@@ -1,0 +1,43 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/group.css" %}" />
+{% endblock %}
+
+
+{% block mainbody %}
+<div class="group_container">
+	<div class="group_table">
+		<table border='0' >
+			<tr>
+				<td>&nbsp;</td>
+				{% for content_type in content_types %}
+				<td>{{content_type.name|capfirst}}</td>
+				{% endfor %}
+			</tr>
+			{% for group in groups %}
+			<tr>
+				<td>{{group.name}}</td>
+				{% for key, value in data.items %}
+					{% ifequal key group.name %}
+						{% for key1, value1 in value %}
+							<td>{{value1}}</td>
+						{% endfor %}
+					{% endifequal %}
+				{% endfor %}
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+<div class="group_separator">
+</div>
+<div class="group_action">
+{% for per in permissions %}
+	<a href="{{per.access_link}}">{{per.display_name}}</a>
+{% endfor %}
+</div>	
+
+
+{% endblock %}

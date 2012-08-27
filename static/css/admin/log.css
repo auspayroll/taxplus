@@ -1,0 +1,29 @@
+.log_table{
+	text-align:left;
+	margin-left:20px;
+}
+
+
+.firstrow{
+	border-top:1px solid #CCCCCC;
+}
+
+.firstcolumn{
+	border-left:1px solid #CCCCCC;
+}
+
+.firstrowfirstcolumn{
+	border:1px solid #CCCCCC;
+}
+
+.log_table table{
+	
+	margin-left:auto;
+	margin-right:auto;
+}
+
+.log_table table tr td{
+	text-indent:4px;
+	border-bottom:1px solid #CCCCCC;
+	border-right:1px solid #CCCCCC;
+}

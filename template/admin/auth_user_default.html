@@ -1,0 +1,43 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/user.css" %}" />
+{% endblock %}
+
+{% block mainbody %}
+<div class="user_container">
+	<div class="user_table">
+		<table cellspacing="0">
+			<tr>
+				<td class="firstrowfirstcolumn">Username</td>
+				<td class="firstrow">First name</td>
+				<td class="firstrow">Last name</td>
+				<td class="firstrow">Email address</td>
+				<td class="firstrow">Contact number</td>
+				<td class="firstrow">Super user</td>
+				<td class="firstrow">Active</td>
+			</tr>
+			{% for user in users %}
+			<tr>
+				<td class="firstcolumn">{{user.username}}</td>
+				<td>{{user.firstname}}</td>
+				<td>{{user.lastname}}</td>
+				<td>{{user.email}}</td>
+				<td>{{user.contactnumber}}</td>
+				<td>{{user.superuser}}</td>
+				<td>{{user.active}}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+</div>
+
+
+<div class="user_separator">
+</div>
+<div class="user_action">
+{% for per in permissions %}
+	<a href="{{per.access_link}}">{{per.display_name}}</a>
+{% endfor %}
+</div>	
+{% endblock %}

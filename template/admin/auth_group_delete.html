@@ -1,0 +1,36 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/group.css" %}" />
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/group.js"></script>
+{% endblock %}
+
+
+{% block mainbody %}
+<div class="group_container">
+	<div class="group_creation_table">
+		<form onsubmit="return check_group_select_or_not();" action="/admin/auth/group/delete_group/" method="post" >
+			{% csrf_token %}
+			<div>
+				Please select a group to delete:				
+				{{form.group_id}}
+			</div>
+			<div>
+				<br>
+				<span id="name_error">&nbsp;</span>
+			</div>
+			<br>
+			<div>
+				<input type="submit" value="go"/>	
+			</div>	
+			{% if form.errors %}
+				{{form.errors|striptags }}
+			{% endif %}
+		</form>
+	</div>
+</div>
+{% endblock %}

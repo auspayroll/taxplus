@@ -1,0 +1,53 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/user.css" %}" />
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+
+
+<div class="group_container">
+	<div class="group_creation_table">
+		<form onsubmit="return check_citizen_change_form();" action="/admin/citizen/citizen/change_citizen1/" method="post" >
+			{% csrf_token %}
+			<table style="text-align: left; margin-left:10px;margin-top:20px; line-height:25px;">
+				<tr>
+					<td width="150">Firstname: </td>
+					<td>{{form.firstname}} *</td>
+					<td><span id='firstname_error'>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td width="150">Lastname:</td>
+					<td>{{form.lastname}} *</td>
+					<td><span id='lastname_error'>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td width="150">Unique Citizen ID:</td>
+					<td>{{form.citizenid}} *</td>
+					<td><span id='citizenid_error'>&nbsp;</span></td>
+				</tr>
+				<tr>
+					<td height="40">&nbsp;<span style="display:none;">{{form.citizen_id}}</span></td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td><input type="submit" value="Update citizen" /></td>
+					<td>&nbsp;</td>
+				</tr>
+			</table>
+			{% if form.errors %}
+				{{form.errors|striptags }}
+			{% endif %}
+			<div style="display:none;">
+				{{form.citizen_id}}
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock %}

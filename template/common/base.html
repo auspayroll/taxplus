@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" >
+	<head>
+		<title>{% block title %}Council Tax Evalution System{% endblock %}</title>
+	
+		{% load staticfiles %}
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/base.css" %}" />
+		<link href='http://fonts.googleapis.com/css?family=Asap' rel='stylesheet' type='text/css'>
+		<script type="text/javascript"  src="/static/js/jquery-1.7.2.min.js"></script>
+		<script type="text/javascript"  src="/static/js/jquery-ui.min.js"></script>
+		<script type="text/javascript"  src="/static/js/common.js"></script>
+		{% block css %}
+		{% endblock %}
+		{% block javascript %}
+		{% endblock %}
+	</head>
+	
+	
+	<body onload="init();">
+	{% block header %}
+		<div class='header'>
+			<a href="/admin/"><span class="title">KCC Tax Systems</span></a>
+			<div class="himg">
+			<a href="/admin/"><img width='96' height='96'  src='/static/images/icons/home.png' /></a>
+			<a href="/admin/action_editprofile/{{request.session.user.username}}/"><img width='96' height='96'  src='/static/images/icons/user_profile.png' /></a>
+				<a href="/admin/logout/"><img width='96' height='96'  src='/static/images/icons/user_logout.png' /></a>
+				
+			</div>
+		</div>
+	{% endblock %}
+	
+	
+	
+	{% block mainbody %}
+	{% endblock %}
+	
+	
+	
+	</body>
+</html>

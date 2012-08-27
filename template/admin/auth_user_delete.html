@@ -1,0 +1,58 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/user.css" %}" />
+{% endblock %}
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/user.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+
+
+<div class="user_action_title">
+	Enter user's name to search:
+</div>
+<div class="user_registration_form">
+	<form onsubmit="return check_user_select_or_not();" action="/admin/auth/user/delete_user/" method="post" >
+		<div style="text-align:left;">
+			{% csrf_token %}
+			
+			<table cellpadding="0" cellspacing="0">
+				<tr>
+					<td width="200">
+						<div class="user_dropdown">
+							<div class="keyword_div">
+								<input autocomplete="off" type="text" class="keyword"  name ="keyword" id="id_keyword"/>
+							</div>
+							<div id="matched_users_list" class="matched_users_div">
+							</div>
+						</div>
+					</td>
+					<td>
+						<input type="submit" value="delete user"/>	
+					</td>
+				</tr>
+			</table>
+			
+			
+			
+			<div>
+				<br>
+				<span id="name_error">&nbsp;</span>
+			</div>
+			<br>
+			<div>
+					
+			</div>	
+		</div>
+		<br><br><br>
+		<div style="display:none;">
+			{{form.user_id}}
+		</div>
+	</form>
+</div>
+<script>
+	selectUser()
+</script>
+{% endblock %}

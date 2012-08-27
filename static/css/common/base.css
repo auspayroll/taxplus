@@ -1,0 +1,125 @@
+body{
+	margin:0px;
+	background-color:white;
+	text-align:center;
+	padding:0px;
+}
+
+.header{
+	height:100px;
+	width:100%;
+	display:block;
+	text-align: left;
+	/* border-bottom:1px solid #CCCCCC; */
+	background:url('/static/images/header_bg.png') repeat-x;
+}
+
+.title{
+	
+	float:left;
+	font-size:50px;
+	margin-top:20px;
+	margin-left:55px;
+	font-family: 'Asap', sans-serif;
+	color:white;
+	
+}
+
+.himg{
+
+	margin-right:55px;
+	margin-top:2px;
+	display:inline;
+	float:right;
+	
+}
+
+.section_container{
+	display:block;
+}
+
+.section_container .content_type_container{
+	display:inline;
+	margin-top:20px;
+	float:left;
+}
+
+.section_container .permission{
+	display:inline;
+	float:right;
+	margin-top:20px; 
+	margin-left:20px;
+	margin-right:20px;
+}
+
+
+.content_type_container .content_type{
+	display:inline;
+	float:left;
+	width:138px;
+	text-align:center;
+}
+
+.content_type .img{
+	display:block;
+
+}
+
+.content_type .desc{
+	text-align:center;
+}
+
+.desc a:link, .desc a:visited{
+	text-decoration: none;
+	color:#555555;
+}
+
+
+.separator{
+	clear:both;
+	height:1px;
+	line-height:1px;
+}
+.workflow_container{
+	width:100%;
+	text-align:left;
+	margin-top:20px;
+	border-top:1px solid #CCCCCC;
+	display:block;
+}
+
+.workflow_container .permission_container{
+	display:block;
+	margin-top:20px;
+}
+
+.permission_container .permission{
+	display:inline;
+	display:inline;
+	float:left;
+	width:120px;
+	text-align:center;
+}
+
+
+.permission .img{
+	display:block;
+}
+
+.permission .desc{
+	text-align:center;
+}
+
+.desc a:link, .desc a:visited{
+	text-decoration: none;
+	color:#555555;
+}
+
+.title a:link, a:visited{
+	text-decoration: none;
+	color:#222222;
+}
+
+ul li .radio {
+	list-style-type: none;
+}

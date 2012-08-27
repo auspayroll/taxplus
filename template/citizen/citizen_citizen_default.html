@@ -1,0 +1,89 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+{% block css  %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+{% endblock %}
+
+
+
+{% block mainbody %}
+
+<div style="margin-top:20px;">
+	&nbsp;
+</div>
+<div style="margin-left:10px;" align="center">
+	<!--
+{% if not citizens|length %}
+	No citizens found.	
+{% else %}
+	<div class="log_table">
+		<table cellpadding="0" cellspacing="0">
+			<tr>
+				<td class="firstrowfirstcolumn"  width="160">Citizen ID</td>
+				<td class="firstrow" width="110">Firstname</td>
+				<td class="firstrow" width="60">Lastname</td>
+			</tr>
+			{% for citizen in citizens %}
+			<tr>
+				<td class="firstcolumn">{{citizen.citizenid}}</td>
+				<td>{{citizen.firstname}}</td>
+				<td>{{citizen.lastname}}</td>
+			</tr>
+			{% endfor %}
+		</table>
+	</div>
+{% endif %}
+</div>
+-->
+
+
+<div class="section_container">
+		<div class="content_type_container">
+				<div class="content_type">
+					<div class="img">
+						<a href="/admin/citizen/citizen/add_citizen/">
+								<image width='128' height='128' src='/static/images/icons/add_citizen.png'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/citizen/citizen/add_citizen/">Add Citizen</a></div>
+				</div>
+				<div class="content_type">
+					<div class="img">
+						<a href="/admin/citizen/citizen/view_citizen/">
+								<image width='128' height='128' src='/static/images/icons/find_citizen.png'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/citizen/citizen/view_citizen/">Find Citizen</a></div>
+				</div>
+				<div class="content_type">
+					<div class="img">
+						<a href="/admin/citizen/citizen/change_citizen/">
+								<image width='128' height='128' src='/static/images/icons/edit_citizen.png'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/citizen/citizen/change_citizen/">Change Citizen</a></div>
+				</div>
+				<div class="content_type">
+					<div class="img">
+						<a href="/admin/citizen/citizen/delete_citizen/">
+								<image width='128' height='128' src='/static/images/icons/remove_citizen3.png'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/citizen/citizen/delete_citizen/">Delete Citizen</a></div>
+				</div>
+
+		</div>
+	</div>		
+</div>	
+<div style="clear:both;"></div>
+
+
+<br><br>
+<div>
+{% for per in permissions %}
+	<a href="{{per.access_link}}">{{per.display_name}}</a>
+{% endfor %}
+</div>	
+
+
+{% endblock %}

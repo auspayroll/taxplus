@@ -1,0 +1,49 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/log.js"></script>
+{% endblock %}
+{% block css  %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+{% endblock %}
+
+
+{% block mainbody %}
+	<div style="margin-top:20px;">
+		&nbsp;
+	</div>
+	<div style="margin-left:10px;" align="left">
+	{% if not logs|length %}
+		No logs found.	
+	{% else %}
+		<div class="log_table">
+			<table cellpadding="0" cellspacing="0">
+				<tr>
+					<td class="firstrowfirstcolumn"  width="160">Date</td>
+					<td class="firstrow" width="110">Username</td>
+					<td class="firstrow" width="60">Plot</td>
+					<td class="firstrow" width="60">Tran ID</td>
+					<td class="firstrow" width="700">Message</td>
+				</tr>
+				{% for log in logs %}
+				<tr>
+					<td class="firstcolumn">{{log.datetime|date:'Y-m-d H:i:s'}}</td>
+					<td>{{log.username}}</td>
+					<td>
+						{% if not log.plotid %}
+							N/A
+						{% endif %}
+						{% if log.plotid %}
+							{{log.plotid}}
+						{% endif %}
+					</td>
+					<td>{{log.transactionid}}</td>
+					<td>{{log.message}}</td>
+				</tr>
+				{% endfor %}
+			</table>
+		</div>
+	{% endif %}
+	</div>
+{% endblock %}

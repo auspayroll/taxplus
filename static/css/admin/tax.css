@@ -1,0 +1,67 @@
+.dropdown{
+	display:block; 
+	position:relative;
+}
+
+.dropdown .keyword_div{
+	margin:0px;
+	padding:0px;
+}
+
+.dropdown .keyword_div input.keyword{
+	width:120px; 
+	height:20px; 
+	font-size:12px; 
+	padding:0px; 
+	line-height:20px;
+	text-indent:2px;
+}
+
+.dropdown_list{
+	position:absolute; 
+	left:0px; 
+	line-height:20px; 
+	top:28px; 
+	width:124px; 
+	background-color:#EEEEEE;
+	z-index: 80;
+}
+
+.dropdown_list ul{
+	width:124px;
+	margin:0px; padding:0px; list-style: none;	
+}
+
+.dropdown_list ul li{
+	border-bottom: 1px dotted #cccccc;
+	font-size:12px;
+	width:124px;
+	line-height:20px;
+	text-indent:2px;
+}
+
+
+
+
+.property_table{
+	text-align:left;
+	margin-top:20px;
+}
+
+.firstrow{
+	border-top:1px solid #CCCCCC;
+}
+
+.firstcolumn{
+	border-left:1px solid #CCCCCC;
+}
+
+.firstrowfirstcolumn{
+	border:1px solid #CCCCCC;
+}
+
+.property_table table tr td{
+	text-indent:4px;
+	border-bottom:1px solid #CCCCCC;
+	border-right:1px solid #CCCCCC;
+}
