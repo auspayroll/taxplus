@@ -9,6 +9,13 @@
 	<script type="text/javascript"  src="/static/js/admin/user.js"></script>
 {% endblock %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "User" "/admin/auth/user/" %}
+	{% breadcrumb "Select user" %}
+{% endblock %}
+
 
 {% block mainbody %}
 <div class="user_action_title">

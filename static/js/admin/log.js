@@ -1,17 +1,12 @@
 function check_log_search_form()
 {
-	userid=$.trim($("#id_userid").val());
+	username=$.trim($("#id_username").val());
 	plotid=$.trim($("#id_plotid").val());
 	transactionid=$.trim($("#id_transactionid").val());
 	
-	if(userid==''){
+	if(username==''){
 		reset_log_search_form_error_fields();
-		$("#userid_error").html(' Please enter user id.');
-		return false;		  
-	}
-	if(userid!='' && isNaN(userid)){
-		reset_log_search_form_error_fields();
-		$("#userid_error").html(' Please enter a valid user id.');
+		$("#username_error").html(' Please enter username.');
 		return false;		  
 	}
 	if(plotid!='' && isNaN(plotid)){
@@ -27,7 +22,7 @@ function check_log_search_form()
 }
 function reset_log_search_form_error_fields()
 {
-	$("#id_userid").html('');
+	$("#id_username").html('');
 	$("#id_plotid").html('');
 	$("#id_transactionid").html('');
 }

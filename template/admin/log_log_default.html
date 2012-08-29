@@ -8,6 +8,14 @@
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
 {% endblock %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Search log" "/admin/log/log/" %}
+	{% breadcrumb "Log found" %}
+{% endblock %}
+
+
 
 {% block mainbody %}
 	<div style="margin-top:20px;">

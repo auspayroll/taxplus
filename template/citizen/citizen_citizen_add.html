@@ -1,6 +1,14 @@
 {% extends "common/base.html" %}
 {% load staticfiles %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "Add citizen" %}
+{% endblock %}
+
+
 {% block javascript %}
 	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
 {% endblock %}

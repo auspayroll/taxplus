@@ -14,12 +14,18 @@ class Citizen(models.Model):
         return self.firstname + ' ' + self.lastname
     
     def save(self):
+        """
+        set status to be "active" by default
+        """
         if not self.i_status:
             self.i_status="active"
         models.Model.save(self) 
     
     
     def getLogMessage(self,old_data=None,new_data=None, action=None):
+        """
+        return tailored log message for different actions taken on this citizen
+        """
         if action == "view":
             return "view " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
         if action == "delete":

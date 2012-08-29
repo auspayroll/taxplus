@@ -5,6 +5,10 @@ from log.models import Log
 from django.forms import model_to_dict
 
 class CitizenCreationForm(ModelForm):
+    """
+    Used for citizen registry
+    Override the save method to integrate with log capability
+    """
     class Meta:
         model = Citizen   
     def save(self, request, commit=True):
@@ -15,6 +19,10 @@ class CitizenCreationForm(ModelForm):
         return citizen
      
 class CitizenChangeForm(ModelForm):
+    """
+    Used to change citizen
+    Override the save method to integrate with log capability
+    """
     citizen_id = forms.IntegerField(required = False)
     citizenid = forms.IntegerField(required = True)
     class Meta:

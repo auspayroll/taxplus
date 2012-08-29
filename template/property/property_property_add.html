@@ -17,6 +17,15 @@
 	<script type="text/javascript"  src="/static/js/admin/property.js"></script>
 {% endblock %}
 
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Property" "/admin/property/property/" %} 
+	{% breadcrumb "Add property" %}	
+{% endblock %}
+
+
 {% block mainbody %}
 
 <div style="display:block">

@@ -20,11 +20,18 @@ class Module(models.Model):
     description = models.CharField(max_length = 200, blank=True, help_text = 'Module description')
     def __unicode__(self):
         return self.name
+    
     def get_access_link(self):
+        """
+        The url used to access this module
+        """
         return '/admin/' + self.name + '/'
     
     @staticmethod
     def getModule(modulename):
+        """
+        Static method to get module by provided module name
+        """
         try:
            module = Module.objects.get(name = modulename)
            return module
@@ -56,8 +63,8 @@ class ContentType(models.Model):
 # Permission
 ##############################################################################################  
 class Permission(models.Model):
-    name = models.CharField(max_length = 50, help_text = 'Permission name')
-    codename = models.CharField(max_length = 50, help_text = 'Permission name in code')
+    name = models.CharField(max_length = 50, help_text = 'The name of the permission shown to users')
+    codename = models.CharField(max_length = 50, help_text = 'The name of the permission used in code')
     contenttype = models.ForeignKey(ContentType)
     def __unicode__(self):
         return self.name
@@ -67,12 +74,13 @@ class Permission(models.Model):
         names = self.codename.split('_')
         names[0] = names[0].capitalize()
         names[0] = names[0] + ' '
-        #name_together = ''.join(names[0]).join(names[1])
-        #return name_together.capitalize()
         return ''.join(names)
     
     @staticmethod    
     def getPermission(name, contentType):
+        """
+        As different contentType may have same permission name, contentType is needed
+        """
         try:
             permission = Permission.objects.get(name = name, contenttype = contentType)
             return permission
@@ -113,12 +121,18 @@ class Group(models.Model):
     
     
     def save(self, *args, **kwargs):
+        """
+        The status of a group is set to "active" by default
+        """
         if not self.i_status:
             self.i_status = 'active'
         models.Model.save(self)
 
 
     def has_permission(self, permission):
+        """
+        check where this group has given permission
+        """
         sql = "select ap.* from auth_permission ap \
             inner join auth_group_permissions agp on agp.permission_id = ap.id \
             where agp.group_id = %i " % self.pk
@@ -128,6 +142,9 @@ class Group(models.Model):
             return False
         
     def can_access_content_type(self, content_type):
+        """
+        check if this group has the permission to access given contentType
+        """
         sql = "select ct.* from  auth_contenttype ct \
                inner join auth_permission ap on ap.contenttype_id = ct.id \
                inner join auth_group_permissions agp on agp.permission_id = ap.id \
@@ -138,6 +155,9 @@ class Group(models.Model):
             return False
     
     def getLogMessage(self,old_data=None,new_data=None,action=None):
+        """
+        return tailored log message for different actions taken on this group
+        """
         if action == "view":
             return "view " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
         if action == "delete":
@@ -180,6 +200,9 @@ class Group(models.Model):
 
     @staticmethod
     def getGroup(groupname):
+        """
+        return group with given group name
+        """
         try:
             group = Group.objects.get(name = groupname)
             return group
@@ -188,6 +211,9 @@ class Group(models.Model):
         
     @staticmethod
     def getGroupNames():
+        """
+        return a list of group names
+        """
         names = []
         groups = Group.objects.all()
         for group in groups:
@@ -220,6 +246,10 @@ class User(models.Model):
         return self.username
       
     def getModules(self):
+        """
+        Get all the modules that the user has permission to access
+        Both user specific permissions and group permissions are considered
+        """
         if self.superuser:
             return Module.objects.all()
         else:
@@ -246,6 +276,12 @@ class User(models.Model):
             return modules
         
     def getContentTypes1(self,module=None):
+        """
+        Get all the contentTypes within a given module that the user has permission to access
+        if module is None, then get all the contenttypes that the user has permission to access 
+        Both user specific permissions and group permissions are considered
+        The returned contenttypes are not sorted
+        """
         if self.superuser:
             if module is None:
                 return ContentType.objects.all()
@@ -280,6 +316,12 @@ class User(models.Model):
                 return final_content_types
     
     def getContentTypes(self, module=None):
+        """
+        Get all the contentTypes within a given module that the user has permission to access
+        if module is None, then get all the contenttypes that the user has permission to access 
+        Both user specific permissions and group permissions are considered
+        The returned contenttypes are sorted
+        """
         content_types=self.getContentTypes1(module)
         ct=[]
         for content_type in content_types:
@@ -289,6 +331,9 @@ class User(models.Model):
         return ct
     
     def getGroups(self):
+        """
+        Get all the groups this user is associated with
+        """
         sql = "select distinct ag.* from auth_group ag \
             inner join auth_user_groups ug on ag.id = ug.group_id \
             inner join auth_user au on au.id = ug.user_id \
@@ -299,6 +344,9 @@ class User(models.Model):
         return groups
   
     def getGroupPermissions(self):
+        """
+        Get all the group permissions this user has
+        """
         final_permissions = []
         if self.superuser:
             final_permissions = Permission.objects.all()
@@ -314,6 +362,10 @@ class User(models.Model):
         return final_permissions
     
     def getAllPermissions(self):
+        """
+        Get all the permissions this user has
+        including user-specific permissions and group permissions
+        """
         all_permissions =  []    
         permissions = self.getAdditionalPermissions()
         if permissions is not None:
@@ -327,6 +379,9 @@ class User(models.Model):
         return all_permissions
         
     def getAdditionalPermissions(self):
+        """
+        Get only user-specific permissions
+        """
         final_permissions = []
         if self.superuser:
             return None
@@ -340,6 +395,9 @@ class User(models.Model):
         return final_permissions
         
     def getAllPermissionsByContentType(self,content_type):
+        """
+        Get all the permissions the user has associated with this contenttype
+        """
         all_permissions=self.getAllPermissions()
         final_permissions=[]
         for per in all_permissions:
@@ -348,6 +406,25 @@ class User(models.Model):
         return final_permissions
     
     def getProfile(self):
+        """
+        Get all the modules the user can access, and
+        all the contenttypes the user can access, and
+        all the permissions the user has
+        pack these infomation in a complex dictionary with the following hierachy: 
+        {
+            {{Module name}} => {
+                {{contentType name1}}=>[permission1, permission2,...],
+                {{contentType name2}}=>[permission1, permission2,...],
+                ...
+                },
+            {{Module name}} => {
+                {{contentType name1}}=>[permission1, permission2,...],
+                {{contentType name2}}=>[permission1, permission2,...],
+                ...
+                },
+            ...
+        }
+        """
         all_modules = self.getModules()
         profile = {}
         for module in all_modules:
@@ -392,6 +469,11 @@ class User(models.Model):
         return profile
     
     def getProfileByModule(self, module):
+        """
+        Get all the contenttypes the user can access within the given module, and
+        all the permissions the user has
+        return the above info with the same structure as the above function
+        """
         module_dict = {}
         all_content_types = self.getContentTypes(module)
         for content_type in all_content_types:
@@ -431,6 +513,9 @@ class User(models.Model):
         return module_dict
     
     def has_permission(self,permission):
+        """
+        check if this user has the given permission or not
+        """
         permissions = self.getAllPermissions()
         if permission in permissions:
             return True
@@ -438,6 +523,9 @@ class User(models.Model):
             return False
     
     def has_module(self, module):
+        """
+        check if this user has the permission to access this module or not
+        """
         modules = self.getModules()
         if module in modules:
             return True
@@ -445,6 +533,9 @@ class User(models.Model):
             return False
         
     def has_group(self, group):
+        """
+        Check if this user is associated with this group or not
+        """
         groups = self.getGroups()
         if group in groups:
             return True
@@ -452,6 +543,9 @@ class User(models.Model):
             return False
       
     def getLogMessage(self,old_data=None,new_data=None, action = None):
+        """
+        return tailored log message for different actions taken on this user
+        """
         if action == "view":
             return "view " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
         if action == "delete":
@@ -507,6 +601,11 @@ class User(models.Model):
             return message
         
     def save(self, *args, **kwargs):
+        """
+        user status is set active by default
+        check whether password is encrypted,
+        if not, encrypt the password
+        """
         if not self.i_status:
             self.i_status = 'active'
         if self.password and len(self.password) < 32:
@@ -517,6 +616,9 @@ class User(models.Model):
         
     @staticmethod
     def getUser(email, password):
+        """
+        return a user having the given email and password
+        """
         try:
             user = User.objects.get(email  = email, password = md5.new(password).hexdigest())
             return user
@@ -525,6 +627,10 @@ class User(models.Model):
     
     @staticmethod
     def getUserPermissionsByContentType(request, module_name, content_type_name):
+        """
+        Return permissions the user has asssociated with the given contenttype,
+        Return additional info regarding permissions like, permission name and permission access link info
+        """
         username = request.session.get('user').username
         user = User.objects.get(username = username)
         module = User.getModule(module_name)

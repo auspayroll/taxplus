@@ -8,6 +8,9 @@ import pytz
 class LogManager(models.Manager):
     @classmethod
     def getTransactionId(cls):
+        """
+        Generate a new transactionid by using max transactionid + 1 
+        """
         count = Log.objects.all().count()
         if count == 0:
             return 1
@@ -17,6 +20,10 @@ class LogManager(models.Manager):
         
     # action could be: 1)view 2)add 3)change 4)delete 5)login 6)logout 
     def createLog(self,user,obj=None,old_data=None,new_data=None,action=None):
+        """
+        Given the action taken on the object, create a log for this action
+        Make a copy of the old data and new data as strings in databse
+        """
         log = Log()
         log.transactionid = self.getTransactionId()
         log.setUser(user)
@@ -41,6 +48,9 @@ class LogManager(models.Manager):
         log.save()
         
     def objToStr(self, dict):
+        """
+        convert object to string
+        """
         if dict is None:
             return str("")
         for key, value in dict.iteritems():
@@ -50,6 +60,9 @@ class LogManager(models.Manager):
         return dict
     
     def getLogMessage(self, obj,olddata=None,newdata=None,action=None):
+        """
+        Call getLogMessage function from each object
+        """
         old_data = None
         new_data = None
         if olddata is not None:
@@ -59,6 +72,9 @@ class LogManager(models.Manager):
         return obj.getLogMessage(old_data,new_data,action)
         
 class Log(models.Model):
+    """
+    keep log for each action taken by user.
+    """
     transactionid = models.IntegerField()
     userid = models.IntegerField()
     plotid = models.IntegerField(null = True, blank = True)
@@ -71,6 +87,9 @@ class Log(models.Model):
     message = models.CharField(blank=True, null=True, max_length=1000)
     
     def elements_to_add(self, old_list,new_list):
+        """
+        Compare two list, and get the items in old_list but not in new_list.
+        """
         result = []
         if len(old_list) == 0:
             return result
@@ -82,6 +101,9 @@ class Log(models.Model):
         return result    
      
     def elements_to_delete(self, old_list,new_list):
+        """
+        Compare two list, and get the items not in old_list but in new_list.
+        """
         result = []
         if len(old_list) == 0:
             return new_list
@@ -94,6 +116,9 @@ class Log(models.Model):
             return result
     
     def rollback(self):
+        """
+        Rollback the changes recorded in the log
+        """
         old_data = ast.literal_eval(self.olddata)
         new_data = ast.literal_eval(self.newdata)
         sql = "update " + self.table
@@ -119,6 +144,11 @@ class Log(models.Model):
                     sql = sql + " "+key + " = " + value
                 count = count + 1
             elif key != 'id' and type(value) is list:
+                """
+                Check if the object has attribute(s) referencing objects in some other table.
+                If so, check whether the object has different referencing objects after it was changed.
+                If so, then rollback.
+                """
                 if old_data[key] != new_data[key]:
                     to_delete = self.elements_to_delete(old_data[key], new_data[key])
                     to_add = self.elements_to_add(old_data[key], new_data[key])
@@ -156,6 +186,9 @@ class Log(models.Model):
         return True    
     
     def objToStr(self, dict):
+        """
+        convert object to string type. Especially, datetime type needs to be cast with desired string format
+        """
         if dict is None:
             return str('') 
         for key, value in dict.iteritems():

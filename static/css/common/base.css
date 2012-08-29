@@ -42,6 +42,7 @@ body{
 	display:inline;
 	margin-top:20px;
 	float:left;
+	padding-left:10px;
 }
 
 .section_container .permission{
@@ -123,3 +124,16 @@ body{
 ul li .radio {
 	list-style-type: none;
 }
+
+.content_type_action{
+	margin-top:20px;
+	text-align:center;
+}
+
+.content_type_action a:link, .content_type_action a:visited{
+	text-decoration: none;
+	color:#555555;
+	margin-left:10px;
+	margin-right:10px;
+}
+

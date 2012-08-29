@@ -7,6 +7,16 @@
 	<script type="text/javascript"  src="/static/js/admin/user.js"></script>
 {% endblock %}
 
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "User" "/admin/auth/user/" %}
+	{% breadcrumb "Delete user" %}	
+{% endblock %}
+
+
+
 {% block mainbody %}
 
 

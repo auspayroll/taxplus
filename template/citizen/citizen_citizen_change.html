@@ -4,6 +4,16 @@
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/user.css" %}" />
 {% endblock %}
 
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "Select citizen" %}
+{% endblock %}
+
+
+
 {% block javascript %}
 	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
 {% endblock %}

@@ -3,7 +3,9 @@ import md5
     
 def initializeAuthData():
         
-    # create testing module data
+    """ 
+    create testing module data
+    """
     module1 = Module.getModule('auth')
     module2 = Module.getModule('property')
     module3 = Module.getModule('log')
@@ -22,7 +24,9 @@ def initializeAuthData():
         module5 = Module.objects.create(name='tax')
     
         
-    # create testing content type data
+    """ 
+    create testing content type data
+    """
     contenttype1 = ContentType.getContentType('permission',module1)
     if contenttype1 is None:
           contenttype1 = ContentType.objects.create(name ='permission',module = module1)
@@ -47,7 +51,10 @@ def initializeAuthData():
           contenttype8 = ContentType.objects.create(name ='tax', image= 'icons/tax.png', module = module5)
     
     
-    # crate testig permission data
+    
+    """
+    create testig permission data
+    """
     contentTypes = ContentType.objects.all()
     for obj in contentTypes:
         permission1 = Permission.getPermission('Can view '+obj.name, obj)
@@ -64,7 +71,9 @@ def initializeAuthData():
             Permission.objects.create(name='Can delete '+obj.name,codename='delete_'+obj.name,contenttype=obj)    
 
 
-    # create testing group data
+    """
+    create testig group data
+    """
     group1 = Group.getGroup('testgroup')
     if group1 is None:
         group1 = Group.objects.create(name='testgroup', i_status='active')
@@ -74,7 +83,9 @@ def initializeAuthData():
         group2 = Group.objects.create(name='dev', i_status='active')
     
     
-    # create testing user data
+    """
+    create testig user data
+    """
     user1 = User.getUser('linkongluan@gmail.com','ilyjun')
     user2 = User.getUser('test@test.com','test')
     user3 = User.getUser('shane@propertymode.com.au','shane100')
@@ -93,7 +104,9 @@ def initializeAuthData():
         user5 = User.objects.create(username='Justin Hopley', firstname='justin', lastname='Hopley', password='justin100', email='justin@propertymode.com.au', i_status='active', active=True,superuser=True)
     
     
-    # create testing group permission data
+    """
+    create testing group permission data
+    """
     permission1 = Permission.getPermissionByCodeName('view_property')
     if not group1.has_permission(permission1):
         group1.permissions.add(permission1)
@@ -109,14 +122,17 @@ def initializeAuthData():
             group2.permissions.add(per)
     group2.save()
       
-        
-    # create a group for test user
-
+   
+    """
+    create a group for test user
+    """
     if not user2.has_group(group1):
         user2.groups.add(group1)
         user2.save()
     
-    # create testing user permission data
+    """
+    create testing user permission data
+    """
     permission1 = Permission.getPermissionByCodeName(codename = 'change_property')
     if not user2.has_permission(permission1):
         user2.permissions.add(permission1)

@@ -5,6 +5,15 @@
 {% endblock %}
 
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Group" "/admin/auth/group/"  %}
+	{% breadcrumb "Delete group" %}
+{% endblock %}
+
+
+
 {% block javascript %}
 	<script type="text/javascript"  src="/static/js/admin/group.js"></script>
 {% endblock %}

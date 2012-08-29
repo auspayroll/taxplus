@@ -16,6 +16,15 @@
 	<script type="text/javascript"  src="/static/js/admin/tax.js"></script>
 {% endblock %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Search property" %}	
+{% endblock %}
+
+
+
 {% block mainbody %}
 	<div style="display:block;">
 		<table width="100%" cellpadding="5" cellspacing="0">

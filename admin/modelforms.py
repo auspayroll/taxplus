@@ -10,12 +10,18 @@ from django.conf import settings
 import md5
 
 class GroupCreationForm(ModelForm):
+    """
+    The form is used for Group registry
+    """
     permissions_all = forms.ModelMultipleChoiceField(queryset = Permission.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'group_creation_form_permission'}))
     permissions_selected = forms.ModelMultipleChoiceField(queryset = Permission.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'group_creation_form_permission'}))
     class Meta:
         model = Group
         fields = ("name","permissions",)
     def save(self, request, commit=True):
+        """
+        The save method is override because the default one does not save the referencing permissions
+        """
         group = forms.ModelForm.save(self, False)
         if commit:
             group.save()
@@ -30,6 +36,9 @@ class GroupCreationForm(ModelForm):
     
     
 class GroupChangeForm(ModelForm):
+    """
+    The form is used to chagne Group
+    """
     permissions_all = forms.ModelMultipleChoiceField(queryset = Permission.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'group_creation_form_permission'}))
     permissions_selected = forms.ModelMultipleChoiceField(queryset = Permission.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'group_creation_form_permission'}))
     group_id = forms.IntegerField()
@@ -38,6 +47,9 @@ class GroupChangeForm(ModelForm):
         model = Group
         fields = ("permissions",)
     def save(self, request, commit=True):
+        """
+        The save method is override because the default one does not save the referencing permissions
+        """
         group_id = self.cleaned_data["group_id"]
         group = Group.objects.get(id = group_id)
         old_data = model_to_dict(group)
@@ -55,6 +67,10 @@ class GroupChangeForm(ModelForm):
 
 
 class UserChangeForm(ModelForm):
+    """
+    Display user info in this form by default,
+    Update user inof by saving this form
+    """
     class Meta:
         model = User
         fields = ("firstname","lastname","contactnumber","active","superuser","datejoined","groups","permissions",) 
@@ -93,6 +109,9 @@ class UserChangeForm(ModelForm):
         return user
 
 class UserCreationForm(ModelForm):
+    """
+    This form is used for user registry
+    """
     error_messages = {
         'empty': "Required.",
         'empty_username': "Required. Maximum 30 characters.",

@@ -1,14 +1,32 @@
 {% extends "common/base.html" %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" %}	
+{% endblock %}
+
+
 {% block mainbody %}
 	<div class="section_container">
 		<div class="content_type_container">
 				<div class="content_type">
 					<div class="img">
 						<a href="/admin/tax/tax/search_tax/">
-							<image width='96' height='96' src='/static/images/icons/tax_search.png'></image>
+							<image width='128' height='128' src='/static/images/icons/tax_search.png'></image>
 						</a>
 					</div>
 					<div class="desc"><a href="/admin/tax/tax/search_tax/">Search</a></div>
+				</div>
+				
+				<div class="content_type">
+					<div class="img">
+						<a href="/admin/tax/tax/declarevalue_tax/">
+							<image width='128' height='128' src='/static/images/blank.jpg'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/tax/tax/declarevalue_tax/">Declare value</a></div>
 				</div>
 		</div>
 	</div>		

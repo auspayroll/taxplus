@@ -4,9 +4,14 @@ from django.http import HttpResponse
 from property.models import Property, Boundary
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.utils import simplejson
+from jtax.models import DeclaredValue
 
 
 def search_user(request):
+    """
+    search user with entered keyword, case-insensitive.
+    Return a list of users having full name contains the entered keyword
+    """
     result =""
     match_count = 0
     if request.method == 'GET':
@@ -17,12 +22,6 @@ def search_user(request):
             for user in users:
                 fullname = user.firstname.lower() + ' ' + user.lastname.lower()
                 match = keyword in fullname                 
-                #if user.firstname.lower() == keyword:
-                #    match = True
-                #if user.lastname.lower() == keyword:
-                #    match = True
-                #if user.firstname.lower() + ' ' + user.lastname.lower() == keyword:
-                #    match = True
                 if match:
                     match_count = match_count + 1
                     if match_count == 1:
@@ -30,7 +29,12 @@ def search_user(request):
                     else:
                         result = result + '#'+str(user.id)+':'+user.firstname.capitalize()+' '+user.lastname.capitalize()
     return HttpResponse(result)
+
 def search_citizen(request):
+    """
+    search citizen with entered keyword, case-insensitive.
+    Return a list of citizens having full name contains the entered keyword
+    """
     result =""
     match_count = 0
     if request.method == 'GET':
@@ -41,12 +45,6 @@ def search_citizen(request):
             for citizen in citizens:
                 fullname = citizen.firstname.lower() + ' ' + citizen.lastname.lower()
                 match = keyword in fullname                 
-                #if user.firstname.lower() == keyword:
-                #    match = True
-                #if user.lastname.lower() == keyword:
-                #    match = True
-                #if user.firstname.lower() + ' ' + user.lastname.lower() == keyword:
-                #    match = True
                 if match:
                     match_count = match_count + 1
                     if match_count == 1:
@@ -56,6 +54,12 @@ def search_citizen(request):
     return HttpResponse(result)
 
 def search_property_in_area(request):
+    """
+    search properties within a specified area.
+    For each property satisfying the above requirement, info is returned including plotid, street no, street name, suburb 
+    and shape (This is represented by a polygon with known vertice coordinates).
+    The above info is returned with json format
+    """
     to_json = {}
     properties=[]
     if request.method == 'GET':
@@ -96,12 +100,28 @@ def search_property_in_area(request):
                 property_json['streetno']=property.streetno
                 property_json['streetname']=property.streetname
                 property_json['suburb']=property.suburb
+                
+                declarevalues_json=[]
+                declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclairedValueDateTime")
+                for declare_value in declarevalues:
+                    declare_value_json = {}
+                    declare_value_json['accepted']=declare_value.DeclairedValueAccepted
+                    declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
+                    declare_value_json['staffid']=declare_value.DeclairedValueStaffId
+                    declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
+                    declarevalues_json.append(declare_value_json)
+                property_json['declarevalues']=declarevalues_json                
+                
                 properties.append(property_json)
             to_json['properties'] = properties
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 
 
 def search_property_field(request):
+    """
+    Give the user a list of suburb names or street names with given entered words.
+    The above info is returned with json format
+    """
     if request.method == 'GET':
         GET = request.GET
         if GET.has_key('suburb'):         
@@ -126,6 +146,11 @@ def search_property_field(request):
             return HttpResponse(simplejson.dumps(result), mimetype='application/json')
         
 def search_property_by_fields(request):
+    """
+    Search a property or properties by provided conditions
+    If plotid is given, the remaining conditions will not be considered, as each plotid corresponds to a property
+    The above info is returned with json format
+    """
     result = ""
     to_json = {}
     properties=[]
@@ -145,7 +170,7 @@ def search_property_by_fields(request):
         if GET.has_key('streetno'):
             streetno = GET['streetno']
         
-        if plotid is not None:       
+        if plotid is not None:
             matched_properties = Property.objects.filter(plotid=plotid)
         elif suburb is not None:
             if streetname is not None:
@@ -190,7 +215,19 @@ def search_property_by_fields(request):
             property_json['streetno']=property.streetno
             property_json['streetname']=property.streetname
             property_json['suburb']=property.suburb
+            
+            declarevalues_json=[]
+            declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclairedValueDateTime")
+            for declare_value in declarevalues:
+                declare_value_json = {}
+                declare_value_json['accepted']=declare_value.DeclairedValueAccepted
+                declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
+                declare_value_json['staffid']=declare_value.DeclairedValueStaffId
+                declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
+                declarevalues_json.append(declare_value_json)
+            property_json['declarevalues']=declarevalues_json
             properties.append(property_json)
+            
         to_json['properties'] = properties
         return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 

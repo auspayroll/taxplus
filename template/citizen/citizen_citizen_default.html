@@ -4,14 +4,14 @@
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
 {% endblock %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen"  %} 
+{% endblock %}
 
 
 {% block mainbody %}
-
-<div style="margin-top:20px;">
-	&nbsp;
-</div>
-<div style="margin-left:10px;" align="center">
 	<!--
 {% if not citizens|length %}
 	No citizens found.	
@@ -37,53 +37,32 @@
 -->
 
 
+
 <div class="section_container">
-		<div class="content_type_container">
-				<div class="content_type">
-					<div class="img">
-						<a href="/admin/citizen/citizen/add_citizen/">
-								<image width='128' height='128' src='/static/images/icons/add_citizen.png'></image>
-						</a>
-					</div>
-					<div class="desc"><a href="/admin/citizen/citizen/add_citizen/">Add Citizen</a></div>
+	<div class="content_type_container">
+		{% for per in permissions %}
+			<div class="content_type">
+				<div class="img">
+					<a href="{{per.access_link}}">
+							<image width='128' height='128' src="{% static "images/icons/" %}{{per.display_name}}.png"></image>
+					</a>
 				</div>
-				<div class="content_type">
-					<div class="img">
-						<a href="/admin/citizen/citizen/view_citizen/">
-								<image width='128' height='128' src='/static/images/icons/find_citizen.png'></image>
-						</a>
-					</div>
-					<div class="desc"><a href="/admin/citizen/citizen/view_citizen/">Find Citizen</a></div>
-				</div>
-				<div class="content_type">
-					<div class="img">
-						<a href="/admin/citizen/citizen/change_citizen/">
-								<image width='128' height='128' src='/static/images/icons/edit_citizen.png'></image>
-						</a>
-					</div>
-					<div class="desc"><a href="/admin/citizen/citizen/change_citizen/">Change Citizen</a></div>
-				</div>
-				<div class="content_type">
-					<div class="img">
-						<a href="/admin/citizen/citizen/delete_citizen/">
-								<image width='128' height='128' src='/static/images/icons/remove_citizen3.png'></image>
-						</a>
-					</div>
-					<div class="desc"><a href="/admin/citizen/citizen/delete_citizen/">Delete Citizen</a></div>
-				</div>
+				<div class="desc"><a href="{{per.access_link}}">{{per.display_name}}</a></div>
+			</div>
+		{% endfor %}
+	</div>	
+</div>		
 
-		</div>
-	</div>		
+
+<div class="separator">&nbsp;</div>	
+<div class="workflow_container">
+	<div class="content_type_action">
+		{% for per in permissions %}
+			<a href="{{per.access_link}}">{{per.display_name}}</a>
+		{% endfor %}
+	</div>
 </div>	
-<div style="clear:both;"></div>
 
-
-<br><br>
-<div>
-{% for per in permissions %}
-	<a href="{{per.access_link}}">{{per.display_name}}</a>
-{% endfor %}
-</div>	
 
 
 {% endblock %}

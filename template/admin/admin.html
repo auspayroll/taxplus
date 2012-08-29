@@ -1,4 +1,10 @@
 {% extends "common/base.html" %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+{% endblock %}
+
 {% block mainbody %}
 	<div class="section_container">
 		<div class="content_type_container">

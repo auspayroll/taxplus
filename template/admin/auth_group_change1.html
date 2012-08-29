@@ -4,6 +4,14 @@
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/group.css" %}" />
 {% endblock %}
 
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Group" "/admin/auth/group/"  %}
+	{% breadcrumb "Select group" "/admin/auth/group/change_group/"  %}
+	{% breadcrumb "Change group" %}
+{% endblock %}
+
 
 {% block javascript %}
 	<script type="text/javascript"  src="/static/js/admin/group.js"></script>

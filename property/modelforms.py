@@ -6,6 +6,9 @@ from django.forms import model_to_dict
 from log.models import Log
 
 class PropertyCreationForm(ModelForm):
+    """
+    Consider the boundary of a property as a polygon, then boundary textfield stores the coordinators of polygon vertices
+    """
     boundary = forms.CharField(widget=forms.Textarea)
     class Meta:
         model = Property
