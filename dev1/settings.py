@@ -1,6 +1,9 @@
 # Django settings for dev1 project.
-
-DEBUG = True
+import os
+ROOT_PATH_SETTINGS = os.path.dirname(os.path.abspath(__file__))
+ROOT_PATH = os.path.join(ROOT_PATH_SETTINGS,"..")
+PROJECT_DIR = os.path.abspath(os.path.join(ROOT_PATH_SETTINGS, '..'))
+DEBUG = True 
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -48,8 +51,10 @@ USE_TZ = True
 
 # Absolute filesystem path to the directory that will hold user-uploaded files.
 # Example: "/var/www/example.com/media/"
-MEDIA_ROOT = '/var/www/dev1/uploads/'
 
+
+# - JUSTIN - MEDIA_ROOT = '/var/www/dev1/uploads/'
+MEDIA_ROOT = os.path.join(PROJECT_DIR, 'uploads/')
 # URL that handles the media served from MEDIA_ROOT. Make sure to use a
 # trailing slash.
 # Examples: "http://example.com/media/", "http://media.example.com/"
@@ -67,8 +72,9 @@ STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
-    '/var/www/dev1/static',
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # '/var/www/dev1/static',
+    os.path.join(PROJECT_DIR,'static'),
+	# Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
@@ -107,8 +113,9 @@ ROOT_URLCONF = 'dev1.urls'
 WSGI_APPLICATION = 'dev1.wsgi.application'
 
 TEMPLATE_DIRS = (
-    '/var/www/dev1/template',
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # '/var/www/dev1/template',
+	os.path.join(ROOT_PATH,'template'),    
+# Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
@@ -168,3 +175,6 @@ LOGGING = {
         },
     }
 }
+
+from settings_local import *
+
