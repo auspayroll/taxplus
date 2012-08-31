@@ -15,11 +15,32 @@ var style = {
   strokeOpacity: 0.5,
   strokeWidth: 5
 };
+
+var style_green = { 
+   fillColor: "green",
+   fillOpacity: 0.25,
+   strokeColor: "green",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
+var style_red = { 
+   fillColor: "orange",
+   fillOpacity: 0.25,
+   strokeColor: "orange",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
+var style_black = { 
+   fillColor: "red",
+   fillOpacity: 0.25,
+   strokeColor: "red",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
  	
 //Initialise the 'map' object
 function init() 
 {
- 
    	map = new OpenLayers.Map 
    	("map", {controls:
     	[
@@ -48,7 +69,7 @@ function init()
 	    var gsat = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 19});
     	map.addLayer(gsat);
 	    
-	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", "http://devtile.propertymode.com.au/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
+	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", map_url+"/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
 	    newLayer.tileOptions={crossOriginKeyword: null};
 	    map.addLayer(newLayer);
 	    
@@ -98,6 +119,8 @@ function init()
 		}	
 }
     
+
+
 
 
 function getCoordinates()
@@ -312,6 +335,12 @@ function search_property_by_fields(querystring)
 }
 
 
+function viewPropertyDetail(plotid)
+{
+	querystring = "plotid="+plotid;
+	search_property_by_fields(querystring);
+}
+
 
 // According to the Json object data, decide how to display the result
 function showResults(data)
@@ -357,7 +386,7 @@ function showMultiplePropertyResults(data)
 			if(declareValues.length==0)
 			{
 				row+=							"<tr>";
-				row+=								"<td class='firstcolumn'>" + plotid + "</td>";
+				row+=								"<td class='firstcolumn'><a href='#' onclick='viewPropertyDetail("+plotid +")'>" + plotid + "</a></td>";
 				row+=								"<td class='normal'> N/A</td>";
 				row+=								"<td class='normal'> N/A</td>";
 				row+=								"<td class='normal'> N/A</td>";									
@@ -367,10 +396,10 @@ function showMultiplePropertyResults(data)
 			{
 				declareValue=declareValues[0];
 				row+=							"<tr>";
-				row+=								"<td class='firstcolumn'> "+plotid+"</td>";
+				row+=								"<td class='firstcolumn'><a href='#' onclick='viewPropertyDetail("+plotid +")'>" + plotid + "</a></td>";
 				row+=								"<td class='normal'> "+declareValue['amount']+"</td>";
 				row+=								"<td class='normal'> "+declareValue['datetime']+"</td>";
-				row+=								"<td class='normal'> yes</td>";
+				row+=								"<td class='normal'> "+ getDueStatus(declareValue['datetime']) +"</td>";
 				row+=							"</tr>";		
 				
 			}
@@ -390,6 +419,26 @@ function showMultiplePropertyResults(data)
 			var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
 			var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
 			var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+			if(declareValues.length>0)
+			{
+				declareValue=declareValues[0];
+				if(getDeclareValueStatus(declareValue['datetime'])=="lessthan3")
+				{
+					feature.style=style_green;	
+				}
+				if(getDeclareValueStatus(declareValue['datetime'])=="between34")
+				{
+					feature.style=style_red;	
+				}
+				if(getDeclareValueStatus(declareValue['datetime'])=="greaterthan4")
+				{
+					feature.style=style_black;	
+				}
+			}
+			else
+			{
+				feature.style=style_black;
+			}
 			var anchor = {'size': new OpenLayers.Size(0,0), 'offset': new OpenLayers.Pixel(0, 0)};
 	        popup = new OpenLayers.Popup.FramedCloud(
 	          	"",
@@ -455,6 +504,8 @@ function showSinglePropertyResult(data)
 		for(i=0;i<properties.length;i++)
 		{
 			property=properties[i];
+			declareValues = property['declarevalues'];
+			property=properties[i];
 			plotid = property['plotid'];
 			address = property['streetno']+ " "+property['streetname']+", "+property['suburb'];
 			row=		"<tr>";
@@ -469,7 +520,6 @@ function showSinglePropertyResult(data)
 			row+=								"</div>";
 			row+=								"<div class='box'>";
 			row+=									"<div class='box_title'>Official declared value:</div>";
-			declareValues = property['declarevalues'];
 			if(declareValues.length==0)
 			{
 				row+=								"<div class='box_detail'><strong>Amount:</strong> N/A</div>";
@@ -500,7 +550,6 @@ function showSinglePropertyResult(data)
 			row+=												"<td class='firstrow'>Accept</td>";
 			row+=												"<td class='firstrow'>Official</td>";
 			row+=											"</tr>";
-			declareValues = property['declarevalues'];
 			if(declareValues.length==0)
 			{
 				row+=										"<tr>";
@@ -549,6 +598,26 @@ function showSinglePropertyResult(data)
 			var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
 			var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
 			var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+			if(declareValues.length>0)
+			{
+				declareValue=declareValues[0];
+				if(getDeclareValueStatus(declareValue['datetime'])=="lessthan3")
+				{
+					feature.style=style_green;	
+				}
+				if(getDeclareValueStatus(declareValue['datetime'])=="between34")
+				{
+					feature.style=style_red;	
+				}
+				if(getDeclareValueStatus(declareValue['datetime'])=="greaterthan4")
+				{
+					feature.style=style_black;	
+				}
+			}
+			else
+			{
+				feature.style=style_black;
+			}
 			var anchor = {'size': new OpenLayers.Size(0,0), 'offset': new OpenLayers.Pixel(0, 0)};
 	        popup = new OpenLayers.Popup.FramedCloud(
 	          	"",
@@ -664,16 +733,29 @@ function getDeclareValueStatus(date_var)
 	status = new Array();
 	status[0] = "lessthan3";
 	status[1] = "between34";
-	status[2] = "greaterthan3";
+	status[2] = "greaterthan4";
 	
 	var today = new Date();
-	days=(today.getTime()-date_crated.getTime())/(1000*60*60*24);
+	days=(today.getTime()-date_created.getTime())/(1000*60*60*24);
 	
 	years = 1.0*days/365;
 	if(years<=3){result = status[0];}
 	if(years>3&&years<=4){result = status[1];}
 	if(years>4){result = status[2];}
 	return result;	
+}
+
+function getDueStatus(date_var)
+{
+	status=getDeclareValueStatus(date_var);
+	if(status=="greaterthan4")
+	{
+		return "Yes";
+	}
+	else
+	{
+		return "No";
+	}
 }
 
 

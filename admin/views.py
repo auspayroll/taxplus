@@ -16,7 +16,6 @@ import ast
 from citizen.forms import select_citizen_form
 from django.forms import model_to_dict
 import md5
-
     
 def login(request):
     """
@@ -62,8 +61,7 @@ def logout(request):
     for key in request.session.keys():
         del request.session[key]
     return login(request)     
-
-                            
+                     
 def auth_user_default(request,permissions, action, content_type_name1):
     """
     This funcion manages the following actions related to users. 1)add, 2)change, 3)delete 
@@ -326,9 +324,6 @@ def property_property_default(request, permissions, action, content_type_name1):
                 return render_to_response('property/property_property_add.html', {'form':form,},
                                   context_instance=RequestContext(request))
                 
-
-
-
 def tax_tax_default(request, permissions, action, content_type_name1):
     """
     This function enable users to search property within an area, or search by suburb, street name, street no or plot id.
@@ -353,12 +348,7 @@ def tax_tax_default(request, permissions, action, content_type_name1):
         if request.method != 'POST':
             return render_to_response('tax/tax_tax_declarevalue.html',{},
                               context_instance=RequestContext(request))
-
-
-
-
-
-                     
+                    
 def access_content_type(request, module_name, content_type_name, action = None, content_type_name1 = None):
     """
     This function direct request to the correspodding {module}_{contenttype}_default page
@@ -383,7 +373,8 @@ def access_content_type(request, module_name, content_type_name, action = None, 
     if function_name == 'tax_tax':
         return tax_tax_default(request, permissions, action, content_type_name1)
     
-    
+def test(request):
+    return render_to_response('admin/test.html', {}, context_instance=RequestContext(request))
     
     
     

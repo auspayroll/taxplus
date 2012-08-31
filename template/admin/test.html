@@ -1,0 +1,68 @@
+<html>
+<head>
+  <title>OpenLayers Example</title>
+  <header>
+  	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+  </head>
+  <body>
+    <div style="width:100%; height:100%" id="map"></div>
+    <script type="text/javascript">
+    	
+    	// define a map
+    	var map = new OpenLayers.Map('map');
+    	
+		// define a layer that is actually an origin of map data.
+    	var wms = new OpenLayers.Layer.WMS(
+    		"wms map",
+    		"http://vmap0.tiles.osgeo.org/wms/vmap0",
+    		{'layers':'basic'}
+    	);
+    	
+    	// add layer to map
+    	map.addLayer(wms);
+    	
+    	// define point style. Parameter pointRadius is needed, otherwise would be set to 0 by default.
+    	// that is, we are not going to see the point on the screen.
+    	// the optional style attributes could be:
+    	
+    	// fill, fillColor, fillOpacity, stroke, strokeColor, strokeOpacity, strokeWidth, strokeLinecap, strokeDashstyle, graphic, pointRadius,
+    	// pointerEvents, cursor, externalGraphic, graphicWidth, graphicHeight, graphicOpacity graphicXOffset,graphicYOffset, rotation,
+    	// graphicZIndex, graphicName,graphicTitle,backgroundGraphic,backgroundGraphicZIndex,backgroundXOffset,backgroundYOffset,backgroundHeight,
+    	//backgroundWidth,label,labelAlign,labelXOffset,labelYOffset,labelSelect,fontColor,fontOpacity,fontFamily,fontSize,fontWeight,display
+    	var style = { 
+		  fillColor: "green",
+		  fillOpacity: 1,
+		  pointRadius: 6,
+		  strokeColor: "black",
+		  strokeWidth: 1 
+		};
+    	
+    	// define a vector layer to accommodate costomized stuffs like points, or polygon objects.
+    	var vectorLayer = new OpenLayers.Layer.Vector("Overlay");
+    	
+    	// define points
+    	var point1 = new OpenLayers.Geometry.Point(-100,58);
+    	var point2 = new OpenLayers.Geometry.Point(-71,42);
+    	
+    	// create features based on point objects   
+    	var feature1 = new OpenLayers.Feature.Vector(point1);
+    	var feature2 = new OpenLayers.Feature.Vector(point2);
+    	
+    	// set up style for feature1
+    	feature1.style=style;
+    	
+    	// add features to vector layer
+    	vectorLayer.addFeatures([feature1,feature2]);
+    	
+    	//vectorLayer.addFeatures(feature);
+    	map.addLayer(vectorLayer);
+    	
+    	
+    	
+    	
+    	
+    	
+    	map.zoomToMaxExtent();
+    </script>
+  </body>
+</html>

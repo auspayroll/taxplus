@@ -48,7 +48,7 @@ function init()
 	    var gsat = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 19});
     	map.addLayer(gsat);
 	    
-	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", "http://devtile.propertymode.com.au/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
+	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", map_url+"/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
 	    newLayer.tileOptions={crossOriginKeyword: null};
 	    map.addLayer(newLayer);
 	    
