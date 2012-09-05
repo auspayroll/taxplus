@@ -74,15 +74,36 @@
 						<div style="clear:both;"></div>
 					</div>
 					<div id='tab2'>
-						<div class='box'>			
-							<div class='box_title'>Transaction history:</div>
+						<div class='box' style="text-align:left; width:500px;">			
+							<div class='box_title'>Owner details:</div>
+							<div class='box_detail'><strong>First name:</strong> Staley</div>
+							<div class='box_detail'><strong>Last name:</strong> Lin</div>
+						</div>
+						<div class='box' style="text-align:left; width:500px;">			
+							<div class='box_title'>Official declared value:</div>
+							{% if declarevalues|length == 0 %}
+								<div class='box_detail'><strong>Amount: </strong> N/A</div>
+								<div class='box_detail'><strong>Date submitted: </strong> N/A</div>
+								<div class='box_detail'><strong>Submitted by: </strong> N/A</div>
+								<div class='box_detail'><strong>Staff name: </strong> N/A</div>
+							{% else %}
+								{% with declarevalues|first as declarevalue %}
+								<div class='box_detail'><strong>Amount: </strong>{{declarevalue.amount}}</div>
+								<div class='box_detail'><strong>Date submitted: </strong>{{declarevalue.datetime}}</div>
+								<div class='box_detail'><strong>Submitted by: </strong>stanley Lin</div>
+								<div class='box_detail'><strong>Staff name: </strong>Justin Hopley</div>
+								{% endwith%}
+							{% endif %}		
+						</div>				
+						<div class='box' style="text-align:left;width:500px">			
+							<div class='box_title'>Declared value history:</div>
 							<div class='transactionhistory_div'>					
 								<table id='transaction_table' cellpadding='0' cellspacing='0'>
 									<tr>
-										<td class='firstrowfirstcolumn'>Date</td>
-										<td class='firstrow'>Amount</td>
-										<td class='firstrow'>Accept</td>
-										<td class='firstrow'>Official</td>
+										<td class='firstrowfirstcolumn'><strong>Date</strong></td>
+										<td class='firstrow'><strong>Amount</strong></td>
+										<td class='firstrow'><strong>Accept</strong></td>
+										<td class='firstrow'><strong>Official</strong></td>
 									</tr>
 							{% if declarevalues|length == 0 %}
 									<tr>
@@ -91,16 +112,21 @@
 							{% else %}
 								{% for declarevalue in declarevalues %}
 									<tr>
-										<td class='firstcolumn'>{{declarevalue['datetime']}}</td>
-										<td class='normal'>{{declarevalue['amount']}}</td>
-										<td class='normal'>{{declarevalue['accepted']}}</td>
-										<td class='normal'>{{declarevalue['staffid']}}</td>
+										<td class='firstcolumn'>{{declarevalue.datetime}}</td>
+										<td class='normal'>{{declarevalue.amount}}</td>
+										<td class='normal'>{{declarevalue.accepted}}</td>
+										<td class='normal'>{{declarevalue.staffid}}</td>
 									</tr>
 								{% endfor %}	
 							{% endif %}
 								</table>
 							</div>				
-						</div>				
+						</div>
+						<div class='box' style="text-align:left; width:500px;">			
+							<div class='box_title'>Tax paid history:</div>
+							<div class='box_detail' style="text-align:center"><strong>No tax has been paid yet regarding this property.</strong></div>
+						</div>	
+											
 					</div>
 				</div>
 				<div style="clear:both; line-height:2px; height:2px;">

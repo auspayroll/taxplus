@@ -9,13 +9,16 @@ from property.modelforms import PropertyCreationForm
 from admin.functions import initializeAuthData
 from django.shortcuts import redirect
 import dev1.settings
-from property.models import Property
 from citizen.models import Citizen
 from log.models import Log
 import ast
 from citizen.forms import select_citizen_form
+from property.forms import select_property_form
 from django.forms import model_to_dict
 import md5
+from property.models import Property, Boundary
+from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
+from jtax.models import DeclaredValue
     
 def login(request):
     """
@@ -300,6 +303,40 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
                 else:
                     return render_to_response('citizen/citizen_citizen_change1.html', {'form':form,},
                                   context_instance=RequestContext(request))
+    elif action == 'view':
+        if request.method != 'POST':
+            form = select_citizen_form()
+            return render_to_response('citizen/citizen_citizen_view.html', {'form':form,},
+                              context_instance=RequestContext(request))
+        else:
+            form = select_citizen_form(request.POST)
+            if form.is_valid():
+                citizen_id=form.cleaned_data['citizen_id']
+                citizen = Citizen.objects.get(id = citizen_id)
+                Log.objects.createLog(request.session.get('user'),citizen,None,None,"view")
+                return render_to_response('citizen/citizen_citizen_view1.html', {'citizen':citizen,},
+                              context_instance=RequestContext(request))
+            else:
+                 return render_to_response('citizen/citizen_citizen_view.html', {'form':form,},
+                              context_instance=RequestContext(request))
+                
+    elif action == 'delete':
+        if request.method != 'POST':
+            form = select_citizen_form()
+            return render_to_response('citizen/citizen_citizen_delete.html', {'form':form,},
+                              context_instance=RequestContext(request))
+        else:
+            form = select_citizen_form(request.POST)
+            if form.is_valid():
+                citizen_id=form.cleaned_data['citizen_id']
+                citizen = Citizen.objects.get(id = citizen_id)
+                Log.objects.createLog(request.session.get('user'),citizen,None,None,"delete")
+                citizen.delete();
+                return access_content_type(request, "citizen", "citizen", None, None)
+            else:
+                return render_to_response('citizen/citizen_citizen_delete.html', {'form':form,},
+                              context_instance=RequestContext(request))
+
 
 def property_property_default(request, permissions, action, content_type_name1):
     """
@@ -323,6 +360,62 @@ def property_property_default(request, permissions, action, content_type_name1):
             else: 
                 return render_to_response('property/property_property_add.html', {'form':form,},
                                   context_instance=RequestContext(request))
+    elif action == 'view':
+        if request.method != 'POST':
+            form = select_property_form()
+            return render_to_response('property/property_property_view.html', {'form':form,},
+                              context_instance=RequestContext(request))
+        else:
+            form = select_property_form(request.POST)
+            if form.is_valid():
+                plotid = form.cleaned_data["plotid"]
+                streetno = form.cleaned_data["streetno"]
+                streetname = form.cleaned_data["streetname"].strip()
+                suburb = form.cleaned_data["suburb"].strip()
+                error_message = ""
+                property = None
+                if plotid:
+                    property = Property.objects.filter(plotid=plotid)
+                    print "haha1"
+                else:
+                    property = Property.objects.filter(streetno = streetno).filter(streetname = streetname).filter(suburb=suburb)
+                if not property:
+                        error_message = "No property found!"
+                        return render_to_response('property/property_property_view.html', {'form':form, 'error_message': error_message},
+                                  context_instance=RequestContext(request))
+                else:
+                    property = property[0]
+                    declarevalues_json=[]
+                    declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclairedValueDateTime")
+                    for declare_value in declarevalues:
+                        declare_value_json = {}
+                        declare_value_json['accepted']=declare_value.DeclairedValueAccepted
+                        declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
+                        declare_value_json['staffid']=declare_value.DeclairedValueStaffId
+                        declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
+                        declarevalues_json.append(declare_value_json)
+                    boundary = property.boundary
+                    property_json = {}
+                    points_json = []
+                    str1=str(boundary.polygon.wkt)
+                    str1=str1.replace('POLYGON', '').replace('((', '').replace('))', '')[1:]
+                    points = str1.split(', ')
+                    poly = ''
+                    for point in points:
+                        point_json={}
+                        point_parts = point.split(' ')
+                        point_x_parts=point_parts[0].replace(' ','').split('.')
+                        point_x=point_x_parts[0]+'.'+point_x_parts[1][:5]
+                        point_y_parts=point_parts[1].replace(' ','').split('.')
+                        point_y=point_y_parts[0]+'.'+point_y_parts[1][:5]
+                        point_json['x']=point_x
+                        point_json['y']=point_y
+                        points_json.append(point_json)
+                    return render_to_response('property/property_property_view1.html', {'property': property, 'points':points_json, 'declarevalues':declarevalues_json},
+                              context_instance=RequestContext(request))
+            else: 
+                return render_to_response('property/property_property_view.html', {'form':form,},
+                              context_instance=RequestContext(request))
                 
 def tax_tax_default(request, permissions, action, content_type_name1):
     """
@@ -353,6 +446,9 @@ def access_content_type(request, module_name, content_type_name, action = None, 
     """
     This function direct request to the correspodding {module}_{contenttype}_default page
     """    
+    
+    if not request.session.get('user'):
+        return login(request);
     username = request.session.get('user').username
     user = User.objects.get(username = username)
     module = Module.getModule(module_name)
