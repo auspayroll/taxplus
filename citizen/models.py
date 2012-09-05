@@ -10,6 +10,8 @@ class Citizen(models.Model):
     lastname = models.CharField(max_length = 50, help_text = 'Last name')
     citizenid = models.IntegerField(blank=False, unique=True, help_text = 'unique ID for citizen')
     i_status = models.CharField(max_length = 10, choices = status_choices, default='active', blank = True)
+    citizenPhoto = models.ImageField(upload_to='citizenphotos', help_text='Photo of The Citizen')
+    
     def __unicode__(self):
         return self.firstname + ' ' + self.lastname
     
@@ -20,6 +22,7 @@ class Citizen(models.Model):
         if not self.i_status:
             self.i_status="active"
         models.Model.save(self) 
+        
     
     
     def getLogMessage(self,old_data=None,new_data=None, action=None):

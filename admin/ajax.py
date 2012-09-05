@@ -1,11 +1,73 @@
 from auth.models import Permission,ContentType,Module,User,Group
 from citizen.models import Citizen
 from django.http import HttpResponse
-from property.models import Property, Boundary
-from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.utils import simplejson
 from jtax.models import DeclaredValue
+from property.modelforms import PropertyCreationForm
+from property.models import Property, Boundary
+from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
+from django.forms import model_to_dict
+from log.models import Log
 
+
+
+def declare_value(request):
+    if request.method == 'GET':
+        GET = request.GET
+        plotid = GET['plotid']
+        citizenid = GET['citizenid']
+        citizen = Citizen.objects.filter(citizenid = citizenid)
+        if len(citizen) == 0:
+            return HttpResponse('Citizen ID is not found.')        
+        citizen = citizen[0]
+        citizenid = citizen.id
+        amount = GET['amount']
+        user=request.session.get('user')
+        
+        declareValue = DeclaredValue()
+        declareValue.PlotId = plotid
+        declareValue.DeclairedValueCitizenId = citizenid
+        declareValue.DeclairedValueAmount = amount
+        declareValue.DeclairedValueAmountCurrencey = "AUD"
+        declareValue.DeclairedValueStaffId = user.id  
+        declareValue.DeclairedValueAccepted = 'YE'
+        
+        declareValue.save()
+        return HttpResponse('OK')
+
+def add_property(request):
+    """
+    Add property and create a log for this action
+    """
+    if request.method == 'POST':
+        POST = request.POST
+        plotid = POST['plotid']
+        streetno = POST['streetno']
+        streetname = POST['streetname']
+        suburb = POST['suburb']
+        boundary = POST['boundary']
+        
+        plist=[]
+        points = boundary.split('#')
+        for point in points:
+            parts = point.split(',')
+            point_x=parts[0]
+            point_y=parts[1]
+            plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
+        plist.append(plist[0])
+        polygon = Polygon(plist)
+        boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
+        property = Property()
+        property.plotid = plotid
+        property.streetno=streetno
+        property.streetname = streetname
+        property.suburb = suburb
+        property.boundary = boundary
+        property.i_status="active"
+        property.save()
+        new_data = model_to_dict(property)
+        Log.objects.createLog(request.session.get('user'),property, None, None,"add", plotid)
+        return HttpResponse('OK')
 
 def search_user(request):
     """
@@ -222,7 +284,11 @@ def search_property_by_fields(request):
                 declare_value_json = {}
                 declare_value_json['accepted']=declare_value.DeclairedValueAccepted
                 declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
-                declare_value_json['staffid']=declare_value.DeclairedValueStaffId
+                user = User.objects.get(id = declare_value.DeclairedValueStaffId)
+                username = user.firstname + ' '+ user.lastname
+                declare_value_json['staff']=username
+                citizen = Citizen.objects.get(id = declare_value.DeclairedValueCitizenId)
+                declare_value_json['citizen']= citizen.firstname + ' '+citizen.lastname
                 declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
                 declarevalues_json.append(declare_value_json)
             property_json['declarevalues']=declarevalues_json

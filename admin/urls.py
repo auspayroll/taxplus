@@ -2,6 +2,8 @@ from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
     url(r'^test/$','admin.views.test'),
+    url(r'^ajax/add_property/$','admin.ajax.add_property'),
+    url(r'^ajax/declare_value/$','admin.ajax.declare_value'),
     url(r'^ajax/search_user/$','admin.ajax.search_user'),
     url(r'^ajax/search_citizen/$','admin.ajax.search_citizen'),
     url(r'^ajax/search_property_in_area/$','admin.ajax.search_property_in_area'),

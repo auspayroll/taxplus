@@ -13,13 +13,15 @@ class LogManager(models.Manager):
         """
         count = Log.objects.all().count()
         if count == 0:
-            return 1
+            return None
+            #return 1
         else:
-            log = Log.objects.all().order_by("-transactionid")[0]
-            return log.transactionid + 1
+            return None
+            #log = Log.objects.all().order_by("-transactionid")[0]
+            #return log.transactionid + 1
         
     # action could be: 1)view 2)add 3)change 4)delete 5)login 6)logout 
-    def createLog(self,user,obj=None,old_data=None,new_data=None,action=None):
+    def createLog(self,user,obj=None,old_data=None,new_data=None,action=None, plotid = None, search_condition = None):
         """
         Given the action taken on the object, create a log for this action
         Make a copy of the old data and new data as strings in databse
@@ -34,6 +36,8 @@ class LogManager(models.Manager):
         elif action == "logout":
             message = "logout"
             log.setTable(user._meta.db_table)
+        elif action == "search":
+            message = "search " + search_condition
         else:
             message = self.getLogMessage(obj,old_data, new_data, action)
         if new_data is not None:
@@ -45,6 +49,8 @@ class LogManager(models.Manager):
         log.setMessage("User["+user.firstname+" "+user.lastname+"] "+message)
         if not log.table:
             log.setTable(obj._meta.db_table)
+        if plotid:
+            log.plotid = plotid
         log.save()
         
     def objToStr(self, dict):
@@ -75,7 +81,7 @@ class Log(models.Model):
     """
     keep log for each action taken by user.
     """
-    transactionid = models.IntegerField()
+    transactionid = models.IntegerField(null = True, blank = True)
     userid = models.IntegerField()
     plotid = models.IntegerField(null = True, blank = True)
     tids = models.CharField(max_length = 200, null=True, blank = True)

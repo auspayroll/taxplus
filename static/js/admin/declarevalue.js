@@ -1,5 +1,5 @@
-var lon=30.05979;
-var lat=-1.94479;
+var lon = 30.05979;
+var lat = -1.94479;
 var zoom = 18;
 var polygon;
 var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
@@ -487,7 +487,7 @@ function showMultiplePropertyResults(data)
 		);
 		
 		map.addControl(selectControl);
-		selectControl.activate();	
+		selectControl.activate();
 	
 }
 
@@ -513,11 +513,17 @@ function showSinglePropertyResult(data)
 			row+=    			"<table cellpadding='0' cellspacing='0' id='declaree_value'>";
 			row+=        			"<tr>";
 			row+=          				"<td border='0'>";
+			
+			// property info box
+			
 			row+=								"<div class='box'>";
 			row+=									"<div class='box_title'>Property info:</div>";
 			row+=									"<div class='box_detail'><strong>Plot ID:</strong> "+plotid+"</div>";
 			row+=									"<div class='box_detail'><strong>Address:</strong> "+address+"</div>";
 			row+=								"</div>";
+			
+			// official decared value box
+			
 			row+=								"<div class='box'>";
 			row+=									"<div class='box_title'>Official declared value:</div>";
 			if(declareValues.length==0)
@@ -532,13 +538,13 @@ function showSinglePropertyResult(data)
 				latest_declared_value = declareValues[0];
 				row+=								"<div class='box_detail'><strong>Amount:</strong> "+latest_declared_value['amount']+"</div>";
 				row+=								"<div class='box_detail'><strong>Date submitted:</strong> "+latest_declared_value['datetime']+"</div>";
-				row+=								"<div class='box_detail'><strong>Submitted by:</strong> "+"stanley Lin"+"</div>";
-				row+=								"<div class='box_detail'><strong>Staff name:</strong> "+"Justin Hopley"+"</div>";	
+				row+=								"<div class='box_detail'><strong>Submitted by:</strong> "+latest_declared_value['citizen']+"</div>";
+				row+=								"<div class='box_detail'><strong>Staff name:</strong> "+latest_declared_value['staff']+"</div>";	
 			}
 			row+=								"</div>";
 			
 			
-			
+			// Transaction history box
 			
 			row+=								"<div class='box'>";			
 			row+=									"<div class='box_title'>Transaction history:</div>";
@@ -565,13 +571,47 @@ function showSinglePropertyResult(data)
 					row+=										"<td class='firstcolumn'>"+declareValue['datetime']+"</td>";
 					row+=										"<td class='normal'>"+declareValue['amount']+"</td>";
 					row+=										"<td class='normal'>"+declareValue['accepted']+"</td>";
-					row+=										"<td class='normal'>"+declareValue['staffid']+"</td>";
+					row+=										"<td class='normal'>"+declareValue['staff']+"</td>";
 					row+=									"</tr>";		
 				}
 			}
 			row+=									"</table>";
 			row+=								"</div>";
 			row+=							"</div>";
+			
+			// action: declare a value
+			
+			row+=							"<div>";
+			row+=								"<div style='line-height:30px;'><strong>Declare a new value for this propertry:</strong></div>";
+			row+=								"<div>";
+			row+=									"<table>";
+			row+=										"<tr>";
+			row+=											"<td>";
+			row+=												"<div style='width:100px; float:left;'>Amount:</div>";
+			row+=												"<div style='width:250px; float:left;'><input type='text' name='declare_amount' id='declare_amount'/> ($AUD)</div>";
+			row+=												"<div style='clear:both'></div>";
+			row+=											"</td>";
+			row+=										"</tr>";
+			row+=										"<tr>";
+			row+=											"<td>";
+			row+=												"<div style='width:100px; float:left;'>Citizen ID:</div>";
+			row+=												"<div style='width:250px; float:left;'><input id='citizenid' type='text' name='citizenid'/></div>";
+			row+=												"<div style='clear:both'></div>";
+			row+=											"</td>";
+			row+=										"</tr>";
+			row+=										"<tr>";
+			row+=											"<td colspan='2'><button id='button" + plotid + "' type='button'>Declare</button></td>";
+			row+=										"</tr>";
+			row+=										"</table>";
+			row+=									"</div>";									
+			row+=								"<div style='line-height:30px;color:red;' id='declare_amount_error'></div>";
+			row+=							"</div>";
+			
+			
+			
+			
+			
+			
 			row+=						"</td>";
 			row+=					"</tr>";
 			row+=				"</table>";
@@ -631,6 +671,59 @@ function showSinglePropertyResult(data)
 			resultLayer.addFeatures([feature]);
 		    map.addPopup(popup);
 		    
+		    
+		   $('button[id^="button"]').click(function(){
+				id = $(this).attr('id');
+				plotid = id.replace("button","");
+				amount = $.trim($("#declare_amount").val());
+				citizenid = $.trim($("#citizenid").val());
+				if( amount=="" || isNaN(amount) )
+				{
+					$("#declare_amount_error").html("Please enter a valid amount!");
+					return false;
+				}
+				else if( citizenid=="" || isNaN(citizenid) )
+				{
+					$("#declare_amount_error").html("Please enter a valid citizenid!");
+					return false;
+				}
+				else
+				{
+					querystring = "plotid="+plotid+"&amount="+amount+"&citizenid="+citizenid;
+					$.ajax({
+						type:"get",
+						url: "/admin/ajax/declare_value/",
+						data: querystring,
+						success:function(data)
+						{
+							if(data==""){return;}
+							else
+							{
+								if(data=="OK")
+								{
+									querystring = "plotid=" + plotid;
+									search_property_by_fields(querystring);
+									return true;
+								}
+								else
+								{
+									$("#declare_amount_error").html(data);
+									return false;
+								}
+							}
+						},
+						error: function(request)
+						{
+							alert(request.responseText);
+						}
+					});
+	
+					
+					return true;	
+				}
+				
+			});
+				    
 		    
 	
 		    
@@ -757,6 +850,5 @@ function getDueStatus(date_var)
 		return "No";
 	}
 }
-
 
 

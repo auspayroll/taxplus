@@ -50,6 +50,9 @@ class Property(models.Model):
                 message = "No change made"
             message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
             return message
+        
+            
+            
     
 class Ownership(models.Model):
     property = models.ForeignKey(Property)

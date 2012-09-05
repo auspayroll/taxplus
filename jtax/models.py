@@ -3,6 +3,7 @@ from django.db import models
 # Create your models here.
 CURRENCIES = (
 	('RWF','Rwandan Franks'),
+	('AUD','Australian Dollars'),
 	('USD','American Dollars')
 )
 

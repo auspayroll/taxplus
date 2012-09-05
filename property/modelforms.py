@@ -31,5 +31,5 @@ class PropertyCreationForm(ModelForm):
         property.i_status="active"
         property.save()
         new_data = model_to_dict(property)
-        Log.objects.createLog(request.session.get('user'),property, None, None,"add")        
+        Log.objects.createLog(request.session.get('user'),property, None, None,"add", self.cleaned_data["plotid"])        
         return property

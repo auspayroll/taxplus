@@ -21,7 +21,7 @@
 
 <div style="text-align:left; margin-left:20px;margin-top:20px;">
 
-<form onsubmit="return check_citizen_registration_form();" action="/admin/citizen/citizen/add_citizen/" method="post" >
+<form onsubmit="return check_citizen_registration_form();" action="/admin/citizen/citizen/add_citizen/" method="post" enctype="multipart/form-data">
 	{% csrf_token %}
 	<table>
 		<tr>
@@ -51,6 +51,14 @@
 				{% endif %}
 			</td>
 		</tr>
+		<tr>
+			<td>Citizen Photo</td>
+			<td>{{form.citizenPhoto}}</td>
+			<td id="photo_error">{% if form.citizenPhoto.errors %}{{form.citizenPhoto.errors|striptags}}{% endif %}</td>
+		</tr>
+		
+		
+		
 		<tr>
 			<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
 		</tr>

@@ -269,7 +269,7 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
             return render_to_response('citizen/citizen_citizen_add.html', {'form':form,},
                               context_instance=RequestContext(request))
         else:
-            form = CitizenCreationForm(request.POST)
+            form = CitizenCreationForm(request.POST, request.FILES)
             if form.is_valid():
                 form.save(request)
                 return access_content_type(request, "citizen", "citizen", None, None)
@@ -296,7 +296,7 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
                     return render_to_response('citizen/citizen_citizen_change.html', {'form':form,},
                                   context_instance=RequestContext(request))
             elif content_type_name1 == 'citizen1': 
-                form = CitizenChangeForm(request.POST);
+                form = CitizenChangeForm(request.POST, request.FILES);
                 if form.is_valid():
                     form.save(request)
                     return access_content_type(request, "citizen", "citizen", None, None)
@@ -372,6 +372,27 @@ def property_property_default(request, permissions, action, content_type_name1):
                 streetno = form.cleaned_data["streetno"]
                 streetname = form.cleaned_data["streetname"].strip()
                 suburb = form.cleaned_data["suburb"].strip()
+                count = 0
+                message = "property with conditions ("
+                if plotid:
+                    message = message + "plotid=" + str(plotid)
+                    count = count + 1
+                if streetno:
+                    if count > 0:
+                        message = message + ", "
+                    message = message + "streetno=" + str(streetno)
+                    count = count + 1
+                if streetname:
+                    if count > 0:
+                        message = message + ", "
+                    message = message + "streetname=" + streetname
+                    count = count + 1
+                if suburb:
+                    if count > 0:
+                        message = message + ", "
+                    message = message + "suburb=" + suburb
+                    count = count + 1        
+                Log.objects.createLog(request.session.get('user'),None,None,None,"search",message)
                 error_message = ""
                 property = None
                 if plotid:

@@ -4,18 +4,19 @@
 <title>User Login</title>
 {% load staticfiles %}
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/login.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='styleesheet' type='textt/css'>
 </head>
 <body>
 	<form action="/admin/" method="post">
 		{% csrf_token %}
 		<div class="container">
-			<div class="title">Transaction administration</div>
+			
 			{% if errorMessageType > 0 %}
 			<div class="errormessage">Your username and password were incorrect.</div>
 			{% endif %}
 			<div class="row1">
 				<div class="column1">Username:</div>
-				<div class="column2"><input type="text" name="username" autocomplete="off" id="id_username" /></div>
+				<div class="column2"><input type="text" name="username" autocomplete="off" id="id_username" autofocus /></div>
 			</div>
 			<div class="row2">
 				<div class="column1">Password:</div>
