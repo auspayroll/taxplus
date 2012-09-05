@@ -1,0 +1,83 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" src="/static/js/jquery-ui.min.js"></script>
+	<script type="text/javascript"  src="/static/js/admin/property.js"></script>
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Property" "/admin/property/property/" %} 
+	{% breadcrumb "Select property" %}	
+{% endblock %}
+
+
+{% block mainbody %}
+<div style="margin-top:20px; font-weight:bold; font-size:16px;text-align:left; margin-left:20px;">
+	<div>Please enter property details to search.</div>
+	<form action="/admin/property/property/view_property/" onsubmit="return checkPropertyConditions();" method="post" >
+		{% csrf_token %}
+		<div style="font-size:14px; font-weight:normal;margin-top:20px">
+			<table>
+				<tr>
+					<td>Plot ID# </td><td>{{form.plotid}}</td>
+				</tr>
+				<tr>	
+					<td>Street NO: </td><td>{{form.streetno}}</td>
+				</tr>
+				<tr>	
+					<td>Street Name: </td><td>{{form.streetname}}</td>
+				</tr>
+				<tr>	
+					<td>Suburb: </td><td>{{form.suburb}}</td>
+				</tr>
+			</table>
+		</div>
+		<div style="color:red; width:600px; height:25px; line-height: 25px; margin-top:5px; font-size:14px;" id="search_error">
+			{% if error_message	%}
+				{{error_message}}
+			{% endif%}
+		</div>
+		<div style="margin-top:10px;">
+			<input type="submit" value="Search"/>
+		</div>
+	</form>
+</div>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

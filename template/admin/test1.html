@@ -1,0 +1,278 @@
+<html>
+<head>
+  <title>OpenLayers Example</title>
+  	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+  	<style type="text/css">
+  		.olControlNavToolbar div {
+		  display:block;
+		  width:  28px;
+		  height: 28px;
+		  top: 300px;
+		  left: 6px;
+		  position: relative;
+		}
+		.olControlNavToolbar .olControlNavigationItemActive {
+		  background-image: url("/static/images/nav-bg.gif");
+		  background-repeat: no-repeat;
+		}
+		.olControlNavToolbar .olControlNavigationItemInactive {
+		  background-image: url("/static/images/nav-bg.gif");
+		  background-repeat: no-repeat;
+		}
+  	</style>
+  </head>
+  <body>
+    <div style="width:100%; height:60%" id="map"></div>
+    <script type="text/javascript">
+    	
+    	// define a map
+    	var map = new OpenLayers.Map('map');    	
+		//map.addControl(new OpenLayers.Control.PanZoomBar());
+		map.addControl(new OpenLayers.Control.LayerSwitcher({'ascending':false}));
+		map.addControl(new OpenLayers.Control.MousePosition());
+		map.addControl(new OpenLayers.Control.OverviewMap());
+		map.addControl(new OpenLayers.Control.KeyboardDefaults()); 	
+    	
+		// define a layer that is actually an origin of map data.
+    	var wms = new OpenLayers.Layer.WMS(
+    		"wms map",
+    		"http://vmap0.tiles.osgeo.org/wms/vmap0",
+    		{'layers':'basic'},
+    		{'attribution': 'Provided by OSGeo'}
+    	);
+    	
+    	// add layer to map
+    	map.addLayer(wms);
+    	
+    	// define point style. Parameter pointRadius is needed, otherwise would be set to 0 by default.
+    	// that is, we are not going to see the point on the screen.
+    	// the optional style attributes could be:
+    	
+    	// fill, fillColor, fillOpacity, stroke, strokeColor, strokeOpacity, strokeWidth, strokeLinecap, strokeDashstyle, graphic, pointRadius,
+    	// pointerEvents, cursor, externalGraphic, graphicWidth, graphicHeight, graphicOpacity graphicXOffset,graphicYOffset, rotation,
+    	// graphicZIndex, graphicName,graphicTitle,backgroundGraphic,backgroundGraphicZIndex,backgroundXOffset,backgroundYOffset,backgroundHeight,
+    	//backgroundWidth,label,labelAlign,labelXOffset,labelYOffset,labelSelect,fontColor,fontOpacity,fontFamily,fontSize,fontWeight,display
+    	var style = { 
+		  fillColor: "green",
+		  fillOpacity: 1,
+		  pointRadius: 6,
+		  strokeColor: "black",
+		  strokeWidth: 1 
+		};
+    	
+    	// define a vector layer to accommodate costomized stuffs like points, or polygon objects.
+    	var vectorLayer = new OpenLayers.Layer.Vector("Overlay");
+    	
+    	// define points
+    	var point1 = new OpenLayers.Geometry.Point(-100,58);
+    	var point2 = new OpenLayers.Geometry.Point(-71,42);
+    	
+    	// create features based on point objects   
+    	var feature1 = new OpenLayers.Feature.Vector(point1);
+    	var feature2 = new OpenLayers.Feature.Vector(point2);
+    	
+    	// set up style for feature1
+    	feature1.style=style;
+    	
+    	// add features to vector layer
+    	vectorLayer.addFeatures([feature1,feature2]);
+    	
+    	//vectorLayer.addFeatures(feature);
+    	map.addLayer(vectorLayer);
+    	
+		// define all the controls needed
+		var panelControls = [
+			new OpenLayers.Control.Navigation(),
+		 	new OpenLayers.Control.DrawFeature(vectorLayer,
+		     		OpenLayers.Handler.Path,
+		     		{'displayClass': 'olControlDrawFeaturePath'})
+		];
+		
+		// define toolbar
+		var toolbar = new OpenLayers.Control.Panel({
+		   	displayClass: 'olControlEditingToolbar',
+		   	defaultControl: panelControls[0]
+		});
+		
+		//put all the controls in toolbar
+		toolbar.addControls(panelControls);
+		
+		// add toolbar to map
+		map.addControl(toolbar);
+		
+    	
+    	
+    	// define the center of the map, and zoom level
+    	if(!map.getCenter())
+    	{
+    		map.setCenter(new OpenLayers.LonLat(-71, 42), 4);
+    	}
+    	    	
+    	controls = {
+    		point: new OpenLayers.Control.DrawFeature(vectorLayer,
+                            OpenLayers.Handler.Point),
+            line: new OpenLayers.Control.DrawFeature(vectorLayer,
+                        OpenLayers.Handler.Path),
+            polygon: new OpenLayers.Control.DrawFeature(vectorLayer,
+                        OpenLayers.Handler.Polygon),
+            regular: new OpenLayers.Control.DrawFeature(vectorLayer,
+                        OpenLayers.Handler.RegularPolygon,
+                        {handlerOptions: {sides: 5}}),
+            modify: new OpenLayers.Control.ModifyFeature(vectorLayer)
+    	}
+    	for(var key in controls)
+    	{
+    		map.addControl(controls[key]);
+    	}
+    	
+    	
+    	
+    	
+    	
+    	// this function used to activate modification mode like rotate, resize, reshape...
+    	 function update() {
+            // reset modification mode
+            controls.modify.mode = OpenLayers.Control.ModifyFeature.RESHAPE;
+            var rotate = document.getElementById("rotate").checked;
+            if(rotate) {
+                controls.modify.mode |= OpenLayers.Control.ModifyFeature.ROTATE;
+            }
+            var resize = document.getElementById("resize").checked;
+            if(resize) {
+                controls.modify.mode |= OpenLayers.Control.ModifyFeature.RESIZE;
+                var keepAspectRatio = document.getElementById("keepAspectRatio").checked;
+                if (keepAspectRatio) {
+                    controls.modify.mode &= ~OpenLayers.Control.ModifyFeature.RESHAPE;
+                }
+            }
+            var drag = document.getElementById("drag").checked;
+            if(drag) {
+                controls.modify.mode |= OpenLayers.Control.ModifyFeature.DRAG;
+            }
+            if (rotate || drag) {
+                controls.modify.mode &= ~OpenLayers.Control.ModifyFeature.RESHAPE;
+            }
+            controls.modify.createVertices = document.getElementById("createVertices").checked;
+            var sides = parseInt(document.getElementById("sides").value);
+            sides = Math.max(3, isNaN(sides) ? 0 : sides);
+            controls.regular.handler.sides = sides;
+            var irregular =  document.getElementById("irregular").checked;
+            controls.regular.handler.irregular = irregular;
+        }
+		
+		// this function used to switch among draw features
+        function toggleControl(element) {
+            for(key in controls) {
+                var control = controls[key];
+                if(element.value == key && element.checked) {
+                    control.activate();
+                } else {
+                    control.deactivate();
+                }
+            }
+        }
+        
+        
+        // clear all the feautures on a layer
+        function clearAll()
+        {
+        	vectorLayer.removeAllFeatures();
+        }
+		
+    	
+    	// define select event
+    	function selected (evt) {
+		    alert(evt.feature.id + " selected on " + this.name);
+		}
+		
+		//register select event
+		vectorLayer.events.register("featureselected", vectorLayer, selected);
+		
+		// add select control to vectorLayer
+		var control = new OpenLayers.Control.SelectFeature(vectorLayer);
+		map.addControl(control);
+		control.activate();  	
+    	
+    	
+    </script>
+    
+    
+    
+	   <div id="controls">
+	        <ul id="controlToggle">
+	            <li>
+	                <input type="radio" name="type" value="none" id="noneToggle"
+	                       onclick="toggleControl(this);" checked="checked" />
+	                <label for="noneToggle">navigate</label>
+	            </li>
+	            <li>
+	                <input type="radio" name="type" value="point" id="pointToggle" onclick="toggleControl(this);" />
+	                <label for="pointToggle">draw point</label>
+	            </li>
+	            <li>
+	                <input type="radio" name="type" value="line" id="lineToggle" onclick="toggleControl(this);" />
+	                <label for="lineToggle">draw line</label>
+	            </li>
+	            <li>
+	                <input type="radio" name="type" value="polygon" id="polygonToggle" onclick="toggleControl(this);" />
+	                <label for="polygonToggle">draw polygon</label>
+	            </li>
+	            <li>
+	                <input type="radio" name="type" value="regular" id="regularToggle" onclick="toggleControl(this);" />
+	                <label for="regularToggle">draw regular polygon</label>
+	                <label for="sides"> - sides</label>
+	                <input id="sides" type="text" size="2" maxlength="2"
+	                       name="sides" value="5" onchange="update()" />
+	                <ul>
+	                    <li>
+	                        <input id="irregular" type="checkbox"
+	                               name="irregular" onchange="update()" />
+	                        <label for="irregular">irregular</label>
+	                    </li>
+	                </ul>
+	            </li>
+	            <li>
+	                <input type="radio" name="type" value="modify" id="modifyToggle"
+	                       onclick="toggleControl(this);" />
+	                <label for="modifyToggle">modify feature</label>
+	                <ul>
+	                    <li>
+	                        <input id="createVertices" type="checkbox" checked
+	                               name="createVertices" onchange="update()" />
+	                        <label for="createVertices">allow vertices creation</label>
+	                    </li>
+	                    <li>
+	                        <input id="rotate" type="checkbox"
+	                               name="rotate" onchange="update()" />
+	                        <label for="rotate">allow rotation</label>
+	                    </li>
+	                    <li>
+	                        <input id="resize" type="checkbox"
+	                               name="resize" onchange="update()" />
+	                        <label for="resize">allow resizing</label>
+	                        (<input id="keepAspectRatio" type="checkbox"
+	                               name="keepAspectRatio" onchange="update()" checked="checked" />
+	                        <label for="keepAspectRatio">keep aspect ratio</label>)
+	                    </li>
+	                    <li>
+	                        <input id="drag" type="checkbox"
+	                               name="drag" onchange="update()" />
+	                        <label for="drag">allow dragging</label>
+	                    </li>
+	                </ul>
+	            </li>
+	        </ul>
+	    </div> 
+	    
+	    <div style="margin-top:30px;">
+	    	<button type="button" onclick="clearAll();">
+	    		Clear all
+	    	</button>
+	    </div>
+    
+    
+    
+    
+    
+  </body>
+</html>

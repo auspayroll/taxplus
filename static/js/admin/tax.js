@@ -151,9 +151,8 @@ function check_search_conditions()
 	{
 		$("#search_error").html("Please select a search option.");
 		$("#boundary_error").html("");
-		return false;	
+		return false;
 	}
-	
 	// check whether an area is drawed
 	if($('#id_boundary').val()==''||polygonLayer.features.length==0)
 	{

@@ -1,0 +1,71 @@
+<html>
+	<header>
+		<title>OpenLayers Example</title>
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>	
+	</header>
+   
+   <body>
+    <div style="width:100%; height:60%" id="map"></div> 	
+    <script type="text/javascript">
+    var map;
+    
+        map = new OpenLayers.Map('map');
+        var wms = new OpenLayers.Layer.WMS(
+            "OpenLayers WMS",
+            "http://vmap0.tiles.osgeo.org/wms/vmap0",
+            {layers: 'basic'}
+        );
+        
+        // Create 50 random features, and give them a "type" attribute that
+        // will be used to style them by size.
+        var features = new Array(50);
+        for (var i=0; i<features.length; i++) {
+            features[i] = new OpenLayers.Feature.Vector(
+                new OpenLayers.Geometry.Point(
+                    	(360 * Math.random()) - 180, (180 * Math.random()) - 90
+                    ), 
+                    { type: 5 + parseInt(5 * Math.random())}
+            	);
+        	}
+        
+        // Create a styleMap to style your features for two different
+        // render intents.  The style for the 'default' render intent will
+        // be applied when the feature is first drawn.  The style for the
+        // 'select' render intent will be applied when the feature is
+        // selected.
+        var myStyles = new OpenLayers.StyleMap({
+            "default": new OpenLayers.Style({
+                pointRadius: "${type}", // sized according to type attribute
+                fillColor: "#ffcc66",
+                strokeColor: "#ff9933",
+                strokeWidth: 2,
+                graphicZIndex: 1
+            }),
+            "select": new OpenLayers.Style({
+                fillColor: "#66ccff",
+                strokeColor: "#3399ff",
+                graphicZIndex: 2
+            })
+        });
+        
+        // Create a vector layer and give it your style map.
+        var points = new OpenLayers.Layer.Vector("Points", {
+            styleMap: myStyles,
+            rendererOptions: {zIndexing: true}
+        });
+        points.addFeatures(features);
+        map.addLayers([wms, points]);
+        
+        // Create a select feature control and add it to the map.
+        var select = new OpenLayers.Control.SelectFeature(points, {hover: true});
+        map.addControl(select);
+        select.activate();
+        
+        map.setCenter(new OpenLayers.LonLat(0, 0), 1);
+   
+    </script>	
+    	
+    
+    
+  </body>
+</html>

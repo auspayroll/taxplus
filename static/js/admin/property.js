@@ -1,20 +1,9 @@
-
-
-//3346122.6686947,-216497.90669933
-
-
-
-
-
-
-
-
 var lon=30.05979;
 var lat=-1.94479;
 var zoom = 18;
 var polygon;
-var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
-renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
+var renderer; //= OpenLayers.Util.getParameters(window.location.href).renderer;
+//renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
 var map; //complex object of type OpenLayers.Map
 var polygonLayer;
 var newLayer;
@@ -23,7 +12,15 @@ var apiKey = "AqTGBsziZHIJYYxgivLBf0hVdrAk9mWO5cQcb8Yux8sW5M8c8opEC2lZqKR1ZZXf";
 //Initialise the 'map' object
 function init() 
 {
- 
+	map_div = document.getElementById("map");
+ 	if(map_div==null)
+ 	{
+ 		return;
+ 	}
+ 	renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
+ 	renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
+ 	
+ 	
    	map = new OpenLayers.Map 
    	("map", {controls:
     	[
@@ -96,9 +93,7 @@ function init()
 		}
 		map.addControl(polygon);	
 }
-    
-
-
+   
 function getCoordinates()
 {
 	str="";
@@ -148,9 +143,7 @@ function refreshMap()
 	}
 	map.addControl(polygon);
 }
-
-    
-   	    
+	    
 function toggle() {
 	if(polygon!=null)
 	{
@@ -171,7 +164,6 @@ function toggle() {
 		}				
 	}
 }
-
 
 function check_property_registration_form()
 {
@@ -212,3 +204,76 @@ function check_property_registration_form()
 	return true;
 }
    
+function checkPropertyConditions()
+{
+	plotid =  $.trim($("#id_plotid").val());
+	streetno =  $.trim($("#id_streetno").val());
+	streetname =  $.trim($("#id_streetname").val());
+	suburb =  $.trim($("#id_suburb").val());
+	if(plotid!="")
+	{
+		if(isNaN(plotid))
+		{
+			$("#search_error").html("Plot id is not a valid number.");
+			return false;
+		}
+		return true;
+	}
+	else
+	{
+		if((streetno=="")&(streetname=="")&(suburb==""))
+		{
+			$("#search_error").html("No property details entered!");
+			return false;
+		}
+		if(isNaN(streetno))
+		{
+			$("#search_error").html("Street number is not a valid number.");
+			return false;
+		}
+		if((streetno!="")&(streetname!="")&(suburb!=""))
+		{
+			return true;
+		}
+		else
+		{
+			$("#search_error").html("Please enter street number, street name and suburb. Alternatively, you can enter plot ID only.");
+			return false;
+		}
+	}
+}
+
+function showPropertyOnMap()
+{
+	var points=$("#points").html();
+	points=eval("("+points+')');
+		
+	popup_message ="Hello";
+	popup_message = "<div>"+popup_message+"</div>";
+	var polygon_points = [];
+	for( j=0;j<points.length;j++)
+	{
+		point=points[j];
+		x = point['x'];
+		y = point['y'];
+		p = new OpenLayers.Geometry.Point(x,y);
+  		polygon_points.push(p);
+	}
+	var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
+	var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
+	var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+	var anchor = {'size': new OpenLayers.Size(0,0), 'offset': new OpenLayers.Pixel(0, 0)};
+    popup = new OpenLayers.Popup.FramedCloud(
+      	"",
+      	feature.geometry.getBounds().getCenterLonLat(),
+      	new OpenLayers.Size(100,100),
+      	popup_message,
+      	anchor,
+      	false
+      	);
+    feature.popup = popup;
+	polygonLayer.addFeatures([feature]);
+    map.addPopup(popup);
+}
+
+

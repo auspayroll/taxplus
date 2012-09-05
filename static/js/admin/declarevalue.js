@@ -170,12 +170,12 @@ function check_search_conditions()
 {	
 	// check whether a search option is selected
 	$("#search_error").html("");
-	if (!$("input[name='search_option']:checked").val())
-	{
-		$("#search_error").html("Please select a search option.");
-		$("#boundary_error").html("");
-		return false;	
-	}
+	//if (!$("input[name='search_option']:checked").val())
+	//{
+	//	$("#search_error").html("Please select a search option.");
+	//	$("#boundary_error").html("");
+	//	return false;	
+	//}
 	
 	// check whether an area is drawed
 	if($('#id_boundary').val()==''||polygonLayer.features.length==0)
