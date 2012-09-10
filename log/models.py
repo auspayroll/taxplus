@@ -2,10 +2,12 @@ from django.db import models, connection, transaction
 from django.forms import model_to_dict
 from datetime import datetime
 from django.utils import timezone
+from django.db.models.fields.files import ImageFieldFile
 import ast
 import pytz
 
 class LogManager(models.Manager):
+    
     @classmethod
     def getTransactionId(cls):
         """
@@ -21,47 +23,111 @@ class LogManager(models.Manager):
             #return log.transactionid + 1
         
     # action could be: 1)view 2)add 3)change 4)delete 5)login 6)logout 
-    def createLog(self,user,obj=None,old_data=None,new_data=None,action=None, plotid = None, search_condition = None):
+    #def createLog(self,user,obj=None,old_data=None,new_data=None,action=None, plotid = None, search_condition = None):
+    def createLog(self,request,**kwargs):
         """
         Given the action taken on the object, create a log for this action
         Make a copy of the old data and new data as strings in databse
         """
+        
+        plotid = None
+        citizenid = None
+        object = None
+        old_data = None
+        new_data = None
+        action = None
+        search_message_all = None
+        search_message_action =None
+        search_message_purpose =None
+        search_object_class_name = None
+        search_conditions = {}
+        
+        user = request.session.get('user')
+        message = ""
+        
         log = Log()
         log.transactionid = self.getTransactionId()
         log.setUser(user)
-        message = ""
-        if action == "login":
-            message = "login"
-            log.setTable(user._meta.db_table)
-        elif action == "logout":
-            message = "logout"
-            log.setTable(user._meta.db_table)
+        
+        # get parameters from arguments
+        for key, value in kwargs.iteritems():
+            if key == "action":
+                action = kwargs["action"]
+            if key == "object":
+                object = kwargs["object"]
+            if key == "old_data":
+                old_data = kwargs["old_data"]
+            if key == "new_data":
+                new_data = kwargs["new_data"]
+            if key == "plotid":
+                plotid = kwargs["plotid"]
+            if key == "citizenid":
+                citizenid = kwargs["citizenid"]
+            if key == "search_message_all":
+                search_message_all = kwargs["search_message_all"]
+            if key == "search_message_action":
+                search_message_action = kwargs["search_message_action"]
+            if key == "search_message_purpose":
+                search_message_purpose = kwargs["search_message_purpose"]
+            if key == "search_object_class_name":
+                search_object_class_name = kwargs["search_object_class_name"]
+            if key == "search_conditions":
+                search_conditions = kwargs["search_conditions"]
+            
+        if action == "login" or action == "logout":
+            message = action
+            log.setTable(user._meta.db_table)     
         elif action == "search":
-            message = "search " + search_condition
+            # we can provide customized message for a search
+            if search_message_all:
+                message = search_message_all
+            # normal search: we need search object class name and conditions
+            else:
+                if search_message_action:
+                    message = search_message_action
+                else:
+                    message = "search " + search_object_class_name
+                if search_message_purpose:
+                    message  = message + " for " + search_message_purpose + " purpose"
+                if search_conditions:
+                    message = message + " with conditions("
+                    count = 0
+                    for key, value in search_conditions.iteritems():
+                        if value:
+                            if count > 0:
+                                message = message + ", "
+                            message = message + key + "=" + str(value)
+                            count = count + 1
+                    message = message + ")"
         else:
-            message = self.getLogMessage(obj,old_data, new_data, action)
-        if new_data is not None:
-            for key, value in new_data.iteritems():
-                if type(value) is datetime:
-                    new_data[key]=value.astimezone(pytz.utc)  
-        log.setOldObj(old_data)
-        log.setNewObj(new_data)
-        log.setMessage("User["+user.firstname+" "+user.lastname+"] "+message)
-        if not log.table:
-            log.setTable(obj._meta.db_table)
-        if plotid:
-            log.plotid = plotid
+            message = self.getLogMessage(object,old_data, new_data, action)
+            if new_data is not None:
+                for key, value in new_data.iteritems():
+                    if type(value) is datetime:
+                        new_data[key]=value.astimezone(pytz.utc)  
+            log.setOldObj(old_data)
+            log.setNewObj(new_data)
+            if not log.table and object:
+                log.setTable(object._meta.db_table)
+            if plotid:
+                log.plotid = plotid
+            if citizenid:
+                log.citizenid = citizenid
+        log.setMessage("User ["+user.firstname+" "+user.lastname+"] "+message)
         log.save()
         
     def objToStr(self, dict):
         """
         convert object to string
         """
+        print dict
         if dict is None:
             return str("")
         for key, value in dict.iteritems():
             if type(value) is datetime:
                 dict[key] = value.strftime('%Y-%m-%d %H:%M:%S')
+            if type(value) is ImageFieldFile:
+                dict[key] = value.name
         dict = str(dict)
         return dict
     
@@ -83,6 +149,7 @@ class Log(models.Model):
     """
     transactionid = models.IntegerField(null = True, blank = True)
     userid = models.IntegerField()
+    citizenid = models.IntegerField(null = True, blank = True)
     plotid = models.IntegerField(null = True, blank = True)
     tids = models.CharField(max_length = 200, null=True, blank = True)
     username = models.CharField(max_length=100)
@@ -92,6 +159,7 @@ class Log(models.Model):
     newdata = models.CharField(blank=True, null=True, max_length=1000)
     message = models.CharField(blank=True, null=True, max_length=1000)
     
+      
     def elements_to_add(self, old_list,new_list):
         """
         Compare two list, and get the items in old_list but not in new_list.

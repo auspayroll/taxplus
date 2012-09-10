@@ -15,7 +15,7 @@ class CitizenCreationForm(ModelForm):
         citizen = forms.ModelForm.save(self, False)
         if commit:
             citizen.save()
-            Log.objects.createLog(request.session.get('user'),citizen, None, None,"add")            
+            Log.objects.createLog(request,object=citizen,action="add", citizenid =  citizen.citizenid)            
         return citizen
      
 class CitizenChangeForm(ModelForm):
@@ -38,7 +38,7 @@ class CitizenChangeForm(ModelForm):
         citizen.lastname = self.cleaned_data["lastname"]
         citizen.save()
         new_data = model_to_dict(citizen)
-        Log.objects.createLog(request.session.get('user'),citizen, old_data, new_data,"change")            
+        Log.objects.createLog(request,object=citizen, old_data=old_data, new_data=new_data, action="change", citizenid = citizenid)            
         return citizen
         
  

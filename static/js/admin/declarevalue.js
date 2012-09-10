@@ -222,7 +222,7 @@ function check_search_conditions()
 	$.ajax({
 			type:"get",
 			url: "/admin/ajax/search_property_in_area/",
-			data: {boundary: $("#id_boundary").val()},
+			data: {boundary: $("#id_boundary").val(),  purpose:"value declaration"},
 			success:function(data)
 			{
 				if(data==""){return;}
@@ -308,13 +308,20 @@ function keyword_search()
 		$("#keyword_error").html("Please enter keyword to search!");
 		return false;
 	}
-	search_property_by_fields(querystring);
+	search_property_by_fields(querystring, false);
 }
 
 
 // search property according to the querystring
-function search_property_by_fields(querystring)
+function search_property_by_fields(querystring, refresh)
 {
+	querystring = querystring + "&purpose=value declaration&refresh=";
+	if(refresh){
+		querystring = querystring + "1";
+	}
+	else{
+		querystring = querystring + "0";
+	}
 	$.ajax({
 			type:"get",
 			url: "/admin/ajax/search_property_by_fields/",
@@ -338,7 +345,7 @@ function search_property_by_fields(querystring)
 function viewPropertyDetail(plotid)
 {
 	querystring = "plotid="+plotid;
-	search_property_by_fields(querystring);
+	search_property_by_fields(querystring,true);
 }
 
 
@@ -488,6 +495,7 @@ function showMultiplePropertyResults(data)
 		
 		map.addControl(selectControl);
 		selectControl.activate();
+		polygon.deactivate();
 	
 }
 
@@ -702,7 +710,7 @@ function showSinglePropertyResult(data)
 								if(data=="OK")
 								{
 									querystring = "plotid=" + plotid;
-									search_property_by_fields(querystring);
+									search_property_by_fields(querystring,true);
 									return true;
 								}
 								else
@@ -753,6 +761,7 @@ function showSinglePropertyResult(data)
 		
 		map.addControl(selectControl);
 		selectControl.activate();
+		polygon.deactivate();
 }
 
 

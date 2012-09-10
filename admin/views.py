@@ -2,7 +2,8 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from auth.models import Permission,ContentType,Module,User,Group
 from auth.forms import select_group_form, select_user_form
-from admin.forms import LoginForm, LogSearchForm
+from admin.forms import LoginForm
+from log.forms import LogSearchForm, LogRefineSearchForm
 from admin.modelforms import UserCreationForm, GroupCreationForm, GroupChangeForm, UserChangeForm
 from citizen.modelforms import CitizenCreationForm, CitizenChangeForm
 from property.modelforms import PropertyCreationForm
@@ -19,6 +20,7 @@ import md5
 from property.models import Property, Boundary
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from jtax.models import DeclaredValue
+from django.http import Http404
     
 def login(request):
     """
@@ -35,7 +37,7 @@ def login(request):
                 if user.active:
                     content_types = user.getContentTypes()
                     request.session['user'] = user
-                    Log.objects.createLog(request.session.get('user'),None,None,None,"login")
+                    Log.objects.createLog(request,action="login")
                     return render_to_response('admin/admin.html', {\
                          'content_types':content_types,},
                           context_instance=RequestContext(request))
@@ -60,7 +62,7 @@ def login(request):
 
 def logout(request):
     # logout and clear session
-    Log.objects.createLog(request.session.get('user'),None,None,None,"logout")
+    Log.objects.createLog(request,action="logout")
     for key in request.session.keys():
         del request.session[key]
     return login(request)     
@@ -109,7 +111,7 @@ def auth_user_default(request,permissions, action, content_type_name1):
                 if form.is_valid():
                     user_id = form.cleaned_data['user_id']
                     user= User.objects.get(id = user_id)
-                    Log.objects.createLog(request.session.get('user'),user,None,None,"view")
+                    Log.objects.createLog(request,object=user,action="view")
                     form = UserChangeForm(instance = user,initial={'user_id':user_id, 'email':user.email,'password':user.password,})
                     return render_to_response('admin/auth_user_change1.html', {'form':form,},
                                   context_instance=RequestContext(request))
@@ -135,12 +137,14 @@ def auth_user_default(request,permissions, action, content_type_name1):
             if form.is_valid():
                 user_id=form.cleaned_data['user_id']
                 user=User.objects.get(id = user_id)
-                Log.objects.createLog(request.session.get('user'),user,None,None,"delete")
+                Log.objects.createLog(request,object=user,action="delete")
                 user.delete()
                 return access_content_type(request, "auth", "user", None, None)
             else: 
                 return render_to_response('admin/auth_user_delete.html', {'form':form,},
                                   context_instance=RequestContext(request))
+    elif action == "view":
+        return construction(request)
 
 def auth_group_default(request, permissions, action, content_type_name1):
     """
@@ -189,7 +193,7 @@ def auth_group_default(request, permissions, action, content_type_name1):
                 if form.is_valid():
                     group_id=form.cleaned_data['group_id']
                     group=Group.objects.get(id = group_id)
-                    Log.objects.createLog(request.session.get('user'),group, None, None,"view")
+                    Log.objects.createLog(request,object=group,action="view")
                     form = GroupChangeForm(instance = group,initial={'group_id':group_id, 'name':group.name,})
                     return render_to_response('admin/auth_group_change1.html', {'form':form,},
                                   context_instance=RequestContext(request))
@@ -215,12 +219,14 @@ def auth_group_default(request, permissions, action, content_type_name1):
             if form.is_valid():
                 group_id=form.cleaned_data['group_id']
                 group=Group.objects.get(id = group_id)
-                Log.objects.createLog(request.session.get('user'),group, None, None,"delete")    
+                Log.objects.createLog(request,object=group,action="delete")    
                 group.delete()
                 return access_content_type(request, "auth", "group", None, None)
             else: 
                 return render_to_response('admin/auth_group_delete.html', {'form':form,},
                                   context_instance=RequestContext(request))
+    elif action == "view":
+        return construction(request)
 
 def log_log_default(request,permissions, action, content_type_name1):
     """
@@ -245,11 +251,75 @@ def log_log_default(request,permissions, action, content_type_name1):
                 if transactionid is None and plotid is not None:
                     logs=Log.objects.filter(plotid = plotid).filter(username__icontains=username)
                 if transactionid is not None and plotid is not None:
-                    logs=Log.objects.filter(transactionid = transactionid, plotid = plotid).filter(username__icontains=username)
+                    logs=Log.objects.filter(transactionid = transactionid, plotid = plotid).filter(username__icontains=username)          
                 logs = list(logs)
                 logs.sort(key=lambda x:x.datetime, reverse=True)
-                return render_to_response('admin/log_log_default.html', {'logs':logs,},
+                for log in logs:
+                    log.message=log.message.replace("User [","<span class='loguser'>User [")
+                    log.message=log.message.replace("User[","<span class='loguser'>User [")                    
+                    log.message=log.message.replace("Property [","<span class='logproperty'>Property [")
+                    log.message=log.message.replace("property [","<span class='logproperty'>Property [")
+                    log.message=log.message.replace("Citizen [","<span class='logcitizen'>Citizen [")
+                    log.message=log.message.replace("citizen [","<span class='logcitizen'>Citizen [")
+                    log.message=log.message.replace("Group [","<span class='loggroup'>Group [")
+                    log.message=log.message.replace("group [","<span class='loggroup'>Group [")
+                    log.message=log.message.replace("]","]</span>")
+                form1 = LogRefineSearchForm(initial={'username':username,'transactionid':transactionid,'plotid':plotid,})
+                Log.objects.createLog(request,action="search", search_object_class_name="log", search_conditions = {"username": username, "transactionid":transactionid,"plotid":plotid})
+                return render_to_response('admin/log_log_default.html', {'logs':logs, 'form':form1},
                                   context_instance=RequestContext(request))
+    elif action == "refinesearch":
+        form = LogRefineSearchForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            transactionid = form.cleaned_data['transactionid']
+            plotid = form.cleaned_data['plotid']
+            new_transactionid = form.cleaned_data['new_transactionid']
+            new_plotid = form.cleaned_data['new_plotid']
+            new_citizenid = form.cleaned_data['new_citizenid']
+            
+            count = 0
+            sql = "select * from log_log where 1"
+            #if username is not None:
+            #    sql = sql + " and lower(username) like '%" + str(username).lower() + "%'"
+            #    count = count + 1
+            if plotid is not None:
+                
+                sql = sql + " and plotid = " + str(plotid)
+                count = count + 1
+            if new_plotid is not None:
+                sql = sql + " and plotid = " + str(new_plotid)
+                count = count + 1
+            if transactionid is not None:
+                sql = sql + " and transactionid = " + str(transactionid)
+                count = count + 1
+            if new_transactionid is not None:
+                sql = sql + " and transactionid = " + str(new_transactionid)
+                count = count + 1
+            if new_citizenid is not None:
+                sql = sql + " and citizenid = " + str(new_citizenid)
+                
+            logs = []
+            logs_results = Log.objects.raw(sql)
+            logs_results = list(logs_results)
+            for log in logs_results:
+                if username.lower() in log.username.lower():
+                    logs.append(log)
+            logs.sort(key=lambda x:x.datetime, reverse=True)
+            for log in logs:
+                log.message=log.message.replace("User [","<span class='loguser'>User [")
+                log.message=log.message.replace("User[","<span class='loguser'>User [")                    
+                log.message=log.message.replace("Property [","<span class='logproperty'>Property [")
+                log.message=log.message.replace("property [","<span class='logproperty'>Property [")
+                log.message=log.message.replace("Citizen [","<span class='logcitizen'>Citizen [")
+                log.message=log.message.replace("citizen [","<span class='logcitizen'>Citizen [")
+                log.message=log.message.replace("Group [","<span class='loggroup'>Group [")
+                log.message=log.message.replace("group [","<span class='loggroup'>Group [")
+                log.message=log.message.replace("]","]</span>")
+            form1 = LogRefineSearchForm(initial={'username':username,'transactionid':transactionid,'plotid':plotid,'new_plotid':new_plotid,'new_transactionid':new_transactionid,'new_citizenid':new_citizenid,})
+            Log.objects.createLog(request,action="search", search_message_action="refine log search", search_conditions = {'plotid':new_plotid,'transactionid':new_transactionid,'citizenid':new_citizenid})
+            return render_to_response('admin/log_log_default.html', {'logs':logs, 'form':form1},
+                              context_instance=RequestContext(request))
 
 def citizen_citizen_default(request, permissions, action, content_type_name1):
     """
@@ -288,7 +358,7 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
                 if form.is_valid():
                     citizen_id=form.cleaned_data['citizen_id']
                     citizen = Citizen.objects.get(id = citizen_id)
-                    Log.objects.createLog(request.session.get('user'),citizen,None,None,"view")
+                    Log.objects.createLog(request,object=citizen,action="view", citizenid = citizen.citizenid)
                     form = CitizenChangeForm(instance = citizen,initial={'citizen_id':citizen_id, 'citizenid':citizen.citizenid,})
                     return render_to_response('citizen/citizen_citizen_change1.html', {'form':form,},
                                   context_instance=RequestContext(request))
@@ -313,7 +383,7 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
             if form.is_valid():
                 citizen_id=form.cleaned_data['citizen_id']
                 citizen = Citizen.objects.get(id = citizen_id)
-                Log.objects.createLog(request.session.get('user'),citizen,None,None,"view")
+                Log.objects.createLog(request,object=citizen,action="view", citizenid=citizen.citizenid)
                 return render_to_response('citizen/citizen_citizen_view1.html', {'citizen':citizen,},
                               context_instance=RequestContext(request))
             else:
@@ -330,7 +400,7 @@ def citizen_citizen_default(request, permissions, action, content_type_name1):
             if form.is_valid():
                 citizen_id=form.cleaned_data['citizen_id']
                 citizen = Citizen.objects.get(id = citizen_id)
-                Log.objects.createLog(request.session.get('user'),citizen,None,None,"delete")
+                Log.objects.createLog(request,object=citizen,action="delete", citizenid=citizen.citizenid)
                 citizen.delete();
                 return access_content_type(request, "citizen", "citizen", None, None)
             else:
@@ -371,33 +441,12 @@ def property_property_default(request, permissions, action, content_type_name1):
                 plotid = form.cleaned_data["plotid"]
                 streetno = form.cleaned_data["streetno"]
                 streetname = form.cleaned_data["streetname"].strip()
-                suburb = form.cleaned_data["suburb"].strip()
-                count = 0
-                message = "property with conditions ("
-                if plotid:
-                    message = message + "plotid=" + str(plotid)
-                    count = count + 1
-                if streetno:
-                    if count > 0:
-                        message = message + ", "
-                    message = message + "streetno=" + str(streetno)
-                    count = count + 1
-                if streetname:
-                    if count > 0:
-                        message = message + ", "
-                    message = message + "streetname=" + streetname
-                    count = count + 1
-                if suburb:
-                    if count > 0:
-                        message = message + ", "
-                    message = message + "suburb=" + suburb
-                    count = count + 1        
-                Log.objects.createLog(request.session.get('user'),None,None,None,"search",message)
+                suburb = form.cleaned_data["suburb"].strip()                
+                Log.objects.createLog(request,action="search", search_object_class_name="property", search_conditions = {"plotid": plotid, "streetno":streetno,"streetname":streetname,"suburb":suburb})
                 error_message = ""
                 property = None
                 if plotid:
                     property = Property.objects.filter(plotid=plotid)
-                    print "haha1"
                 else:
                     property = Property.objects.filter(streetno = streetno).filter(streetname = streetname).filter(suburb=suburb)
                 if not property:
@@ -432,11 +481,16 @@ def property_property_default(request, permissions, action, content_type_name1):
                         point_json['x']=point_x
                         point_json['y']=point_y
                         points_json.append(point_json)
+                    Log.objects.createLog(request,action="view",object=property)
                     return render_to_response('property/property_property_view1.html', {'property': property, 'points':points_json, 'declarevalues':declarevalues_json},
                               context_instance=RequestContext(request))
             else: 
                 return render_to_response('property/property_property_view.html', {'form':form,},
                               context_instance=RequestContext(request))
+    elif action == "change":
+        return construction(request)
+    elif action == "delete":
+        return construction(request)
                 
 def tax_tax_default(request, permissions, action, content_type_name1):
     """
@@ -462,6 +516,8 @@ def tax_tax_default(request, permissions, action, content_type_name1):
         if request.method != 'POST':
             return render_to_response('tax/tax_tax_declarevalue.html',{},
                               context_instance=RequestContext(request))
+    elif action == 'paytax':
+        return construction(request)
                     
 def access_content_type(request, module_name, content_type_name, action = None, content_type_name1 = None):
     """
@@ -490,8 +546,10 @@ def access_content_type(request, module_name, content_type_name, action = None, 
     if function_name == 'tax_tax':
         return tax_tax_default(request, permissions, action, content_type_name1)
     
-def test(request):
-    return render_to_response('admin/test.html', {}, context_instance=RequestContext(request))
+def construction(request):
+    #return HttpResponse('Unauthorized', status=401)
+    raise Http404
+    #return render_to_response('admin/construction.html', {}, context_instance=RequestContext(request))
     
     
     

@@ -10,7 +10,6 @@ from django.forms import model_to_dict
 from log.models import Log
 
 
-
 def declare_value(request):
     if request.method == 'GET':
         GET = request.GET
@@ -33,6 +32,7 @@ def declare_value(request):
         declareValue.DeclairedValueAccepted = 'YE'
         
         declareValue.save()
+        Log.objects.createLog(request, object=declareValue, plotid=plotid, citizenid=citizen.citizenid, action="add")
         return HttpResponse('OK')
 
 def add_property(request):
@@ -42,6 +42,7 @@ def add_property(request):
     if request.method == 'POST':
         POST = request.POST
         plotid = POST['plotid']
+        print plotid
         streetno = POST['streetno']
         streetname = POST['streetname']
         suburb = POST['suburb']
@@ -66,7 +67,7 @@ def add_property(request):
         property.i_status="active"
         property.save()
         new_data = model_to_dict(property)
-        Log.objects.createLog(request.session.get('user'),property, None, None,"add", plotid)
+        Log.objects.createLog(request,object=property,action="add", plotid=plotid)
         return HttpResponse('OK')
 
 def search_user(request):
@@ -124,8 +125,11 @@ def search_property_in_area(request):
     """
     to_json = {}
     properties=[]
+    purpose = None
     if request.method == 'GET':
         GET = request.GET
+        if GET.has_key('purpose'):
+            purpose = GET['purpose']
         if GET.has_key('boundary'):         
             boundary = GET['boundary']
             plist=[]
@@ -176,6 +180,8 @@ def search_property_in_area(request):
                 
                 properties.append(property_json)
             to_json['properties'] = properties
+    search_message_all = "does a map search of properties for " + purpose + " purpose."
+    Log.objects.createLog(request,action="search", search_message_all=search_message_all)
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 
 
@@ -220,9 +226,15 @@ def search_property_by_fields(request):
     suburb = None
     streetname = None
     streetno = None
+    purpose = None
+    refresh = None
     matched_properties = []
     if request.method == 'GET':
         GET = request.GET
+        if GET.has_key('purpose'):
+            purpose = GET['purpose']
+        if GET.has_key('refresh'):
+            refresh = GET['refresh']
         if GET.has_key('plotid'):
             plotid = GET['plotid']
         if GET.has_key('suburb'):
@@ -292,9 +304,17 @@ def search_property_by_fields(request):
                 declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
                 declarevalues_json.append(declare_value_json)
             property_json['declarevalues']=declarevalues_json
-            properties.append(property_json)
-            
+            properties.append(property_json)            
         to_json['properties'] = properties
+        
+        if int(refresh) == 0:
+            Log.objects.createLog(request,action="search", search_message_action=" does a text search of properties", search_message_purpose=purpose, search_conditions={"plotid":plotid,"streetno":streetno,"streetname":streetname,"suburb":suburb})
+        else:
+            matched_properties = Property.objects.filter(plotid=plotid)
+            matched_property = matched_properties[0]
+            property_info = str(matched_property.streetno)+" " +matched_property.streetname+", "+matched_property.suburb
+            search_message_action = " views property ["+property_info+"]"
+            Log.objects.createLog(request,action="search", search_message_action=search_message_action, search_message_purpose=purpose)
         return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 
         

@@ -6,6 +6,7 @@
 {% endblock %}
 {% block css  %}
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
 {% endblock %}
 
 {% load breadcrumb %}
@@ -21,33 +22,87 @@
 	<div style="margin-top:20px;">
 		&nbsp;
 	</div>
-	<div style="margin-left:10px;" align="left">
+	<div style="margin-left:10px;" align="center">
+		<div>
+			Search for
+			{% if form.username.value %}
+				username({{ form.username.value }})
+			{% endif %} 
+			{% if form.plotid.value %}
+				plot ID({{ form.plotid.value }})
+			{% endif %}
+			{% if form.transactionid.value %}
+				transaction ID({{ form.transactionid.value }})
+			{% endif %} 
+		</div>
+		<div style="margin-bottom:20px; margin-top:20px; margin-left:auto; margin-right:auto;">
+			<form onsubmit="return check_search_conditions();" action="/admin/log/log/refinesearch_log/" method="post">
+				{% csrf_token %}
+				<table>
+					<tr>
+						<td>Plot ID: </td>
+						<td>{{form.new_plotid}}</td>
+						<td style="padding-left:30px;">citizen ID: </td>
+						<td>{{form.new_citizenid}}</td>
+						<td style="padding-left:30px;">Transaction ID: </td>
+						<td>{{form.new_transactionid}}</td>
+						<td style="padding-left:30px;"><input type="submit" name="submit" value="Refine this search"/></td>
+					</tr>
+				</table>
+				<div style="display:none;">
+					{{form.plotid}}
+					{{form.transactionid}}
+					{{form.username}}
+				</div>
+			</form>
+		</div>
 	{% if not logs|length %}
-		No logs found.	
+		<div style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+			No logs found.	
+		</div>
 	{% else %}
+		<div id="log_error" style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+			
+		</div>
 		<div class="log_table">
 			<table cellpadding="0" cellspacing="0">
-				<tr>
-					<td class="firstrowfirstcolumn"  width="160">Date</td>
-					<td class="firstrow" width="110">Username</td>
-					<td class="firstrow" width="60">Plot</td>
-					<td class="firstrow" width="60">Tran ID</td>
-					<td class="firstrow" width="700">Message</td>
+				<tr style="border-bottom:1px solid #555;">
+					<th class="firstrowfirstcolumn"  width="160">Date</th>
+					<!--<th class="firstrow" width="110">Username</th>-->
+					<th class="firstrow" width="60">Plot</th>
+					<th class="firstrow" width="60">Citizen</th>
+					<th class="firstrow" width="60">Tran ID</th>
+					<th class="firstrow" width="700">Message</th>
 				</tr>
 				{% for log in logs %}
 				<tr>
-					<td class="firstcolumn">{{log.datetime|date:'Y-m-d H:i:s'}}</td>
-					<td>{{log.username}}</td>
+					<td class="firstcolumn">{{log.datetime|date:'d/m/y@H:i'}}</td>
+					<!--<td>{{log.username}}</td>-->
 					<td>
 						{% if not log.plotid %}
-							N/A
+							<font style="color:#999;">{{log.plotid}}</font>
 						{% endif %}
 						{% if log.plotid %}
 							{{log.plotid}}
 						{% endif %}
 					</td>
-					<td>{{log.transactionid}}</td>
-					<td>{{log.message}}</td>
+					<td>
+						{% if not log.citizenid %}
+							<font style="color:#999;">{{log.citizenid}}</font>
+						{% endif %}
+						{% if log.citizenid %}
+							{{log.citizenid}}
+						{% endif %}
+					</td>
+					<td>
+						
+						{% if not log.transactionid %}
+						<font style="color:#999;">{{log.transactionid}}</font>
+						{% else %}
+						{{log.transactionid}}						
+						{% endif %}
+						</td>
+					<td class="message">{{log.message | safe}}</td>
 				</tr>
 				{% endfor %}
 			</table>

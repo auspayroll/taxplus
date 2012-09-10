@@ -13,5 +13,7 @@ DATABASES = {
     }
 }
 
+
 MAP_URL = "http://devtile.propertymode.com.au"
 SITE_URL = "http://dev1.propertymode.com.au"
+#DEBUG = False

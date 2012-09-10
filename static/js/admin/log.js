@@ -26,3 +26,26 @@ function reset_log_search_form_error_fields()
 	$("#id_plotid").html('');
 	$("#id_transactionid").html('');
 }
+
+function check_search_conditions()
+{
+	plotid = $.trim($("#id_new_plotid").val());
+	citizenid = $.trim($("#id_new_citizenid").val());
+	transactionid = $.trim($("#id_new_transactionid").val());
+	if(plotid!=""&&isNaN(plotid))
+	{
+		$("#log_error").html("Please enter a valid plot ID.");
+		return false;
+	}
+	if(citizenid!=""&&isNaN(citizenid))
+	{
+		$("#log_error").html("Please enter a valid citizen ID.");
+		return false;
+	}
+	if(transactionid!=""&&isNaN(transactionid))
+	{
+		$("#log_error").html("Please enter a valid transaction ID.");
+		return false;
+	}
+	return true;
+}

@@ -26,4 +26,29 @@
 	text-indent:4px;
 	border-bottom:1px solid #CCCCCC;
 	border-right:1px solid #CCCCCC;
+	font-family:Verdana;
+}
+.log_table table tr th{
+	text-indent:4px;
+	border-bottom:1px solid #CCCCCC;
+	border-right:1px solid #CCCCCC;
+	font-family:Verdana;
+	
+}
+
+.logproperty{
+	color:#990000;
+	font-weight:bold;
+}
+.loguser{
+	color:#000099;
+	font-weight:bold;
+}
+.loggroup{
+	color:#990099;
+	font-weight:bold;
+}
+.logcitizen{
+	color:#009900;
+	font-weight:bold;
 }

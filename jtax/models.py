@@ -1,4 +1,6 @@
 from django.db import models
+from property.models import Property
+from citizen.models import Citizen
 
 # Create your models here.
 CURRENCIES = (
@@ -44,7 +46,18 @@ class DeclaredValue(models.Model):
 	DeclairedValueDateTime = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
 	DeclairedValueStaffId = models.IntegerField(help_text='This is the Id of the Staff Member that Added the Declared Value for the Property.')
 	DeclairedValueAccepted = models.CharField(max_length=4,choices=DECLAREDVALUEACCEPTED,help_text='This is whether the Declaired Value has been Accepted, rejected, or needs review.')
-
+	
+	def getLogMessage(self,old_data=None,new_data=None,action=None):
+	    """
+	    return tailored log message for different actions taken on this group
+	    """
+	    if action == "add":
+	    	citizen = Citizen.objects.get(id = self.DeclairedValueCitizenId)
+	    	citizen_fullname = citizen.firstname + " " + citizen.lastname
+	    	property = Property.objects.get(plotid = self.PlotId)
+	    	property_info = str(property.streetno)+" " +property.streetname+", "+property.suburb
+	    	message = "approves Citizen ["+citizen_fullname+ "] to declare a value of "+ self.DeclairedValueAmountCurrencey + " " + str(self.DeclairedValueAmount) + " on Property ["+ property_info + "]"
+	      	return message
 
 class DeclaredValueNotes(models.Model):
 	"""

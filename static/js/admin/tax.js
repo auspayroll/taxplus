@@ -198,7 +198,7 @@ function check_search_conditions()
 	$.ajax({
 			type:"get",
 			url: "/admin/ajax/search_property_in_area/",
-			data: {boundary: $("#id_boundary").val()},
+			data: {boundary: $("#id_boundary").val(), purpose:"tax"},
 			success:function(data)
 			{
 				if(data==""){return;}
@@ -263,6 +263,7 @@ function check_search_conditions()
 						
 						map.addControl(selectControl);
 						selectControl.activate();
+						
 				}
 			},
 			error: function(request)
@@ -338,15 +339,24 @@ function keyword_search()
 		$("#keyword_error").html("Please enter keyword to search!");
 		return false;
 	}
+	querystring = querystring + "&purpose=tax&refresh=0" 
 	$.ajax({
 			type:"get",
 			url: "/admin/ajax/search_property_by_fields/",
 			data: querystring,
 			success:function(data)
 			{
+				
 				if(data==""){return;}
+				else if(data["properties"].length==0)
+				{
+					toggle();
+					$("#keyword_error").html("No property found!");
+					return false;
+				}
 				else
 				{
+					$("#keyword_error").html("");
 					toggle();
 					properties=data["properties"];
 					for(i=0;i<properties.length;i++)
@@ -407,6 +417,7 @@ function keyword_search()
 						
 						map.addControl(selectControl);
 						selectControl.activate();
+						polygon.deactivate();
 				}
 			},
 			error: function(request)

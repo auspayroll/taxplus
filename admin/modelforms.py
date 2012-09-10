@@ -31,7 +31,7 @@ class GroupCreationForm(ModelForm):
                     group.permissions.add(per)
             group.save()
             new_data = model_to_dict(group)
-            Log.objects.createLog(request.session.get('user'),group, None, None,"add")            
+            Log.objects.createLog(request,object=group, action="add")            
         return group
     
     
@@ -62,7 +62,7 @@ class GroupChangeForm(ModelForm):
                     group.permissions.add(per)
             group.save()
         new_data = model_to_dict(group)
-        Log.objects.createLog(request.session.get('user'),group, old_data, new_data, "change")            
+        Log.objects.createLog(request,object=group, old_data=old_data, new_data=new_data, action="change")            
         return group
 
 
@@ -105,7 +105,7 @@ class UserChangeForm(ModelForm):
                     user.groups.add(group)
             user.save()            
         new_data = model_to_dict(user)
-        Log.objects.createLog(request.session.get('user'),user, old_data, new_data,"change")
+        Log.objects.createLog(request,object=user, old_data=old_data, new_data=new_data, action="change")
         return user
 
 class UserCreationForm(ModelForm):
@@ -160,6 +160,6 @@ class UserCreationForm(ModelForm):
             #for group in self.cleaned_data['groups']:
             #    user.groups.add(group)
             user.save()
-            Log.objects.createLog(request.session.get('user'),user, None, None,"add")
+            Log.objects.createLog(request,object=user,action="add")
         return user
     
