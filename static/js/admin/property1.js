@@ -70,9 +70,6 @@ function init()
 	    
 	    var points=$("#points").html();
 		points=eval("("+points+')');
-			
-		popup_message ="Hello";
-		popup_message = "<div>"+popup_message+"</div>";
 		var polygon_points = [];
 		for( j=0;j<points.length;j++)
 		{
@@ -85,6 +82,8 @@ function init()
 		var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
 		var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
 		var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+		var label = $("div#displaytext").html();
+		feature.style={label:label, fillColor:"yellow", fillOpacity:0.2, strokeColor:"#FF0000", strokeWidth: 1,fontColor:"#0000FF",};
 		polygonLayer.addFeatures([feature]);
 		var bounds = polygonLayer.getDataExtent();
 		map.zoomToExtent(bounds);
