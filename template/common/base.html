@@ -12,9 +12,10 @@
 		</script>
 		<link rel="stylesheet" type="text/css" href="{% static "css/common/base.css" %}" />
 		<link href='http://fonts.googleapis.com/css?family=Asap' rel='stylesheet' type='text/css'>
-		<script type="text/javascript"  src="/static/js/jquery-1.7.2.min.js"></script>
-		<script type="text/javascript"  src="/static/js/jquery-ui.min.js"></script>
-		<script type="text/javascript"  src="/static/js/common.js"></script>
+		<script type="text/javascript"  src="{% static "js/jquery-1.7.2.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery-ui.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/common.js" %}" "></script>
+justin
 		{% block css %}
 		{% endblock %}
 		{% block javascript %}
@@ -27,9 +28,9 @@
 		<div class='header'>
 			<a href="/admin/"><span class="title">KCC Tax Systems</span></a>
 			<div class="himg">
-			<a href="/admin/"><img width='96' border="0" height='96'  src='/static/images/icons/home.png' /></a>
-			<a href="/admin/edit_profile/"><img width='96' border="0" height='96'  src='/static/images/icons/user_profile.png' /></a>
-				<a href="/admin/logout/"><img width='96' border="0" height='96'  src='/static/images/icons/user_logout.png' /></a>
+			<a href="/admin/"><img width='96' border="0" height='96'  src='{% static "images/icons/home.png" %}' /></a>
+			<a href="/admin/edit_profile/"><img width='96' border="0" height='96'  src='{% static "images/icons/user_profile.png" %}' /></a>
+				<a href="/admin/logout/"><img width='96' border="0" height='96'  src='{% static "images/icons/user_logout.png" %}' /></a>
 				
 			</div>
 		</div>
