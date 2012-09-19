@@ -134,6 +134,7 @@ INSTALLED_APPS = (
     'log',
     'citizen',
     'jtax',
+    'businesslogic',
 )
 
 

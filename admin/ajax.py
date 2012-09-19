@@ -3,11 +3,14 @@ from citizen.models import Citizen
 from django.http import HttpResponse
 from django.utils import simplejson
 from jtax.models import DeclaredValue
-from property.modelforms import PropertyCreationForm
-from property.models import Property, Boundary
+from property.models import Property, Boundary, Sector, District, Council
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
 from django.forms import model_to_dict
-from log.models import Log
+from log.mappers.LogMapper import LogMapper
+from property.mappers.DistrictMapper import DistrictMapper
+from property.mappers.SectorMapper import SectorMapper
+from property.mappers.CouncilMapper import CouncilMapper
+
 
 
 def declare_value(request):
@@ -25,15 +28,43 @@ def declare_value(request):
         
         declareValue = DeclaredValue()
         declareValue.PlotId = plotid
-        declareValue.DeclairedValueCitizenId = citizenid
-        declareValue.DeclairedValueAmount = amount
-        declareValue.DeclairedValueAmountCurrencey = "AUD"
-        declareValue.DeclairedValueStaffId = user.id  
-        declareValue.DeclairedValueAccepted = 'YE'
+        declareValue.DeclaredValueCitizenId = citizenid
+        declareValue.DeclaredValueAmount = amount
+        declareValue.DeclaredValueAmountCurrencey = "AUD"
+        declareValue.DeclaredValueStaffId = user.id  
+        declareValue.DeclaredValueAccepted = 'YE'
         
         declareValue.save()
-        Log.objects.createLog(request, object=declareValue, plotid=plotid, citizenid=citizen.citizenid, action="add")
+        LogMapper.createLog(request, object=declareValue, plotid=plotid, citizenid=citizen.citizenid, action="add")
         return HttpResponse('OK')
+
+
+def getPropertySector(request):
+    if request.method == 'POST':
+        POST = request.POST
+        boundary = POST['boundary']
+        plist=[]
+        points = boundary.split('#')
+        for point in points:
+            parts = point.split(',')
+            point_x=parts[0]
+            point_y=parts[1]
+            plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
+        plist.append(plist[0])
+        polygon = Polygon(plist)
+        sectors = Sector.objects.all()
+        sectors_results = []
+        for sector in sectors:
+            boundary = sector.boundary
+            if boundary.polygon.intersects(polygon):
+                sectors_results.append(sector)
+        if len(sectors_results) == 0:
+            return HttpResponse('')
+        else:
+            return HttpResponse(sectors_results[0].name)
+
+
+
 
 def add_property(request):
     """
@@ -42,12 +73,14 @@ def add_property(request):
     if request.method == 'POST':
         POST = request.POST
         plotid = POST['plotid']
-        print plotid
         streetno = POST['streetno']
         streetname = POST['streetname']
         suburb = POST['suburb']
         boundary = POST['boundary']
-        
+        sector = SectorMapper.getSectorByName(suburb)
+        if not sector:
+            return HttpResponse('NO')
+
         plist=[]
         points = boundary.split('#')
         for point in points:
@@ -60,15 +93,110 @@ def add_property(request):
         boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
         property = Property()
         property.plotid = plotid
-        property.streetno=streetno
+        property.streetno = streetno
         property.streetname = streetname
         property.suburb = suburb
         property.boundary = boundary
         property.i_status="active"
+        property.sector = sector
         property.save()
         new_data = model_to_dict(property)
-        Log.objects.createLog(request,object=property,action="add", plotid=plotid)
+        LogMapper.createLog(request,object=property,action="add", plotid=plotid)
         return HttpResponse('OK')
+
+
+def add_district(request):
+    """
+    Add property and create a log for this action
+    """
+    if request.method == 'POST':
+        POST = request.POST
+        name = POST['name']
+        boundary = POST['boundary']
+        
+        plist=[]
+        points = boundary.split('#')
+        for point in points:
+            parts = point.split(',')
+            point_x=parts[0]
+            point_y=parts[1]
+            plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
+        plist.append(plist[0])
+        polygon = Polygon(plist)
+        boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
+        district = District()
+        district.name = name
+        district.boundary = boundary
+        district.i_status="active"
+        district.save()
+        new_data = model_to_dict(district)
+        LogMapper.createLog(request,object=district,action="add")
+        return HttpResponse('OK')
+
+def add_sector(request):
+    """
+    Add property and create a log for this action
+    """
+    if request.method == 'POST':
+        POST = request.POST
+        name = POST['name']
+        district = POST['district']
+        boundary = POST['boundary']
+        council = POST['council']
+        
+        plist=[]
+        points = boundary.split('#')
+        for point in points:
+            parts = point.split(',')
+            point_x=parts[0]
+            point_y=parts[1]
+            plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
+        plist.append(plist[0])
+        polygon = Polygon(plist)
+        boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
+        sector = Sector()
+        sector.name = name
+        sector.boundary = boundary
+        sector.district = DistrictMapper.getDistrictById(district)
+        sector.council = CouncilMapper.getCouncilById(council)
+        sector.i_status="active"
+        sector.save()
+        new_data = model_to_dict(sector)
+        LogMapper.createLog(request,object=sector,action="add")
+        return HttpResponse('OK')
+
+def add_council(request):
+    """
+    Add property and create a log for this action
+    """
+    if request.method == 'POST':
+        POST = request.POST
+        name = POST['name']
+        address = POST['address']
+        boundary = POST['boundary']
+        
+        plist=[]
+        points = boundary.split('#')
+        for point in points:
+            parts = point.split(',')
+            point_x=parts[0]
+            point_y=parts[1]
+            plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
+        plist.append(plist[0])
+        polygon = Polygon(plist)
+        boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
+        council = Council()
+        council.name = name
+        council.boundary = boundary
+        council.address = address
+        council.i_status="active"
+        council.save()
+        new_data = model_to_dict(council)
+        LogMapper.createLog(request,object=council,action="add")
+        return HttpResponse('OK')
+
+
+
 
 def search_user(request):
     """
@@ -92,6 +220,65 @@ def search_user(request):
                     else:
                         result = result + '#'+str(user.id)+':'+user.firstname.capitalize()+' '+user.lastname.capitalize()
     return HttpResponse(result)
+
+
+def search_district(request):
+    """
+    search district with entered keyword, case-insensitive.
+    Return a list of district having name contains the entered keyword
+    """
+    result =""
+    match_count = 0
+    if request.method == 'GET':
+        GET = request.GET
+        if GET.has_key('keyword'):
+            print GET['keyword']
+            districts = DistrictMapper.searchDistrictsByKeyword(GET['keyword'])
+            match_count = 0      
+            for district in districts:
+                match_count = match_count + 1
+                if match_count == 1:
+                    result = ''+str(district.id)+':'+district.name.capitalize()
+                else:
+                    result = result + '#'+str(district.id)+':'+district.name.capitalize()
+    print result
+    return HttpResponse(result)
+
+
+
+def search_object_names(request):
+    """
+    search district with entered keyword, case-insensitive.
+    Return a list of district having name contains the entered keyword
+    """
+    
+    result =""
+    match_count = 0
+    objects = None
+    if request.method == 'GET':
+        GET = request.GET
+        if GET.has_key('keyword'):
+            object_name = GET['object_name']
+            if object_name == "district":
+                objects = DistrictMapper.searchDistrictsByKeyword(GET['keyword'])
+            elif object_name == "council":
+                objects = CouncilMapper.searchCouncilsByKeyword(GET['keyword'])
+            elif object_name == "sector":
+                objects = SectorMapper.searchSectorsByKeyword(request,GET['keyword'])
+            match_count = 0
+            if objects:
+                for obj in objects:
+                    match_count = match_count + 1
+                    if match_count == 1:
+                        result = ''+str(obj.id)+':'+obj.name.capitalize()
+                    else:
+                        result = result + '#'+str(obj.id)+':'+obj.name.capitalize()
+    return HttpResponse(result)
+
+
+
+
+
 
 def search_citizen(request):
     """
@@ -144,6 +331,11 @@ def search_property_in_area(request):
             boundaries = Boundary.objects.filter(polygon__intersects=polygon.wkt)
             match_polygon = 0
             for boundary in boundaries:
+                property = Property.objects.filter(boundary = boundary)
+                if len(property) == 0:
+                    continue
+                else:
+                    property = property[0]
                 property_json = {}
                 points_json = []
                 str1=str(boundary.polygon.wkt)
@@ -161,27 +353,27 @@ def search_property_in_area(request):
                     point_json['y']=point_y
                     points_json.append(point_json)
                 property_json['points']=points_json
-                property = Property.objects.get(boundary = boundary)
+                
                 property_json['plotid']=property.plotid
                 property_json['streetno']=property.streetno
                 property_json['streetname']=property.streetname
                 property_json['suburb']=property.suburb
                 
                 declarevalues_json=[]
-                declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclairedValueDateTime")
+                declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclaredValueDateTime")
                 for declare_value in declarevalues:
                     declare_value_json = {}
-                    declare_value_json['accepted']=declare_value.DeclairedValueAccepted
-                    declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
-                    declare_value_json['staffid']=declare_value.DeclairedValueStaffId
-                    declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
+                    declare_value_json['accepted']=declare_value.DeclaredValueAccepted
+                    declare_value_json['datetime']=declare_value.DeclaredValueDateTime.strftime('%Y-%m-%d')
+                    declare_value_json['staffid']=declare_value.DeclaredValueStaffId
+                    declare_value_json['amount']=str(declare_value.DeclaredValueAmountCurrencey) + " " +str(declare_value.DeclaredValueAmount)
                     declarevalues_json.append(declare_value_json)
                 property_json['declarevalues']=declarevalues_json                
                 
                 properties.append(property_json)
             to_json['properties'] = properties
     search_message_all = "does a map search of properties for " + purpose + " purpose."
-    Log.objects.createLog(request,action="search", search_message_all=search_message_all)
+    LogMapper.createLog(request,action="search", search_message_all=search_message_all)
     return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 
 
@@ -291,30 +483,30 @@ def search_property_by_fields(request):
             property_json['suburb']=property.suburb
             
             declarevalues_json=[]
-            declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclairedValueDateTime")
+            declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclaredValueDateTime")
             for declare_value in declarevalues:
                 declare_value_json = {}
-                declare_value_json['accepted']=declare_value.DeclairedValueAccepted
-                declare_value_json['datetime']=declare_value.DeclairedValueDateTime.strftime('%Y-%m-%d')
-                user = User.objects.get(id = declare_value.DeclairedValueStaffId)
+                declare_value_json['accepted']=declare_value.DeclaredValueAccepted
+                declare_value_json['datetime']=declare_value.DeclaredValueDateTime.strftime('%Y-%m-%d')
+                user = User.objects.get(id = declare_value.DeclaredValueStaffId)
                 username = user.firstname + ' '+ user.lastname
                 declare_value_json['staff']=username
-                citizen = Citizen.objects.get(id = declare_value.DeclairedValueCitizenId)
+                citizen = Citizen.objects.get(id = declare_value.DeclaredValueCitizenId)
                 declare_value_json['citizen']= citizen.firstname + ' '+citizen.lastname
-                declare_value_json['amount']=str(declare_value.DeclairedValueAmountCurrencey) + " " +str(declare_value.DeclairedValueAmount)
+                declare_value_json['amount']=str(declare_value.DeclaredValueAmountCurrencey) + " " +str(declare_value.DeclaredValueAmount)
                 declarevalues_json.append(declare_value_json)
             property_json['declarevalues']=declarevalues_json
             properties.append(property_json)            
         to_json['properties'] = properties
         
         if int(refresh) == 0:
-            Log.objects.createLog(request,action="search", search_message_action=" does a text search of properties", search_message_purpose=purpose, search_conditions={"plotid":plotid,"streetno":streetno,"streetname":streetname,"suburb":suburb})
+            LogMapper.createLog(request,action="search", search_message_action=" does a text search of properties", search_message_purpose=purpose, search_conditions={"plotid":plotid,"streetno":streetno,"streetname":streetname,"suburb":suburb})
         else:
             matched_properties = Property.objects.filter(plotid=plotid)
             matched_property = matched_properties[0]
             property_info = str(matched_property.streetno)+" " +matched_property.streetname+", "+matched_property.suburb
             search_message_action = " views property ["+property_info+"]"
-            Log.objects.createLog(request,action="search", search_message_action=search_message_action, search_message_purpose=purpose)
+            LogMapper.createLog(request,action="search", search_message_action=search_message_action, search_message_purpose=purpose)
         return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 
         

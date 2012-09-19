@@ -1,6 +1,7 @@
 from django import forms
 
-class select_property_form(forms.Form):
+class tax_search_property_form(forms.Form):
+    citizenid = forms.IntegerField(required = False)
     plotid = forms.IntegerField(required = False)
     streetno = forms.IntegerField(required = False)
     streetname = forms.CharField(required = False)

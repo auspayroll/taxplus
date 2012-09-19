@@ -106,7 +106,64 @@ function getCoordinates()
 	$("#id_boundary").html(str);
 	if(points.length>=3)
 	{
-		$("#boundary_error").html("Boundary added!");
+		$("#boundary_error").html("Boundary added!");		
+		$('html').ajaxSend(function(event, xhr, settings) {
+		    function getCookie(name) {
+		        var cookieValue = null;		
+		
+		
+		        if (document.cookie && document.cookie != '') {
+		            var cookies = document.cookie.split(';');
+		            for (var i = 0; i < cookies.length; i++) {
+		                var cookie = jQuery.trim(cookies[i]);
+		                // Does this cookie string begin with the name we want?
+		                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+		                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+		                    break;
+		                }
+		            }
+		        }
+		        return cookieValue;
+		    }
+		    if (!(/^http:.*/.test(settings.url) || /^https:.*/.test(settings.url))) {
+		        // Only send the token to relative URLs i.e. locally.
+		        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+		    }
+		});
+		
+		
+		$.ajax({
+				type:"post",
+				url: "/admin/ajax/getPropertySector/",
+				data: { boundary:$("#id_boundary").html()},
+				success:function(data)
+				{
+					if(data!="")
+					{
+						$("input#id_suburb").val(data);
+					}
+					else
+					{
+						$("div#error").html("No sector found! ");
+						$("#id_suburb").removeAttr("disabled");	
+						$("#id_suburb").val("");
+					}
+					return;
+				},
+				error: function(request)
+				{
+					alert(request.responseText);
+				}
+			}
+		)
+		
+		
+		
+		
+		
+		
+		
+		
 	}
 	else
 	{
@@ -145,6 +202,7 @@ function refreshMap()
 }
 	    
 function toggle() {
+	$("#id_suburb").val("");
 	if(polygon!=null)
 	{
 		if(!polygon.active)
@@ -231,9 +289,18 @@ function check_property_registration_form()
 			data: {plotid: $("input#id_plotid").val(), streetno: $("input#id_streetno").val(), streetname: $("input#id_streetname").val(), suburb: $("input#id_suburb").val(), boundary:$("#id_boundary").html()},
 			success:function(data)
 			{
-				$("div#error").html("Property added successfully!");
-				toggle();
-				return;
+				if(data=="OK")
+				{
+					$("div#error").html("Property added successfully!");
+					toggle();
+					return;	
+				}
+				else
+				{
+					$("div#error").html("No sector found!");
+					return;
+				}
+				
 			},
 			error: function(request)
 			{

@@ -253,10 +253,3 @@ function selectUser()
 	});
 }
 
-
-
-
-
-
-
-

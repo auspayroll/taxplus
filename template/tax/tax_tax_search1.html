@@ -1,0 +1,366 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" src="/static/js/jquery-ui.min.js"></script>
+	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+	<script type="text/javascript"  src="/static/js/admin/tax_search.js"></script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Search property" %}	
+{% endblock %}
+
+
+
+{% block mainbody %}
+	<div style="display:block;">
+		<table width="100%" height="100%" cellpadding="5" cellspacing="0">
+			<tr>
+				<!-- sidebar td -->
+				<td valign="top" height="100%" align="left" width="280">
+					<form method="post" onsubmit="return keyword_search();" action="/admin/tax/tax/search1_tax/">
+						{% csrf_token %}
+						<div class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+							<div style="height:45px; line-height: 45px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+								Search Property:
+							</div>
+							<div style="margin-top: 10px; font-size:14px; line-height:30px;">
+								<table cellpadding="0" cellspacing="4">
+									<tr>
+										<td width="120"><strong>Suburb:</strong></td>
+										<td width="130">
+											<div class="dropdown">
+												<div class="keyword_div">
+													{% if not form.suburb.value %}
+														<input autocomplete="off" type="text" value="" class="keyword"  name ="suburb" id="id_suburb"/>
+													{% else %}
+														<input autocomplete="off" type="text" value="{{form.suburb.value}}" class="keyword"  name ="suburb" id="id_suburb"/>
+													{% endif %}					
+												</div>
+												<div id="suburb_dropdown_list" class="dropdown_list">
+												</div>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td><strong>Street name:</strong></td>
+										<td>
+											<div class="dropdown">
+												<div class="keyword_div">
+													{% if not form.streetname.value %}
+														<input autocomplete="off" type="text" value="" class="keyword"  name ="streetname" id="id_streetname"/>
+													{% else %}
+														<input autocomplete="off" type="text" value="{{form.streetname.value}}" class="keyword"  name ="streetname" id="id_streetname"/>
+													{% endif %}					
+												</div>
+												<div id="streetname_dropdown_list" class="dropdown_list">
+												</div>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td><strong>Street no:</strong></td>
+										<td>
+											<div class="dropdown">
+												<div class="keyword_div">
+													{% if not form.streetno.value %}
+														<input autocomplete="off" type="text" value="" class="keyword"  name ="streetno" id="id_streetno"/>
+													{% else %}
+														<input autocomplete="off" type="text" value="{{form.streetno.value}}" class="keyword"  name ="streetno" id="id_streetno"/>
+													{% endif %}
+												</div>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td><strong>Plot ID#:</strong></td>
+										<td>
+											<div class="dropdown">
+												<div class="keyword_div">
+													{% if not form.plotid.value %}
+														<input autocomplete="off" type="text" value="" class="keyword"  name ="plotid" id="id_plotid"/>
+													{% else %}
+														<input autocomplete="off" type="text" value="{{form.plotid.value}}" class="keyword"  name ="plotid" id="id_plotid"/>
+													{% endif %}
+												</div>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td><strong>Citizen ID#:</strong></td>
+										<td>
+											<div class="dropdown">
+												<div class="keyword_div">
+													{% if not form.citizenid.value %}
+														<input autocomplete="off" type="text" value="" class="keyword"  name ="citizenid" id="id_citizenid"/>
+													{% else %}
+														<input autocomplete="off" type="text" value="{{form.citizenid.value}}" class="keyword"  name ="citizenid" id="id_citizenid"/>
+													{% endif %}
+												</div>
+											</div>
+										</td>
+									</tr>
+								</table>
+							</div>
+							<div style="margin-top:10px; color:red;  font-weight:bold; font-style:italic; line-height:20px; font-size:14px;" id="keyword_error">
+								{% if error_message %}
+									{{error_message}}
+								{% endif %}
+								
+							</div>
+							<div style="margin-top:15px;margin-bottom:15px; text-align:right; margin-right:20px; font-size:14px;">
+								<input type="submit" name="submit" value="Go!"/>
+							</div>	
+						</div>
+					</form>
+				</td>
+				<!-- map -->
+				<td valign="top" >
+					<div style="text-align: left; display:block;">
+						<div id="tabs">
+							<ul class='tabs'>
+							    <li><a href="#tab1">Property</a></li>
+							    {% if property %}
+							    <li><a href="#tab2">History</a></li>	
+							    {% endif %}
+							</ul>
+							<div id='tab1' class="property_table">
+								<table width="100%" height="100%">
+									<tr>
+										<td width="500" style="border:none;" valign="top">
+											<div style="width:460px;">
+												{% if not properties and not property %}
+													No properties found!
+												{% elif  properties %}
+												
+												<!-- Display table of properties and maps if there are multiple properties found-->
+												<div>
+													<table cellpadding="0" cellspacing="0">
+														<tr>
+															<td width="70" class="firstrowfirstcolumn">Plot ID#</td>
+															<td width="230" class="firstrow">Address</td>
+															<td width="70" class="firstrow">D/V due</td>
+															<td width="70" class="firstrow">P/T due</td>
+														</tr>
+														{% for property in properties %}
+														<tr>
+															<td class="firstcolumn"><a href="/admin/tax/tax/search1_tax/?plotid={{property.plotid}}">{{property.plotid}}</a></td>
+															<td>{{property.streetno}} {{property.streetname}}, {{property.suburb}}</td>
+															<td style="text-align:center">&#10007;</td>
+															<td style="text-align:center">&#10003;</td>
+														</tr>	
+														{% endfor %}
+													</table>
+												</div>
+												<div style="margin-top:20px; font-size:14px;">
+												    <span>
+												        Page {{ properties.number }} of {{ properties.paginator.num_pages }}.
+												        &nbsp;&nbsp;&nbsp;&nbsp;
+												    	
+												    	{% if properties.has_previous %}
+												            <a href="/admin/tax/tax/search1_tax/?page=1">first</a>
+												        {% else %}
+												        	first
+												        {% endif %}
+												        
+														&nbsp;&nbsp;
+														{% if properties.has_previous %}
+												            <a href="/admin/tax/tax/search1_tax/?page={{ properties.previous_page_number }}">previous</a>
+												        {% else %}
+												        	previous
+												        {% endif %}
+												        
+												        &nbsp;&nbsp;
+												        {% if properties.has_next %}
+												            <a href="/admin/tax/tax/search1_tax/?page={{ properties.next_page_number }}">next</a>
+												        {% else %}
+												        	next
+												        {% endif %}
+												        &nbsp;&nbsp;
+												        {% if properties.has_next %}
+												            <a href="/admin/tax/tax/search1_tax/?page={{ properties.paginator.num_pages }}">last</a>
+												        {% else %}
+												        	last
+												        {% endif %}
+												    </span>
+												</div>
+												<!-- end of Display table of properties and maps if there are multiple properties found-->
+												{% elif property %}
+												<!-- Display of property info if only single property is found or selected-->
+												<div>
+													<div class="box">
+														<div class="box_title">Basic info:</div>
+														<div class="box_detail"><strong>Plot ID: </strong>{{property.plotid}}</div>
+														<div class="box_detail"><strong>Address: </strong>{{property.streetno}} {{property.streetname}}, {{property.suburb}}</div>	
+													</div>
+													<div class="box">
+														<div class="box_title">Owner{{ summary.owners|length|pluralize}} info:</div>
+														{% if summary.owners|length == 0 %}
+															<div class="box_detail"><strong>Owner fullname: </strong>N/A</div>
+															<div class="box_detail"><strong>Owner citizenid: </strong>N/A</div>
+														{% elif summary.owners|length == 1 %}
+															{% for owner in summary.owners %}
+																<div class="box_detail"><strong>Owner citizenid: </strong> {{owner.citizenid}}</div>
+																<div class="box_detail"><strong>Owner fullname: </strong>{{owner.firstname}} {{owner.lastname}}</div>
+															{% endfor %}
+														{% else %}
+															{% for owner in summary.owners %}
+																<div class="box_detail"><strong>Owner({{forloop.counter}}) citizenid: </strong>{{owners.citizenid}}</div>
+																<div class="box_detail"><strong>Owner({{forloop.counter}}) fullname: </strong>{{owner.firstname}} {{owner.lastname}}</div>
+															{% endfor %}
+														{% endif %}
+													</div>
+													<div class="box">
+														<div class="box_title">Summary:</div>
+														<div class="box_detail"><strong><em>Declared value: </em></strong>{{summary.declaredValue}}</div>
+														<div class="box_detail"><strong><em>Declared value due on: </em></strong>{{summary.declaredValueDueDate}}</div>
+														<div class="box_detail"><strong><em>Property tax due on: </em></strong>{{summary.propertyTaxDueDate}}</div>
+														<div class="box_detail"><strong><em>Rental/Land tax due on: </em></strong>{{summary.rentalTaxDueDate}}</div>
+														<div class="box_detail"><strong><em>Rental/Land tax due on: </em></strong>{{summary.rentalTaxDueDate}}</div>											
+													</div>
+													
+													
+													
+												</div>
+												
+												
+												<!-- End of displaying of property info if only single property is found or selected-->
+												{% endif %}
+											</div>
+								
+										</td>
+										<td valign="top" style="border:none;">
+											<div style="width:100%; margin-right:10px;">
+												 <div id="maparea">
+													<div style="height:500px;">
+														<div style="height:100%;" id="map"></div>
+													</div>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</table>
+								<div style="clear:both;"></div>
+							</div>
+							{% if property %}
+							<div id='tab2'>
+								<div class="box">
+									<div class="box_title">Declared value history:</div>
+									<div class="box_detail">
+										<table cellpadding="0" cellspacing="0" class="transaction_table">
+											<tr>
+												<td width="20%" class="firstrowfirstcolumn"><strong>Date</strong></td>
+												<td width="20%" class="firstrow"><strong>Amount</strong></td>
+												<td width="20%" class="firstrow"><strong>Declared by</strong></td>
+												<td width="20%" class="firstrow"><strong>Accepted</strong></td>
+												<td width="20%" class="firstrow"><strong>Official</strong></td>
+											</tr>
+											{% if not declaredValues %}
+											<tr>
+												<td colspan="5" class="firstcolumn">
+													<div style="text-align: center">This property has not yet declared!</div>
+												</td>
+											</tr>
+											{% else %}
+												{% for declaredValue in declaredValues %}
+												<tr>
+													<td class="firstcolumn">{{declaredValue.DeclaredValueDateTime}}</td>
+													<td class="normal">{{declaredValue.DeclaredValueAmount}}</td>
+													<td class="normal">{{declaredValue.DeclaredBy}}</td>
+													<td class="normal">{{declaredValue.DeclaredValueAccepted}}</td>
+													<td class="normal">{{declaredValue.DeclaredValueOfficial}}</td>
+												</tr>		
+												{% endfor%}
+											{% endif %}
+										</table>
+									</div>										
+								</div>
+								
+								
+								<div class="box">
+									<div class="box_title">Property tax history:</div>
+									<div class="box_detail">
+										<table cellpadding="0" cellspacing="0" class="transaction_table">
+											<tr>
+												<td width="10%" class="firstrowfirstcolumn"><strong>Date</strong></td>
+												<td width="10%" class="firstrow"><strong>Amount</strong></td>
+												<td width="10%" class="firstrow"><strong>Start Date</strong></td>
+												<td width="10%" class="firstrow"><strong>End Date</strong></td>
+												<td width="10%" class="firstrow"><strong>Paid by</strong></td>
+												<td width="10%" class="firstrow"><strong>Official</strong></td>
+												<td width="8%" class="firstrow"><strong>Generated</strong></td>
+												<td width="8%" class="firstrow"><strong>Paid</strong></td>
+												<td width="8%" class="firstrow"><strong>Challenged</strong></td>
+												<td width="8%" class="firstrow"><strong>Reviewed</strong></td>
+												<td width="8%" class="firstrow"><strong>Accepted</strong></td>
+												
+											</tr>
+											{% if not propertyTaxes %}
+											<tr>
+												<td colspan="11" class="firstcolumn">
+													<div style="text-align: center">This property has no tax paid yet!</div>
+												</td>
+											</tr>
+											{% else %}
+												{% for propertyTax in propertyTaxes %}
+												<tr>
+													<td class="firstcolumn">{{propertyTax.PropertyTaxDateTime}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxAmountCurrency}} {{propertyTax.PropertyTaxAmount}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxStartDate}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxEndDate}}</td>
+													<td class="normal">{{propertyTax.PaidBy}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxOfficial}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxIsGenerated}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxIsPaid}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxIsChallenged}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxIsReviewed}}</td>
+													<td class="normal">{{propertyTax.PropertyTaxAccepted}}</td>
+												</tr>		
+												{% endfor%}
+											{% endif %}
+										</table>
+									</div>										
+								</div>
+							
+							{% endif %}
+							
+							
+							
+							
+							
+							
+							
+							
+							
+							
+						</div>
+						<div style="clear:both; line-height:2px; height:2px;">
+							&nbsp;
+						</div>
+						<!--Store geography infomation about the property of properties-->
+						<div id="geodata" style="display:none;">
+							{% if geodata %}
+								{{geodata}}
+							{% endif %}
+						</div>
+						<!--End of storing geography infomation about the property of properties-->
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>	
+{% endblock %}
+

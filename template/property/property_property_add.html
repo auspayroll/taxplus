@@ -54,7 +54,13 @@
 										<td> <strong>Street name:</strong><br>{{form.streetname}} &nbsp;</td>
 									</tr>
 									<tr>
-										<td><strong>Suburb</strong> <strong style="color:red;font-size:20px;">*</strong><br> {{form.suburb}}</td>
+										<td><strong>Suburb</strong> <strong style="color:red;font-size:20px;">*</strong><br> 
+											{% if form.suburb.value %}
+												<input type="text" id="id_suburb" disabled="disabled" name="suburb" value="{{form.suburb.value}}"/>
+											{% else %}
+												<input type="text" disabled="dissabled"  id="id_suburb" name="suburb" />
+											{% endif %}
+										</td>
 									</tr>
 								</table>
 							</div>

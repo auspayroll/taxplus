@@ -50,12 +50,14 @@
 
 .property_table{
 	text-align:left;
-	margin-top:20px;
+	margin-top:15px;
+	line-height:23px;
 }
 
 .property_table table tr td.firstrow{
 	border-top:1px solid #CCCCCC;
 	font-size:16px;
+	line-height:30px;
 	font-weight:bold;
 }
 
@@ -79,7 +81,7 @@
 
 
 
-table#transaction_table{
+table.transaction_table,table#transaction_table{
 	margin:0px;
 	padding:0px;
 	width:100%;
@@ -89,34 +91,37 @@ table#transaction_table{
 	text-indent:3px;
 }
 
-table#transaction_table tr td.normal{
+table.transaction_table tr td.normal, table#transaction_table tr td.normal{
 	border-right:1px solid #CCCCCC;
 	border-bottom:1px solid #cccccc;
-	width:25%;
 	text-indent:3px;
 }
 
 
-table#transaction_table tr td.firstrow{
+table.transaction_table tr td.firstrow,table#transaction_table tr td.firstrow{
 	border-top:1px solid #CCCCCC;
 	border-right:1px solid #CCCCCC;
 	border-bottom:1px solid #cccccc;
-	width:25%;
 	text-indent:3px;
 }
-table#transaction_table tr td.firstcolumn{
+table.transaction_table tr td.firstcolumn, table#transaction_table tr td.firstcolumn{
 	border-left:1px solid #CCCCCC;
 	border-right:1px solid #CCCCCC;
 	border-bottom:1px solid #cccccc;
-	width:25%;
 	text-indent:3px;
 }
-table#transaction_table tr td.firstrowfirstcolumn{
+table.transaction_table tr td.firstrowfirstcolumn,table#transaction_table tr td.firstrowfirstcolumn{
 	border:1px solid #CCCCCC;
 	border-right:1px solid #CCCCCC;
 	border-bottom:1px solid #cccccc;
-	width:25%;
 	text-indent:3px;
+}
+
+table#transaction_table tr td.normal,
+table#transaction_table tr td.firstcolumn, 
+table#transaction_table tr td.firstrow, 
+table#transaction_table tr td.firstrowfirstcolumn{
+	width:25%;
 }
 
 
@@ -162,6 +167,7 @@ table#declaree_value tr td
 	border:1px solid #CCCCCC;
 	padding:4px;
 	margin-bottom:20px;
+	padding-bottom:10px;
 }
 
 

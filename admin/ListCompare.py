@@ -1,6 +1,6 @@
 from django.db import models
 
-class Tools(models.Model):
+class ListCompare:
     """
     In this class, all the functions are static.
     All these functions are commonly used across all the apps

@@ -1,5 +1,4 @@
 from django.db import models
-from admin.common import Tools
 from datetime import datetime
 
 

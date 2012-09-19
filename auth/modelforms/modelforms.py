@@ -1,13 +1,14 @@
 from django.forms import ModelForm
 from django import forms
 from auth.models import User, Group, Permission
-from log.models import Log
-import string
-import random
+from log.mappers.LogMapper import LogMapper
 from django.forms import model_to_dict
-import pytz
 from django.conf import settings
-import md5
+import md5, ast, pytz, string, random
+from datetime import datetime
+from django.utils import timezone
+from property.mappers.CouncilMapper import CouncilMapper
+
 
 class GroupCreationForm(ModelForm):
     """
@@ -31,7 +32,7 @@ class GroupCreationForm(ModelForm):
                     group.permissions.add(per)
             group.save()
             new_data = model_to_dict(group)
-            Log.objects.createLog(request,object=group, action="add")            
+            LogMapper.createLog(request,object=group, new_data=model_to_dict(group), action="add")            
         return group
     
     
@@ -62,7 +63,7 @@ class GroupChangeForm(ModelForm):
                     group.permissions.add(per)
             group.save()
         new_data = model_to_dict(group)
-        Log.objects.createLog(request,object=group, old_data=old_data, new_data=new_data, action="change")            
+        LogMapper.createLog(request,object=group, old_data=old_data, new_data=new_data, action="change")            
         return group
 
 
@@ -74,6 +75,8 @@ class UserChangeForm(ModelForm):
     class Meta:
         model = User
         fields = ("firstname","lastname","contactnumber","active","superuser","datejoined","groups","permissions",) 
+    councils = [(c.id, c.name) for c in CouncilMapper.getAllCouncils()]
+    council = forms.ChoiceField(widget = forms.Select(),required = True, choices = councils)
     password = forms.CharField(label="Password",help_text = "Enter password.", widget=forms.PasswordInput)
     permissions_selected = forms.ModelMultipleChoiceField(queryset = Permission.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'user_change_form_permissions'}))
     groups_selected = forms.ModelMultipleChoiceField(queryset = Group.objects.all(), required=False, widget = forms.SelectMultiple(attrs = {'class':'user_change_form_groups'}))
@@ -92,6 +95,7 @@ class UserChangeForm(ModelForm):
         user.contactnumber = self.cleaned_data["contactnumber"]
         user.superuser = self.cleaned_data["superuser"]
         user.active = self.cleaned_data["active"]
+        user.council = CouncilMapper.getCouncilById(self.cleaned_data['council'])
         user.datejoined = self.cleaned_data["datejoined"]
         if commit:
             user.save()
@@ -104,8 +108,9 @@ class UserChangeForm(ModelForm):
                 for group in self.cleaned_data['groups_selected']:
                     user.groups.add(group)
             user.save()            
+        user.datejoined = user.datejoined.astimezone(pytz.utc)
         new_data = model_to_dict(user)
-        Log.objects.createLog(request,object=user, old_data=old_data, new_data=new_data, action="change")
+        LogMapper.createLog(request,object=user, old_data=old_data, new_data=new_data, action="change")
         return user
 
 class UserCreationForm(ModelForm):
@@ -160,6 +165,6 @@ class UserCreationForm(ModelForm):
             #for group in self.cleaned_data['groups']:
             #    user.groups.add(group)
             user.save()
-            Log.objects.createLog(request,object=user,action="add")
+            LogMapper.createLog(request,object=user,new_data=model_to_dict(user), action="add")
         return user
     

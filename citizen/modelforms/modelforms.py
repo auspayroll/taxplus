@@ -3,6 +3,7 @@ from django import forms
 from citizen.models import Citizen
 from log.models import Log
 from django.forms import model_to_dict
+from log.mappers.LogMapper import LogMapper
 
 class CitizenCreationForm(ModelForm):
     """
@@ -15,7 +16,7 @@ class CitizenCreationForm(ModelForm):
         citizen = forms.ModelForm.save(self, False)
         if commit:
             citizen.save()
-            Log.objects.createLog(request,object=citizen,action="add", citizenid =  citizen.citizenid)            
+            LogMapper.createLog(request,object=citizen,action="add", citizenid =  citizen.citizenid)            
         return citizen
      
 class CitizenChangeForm(ModelForm):
