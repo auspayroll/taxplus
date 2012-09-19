@@ -1,6 +1,6 @@
 from django.utils import simplejson
 from property.models import District
-
+import logging
 
 class DistrictMapper:    
           
@@ -31,7 +31,8 @@ class DistrictMapper:
     @staticmethod
     def getDistrictByName(name):
         district = District.objects.filter(name = name)
-        if not district:
+        logging.debug("name is " + name)
+	if not district:
             return None
         else:
             return district[0]

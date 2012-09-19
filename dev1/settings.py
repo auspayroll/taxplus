@@ -64,15 +64,16 @@ MEDIA_URL = '/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = ''
+STATIC_ROOT = '/var/www/kcctax/pmrw.kcctax/static'
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
-STATIC_URL = '/static/'
+STATIC_URL = 'http://kt.st.propertymode.com.au/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
     # '/var/www/dev1/static',
+	'/var/www/kcctax/pmrw.kcctax/static',
     os.path.join(PROJECT_DIR,'static'),
 	# Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
