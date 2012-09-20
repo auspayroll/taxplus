@@ -60,7 +60,7 @@ def user_default(request,permissions, action, content_type_name1):
                     user= UserMapper.getUserById(user_id)
                     LogMapper.createLog(request,object=user,action="view")
                     if not user.superuser:
-                        form = UserChangeForm(instance = user,initial={'user_id':user_id, 'council':user.council.id, 'email':user.email,'password':user.password,})
+                        form = UserChangeForm(instance = user,initial={'user_id':user_id, 'email':user.email,'password':user.password,})
                     else:
                         form = UserChangeForm(instance = user,initial={'user_id':user_id, 'email':user.email,'password':user.password,})
                     return render_to_response('admin/auth_user_change1.html', {'form':form,},

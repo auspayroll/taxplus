@@ -232,16 +232,14 @@ def search_district(request):
     if request.method == 'GET':
         GET = request.GET
         if GET.has_key('keyword'):
-            print GET['keyword']
             districts = DistrictMapper.searchDistrictsByKeyword(GET['keyword'])
             match_count = 0      
             for district in districts:
                 match_count = match_count + 1
                 if match_count == 1:
-                    result = ''+str(district.id)+':'+district.name.capitalize()
+                    result = ''+str(district.id)+':'+district.name
                 else:
-                    result = result + '#'+str(district.id)+':'+district.name.capitalize()
-    print result
+                    result = result + '#'+str(district.id)+':'+district.name
     return HttpResponse(result)
 
 
@@ -270,9 +268,9 @@ def search_object_names(request):
                 for obj in objects:
                     match_count = match_count + 1
                     if match_count == 1:
-                        result = ''+str(obj.id)+':'+obj.name.capitalize()
+                        result = ''+str(obj.id)+':'+obj.name
                     else:
-                        result = result + '#'+str(obj.id)+':'+obj.name.capitalize()
+                        result = result + '#'+str(obj.id)+':'+obj.name
     return HttpResponse(result)
 
 

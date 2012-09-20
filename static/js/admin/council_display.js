@@ -83,7 +83,7 @@ function init()
 		var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
 		var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
 		var label = $("div#displaytext").html();
-		feature.style={label:label, fillColor:color_house, fillOpacity:0.2, strokeColor:color_house, strokeWidth: 1,fontColor:color_house,};
+		feature.style={label:label, fillColor:color_council, fillOpacity:0.2, strokeColor:color_council, strokeWidth: 1,fontColor:color_council,};
 		polygonLayer.addFeatures([feature]);
 		var bounds = polygonLayer.getDataExtent();
 		map.zoomToExtent(bounds);
