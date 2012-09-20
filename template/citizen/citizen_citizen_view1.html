@@ -27,6 +27,9 @@
 <strong>First name:</strong> {{citizen.firstname}}<br>
 <strong>Last name:</strong> {{citizen.lastname}}<br>
 <strong>Citizen ID:</strong> {{citizen.citizenid}}<br>
-<strong>Citizen Photo:</strong> {{citizen.citizenPhoto}}<br />
+<strong>Citizen Photo:</strong><br /><br/>
+{% if citizen.citizenPhoto %}
+<img src="/media/{{citizen.citizenPhoto}}" />
+{% endif %}
 </div>
 {% endblock %}

@@ -4,4 +4,6 @@ urlpatterns = patterns('',
     url(r'^(?P<content_type_name>\w+)/$','jtax.views.access_content_type'),
     url(r'^(?P<content_type_name>\w+)/(?P<action>\w+)_(?P<content_type_name1>\w+)/$','jtax.views.access_content_type'),
     url(r'^$','admin.views.login'),
-)
+) 
+
+

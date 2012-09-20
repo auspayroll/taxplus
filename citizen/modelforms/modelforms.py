@@ -26,10 +26,12 @@ class CitizenChangeForm(ModelForm):
     """
     citizen_id = forms.IntegerField(required = False)
     citizenid = forms.IntegerField(required = True)
+    citizenPhotoPath = forms.CharField(max_length=200, required = False)
+    
     class Meta:
         model = Citizen
         fields =("firstname","lastname")
-    def save(self, request, commit=True):
+    def save(self, request,commit=True):
         citizen_id = self.cleaned_data["citizen_id"]
         citizenid = self.cleaned_data["citizenid"]
         citizen = Citizen.objects.get(id = citizen_id)
@@ -39,7 +41,7 @@ class CitizenChangeForm(ModelForm):
         citizen.lastname = self.cleaned_data["lastname"]
         citizen.save()
         new_data = model_to_dict(citizen)
-        Log.objects.createLog(request,object=citizen, old_data=old_data, new_data=new_data, action="change", citizenid = citizenid)            
+        LogMapper.createLog(request,object=citizen, old_data=old_data, new_data=new_data, action="change", citizenid = citizenid)            
         return citizen
         
  

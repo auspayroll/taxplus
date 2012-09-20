@@ -68,23 +68,39 @@ function init()
 	    	map.setCenter (lonLat, zoom);
 	    }
 	    
-	    var points=$("#points").html();
-		points=eval("("+points+')');
-		var polygon_points = [];
-		for( j=0;j<points.length;j++)
+	    var points = $("#points").html(); 
+		var districts = eval("("+points+")");
+		districts = districts['districts'];		
+		for(i=0; i< districts.length; i++)
 		{
-			point=points[j];
-			x = point['x'];
-			y = point['y'];
-			p = new OpenLayers.Geometry.Point(x,y);
-	  		polygon_points.push(p);
+			district = districts[i];
+			name = district["name"];
+			points = district["points"]
+			var polygon_points = [];
+			for( j=0;j<points.length;j++)
+			{
+				point=points[j];
+				x = point['x'];
+				y = point['y'];
+				p = new OpenLayers.Geometry.Point(x,y);
+		  		polygon_points.push(p);
+			}
+			var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
+			var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
+			var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+			var label = $("div#displaytext").html();
+			feature.style={
+				label:name, 
+				fillColor:color_district, 
+				fillOpacity:0.25, 
+				strokeColor:color_district, 
+				strokeWidth: 1,
+				fontColor:"#000000",
+				labelOutlineColor:"#FFFFFF",
+				labelOutlineWidth:3,
+			};
+			polygonLayer.addFeatures([feature]);
 		}
-		var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
-		var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
-		var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
-		var label = $("div#displaytext").html();
-		feature.style={label:label, fillColor:color_council, fillOpacity:0.2, strokeColor:color_council, strokeWidth: 1,fontColor:color_council,};
-		polygonLayer.addFeatures([feature]);
 		var bounds = polygonLayer.getDataExtent();
 		map.zoomToExtent(bounds);
 }

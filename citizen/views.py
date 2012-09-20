@@ -61,7 +61,7 @@ def citizen_default(request, permissions, action, content_type_name1):
                     citizen_id=form.cleaned_data['citizen_id']
                     citizen = CitizenMapper.getCitizenById(citizen_id)
                     LogMapper.createLog(request,object=citizen,action="view", citizenid = citizen.citizenid)
-                    form = CitizenChangeForm(instance = citizen,initial={'citizen_id':citizen_id, 'citizenid':citizen.citizenid,})
+                    form = CitizenChangeForm(instance = citizen,initial={'citizen_id':citizen_id, 'citizenid':citizen.citizenid, 'citizenPhotoPath':citizen.citizenPhoto.url})
                     return render_to_response('citizen/citizen_citizen_change1.html', {'form':form,},
                                   context_instance=RequestContext(request))
                 else:

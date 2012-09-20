@@ -64,18 +64,17 @@ MEDIA_URL = '/media/'
 # Don't put anything in this directory yourself; store your static files
 # in apps' "static/" subdirectories and in STATICFILES_DIRS.
 # Example: "/var/www/example.com/static/"
-STATIC_ROOT = '/var/www/kcctax/pmrw.kcctax/static'
+STATIC_ROOT = ''
 
 # URL prefix for static files.
 # Example: "http://example.com/static/", "http://static.example.com/"
-STATIC_URL = 'http://kt.st.propertymode.com.au/static/'
+STATIC_URL = '/static/'
 
 # Additional locations of static files
 STATICFILES_DIRS = (
     # '/var/www/dev1/static',
-	'/var/www/kcctax/pmrw.kcctax/static',
     os.path.join(PROJECT_DIR,'static'),
-	# Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
 )
@@ -115,7 +114,7 @@ WSGI_APPLICATION = 'dev1.wsgi.application'
 
 TEMPLATE_DIRS = (
     # '/var/www/dev1/template',
-	os.path.join(ROOT_PATH,'template'),    
+    os.path.join(ROOT_PATH,'template'),    
 # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
@@ -142,9 +141,9 @@ INSTALLED_APPS = (
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
     "django.core.context_processors.debug",
+    "django.core.context_processors.media",
     "django.core.context_processors.request",
     "django.core.context_processors.i18n",
-    "django.core.context_processors.media",
     "django.contrib.messages.context_processors.messages"
     )
 
@@ -177,6 +176,10 @@ LOGGING = {
         },
     }
 }
+
+
+
+
 
 from settings_local import *
 

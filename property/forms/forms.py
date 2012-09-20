@@ -9,6 +9,7 @@ class select_property_form(forms.Form):
 
 class select_district_form(forms.Form):
     name = forms.CharField(required = True)
+    superuser = forms.BooleanField(required = False)
     
 class select_council_form(forms.Form):
     name = forms.CharField(required = True)

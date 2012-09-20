@@ -176,22 +176,40 @@ def district_default(request, permissions, action, content_type_name1):
             return render_to_response('property/property_district_add.html', {'form':form,},
                               context_instance=RequestContext(request))
     elif action == 'view':
+        print "yes"
         if request.method != 'POST':
-            form = select_district_form()
+            form = select_district_form(initial={'superuser':request.session.get('user').superuser,})
             return render_to_response('property/property_district_view.html', {'form':form,},
                               context_instance=RequestContext(request))
         else:
-            form = select_district_form(request.POST)
-            if form.is_valid():
-                name = form.cleaned_data["name"]                
-                LogMapper.createLog(request,action="search", search_object_class_name="district", search_conditions = {"name":name})
-                error_message = ""
-                district = DistrictMapper.getDistrictByName(name)
-                if not district:
+           POST = request.POST
+           districts = []
+           if POST.has_key("showall"):
+               districts_result = DistrictMapper.getAllDistricts()
+               if districts_result:
+                   districts = districts_result
+           else:
+               form = select_district_form(request.POST)
+               if form.is_valid():
+                   name = form.cleaned_data["name"]                
+                   LogMapper.createLog(request,action="search", search_object_class_name="district", search_conditions = {"name":name,})
+                   error_message = ""
+                   district = DistrictMapper.getDistrictByName(name)
+                   districts.append(district)
+               else: 
+                    return render_to_response('property/property_district_view.html', {'form':form,},
+                              context_instance=RequestContext(request))
+
+                   
+           if not districts or len(districts) == 0:
                         error_message = "No district found!"
                         return render_to_response('property/property_district_view.html', {'form':form, 'error_message': error_message},
                                   context_instance=RequestContext(request))
-                else:
+           else:
+                to_json = {}
+                districts_json=[]
+                for district in districts:
+                    district_json={}
                     boundary = district.boundary
                     points_json = []
                     str1=str(boundary.polygon.wkt)
@@ -208,13 +226,20 @@ def district_default(request, permissions, action, content_type_name1):
                         point_json['x']=point_x
                         point_json['y']=point_y
                         points_json.append(point_json)
-                    LogMapper.createLog(request,action="view",object=district)
-                    return render_to_response('property/property_district_view1.html', {'district': district, 'points':points_json},
-                              context_instance=RequestContext(request))
-            else: 
-                return render_to_response('property/property_district_view.html', {'form':form,},
-                              context_instance=RequestContext(request))
-
+                    district_json['points'] =  points_json
+                    district_json['name'] = str(district.name)
+                    districts_json.append(district_json)
+                to_json['districts']=districts_json
+                
+                if len(districts) == 1:
+                    #LogMapper.createLog(request,action="view",object=districts[0])
+                    return render_to_response('property/property_district_view1.html', {'district': districts[0], 'districts':to_json},
+                          context_instance=RequestContext(request))
+                else:
+                    #LogMapper.createLog(request,search_message_all="view all districts", object = districts[0])
+                    return render_to_response('property/property_district_view1.html', { 'districts':to_json},
+                          context_instance=RequestContext(request))
+            
 
 
  
