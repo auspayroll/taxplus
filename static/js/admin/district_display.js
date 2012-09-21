@@ -5,6 +5,7 @@ var polygon;
 var renderer;
 var map;
 var polygonLayer;
+var sectorLayer;
 var newLayer;
 var apiKey = "AqTGBsziZHIJYYxgivLBf0hVdrAk9mWO5cQcb8Yux8sW5M8c8opEC2lZqKR1ZZXf";
  	
@@ -68,6 +69,39 @@ function init()
 	    	map.setCenter (lonLat, zoom);
 	    }
 	    
+	    
+	  
+	    
+	    var selectControl = new OpenLayers.Control.SelectFeature(
+                polygonLayer,
+                {
+                	'hover': true,
+                	'multiple': false,
+                     'callbacks':{
+                     	'click':function(feature){
+                     		var points = $("#points").html(); 
+							var districts = eval("("+points+")");
+							districts = districts['districts'];
+							if(districts.length==1){}
+							else
+							{
+								window.location = '/admin/property/district/view_district/?name='+feature.attributes['name'];
+							}
+                     	},
+                     }
+                    //toggle: false,
+                    //multiple: false, hover: false,
+                    //toggleKey: "ctrlKey", // ctrl key removes from selection
+                    //multipleKey: "shiftKey" // shift key adds to selection
+                }
+            );
+        
+        map.addControl(selectControl);
+        
+        
+        
+        selectControl.activate();
+	    
 	    var points = $("#points").html(); 
 		var districts = eval("("+points+")");
 		districts = districts['districts'];		
@@ -88,7 +122,6 @@ function init()
 			var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
 			var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
 			var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
-			var label = $("div#displaytext").html();
 			feature.style={
 				label:name, 
 				fillColor:color_district, 
@@ -99,8 +132,71 @@ function init()
 				labelOutlineColor:"#FFFFFF",
 				labelOutlineWidth:3,
 			};
+			feature.attributes = {
+				name:name,
+			};
 			polygonLayer.addFeatures([feature]);
 		}
+		
+		
+		
+		
+		polygonLayer.events.on({
+                "beforefeatureselected": function(e) {
+                	e.feature.style['fillOpacity']=0.5;
+                	//window.location = 'http://www.google.com.au';
+                	//alert(e.feature.attributes['name']);
+                },
+                "featureselected": function(e) {
+                	e.feature.style['fillOpacity']=0.25;
+                },
+           });
+           
+           
+        if($.trim($('#sectors').html())!="")
+        {
+        	sectorLayer = new OpenLayers.Layer.Vector("Sector Layer", { renderers: renderer });
+        	map.addLayer(sectorLayer);
+        	var points = $("#sectors").html(); 
+			var sectors = eval("("+points+")");
+			sectors = sectors['sectors'];		
+			for(i=0; i< sectors.length; i++)
+			{
+				sector = sectors[i];
+				name = sector["name"];
+				points = sector["points"]
+				var polygon_points = [];
+				for( j=0;j<points.length;j++)
+				{
+					point=points[j];
+					x = point['x'];
+					y = point['y'];
+					p = new OpenLayers.Geometry.Point(x,y);
+			  		polygon_points.push(p);
+				}
+				var ring = new OpenLayers.Geometry.LinearRing(polygon_points);
+				var polygon_obj= new OpenLayers.Geometry.Polygon([ring]);
+				var feature = new OpenLayers.Feature.Vector(polygon_obj,{});
+				feature.style={
+					label:name, 
+					fillColor:color_sector, 
+					fillOpacity:0.25, 
+					strokeColor:color_sector, 
+					strokeWidth: 1,
+					fontColor:"#000000",
+					labelOutlineColor:"#FFFFFF",
+					labelOutlineWidth:3,
+				};
+				feature.attributes = {
+					name:name,
+				};
+				sectorLayer.addFeatures([feature]);
+			}
+			
+        }
+        
+        
+           
 		var bounds = polygonLayer.getDataExtent();
 		map.zoomToExtent(bounds);
 }
@@ -116,6 +212,17 @@ $(document).ready(function(){
 	});
 	$('li[id^="li_"]').mouseleave(function(){
 		$(this).css("background-color","#cccccc");
+	});
+	
+	$("#showsectors").click(function(){
+		if($(this).is(':checked'))
+		{
+			map.addLayer(sectorLayer);
+		}
+		else
+		{
+			map.removeLayer(sectorLayer);
+		}
 	});
 });
 

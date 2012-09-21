@@ -44,6 +44,11 @@
 							<strong>Council name: </strong>{{council.name}}<br>
 							<strong>Council address: </strong>{{council.address}}						
 						</div>
+						{% if sectors %}
+						<div style="font-size:15px; margin-left:10px;">
+							Show sectors &nbsp;<input type="checkbox" name="showsectors" checked="checked" id="showsectors">
+						</div>
+						{% endif %}
 					</div>
 				</div>
 			</td>
@@ -67,11 +72,16 @@
 				
 				
 				<div style="display:none;" id="points">
-					{{points}}
+					{{councils}}
 				</div>
 				<div style="display:none;" id="displaytext">
 					{{council.name}}
-				</div>
+				</div>				
+				<div style="display:none;" id="sectors">
+					{% if sectors %}
+						{{sectors}}
+					{% endif %}
+				</div>	
 			</td>
 		</tr>
 	</table>

@@ -36,6 +36,24 @@ class SectorMapper:
             return sector[0]
     
     
+    
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+    Get Sectors by district name
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""    
+    @staticmethod
+    def getSectorsByDistrictName(name):
+        return Sector.objects.filter(district__name = name)
+        
+    
+    
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+    Get Sectors by council name
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""    
+    @staticmethod
+    def getSectorsByCouncilName(name):
+        return Sector.objects.filter(council__name = name)
+           
+    
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     search Sector by keyword
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""    

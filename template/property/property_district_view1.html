@@ -42,6 +42,11 @@
 						<div style= "line-height:30px; font-size: 15px; margin-left:10px;">
 							<strong>District name: </strong>{{district.name}}
 						</div>
+						{% if sectors %}
+						<div style="font-size:15px; margin-left:10px;">
+							Show sectors &nbsp;<input type="checkbox" name="showsectors" checked="checked" id="showsectors">
+						</div>
+						{% endif %}
 					</div>
 				</div>
 			</td>
@@ -70,6 +75,14 @@
 				<div style="display:none;" id="displaytext">
 					{{district.name}}
 				</div>
+				
+				<div style="display:none;" id="sectors">
+					{% if sectors %}
+						{{sectors}}
+					{% endif %}
+				</div>	
+				
+				
 			</td>
 		</tr>
 	</table>

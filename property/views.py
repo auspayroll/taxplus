@@ -15,6 +15,7 @@ from property.mappers.PropertyMapper import PropertyMapper
 from property.mappers.SectorMapper import SectorMapper
 from property.mappers.DistrictMapper import DistrictMapper
 from property.mappers.CouncilMapper import CouncilMapper
+from property.mappers.PropertyCommonMapper import PropertyCommonMapper
 from jtax.mappers.DeclaredValueMapper import DeclaredValueMapper
 from businesslogic.TaxBusiness import TaxBusiness
 from auth.mappers.ModuleMapper import ModuleMapper
@@ -61,45 +62,54 @@ def council_default(request, permissions, action, content_type_name1):
             return render_to_response('property/property_council_add.html', {'form':form,},
                               context_instance=RequestContext(request))
     elif action == 'view':
-        if request.method != 'POST':
-            form = select_council_form()
+        if request.method != 'POST' and not request.GET.has_key("name"):
+            form = select_council_form(initial={'superuser':request.session.get('user').superuser,})
             return render_to_response('property/property_council_view.html', {'form':form,},
                               context_instance=RequestContext(request))
         else:
-            form = select_council_form(request.POST)
-            if form.is_valid():
-                name = form.cleaned_data["name"]                
-                LogMapper.createLog(request,action="search", search_object_class_name="council", search_conditions = {"name":name})
-                error_message = ""
-                council=CouncilMapper.getCouncilByName(name)
-                if not council:
+            councils = []
+            if request.method == 'POST':
+                POST = request.POST
+                if POST.has_key("showall"):
+                    councils_result = CouncilMapper.getAllCouncils()
+                    if councils_result:
+                        councils = councils_result
+                else:
+                    form = select_council_form(request.POST)
+                    if form.is_valid():
+                        name = form.cleaned_data["name"]                
+                        LogMapper.createLog(request,action="search", search_object_class_name="council", search_conditions = {"name":name})
+                        council=CouncilMapper.getCouncilByName(name)
+                        councils.append(council)
+                    else:
+                        return render_to_response('property/property_council_view.html', {'form':form, },
+                                  context_instance=RequestContext(request))
+            else:
+                name = request.GET['name']
+                LogMapper.createLog(request,action="search", search_object_class_name="council", search_conditions = {"name":name,})
+                council = CouncilMapper.getCouncilByName(name)
+                councils.append(council)
+                
+            if not councils or len(councils) == 0:
                         error_message = "No council found!"
                         return render_to_response('property/property_council_view.html', {'form':form, 'error_message': error_message},
                                   context_instance=RequestContext(request))
+            else:
+                to_json = {}
+                sectors_json = {}
+                to_json['councils']=PropertyCommonMapper.getGeoData(councils)
+                if len(councils) == 1:
+                    #LogMapper.createLog(request,action="view",object=districts[0])
+                    sectors = SectorMapper.getSectorsByCouncilName(councils[0].name)
+                    sectors = PropertyCommonMapper.getGeoData(sectors)
+                    sectors_json['sectors']=sectors
+                    return render_to_response('property/property_council_view1.html', {'council': councils[0], 'councils':to_json, 'sectors':sectors_json,},
+                                                  context_instance=RequestContext(request))
                 else:
-                    boundary = council.boundary
-                    points_json = []
-                    str1=str(boundary.polygon.wkt)
-                    str1=str1.replace('POLYGON', '').replace('((', '').replace('))', '')[1:]
-                    points = str1.split(', ')
-                    poly = ''
-                    for point in points:
-                        point_json={}
-                        point_parts = point.split(' ')
-                        point_x_parts=point_parts[0].replace(' ','').split('.')
-                        point_x=point_x_parts[0]+'.'+point_x_parts[1][:5]
-                        point_y_parts=point_parts[1].replace(' ','').split('.')
-                        point_y=point_y_parts[0]+'.'+point_y_parts[1][:5]
-                        point_json['x']=point_x
-                        point_json['y']=point_y
-                        points_json.append(point_json)
-                    LogMapper.createLog(request,action="view",object=council)
-                    return render_to_response('property/property_council_view1.html', {'council': council, 'points':points_json},
-                              context_instance=RequestContext(request))
-            else: 
-                return render_to_response('property/property_council_view.html', {'form':form,},
-                              context_instance=RequestContext(request))
-
+                    #LogMapper.createLog(request,search_message_all="view all districts", object = districts[0])
+                    return render_to_response('property/property_council_view1.html', { 'councils':to_json},
+                          context_instance=RequestContext(request))
+                
 
 
 
@@ -176,65 +186,49 @@ def district_default(request, permissions, action, content_type_name1):
             return render_to_response('property/property_district_add.html', {'form':form,},
                               context_instance=RequestContext(request))
     elif action == 'view':
-        print "yes"
-        if request.method != 'POST':
+        if request.method != 'POST' and not request.GET.has_key("name"):
             form = select_district_form(initial={'superuser':request.session.get('user').superuser,})
             return render_to_response('property/property_district_view.html', {'form':form,},
                               context_instance=RequestContext(request))
         else:
-           POST = request.POST
-           districts = []
-           if POST.has_key("showall"):
-               districts_result = DistrictMapper.getAllDistricts()
-               if districts_result:
-                   districts = districts_result
-           else:
-               form = select_district_form(request.POST)
-               if form.is_valid():
-                   name = form.cleaned_data["name"]                
-                   LogMapper.createLog(request,action="search", search_object_class_name="district", search_conditions = {"name":name,})
-                   error_message = ""
-                   district = DistrictMapper.getDistrictByName(name)
-                   districts.append(district)
-               else: 
-                    return render_to_response('property/property_district_view.html', {'form':form,},
+            districts = []
+            if request.method == 'POST':
+                POST = request.POST
+                if POST.has_key("showall"):
+                    districts_result = DistrictMapper.getAllDistricts()
+                    if districts_result:
+                        districts = districts_result
+                else:
+                    form = select_district_form(request.POST)
+                    if form.is_valid():
+                        name = form.cleaned_data["name"]                
+                        LogMapper.createLog(request,action="search", search_object_class_name="district", search_conditions = {"name":name,})
+                        district = DistrictMapper.getDistrictByName(name)
+                        districts.append(district)
+                    else: 
+                        return render_to_response('property/property_district_view.html', {'form':form,},
                               context_instance=RequestContext(request))
-
-                   
-           if not districts or len(districts) == 0:
+            else:
+                name = request.GET['name']
+                LogMapper.createLog(request,action="search", search_object_class_name="district", search_conditions = {"name":name,})
+                district = DistrictMapper.getDistrictByName(name)
+                districts.append(district)
+                       
+            if not districts or len(districts) == 0:
                         error_message = "No district found!"
                         return render_to_response('property/property_district_view.html', {'form':form, 'error_message': error_message},
                                   context_instance=RequestContext(request))
-           else:
+            else:
                 to_json = {}
-                districts_json=[]
-                for district in districts:
-                    district_json={}
-                    boundary = district.boundary
-                    points_json = []
-                    str1=str(boundary.polygon.wkt)
-                    str1=str1.replace('POLYGON', '').replace('((', '').replace('))', '')[1:]
-                    points = str1.split(', ')
-                    poly = ''
-                    for point in points:
-                        point_json={}
-                        point_parts = point.split(' ')
-                        point_x_parts=point_parts[0].replace(' ','').split('.')
-                        point_x=point_x_parts[0]+'.'+point_x_parts[1][:5]
-                        point_y_parts=point_parts[1].replace(' ','').split('.')
-                        point_y=point_y_parts[0]+'.'+point_y_parts[1][:5]
-                        point_json['x']=point_x
-                        point_json['y']=point_y
-                        points_json.append(point_json)
-                    district_json['points'] =  points_json
-                    district_json['name'] = str(district.name)
-                    districts_json.append(district_json)
-                to_json['districts']=districts_json
-                
+                sectors_json = {}
+                to_json['districts']=PropertyCommonMapper.getGeoData(districts)
                 if len(districts) == 1:
                     #LogMapper.createLog(request,action="view",object=districts[0])
-                    return render_to_response('property/property_district_view1.html', {'district': districts[0], 'districts':to_json},
-                          context_instance=RequestContext(request))
+                    sectors = SectorMapper.getSectorsByDistrictName(districts[0].name)
+                    sectors = PropertyCommonMapper.getGeoData(sectors)
+                    sectors_json['sectors']=sectors
+                    return render_to_response('property/property_district_view1.html', {'district': districts[0], 'districts':to_json, 'sectors':sectors_json,},
+                                                  context_instance=RequestContext(request))
                 else:
                     #LogMapper.createLog(request,search_message_all="view all districts", object = districts[0])
                     return render_to_response('property/property_district_view1.html', { 'districts':to_json},

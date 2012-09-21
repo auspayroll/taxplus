@@ -49,6 +49,22 @@
 			<input type="submit" value="Search"/>
 		</div>
 	</form>
+	{% if form.superuser.value %}
+		<form action="/admin/property/council/view_council/" method="post">
+			{% csrf_token %}
+			<div style="display:none">
+				<input type="text" name="showall" value="1">
+			</div>
+			<div style="margin-top:10px;">
+				<input type="submit" value="Show all" name="submit" />
+			</div>
+		</form>
+	{% endif %}
+	
+	
+	
+	
+	
 </div>
 <script>
 	selectCouncil();
