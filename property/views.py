@@ -128,46 +128,50 @@ def sector_default(request, permissions, action, content_type_name1):
             return render_to_response('property/property_sector_add.html', {'form':form,},
                               context_instance=RequestContext(request))
     elif action == 'view':
-        if request.method != 'POST':
+        if request.method != 'POST' and not request.GET.has_key("name"):
             form = select_sector_form()
             return render_to_response('property/property_sector_view.html', {'form':form,},
                               context_instance=RequestContext(request))
         else:
-            form = select_sector_form(request.POST)
-            if form.is_valid():
-                id = form.cleaned_data["id"]
-                name = form.cleaned_data["name"]                
-                LogMapper.createLog(request,action="search", search_object_class_name="sector", search_conditions = {"name":name})
-                error_message = ""
-                sector = SectorMapper.getSectorById(id)
-                if not sector:
-                        error_message = "No sector found!"
-                        return render_to_response('property/property_sector_view.html', {'form':form, 'error_message': error_message},
-                                  context_instance=RequestContext(request))
-                else:
-                    boundary = sector.boundary
-                    points_json = []
-                    str1=str(boundary.polygon.wkt)
-                    str1=str1.replace('POLYGON', '').replace('((', '').replace('))', '')[1:]
-                    points = str1.split(', ')
-                    poly = ''
-                    for point in points:
-                        point_json={}
-                        point_parts = point.split(' ')
-                        point_x_parts=point_parts[0].replace(' ','').split('.')
-                        point_x=point_x_parts[0]+'.'+point_x_parts[1][:5]
-                        point_y_parts=point_parts[1].replace(' ','').split('.')
-                        point_y=point_y_parts[0]+'.'+point_y_parts[1][:5]
-                        point_json['x']=point_x
-                        point_json['y']=point_y
-                        points_json.append(point_json)
-                    LogMapper.createLog(request,action="view",object=sector)
-                    return render_to_response('property/property_sector_view1.html', {'sector': sector, 'points':points_json},
+            if request.method != 'POST':
+                name = request.GET['name']
+                sector = SectorMapper.getSectorByName(name)
+            else:
+                form = select_sector_form(request.POST)
+                if form.is_valid():
+                    id = form.cleaned_data["id"]
+                    name = form.cleaned_data["name"]                
+                    LogMapper.createLog(request,action="search", search_object_class_name="sector", search_conditions = {"name":name})
+                    error_message = ""
+                    sector = SectorMapper.getSectorById(id)
+                else: 
+                    return render_to_response('property/property_sector_view.html', {'form':form,},
                               context_instance=RequestContext(request))
-            else: 
-                return render_to_response('property/property_sector_view.html', {'form':form,},
+            if not sector:
+                    error_message = "No sector found!"
+                    return render_to_response('property/property_sector_view.html', {'form':form, 'error_message': error_message},
                               context_instance=RequestContext(request))
-
+            else:
+                boundary = sector.boundary
+                points_json = []
+                str1=str(boundary.polygon.wkt)
+                str1=str1.replace('POLYGON', '').replace('((', '').replace('))', '')[1:]
+                points = str1.split(', ')
+                poly = ''
+                for point in points:
+                    point_json={}
+                    point_parts = point.split(' ')
+                    point_x_parts=point_parts[0].replace(' ','').split('.')
+                    point_x=point_x_parts[0]+'.'+point_x_parts[1][:5]
+                    point_y_parts=point_parts[1].replace(' ','').split('.')
+                    point_y=point_y_parts[0]+'.'+point_y_parts[1][:5]
+                    point_json['x']=point_x
+                    point_json['y']=point_y
+                    points_json.append(point_json)
+                LogMapper.createLog(request,action="view",object=sector)
+                return render_to_response('property/property_sector_view1.html', {'sector': sector, 'points':points_json},
+                          context_instance=RequestContext(request))
+            
 
 
 

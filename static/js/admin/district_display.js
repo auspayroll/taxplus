@@ -138,25 +138,39 @@ function init()
 			polygonLayer.addFeatures([feature]);
 		}
 		
+			
+		if(districts.length>1)
+		{
+			polygonLayer.events.on({
+	            "beforefeatureselected": function(e) {
+	            	e.feature.style['fillOpacity']=0.5;
+	            },
+	            "featureselected": function(e) {
+	            	e.feature.style['fillOpacity']=0.25;
+	            },
+	       });
+       }	
 		
-		
-		
-		polygonLayer.events.on({
-                "beforefeatureselected": function(e) {
-                	e.feature.style['fillOpacity']=0.5;
-                	//window.location = 'http://www.google.com.au';
-                	//alert(e.feature.attributes['name']);
-                },
-                "featureselected": function(e) {
-                	e.feature.style['fillOpacity']=0.25;
-                },
-           });
-           
-           
+        
         if($.trim($('#sectors').html())!="")
         {
         	sectorLayer = new OpenLayers.Layer.Vector("Sector Layer", { renderers: renderer });
         	map.addLayer(sectorLayer);
+        	var sectorSelectControl = new OpenLayers.Control.SelectFeature(
+                sectorLayer,
+                {
+                	'hover': true,
+                	'multiple': false,
+                     'callbacks':{
+                     	'click':function(feature){
+                     		window.location = '/admin/property/sector/view_sector/?name='+feature.attributes['name'];
+                     	},
+                     }
+                }
+            );
+        
+        	map.addControl(sectorSelectControl);
+        	sectorSelectControl.activate();
         	var points = $("#sectors").html(); 
 			var sectors = eval("("+points+")");
 			sectors = sectors['sectors'];		
@@ -192,6 +206,18 @@ function init()
 				};
 				sectorLayer.addFeatures([feature]);
 			}
+			sectorLayer.events.on({
+	            "beforefeatureselected": function(e) {
+	            	e.feature.style['fillOpacity']=0.5;
+	            },
+	            "featureselected": function(e) {
+	            		e.feature.style['fillOpacity']=0.25;
+	            },
+	       });
+			
+			
+			
+			
 			
         }
         
