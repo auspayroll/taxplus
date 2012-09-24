@@ -825,7 +825,9 @@ $(document).ready(function(){
 
 function getDeclareValueStatus(date_var)
 {
-	date_parts=date_var.split('-');	
+	date_parts = date_var.split(' ');
+	date_parts = date_parts[0];
+	date_parts=date_parts.split('-');
 	year=parseInt(date_parts[0]);
 	month=parseInt(date_parts[1]);
 	day=parseInt(date_parts[2]);
