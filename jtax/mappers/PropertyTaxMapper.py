@@ -54,7 +54,7 @@ class PropertyTaxMapper:
                 citizen = CitizenMapper.getCitizenById(propertyTax.PropertyTaxCitizenId)
                 propertyTax.PaidBy = CitizenMapper.getDisplayName(citizen)
                 user = UserMapper.getUserById(propertyTax.PropertyTaxStaffId)
-                declaredValue.PropertyTaxOfficial = UserMapper.getFullName(user)
+                propertyTax.PropertyTaxOfficial = UserMapper.getFullName(user)
                 propertyTaxes_new.append(propertyTax)
             return propertyTaxes_new
            

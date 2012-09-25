@@ -13,14 +13,14 @@
 	<script src="http://openlayers.org/api/OpenLayers.js"></script>
 	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
 	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
-	<script type="text/javascript"  src="/static/js/admin/declarevalue.js"></script>
+	<script type="text/javascript"  src="/static/js/admin/managetax.js"></script>
 {% endblock %}
 
 {% load breadcrumb %}
 {% block crumbbody %}
 	{% breadcrumb "Home" "/admin/" %}
 	{% breadcrumb "Tax" "/admin/tax/tax/" %}
-	{% breadcrumb "Declare value" %}	
+	{% breadcrumb "Tax management" %}	
 {% endblock %}
 
 
@@ -155,9 +155,27 @@
 														<table style="float:right; font-family:Arial; font-size:14px;" cellpadding="0" cellspacing="0">
 															<tr>
 																<td style="padding-right:10px;"> <strong>Last declared date till now: </strong></td>
+																<td>&nbsp;</td>
+																<td>&nbsp;</td>
 																<td width="20" style="background-color:#00ff00">&nbsp;</td>
 																<td style="padding-left:10px;padding-right:20px;">&lt;3 year</td>											
 																<td width="20" style="background-color:#ffa500">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">Between 3 and 4 years</td>
+																<td width="20" style="background-color:red">&nbsp;</td>
+																<td style="padding-left:10px; padding-right:20px;">&gt;4 years</td>
+																<td width="20" style="background-color:black">&nbsp;</td>
+																<td style="padding-left:10px;">Never</td>
+															</tr>
+															<tr>
+																<td style="line-height:2px;" colspan="11" height="2">&nbsp;</td>
+															</tr>
+															<tr>												
+																<td style="padding-right:10px;"> <strong>Last tax paid date till now: </strong></td>
+																<td width="20" style="background-color:#ffc0cb">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">&lt;1 year</td>
+																<td width="20" style="background-color:#87ceeb">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">between 1 and 3 years</td>
+																<td width="20" style="background-color:#a020f0">&nbsp;</td>
 																<td style="padding-left:10px;padding-right:20px;">Between 3 and 4 years</td>
 																<td width="20" style="background-color:red">&nbsp;</td>
 																<td style="padding-left:10px; padding-right:20px;">&gt;4 years</td>

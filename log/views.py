@@ -58,12 +58,11 @@ def log_log_default(request,permissions, action, content_type_name1):
             new_citizenid = form.cleaned_data['new_citizenid']
             
             count = 0
-            sql = "select * from log_log where 1"
+            sql = "select * from log_log where true"
             #if username is not None:
             #    sql = sql + " and lower(username) like '%" + str(username).lower() + "%'"
             #    count = count + 1
-            if plotid is not None:
-                
+            if plotid is not None:   
                 sql = sql + " and plotid = " + str(plotid)
                 count = count + 1
             if new_plotid is not None:

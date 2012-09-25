@@ -17,6 +17,8 @@ var style = {
 };
 
 
+
+
 var style_green = { 
    fillColor: "#00ff00",
    fillOpacity: 0.25,
@@ -30,6 +32,35 @@ var style_orange = {
    fillColor: "#ffa500",
    fillOpacity: 0.25,
    strokeColor: "#ffa500",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
+
+
+
+
+var style_purple = { 
+   fillColor: "#a020f0",
+   fillOpacity: 0.25,
+   strokeColor: "#a020f0",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
+
+
+var style_skyblue = { 
+   fillColor: "#87ceeb",
+   fillOpacity: 0.25,
+   strokeColor: "#87ceeb",
+   strokeOpacity: 1, 
+   strokeWidth:1
+};
+
+
+var style_pink = { 
+   fillColor: "#ffc0cb",
+   fillOpacity: 0.25,
+   strokeColor: "#ffc0cb",
    strokeOpacity: 1, 
    strokeWidth:1
 };
@@ -74,11 +105,6 @@ function init()
         displayProjection: new OpenLayers.Projection("EPSG:4326")
         });
 	
-	
-		
-	
-        // This is the layer that uses the locally stored tiles
-        //newLayer = new OpenLayers.Layer.OSM("Local Tiles");
         
 	    var gsat = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 19});
     	map.addLayer(gsat);
@@ -404,6 +430,7 @@ function showMultiplePropertyResults(data)
 			plotid = property['plotid'];
 			address = property['streetno']+ " "+property['streetname']+", "+property['suburb'];
 			declareValues = property['declarevalues'];
+			propertytaxs = property['propertytaxs'];
 			if(declareValues.length==0)
 			{
 				row+=							"<tr>";
@@ -455,6 +482,35 @@ function showMultiplePropertyResults(data)
 				if(status == "greaterthan4")
 				{
 					feature.style=style_red;	
+				}
+				if(status != "greaterthan4")
+				{
+					if(propertytaxs.length>0)
+					{
+						propertytax = propertytaxs[0];
+						status = getDeclareValueStatus(propertytax['datetime']);
+						if(status =="lessthan1")
+						{
+							feature.style=style_pink;	
+						}
+						if(status == "between13")
+						{
+							feature.style=style_skyblue;	
+						}
+						if(status == "between34")
+						{
+							feature.style=style_purple;	
+						}
+						if(status == "greaterthan4")
+						{
+							feature.style=style_red;	
+						}
+						
+					}
+					else
+					{
+						feature.style=style_black;
+					}
 				}
 			}
 			else
@@ -528,6 +584,7 @@ function showSinglePropertyResult(data)
 		{
 			property=properties[i];
 			declareValues = property['declarevalues'];
+			propertytaxs = property['propertytaxs'];
 			property=properties[i];
 			plotid = property['plotid'];
 			address = property['streetno']+ " "+property['streetname']+", "+property['suburb'];
@@ -602,6 +659,60 @@ function showSinglePropertyResult(data)
 			row+=								"</div>";
 			row+=							"</div>";
 			
+			
+			
+			
+			
+			
+			
+			
+			// propertytax history box
+			
+			row+=								"<div class='box'>";			
+			row+=									"<div class='box_title'>Property tax history:</div>";
+			row+=									"<div class='transactionhistory_div'>";					
+			row+=										"<table id='propertytax_table' cellpadding='0' cellspacing='0'>";
+			row+=											"<tr>";
+			row+=												"<td width='25%' class='firstrowfirstcolumn'>Date</td>";
+			row+=												"<td width='25%' class='firstrow'>Amount</td>";
+			row+=												"<td width='25%' class='firstrow'>Accept</td>";
+			row+=												"<td width='25%' class='firstrow'>Official</td>";
+			row+=											"</tr>";
+			if(propertytaxs.length==0)
+			{
+				row+=										"<tr>";
+				row+=											"<td colspan='4' class='firstcolumn' align='center'> This property has not paid any propety tax.</td>";
+				row+=										"<tr>";
+			}
+			else
+			{
+				for(s=0;s<propertytaxs.length;s++)
+				{
+					propertytax=propertytaxs[s];
+					row+=									"<tr>";
+					row+=										"<td class='firstcolumn'>"+propertytax['datetime']+"</td>";
+					row+=										"<td class='normal'>"+propertytax['amount']+"</td>";
+					row+=										"<td class='normal'>"+propertytax['accepted']+"</td>";
+					row+=										"<td class='normal'>"+propertytax['staff']+"</td>";
+					row+=									"</tr>";		
+				}
+			}
+			row+=									"</table>";
+			row+=								"</div>";
+			row+=							"</div>";
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
 			// action: declare a value
 			
 			row+=							"<div>";
@@ -664,8 +775,8 @@ function showSinglePropertyResult(data)
 			if(declareValues.length>0)
 			{
 				declareValue=declareValues[0];
-				status = getDeclareValueStatus(declareValue['datetime']);
-				if(status == "lessthan3")
+				status = getDeclareValueStatus(declareValue['datetime']);  
+				if(status =="lessthan3")
 				{
 					feature.style=style_green;	
 				}
@@ -676,6 +787,35 @@ function showSinglePropertyResult(data)
 				if(status == "greaterthan4")
 				{
 					feature.style=style_red;	
+				}
+				if(status != "greaterthan4")
+				{
+					if(propertytaxs.length>0)
+					{
+						propertytax = propertytaxs[0];
+						status = getDeclareValueStatus(propertytax['datetime']);
+						if(status =="lessthan1")
+						{
+							feature.style=style_pink;	
+						}
+						if(status == "between13")
+						{
+							feature.style=style_skyblue;	
+						}
+						if(status == "between34")
+						{
+							feature.style=style_purple;	
+						}
+						if(status == "greaterthan4")
+						{
+							feature.style=style_red;	
+						}
+						
+					}
+					else
+					{
+						feature.style=style_black;
+					}
 				}
 			}
 			else
@@ -875,7 +1015,8 @@ function getDeclareValueStatus(date_var)
 	var today = new Date();
 	days=parseInt((today.getTime()-date_created.getTime())/(1000*60*60*24));
 	years = 1.0*days/365;
-	if(years<=3){result ="lessthan3";}
+	if(years<=1){result = "lessthan1"}
+	if(years>1&&years<=3){result ="between13";}
 	if(years>3&&years<=4){result = "between34";}
 	if(years>4){result = "greaterthan4";}
 	return result;	

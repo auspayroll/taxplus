@@ -135,8 +135,10 @@ def tax_default(request, permissions, action, content_type_name1):
         if request.method != 'POST':
             return render_to_response('tax/tax_tax_declarevalue.html',{},
                               context_instance=RequestContext(request))
-    elif action == 'paytax':
-        return construction(request)
+    elif action == 'manage':
+        if request.method != 'POST':
+            return render_to_response('tax/tax_tax_managetax.html',{},
+                              context_instance=RequestContext(request))
                     
 def access_content_type(request,  content_type_name, action = None, content_type_name1 = None):
     """

@@ -24,7 +24,7 @@ function init()
    	("map", {controls:
     	[
             new OpenLayers.Control.Navigation(),
-            new OpenLayers.Control.PanZoomBar(),
+            //new OpenLayers.Control.PanZoomBar(),
             new OpenLayers.Control.Permalink(),
             new OpenLayers.Control.ScaleLine({geodesic: true}),
             new OpenLayers.Control.Permalink('permalink'),
@@ -101,5 +101,15 @@ $(document).ready(function(){
 	$('li[id^="li_"]').mouseleave(function(){
 		$(this).css("background-color","#cccccc");
 	});
+	
+	$("img#hidepanel").click(function(){
+		$("div#leftpanel").hide();
+		$("div#showpanel").show();
+	});
+	$("div#showpanel").click(function(){
+		$("div#showpanel").hide();
+		$("div#leftpanel").show();
+	});
+		
 });
 

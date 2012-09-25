@@ -25,7 +25,7 @@ function init()
    	("map", {controls:
     	[
             new OpenLayers.Control.Navigation(),
-            new OpenLayers.Control.PanZoomBar(),
+           //new OpenLayers.Control.PanZoomBar(),
             new OpenLayers.Control.Permalink(),
             new OpenLayers.Control.ScaleLine({geodesic: true}),
             new OpenLayers.Control.Permalink('permalink'),
@@ -89,10 +89,6 @@ function init()
 							}
                      	},
                      }
-                    //toggle: false,
-                    //multiple: false, hover: false,
-                    //toggleKey: "ctrlKey", // ctrl key removes from selection
-                    //multipleKey: "shiftKey" // shift key adds to selection
                 }
             );
         
@@ -141,6 +137,7 @@ function init()
 			
 		if(districts.length>1)
 		{
+			$("#selectmessage").show();
 			polygonLayer.events.on({
 	            "beforefeatureselected": function(e) {
 	            	e.feature.style['fillOpacity']=0.5;
@@ -149,6 +146,11 @@ function init()
 	            	e.feature.style['fillOpacity']=0.25;
 	            },
 	       });
+       }
+       else if(districts.length==1)
+       {
+       		$('#district_title').html("District info:");
+			$('#details').show();
        }	
 		
         
@@ -171,6 +173,9 @@ function init()
         
         	map.addControl(sectorSelectControl);
         	sectorSelectControl.activate();
+        	
+        	
+        	
         	var points = $("#sectors").html(); 
 			var sectors = eval("("+points+")");
 			sectors = sectors['sectors'];		
@@ -244,11 +249,47 @@ $(document).ready(function(){
 		if($(this).is(':checked'))
 		{
 			map.addLayer(sectorLayer);
+			var sectorSelectControl = new OpenLayers.Control.SelectFeature(
+                sectorLayer,
+                {
+                	'hover': true,
+                	'multiple': false,
+                     'callbacks':{
+                     	'click':function(feature){
+                     		window.location = '/admin/property/sector/view_sector/?name='+feature.attributes['name'];
+                     	},
+                     }
+                }
+            );
+        
+	        map.addControl(sectorSelectControl);
+	        sectorSelectControl.activate();
+	        sectorLayer.events.on({
+	            "beforefeatureselected": function(e) {
+	            	e.feature.style['fillOpacity']=0.5;
+	            },
+	            "featureselected": function(e) {
+	            		e.feature.style['fillOpacity']=0.25;
+	            },
+	       });
+	        
+        
 		}
 		else
 		{
 			map.removeLayer(sectorLayer);
 		}
 	});
+	
+	$("img#hidepanel").click(function(){
+		$("div#leftpanel").hide();
+		$("div#showpanel").show();
+	});
+	$("div#showpanel").click(function(){
+		$("div#showpanel").hide();
+		$("div#leftpanel").show();
+	});
+	
+	
 });
 

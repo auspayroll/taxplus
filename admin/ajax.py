@@ -10,6 +10,7 @@ from log.mappers.LogMapper import LogMapper
 from property.mappers.DistrictMapper import DistrictMapper
 from property.mappers.SectorMapper import SectorMapper
 from property.mappers.CouncilMapper import CouncilMapper
+from jtax.mappers.PropertyTaxMapper import PropertyTaxMapper
 
 
 
@@ -357,6 +358,18 @@ def search_property_in_area(request):
                 property_json['streetname']=property.streetname
                 property_json['suburb']=property.suburb
                 
+                propertytaxs_json=[]
+                propertytaxs = PropertyTaxMapper.getCleanPropertyTaxesByPlotId(property.plotid)
+                if propertytaxs is not None:
+                    for propertytax in propertytaxs:
+                        propertytax_json = {}
+                        propertytax_json['accepted']=propertytax.PropertyTaxAccepted
+                        propertytax_json['datetime']=propertytax.PropertyTaxDateTime.strftime('%Y-%m-%d')
+                        propertytax_json['staffid']=propertytax.PropertyTaxStaffId
+                        propertytax_json['amount']=str(propertytax.PropertyTaxAmountCurrency) + " " +str(propertytax.PropertyTaxAmount)
+                        propertytaxs_json.append(propertytax_json)
+                property_json['propertytaxs']=propertytaxs_json
+                
                 declarevalues_json=[]
                 declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclaredValueDateTime")
                 for declare_value in declarevalues:
@@ -367,7 +380,6 @@ def search_property_in_area(request):
                     declare_value_json['amount']=str(declare_value.DeclaredValueAmountCurrencey) + " " +str(declare_value.DeclaredValueAmount)
                     declarevalues_json.append(declare_value_json)
                 property_json['declarevalues']=declarevalues_json                
-                
                 properties.append(property_json)
             to_json['properties'] = properties
     search_message_all = "does a map search of properties for " + purpose + " purpose."
@@ -479,6 +491,24 @@ def search_property_by_fields(request):
             property_json['streetno']=property.streetno
             property_json['streetname']=property.streetname
             property_json['suburb']=property.suburb
+            
+            
+            
+            propertytaxs_json=[]
+            propertytaxs = PropertyTaxMapper.getCleanPropertyTaxesByPlotId(property.plotid)
+            print "------------------------------";
+            print propertytaxs
+            if propertytaxs is not None:
+                for propertytax in propertytaxs:
+                    propertytax_json = {}
+                    propertytax_json['accepted']=propertytax.PropertyTaxAccepted
+                    propertytax_json['datetime']=propertytax.PropertyTaxDateTime.strftime('%Y-%m-%d')
+                    propertytax_json['staffid']=propertytax.PropertyTaxStaffId
+                    propertytax_json['amount']=str(propertytax.PropertyTaxAmountCurrency) + " " +str(propertytax.PropertyTaxAmount)
+                    propertytaxs_json.append(propertytax_json)
+            property_json['propertytaxs']=propertytaxs_json
+        
+            
             
             declarevalues_json=[]
             declarevalues = DeclaredValue.objects.filter(PlotId = property.plotid).order_by("-DeclaredValueDateTime")

@@ -27,89 +27,67 @@
 {% endblock %}
 
 
+
 {% block mainbody %}
 
-<div style="display:block">
-	<table width="100%" cellpadding="5" cellspacing="0">
-		<tr>
-			<!-- sidebar td -->
-			<td valign="top" align="left" width="300">
-				<div class="ui-tabs ui-widget ui-widget-content ui-corner-all">
-					<div style="height:30px; line-height: 30px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-						District Info:
+<div id="tabs">
+	<ul class='tabs'>
+	    <li><a href="#tab1">Map</a></li>
+	</ul>
+	<div id='tab1' style="margin-left:0px; margin-right:0px; padding-left:0.2em; padding-right: 0.2em;">
+		<div id="maparea" style="position:relative; border:1px solid #cccccc;">
+			<div style="height:600px;">
+				<div id="leftpanel" style="position:absolute; padding-left:10px; text-align: left; width:300px; height: 100%; padding-bottom: 1px; margin: 0px; background-color:white; z-index:2000; left:0px; top:0px;">
+					<div style="height:30px; margin-top:8px; line-height: 30px;">
+						<table cellpadding="0" width="100%" cellspacing="0">
+							<tr>
+								<td align="left" id="district_title">View Districts:</td>
+								<td align="right"><img id="hidepanel" width="29" border="0" height="29" src='{% static "images/icons/left.jpg" %}' /></td>
+							</tr>
+						</table>
+							
 					</div >
-					<div style="margin-top:20px;">
-						<div style= "line-height:30px; font-size: 15px; margin-left:10px;">
-							<strong>District name: </strong>{{district.name}}
+					<div style="color:red; margin-top:20px; display: none; font-size:15px;" id="selectmessage">Please select a district from the map. </div>
+					<div style="margin-top:20px; display:none;" id="details">
+						<div style= "line-height:30px; font-size: 13px;">
+							<strong>District name: </strong>{{district.name}}<br>						
 						</div>
 						{% if sectors %}
-						<div style="font-size:15px; margin-left:10px;">
+						<div style="font-size:13px; margin-top:20px;">
 							Show sectors &nbsp;<input type="checkbox" name="showsectors" checked="checked" id="showsectors">
 						</div>
 						{% endif %}
 					</div>
 				</div>
-			</td>
-			<td valign="top">
-				<div id="tabs">
-					<ul class='tabs'>
-					    <li><a href="#tab1">Map</a></li>
-					</ul>
-					<div id='tab1'>
-						<div id="maparea">
-							<div style="height:600px;">
-								<div style="width:100%;height:100%;border:1px solid #cccccc;" id="map"></div>
-							</div>
-						</div>
-						<div style="clear:both;"></div>
-					</div>
-				</div>
-				<div style="clear:both; line-height:2px; height:2px;">
-					&nbsp;
+				
+				
+				<div id="showpanel" style="position:absolute; display:none; text-align:left; margin-top:8px; z-index: 2000; height:30px; line-height:30px;">
+					<img id="hidepanel" width="29" border="0" height="29" src='{% static "images/icons/right.jpg" %}' />
 				</div>
 				
 				
-				<div style="display:none;" id="points">
-					{{districts}}
-				</div>
-				<div style="display:none;" id="displaytext">
-					{{district.name}}
-				</div>
 				
-				<div style="display:none;" id="sectors">
-					{% if sectors %}
-						{{sectors}}
-					{% endif %}
-				</div>	
-				
-				
-			</td>
-		</tr>
-	</table>
+				<div style="width:100%;height:100%;border:1px solid #cccccc;" id="map"></div>
+			</div>
+		</div>
+		<div style="clear:both;">&nbsp;</div>
+	</div>
+</div>
+		
+
+
+		
+<div style="display:none;" id="points">
+	{{districts}}
+</div>
+<div style="display:none;" id="displaytext">
+	{{district.name}}
+</div>
+<div style="display:none;" id="sectors">
+	{% if sectors %}
+		{{sectors}}
+	{% endif %}
 </div>	
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
