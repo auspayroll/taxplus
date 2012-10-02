@@ -1,5 +1,51 @@
-DROP TABLE jtax_propertytax;
+CREATE SEQUENCE "public"."jtax_challengepropertytaxitem_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 1
+ CACHE 1;
 
+
+CREATE SEQUENCE "public"."jtax_challengepropertytaxitemmedia_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 1
+ CACHE 1;
+
+CREATE SEQUENCE "public"."jtax_challengepropertytaxitemnote_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 1
+ CACHE 1;
+
+
+CREATE SEQUENCE "public"."jtax_paypropertytaxitem_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 1
+ CACHE 1;
+
+
+CREATE SEQUENCE "public"."jtax_propertytaxitem_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 113
+ CACHE 1;
+
+
+CREATE SEQUENCE "public"."jtax_reviewpropertytaxitem_id_seq"
+ INCREMENT 1
+ MINVALUE 1
+ MAXVALUE 9223372036854775807
+ START 1
+ CACHE 1;
+
+
+DROP TABLE jtax_propertytax;
 
 CREATE TABLE jtax_challengepropertytaxitem (
 id int4 DEFAULT nextval('jtax_challengepropertytaxitem_id_seq'::regclass) NOT NULL,
