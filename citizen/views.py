@@ -12,7 +12,6 @@ from citizen.forms.forms import select_citizen_form
 from log.mappers.LogMapper import LogMapper
 from property.mappers.PropertyMapper import PropertyMapper
 from jtax.mappers.DeclaredValueMapper import DeclaredValueMapper
-from jtax.mappers.PropertyTaxMapper import PropertyTaxMapper
 from businesslogic.TaxBusiness import TaxBusiness
 from citizen.mappers.CitizenMapper import CitizenMapper
 from auth.mappers.ModuleMapper import ModuleMapper

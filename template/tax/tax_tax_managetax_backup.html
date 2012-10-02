@@ -1,0 +1,245 @@
+{% extends "common/base.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+	<script type="text/javascript" src="/static/js/jquery-ui.min.js"></script>
+	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+	<script type="text/javascript"  src="/static/js/admin/managetax.js"></script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Tax management" %}	
+{% endblock %}
+{% block mainbody %}
+	
+
+
+<div id="maparea">
+	<div id="leftpanels">
+		<div class="leftpanel">
+			<div class="panelcontent">
+				
+			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel"  style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
+		</div>
+		
+		<div class="leftpanel">
+			<div class="panelcontent">
+				
+			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel"  style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
+		</div>
+	</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<div style="display:block;">
+		<table width="100%" cellpadding="5" cellspacing="0">
+			<tr>
+				<!-- sidebar td -->
+				<td valign="top" align="left" width="250">
+					<div class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+						<div style="height:45px; line-height: 45px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+							Map search:
+						</div >
+						<div style="margin-top:20px;font-size:14px;">
+							<div id="search_error" style="margin-top:15px; height:20px; font-size:14px; line-height:20px;text-align:center; font-weight:bold; color:red;">
+								&nbsp;
+							</div>
+							
+							<div style="margin-top:15px;">
+								<button onClick="toggle();" type="button">Select area</button>&nbsp;&nbsp;
+								<span style="font-size:14px; font-weight:bold; color:red;" id='boundary_error'></span>
+							</div>
+							
+							
+								
+							<div style="margin-top:15px;">
+								<button type="button" onclick="return check_search_conditions();" name="search">Search</button>
+							</div>
+							
+							<div style="display:none">
+								<input type="text" id="id_boundary" style="display:none">
+							</div>	
+						</div>
+						
+						<div style="height:45px; margin-top:30px; line-height: 45px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+							Text Search:
+						</div >
+						<div style="margin-top: 10px; font-size:14px; line-height:30px;">
+							<table cellpadding="0" cellspacing="4">
+								<tr>
+									<td width="120"><strong>Suburb:</strong></td>
+									<td width="130">
+										<div class="dropdown">
+											<div class="keyword_div">
+												<input autocomplete="off" type="text" class="keyword"  name ="keyword_suburb" id="keyword_suburb"/>
+											</div>
+											<div id="suburb_dropdown_list" class="dropdown_list">
+											</div>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<td><strong>Street name:</strong></td>
+									<td>
+										<div class="dropdown">
+											<div class="keyword_div">
+												<input autocomplete="off" type="text" class="keyword"  name ="keyword_streetname" id="keyword_streetname"/>
+											</div>
+											<div id="streetname_dropdown_list" class="dropdown_list">
+											</div>
+										</div>
+									</td>
+								</tr>
+								<tr>
+									<td><strong>Street no:</strong></td>
+									<td>
+										<div class="dropdown">
+											<div class="keyword_div">
+												<input autocomplete="off" type="text" class="keyword"  name ="keyword_streetno" id="streetno"/>
+											</div>
+										</div>
+									</td>
+								</tr>
+								<tr><td style="text-align:center;font-weight:bold;color:red;" colspan="2">OR</td></tr>
+								<tr>
+									<td><strong>Plot #:</strong></td>
+									<td>
+										<div class="dropdown">
+											<div class="keyword_div">
+												<input autocomplete="off" type="text" class="keyword"  name ="keyword_plotid" id="plotid"/>
+											</div>
+										</div>
+									</td>
+								</tr>
+							</table>
+						</div>
+						<div style="margin-top:10px; color:red;  font-weight:bold; font-style:italic; height:20px; line-height:20px; font-size:14px;" id="keyword_error">
+							&nbsp;
+						</div>
+						<div style="margin-top:15px;font-size:14px;">
+							<button onclick="return keyword_search();" type="button">Search</button>
+						</div>	
+					</div>
+				</td>
+				<!-- map -->
+				<td valign="top" >
+					<div style="text-align: left; display:block;">
+						<div id="tabs">
+							<ul class='tabs'>
+							    <li><a href="#tab1">Map</a></li>
+							</ul>
+							<div id='tab1'>
+								<table width="100%">
+									<tr>
+										<td valign="top" width="450">
+											<div class="property_table" style="border:0" width="100%">
+												<table cellpadding="0" cellspacing="0" id="search_declared_values">
+												</table>	
+											</div>
+										</td>
+										<td valign="top">
+											<div id="maparea"  width="50%">
+												<div style="height:580px;">
+													<div style="width:100%;height:100%;border:1px solid #cccccc;" id="map"></div>
+													<div style="margin-top:10px;">
+														<table style="float:right; font-family:Arial; font-size:14px;" cellpadding="0" cellspacing="0">
+															<tr>
+																<td style="padding-right:10px;"> <strong>Last declared date till now: </strong></td>
+																<td width="20" style="background-color:#00ff00">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">&lt;3 year</td>											
+																<td width="20" style="background-color:#ffa500">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">Between 3 and 4 years</td>
+																<td width="20" style="background-color:red">&nbsp;</td>
+																<td style="padding-left:10px; padding-right:20px;">&gt;4 years</td>
+																<td width="20" style="background-color:black">&nbsp;</td>
+																<td style="padding-left:10px;">Never</td>
+															</tr>
+															<tr>
+																<td style="line-height:2px;" colspan="11" height="2">&nbsp;</td>
+															</tr>
+															<tr>												
+																<td style="padding-right:10px;"> <strong>Last tax paid date till now: </strong></td>
+																<td width="20" style="background-color:#ffc0cb">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">&lt;1 year</td>
+																<td width="20" style="background-color:#87ceeb">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">between 1 and 3 years</td>
+																<td width="20" style="background-color:#a020f0">&nbsp;</td>
+																<td style="padding-left:10px;padding-right:20px;">Over 3 years or never</td>
+																<td width="20">&nbsp;</td>
+																<td style="padding-left:10px; padding-right:20px;">&nbsp;</td>
+															</tr>
+														</table>
+													</div>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</table>
+							    
+								<div style="clear:both;"></div>
+							
+							</div>
+						</div>
+						<div style="clear:both; line-height:2px; height:2px;">
+							&nbsp;
+						</div>	
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>	
+{% endblock %}
+

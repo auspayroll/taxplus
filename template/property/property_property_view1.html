@@ -5,15 +5,9 @@
 {% block css %}
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
 {% endblock %}
 
 {% block javascript %}
-	<script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
-	<script type="text/javascript" src="/static/js/jquery-ui.min.js"></script>
-	<script src="http://openlayers.org/api/OpenLayers.js"></script>
-	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
-	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
 	<script type="text/javascript"  src="/static/js/admin/property1.js"></script>
 {% endblock %}
 
@@ -25,150 +19,136 @@
 	{% breadcrumb "Select property" "/admin/property/property/view_property/" %} 
 	{% breadcrumb "View property" %}	
 {% endblock %}
-
-
 {% block mainbody %}
 
-<div style="display:block">
-	<table width="100%" cellpadding="5" cellspacing="0">
-		<tr>
-			<!-- sidebar td -->
-			<td valign="top" align="left" width="300">
-				<div class="ui-tabs ui-widget ui-widget-content ui-corner-all">
-					<div style="height:30px; line-height: 30px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-						Propety Info:
-					</div >
-					<div style="margin-top:20px;">
-						<div>
-							<table style=" font-size:15px; height:30px; line-height:30px;" cellpadding="0" cellspacing="0">
-								<tr>
-									<td width="120" colspan="2"><strong> Plot ID# </strong>{{property.plotid}}
-									</td>
-								</tr>
-								<tr>
-									<td> <strong>Street NO: </strong>{{property.streetno}} &nbsp;</td>
-								</tr>
-								<tr>
-									<td> <strong>Street name: </strong>{{property.streetname}} &nbsp;</td>
-								</tr>
-								<tr>
-									<td><strong>Sector: </strong> {{property.suburb}}</td>
-								</tr>
-							</table>
-						</div>
+
+
+<div id="maparea">							
+	<div id="leftpanels">
+		<div class="leftpanel">
+			<div class="panelcontent" style="display:none;">
+				<div style="margin-left:20px;">
+					<div style="height:30px; margin-top:8px; line-height: 30px;">
+						<div>Propety Info:</div>
 					</div>
+					<div style="margin-top:15px;">
+						<table style=" font-size:15px; height:30px; line-height:30px;" cellpadding="0" cellspacing="0">
+							<tr>
+								<td width="120" colspan="2"><strong> Plot ID# </strong>{{property.plotid}}
+								</td>
+							</tr>
+							<tr>
+								<td> <strong>Street NO: </strong>{{property.streetno}} &nbsp;</td>
+							</tr>
+							<tr>
+								<td> <strong>Street name: </strong>{{property.streetname}} &nbsp;</td>
+							</tr>
+							<tr>
+								<td><strong>Sector: </strong> {{property.suburb}}</td>
+							</tr>
+						</table>
+					</div>
+					<div style="display:none;" id="points">
+						{{points}}
+					</div>	
 				</div>
-			</td>
-			<td valign="top">
-				<div id="tabs">
-					<ul class='tabs'>
-					    <li><a href="#tab1">Map</a></li>
-					    <li><a href="#tab2">History</a></li>
-					</ul>
-					<div id='tab1'>
-						<div id="maparea">
-							<div style="height:600px;">
-								<div style="width:100%;height:100%;border:1px solid #cccccc;" id="map"></div>
-							</div>
-						</div>
-						<div style="clear:both;"></div>
-					</div>
-					<div id='tab2'>
-						<div class='box' style="text-align:left; width:500px;">			
-							<div class='box_title'>Owner details:</div>
-							<div class='box_detail'><strong>First name:</strong> Staley</div>
-							<div class='box_detail'><strong>Last name:</strong> Lin</div>
-						</div>
-						<div class='box' style="text-align:left; width:500px;">			
-							<div class='box_title'>Official declared value:</div>
-							{% if declarevalues|length == 0 %}
-								<div class='box_detail'><strong>Amount: </strong> N/A</div>
-								<div class='box_detail'><strong>Date submitted: </strong> N/A</div>
-								<div class='box_detail'><strong>Submitted by: </strong> N/A</div>
-								<div class='box_detail'><strong>Staff name: </strong> N/A</div>
-							{% else %}
-								{% with declarevalues|first as declarevalue %}
-								<div class='box_detail'><strong>Amount: </strong>{{declarevalue.amount}}</div>
-								<div class='box_detail'><strong>Date submitted: </strong>{{declarevalue.datetime}}</div>
-								<div class='box_detail'><strong>Submitted by: </strong>stanley Lin</div>
-								<div class='box_detail'><strong>Staff name: </strong>Justin Hopley</div>
-								{% endwith%}
-							{% endif %}		
-						</div>				
-						<div class='box' style="text-align:left;width:500px">			
-							<div class='box_title'>Declared value history:</div>
-							<div class='transactionhistory_div'>					
-								<table id='transaction_table' cellpadding='0' cellspacing='0'>
-									<tr>
-										<td class='firstrowfirstcolumn'><strong>Date</strong></td>
-										<td class='firstrow'><strong>Amount</strong></td>
-										<td class='firstrow'><strong>Accept</strong></td>
-										<td class='firstrow'><strong>Official</strong></td>
-									</tr>
-							{% if declarevalues|length == 0 %}
-									<tr>
-										<td colspan='4' class='firstcolumn' align='center'> This property has no declared values.</td>
-									<tr>
-							{% else %}
-								{% for declarevalue in declarevalues %}
-									<tr>
-										<td class='firstcolumn'>{{declarevalue.datetime}}</td>
-										<td class='normal'>{{declarevalue.amount}}</td>
-										<td class='normal'>{{declarevalue.accepted}}</td>
-										<td class='normal'>Justin Hopley</td>
-									</tr>
-								{% endfor %}	
-							{% endif %}
-								</table>
-							</div>				
-						</div>
-						<div class='box' style="text-align:left; width:500px;">			
-							<div class='box_title'>Tax paid history:</div>
-							<div class='box_detail' style="text-align:center"><strong>No tax has been paid yet regarding this property.</strong></div>
-						</div>
+			</div>
+			<div class="hidepanel" style="display:none;">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
+		</div>
+		
+		<div class="leftpanel">
+			<div class="panelcontent">		
 						
-						<div class='box' style="text-align:left; width:500px;">			
-							<div class='box_title'>Property transaction history:</div>
-							<div class='box_detail' style="text-align:center"><strong>No transaction record found.</strong></div>
-						</div>	
-											
+				<div style="margin-left:30px; margin-top:30px;">
+					<div class='box' style="text-align:left; width:420px;">			
+						<div class='box_title'>Owner details:</div>
+						<div class='box_detail'><strong>First name:</strong> Staley</div>
+						<div class='box_detail'><strong>Last name:</strong> Lin</div>
 					</div>
-				</div>
-				<div style="clear:both; line-height:2px; height:2px;">
-					&nbsp;
+					<div class='box' style="text-align:left; width:420px;">			
+						<div class='box_title'>Official declared value:</div>
+						{% if declarevalues|length == 0 %}
+							<div class='box_detail'><strong>Amount: </strong> N/A</div>
+							<div class='box_detail'><strong>Date submitted: </strong> N/A</div>
+							<div class='box_detail'><strong>Submitted by: </strong> N/A</div>
+							<div class='box_detail'><strong>Staff name: </strong> N/A</div>
+						{% else %}
+							{% with declarevalues|first as declarevalue %}
+							<div class='box_detail'><strong>Amount: </strong>{{declarevalue.amount}}</div>
+							<div class='box_detail'><strong>Date submitted: </strong>{{declarevalue.datetime}}</div>
+							<div class='box_detail'><strong>Submitted by: </strong>stanley Lin</div>
+							<div class='box_detail'><strong>Staff name: </strong>Justin Hopley</div>
+							{% endwith%}
+						{% endif %}		
+					</div>				
+					<div class='box' style="text-align:left;width:420px">			
+						<div class='box_title'>Declared value history:</div>
+						<div class='transactionhistory_div'>					
+							<table id='transaction_table' cellpadding='0' cellspacing='0'>
+								<tr>
+									<td class='firstrowfirstcolumn'><strong>Date</strong></td>
+									<td class='firstrow'><strong>Amount</strong></td>
+									<td class='firstrow'><strong>Accept</strong></td>
+									<td class='firstrow'><strong>Official</strong></td>
+								</tr>
+						{% if declarevalues|length == 0 %}
+								<tr>
+									<td colspan='4' class='firstcolumn' align='center'> This property has no declared values.</td>
+								<tr>
+						{% else %}
+							{% for declarevalue in declarevalues %}
+								<tr>
+									<td class='firstcolumn'>{{declarevalue.datetime}}</td>
+									<td class='normal'>{{declarevalue.amount}}</td>
+									<td class='normal'>{{declarevalue.accepted}}</td>
+									<td class='normal'>Justin Hopley</td>
+								</tr>
+							{% endfor %}	
+						{% endif %}
+							</table>
+						</div>				
+					</div>
+					<div class='box' style="text-align:left; width:420px;">			
+						<div class='box_title'>Tax paid history:</div>
+						<div class='box_detail' style="text-align:center"><strong>No tax has been paid yet regarding this property.</strong></div>
+					</div>
+					
+					<div class='box' style="text-align:left; width:420px;">			
+						<div class='box_title'>Property transaction history:</div>
+						<div class='box_detail' style="text-align:center"><strong>No transaction record found.</strong></div>
+					</div>	
+					<div style="clear:both"></div>			
 				</div>
 				
+		
 				
-				<div style="display:none;" id="points">
-					{{points}}
-				</div>
-			</td>
-		</tr>
-	</table>
-</div>	
+			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel" style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
+		</div>
+
+
+
+
+
+
+	</div>
+	<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+</div>
+<div style="clear:both;">&nbsp;</div>
+
+
 {% endblock %}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

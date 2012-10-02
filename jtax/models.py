@@ -35,22 +35,53 @@ class DeclaredValue(models.Model):
 	    	message = "approves Citizen ["+citizen_fullname+ "] to declare a value of "+ self.DeclaredValueAmountCurrencey + " " + str(self.DeclaredValueAmount) + " on Property ["+ property_info + "]"
 	      	return message
 
-
-class PropertyTax(models.Model):
-	PlotId = models.IntegerField()
-	PropertyTaxCitizenId = models.IntegerField()
-	PropertyTaxAmount = models.IntegerField()
-	PropertyTaxAmountCurrency = models.CharField(max_length=4, choices=variables.currency_types)
-	PropertyTaxDateTime = models.DateTimeField(auto_now_add=True,auto_now=True)
-	PropertyTaxStaffId = models.IntegerField()
-	PropertyTaxAccepted = models.CharField(max_length=4,choices=variables.value_accepted)
-	PropertyTaxStartDate = models.DateTimeField()
-	PropertyTaxEndDate = models.DateTimeField()
-	PropertyTaxIsGenerated = models.BooleanField()
-	PropertyTaxIsPayed = models.BooleanField()
-	PropertyTaxIsChallenged = models.BooleanField()
-	PropertyTaxIsReviewed = models.BooleanField()
+class PropertyTaxItem(models.Model):
+	plotid = models.IntegerField()
+	amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The amount of prooperty tax item.")
+	currency = models.CharField(max_length=4, choices=variables.currency_types)
+	startdate = models.DateTimeField(help_text="The start date of a period that this property tax item is for.")
+	enddate = models.DateTimeField(help_text="The end date of a period that this property tax item is for.")
+	dategenerated = models.DateTimeField(help_text="The date this propert tax item is generated.")
+	ispaid = models.BooleanField(help_text="Whether tax is payed.")
+	ischanllenged = models.BooleanField(help_text="whether this tax item is challenged.")
+	isreviewed = models.BooleanField(help_text ="whether this tax item is reviewed.")
+	isaccepted = models.BooleanField(help_text="whether this tax item is accepted.")
+	staffid = models.IntegerField(help_text="The staff who generates this property tax item.")
 	
+class PayPropertyTaxItem(models.Model):
+	propertytaxitemid = models.ForeignKey(PropertyTaxItem)
+	citizenid = models.IntegerField(help_text="The person who pay this tax item.")
+	staffid = models.IntegerField(help_text="The government staff who accepts the payment.")
+	paydate = models.DateTimeField(help_text="The date when this tax item is paid.",auto_now_add=True,auto_now=True)
+	note = models.CharField(max_length=255, help_text="note about this payment.")
+
+class ChallengePropertyTaxItem(models.Model):
+	propertytaxitemid = models.ForeignKey(PropertyTaxItem)
+	citizenid = models.IntegerField(help_text="The person who pay this tax item.")
+	staffid = models.IntegerField(help_text="The government staff who accepts the payment.")
+	challengestartdate = models.DateTimeField(help_text="The date from which this tax item is challenged.",auto_now_add=True,auto_now=True)
+	challengeenddate = models.DateTimeField(help_text="The date till which this tax item is challenged.")
+
+class ChallengePropertyTaxItemNote(models.Model):
+	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
+	staffid = models.IntegerField(help_text="The government staff who records this challenge.")
+	note = models.TextField(help_text="Note on why this property tax item is challenged.")
+	
+class ChallengePropertyTaxItemMedia(models.Model):
+	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
+	mediatype = models.CharField(max_length=4,choices=variables.media_types,help_text='This is the type of media the file is')
+	mediafile = models.FileField(help_text='This is the location of the file on the file system.',upload_to='tmp')
+	staffid = models.IntegerField(help_text='The ID of the Staff Member who uploaded the file')
+	mediadatetime = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True,auto_now=True)
+	
+class ReviewPropertyTaxItem(models.Model):
+	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
+	staffid = models.IntegerField(help_text="The government staff who review the challenge.")
+	reviewdate = models.DateTimeField(help_text="The date when this tax item is reviewd.",auto_now_add=True,auto_now=True)
+	note = models.CharField(max_length=255, help_text="review result.")
+
+
+
 
 class DeclaredValueNotes(models.Model):
 	"""

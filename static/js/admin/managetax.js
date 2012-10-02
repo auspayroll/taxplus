@@ -1,162 +1,36 @@
-var lon = 30.05979;
-var lat = -1.94479;
-var zoom = 18;
-var polygon;
-var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
-renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
-var map; //complex object of type OpenLayers.Map
-var polygonLayer;
 var resultLayer;
-var newLayer;
 var property_str;
-var apiKey = "AqTGBsziZHIJYYxgivLBf0hVdrAk9mWO5cQcb8Yux8sW5M8c8opEC2lZqKR1ZZXf";
-var style = { 
-  strokeColor: '#0000ff', 
-  strokeOpacity: 0.5,
-  strokeWidth: 5
-};
-
-
-
-
-var style_green = { 
-   fillColor: "#00ff00",
-   fillOpacity: 0.25,
-   strokeColor: "#00ff00",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_orange = { 
-   fillColor: "#ffa500",
-   fillOpacity: 0.25,
-   strokeColor: "#ffa500",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-
-
-var style_purple = { 
-   fillColor: "#a020f0",
-   fillOpacity: 0.25,
-   strokeColor: "#a020f0",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_skyblue = { 
-   fillColor: "#87ceeb",
-   fillOpacity: 0.25,
-   strokeColor: "#87ceeb",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_pink = { 
-   fillColor: "#ffc0cb",
-   fillOpacity: 0.25,
-   strokeColor: "#ffc0cb",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_red = { 
-   fillColor: "#ff0000",
-   fillOpacity: 0.25,
-   strokeColor: "#ff0000",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_black = { 
-   fillColor: "black",
-   fillOpacity: 0.25,
-   strokeColor: "black",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
- 	
-//Initialise the 'map' object
 function init() 
 {
-   	map = new OpenLayers.Map 
-   	("map", {controls:
-    	[
-            new OpenLayers.Control.Navigation(),
-            new OpenLayers.Control.PanZoomBar(),
-            new OpenLayers.Control.Permalink(),
-            new OpenLayers.Control.ScaleLine({geodesic: true}),
-            new OpenLayers.Control.Permalink('permalink'),
-            new OpenLayers.Control.MousePosition(),                    
-            new OpenLayers.Control.Attribution()
-        ],
-        maxExtent: new OpenLayers.Bounds(-20037508.34,-20037508.34,20037508.34,20037508.34),
-        maxResolution: 156543.0339,
-        numZoomLevels: 19,
-        units: 'm',
-        projection: new OpenLayers.Projection("EPSG:900913"),
-        displayProjection: new OpenLayers.Projection("EPSG:4326")
-        });
-	
-        
-	    var gsat = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 19});
-    	map.addLayer(gsat);
-	    
-	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", map_url+"/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
-	    newLayer.tileOptions={crossOriginKeyword: null};
-	    map.addLayer(newLayer);
-	    
-    	 var aerial = new OpenLayers.Layer.Bing({
-            name: "Aerial",
-            key: apiKey,
-            type: "Aerial",
-            numZoomLevels: 19
-        });	    
-	    map.addLayer(aerial);
-	    
-	   
-		polygonLayer = new OpenLayers.Layer.Vector("Polygon Layer", { renderers: renderer });
-		map.addLayer(polygonLayer);
-		polygon = new OpenLayers.Control.DrawFeature(
-			polygonLayer,
-			OpenLayers.Handler.Polygon,
-			{
-				handlerOptions: {holeModifier: "altKey"},
-			}
-		);
-		map.addControl(polygon);     
-		polygon.events.register("featureadded", '', controlFeatureHandler); 
-
-
-
-		resultLayer = new OpenLayers.Layer.Vector("Result Layer"); 
-		map.addLayer(resultLayer);
-
-
-                                                
-		map.addControl(new OpenLayers.Control.LayerSwitcher());
-		
-					
-	    if( ! map.getCenter() ){
-	        var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-	    	map.setCenter (lonLat, zoom);
-	    }
-	    
-	
-		function controlFeatureHandler(data)
+	loadMap();   
+	polygon = new OpenLayers.Control.DrawFeature(
+		polygonLayer,
+		OpenLayers.Handler.Polygon,
 		{
-			// deal with some data storing
-			//candraw = false;
-			getCoordinates();
-			polygon.deactivate();			
-		}	
+			handlerOptions: {holeModifier: "altKey"},
+		}
+	);
+	map.addControl(polygon);     
+	polygon.events.register("featureadded", '', controlFeatureHandler); 
+
+
+
+	resultLayer = new OpenLayers.Layer.Vector("Result Layer"); 
+	map.addLayer(resultLayer);
+
+    
+
+	function controlFeatureHandler(data)
+	{
+		getCoordinates();
+		polygon.deactivate();			
+	}
+	
+	$("id^=generate").click(function(){
+		id = $(this).attr('id');
+		id = id.replace("generatetax", "");
+		alert(id);
+	});	
 }
     
 
@@ -430,7 +304,7 @@ function showMultiplePropertyResults(data)
 			plotid = property['plotid'];
 			address = property['streetno']+ " "+property['streetname']+", "+property['suburb'];
 			declareValues = property['declarevalues'];
-			propertytaxs = property['propertytaxs'];
+			propertytaxitems = property['propertytaxitems'];
 			if(declareValues.length==0)
 			{
 				row+=							"<tr>";
@@ -483,12 +357,12 @@ function showMultiplePropertyResults(data)
 				{
 					feature.style=style_red;	
 				}
-				if(status != "greaterthan4")
+				if(status != "greaterthan4"&& status !="between34")
 				{
-					if(propertytaxs.length>0)
+					if(propertytaxitems!=null&&propertytaxitems.length>0)
 					{
-						propertytax = propertytaxs[0];
-						status = getDeclareValueStatus(propertytax['datetime']);
+						propertytaxitem = propertytaxitems[0];
+						status = getDeclareValueStatus(propertytaxitem['startdate']);
 						if(status =="lessthan1")
 						{
 							feature.style=style_pink;	
@@ -503,13 +377,13 @@ function showMultiplePropertyResults(data)
 						}
 						if(status == "greaterthan4")
 						{
-							feature.style=style_red;	
+							feature.style=style_purple;	
 						}
 						
 					}
 					else
 					{
-						feature.style=style_black;
+						feature.style=style_purple;
 					}
 				}
 			}
@@ -584,7 +458,7 @@ function showSinglePropertyResult(data)
 		{
 			property=properties[i];
 			declareValues = property['declarevalues'];
-			propertytaxs = property['propertytaxs'];
+			propertytaxitems = property['propertytaxitems'];
 			property=properties[i];
 			plotid = property['plotid'];
 			address = property['streetno']+ " "+property['streetname']+", "+property['suburb'];
@@ -669,16 +543,16 @@ function showSinglePropertyResult(data)
 			// propertytax history box
 			
 			row+=								"<div class='box'>";			
-			row+=									"<div class='box_title'>Property tax history:</div>";
+			row+=									"<div class='box_title'>Property tax items:</div>";
 			row+=									"<div class='transactionhistory_div'>";					
 			row+=										"<table id='propertytax_table' cellpadding='0' cellspacing='0'>";
 			row+=											"<tr>";
-			row+=												"<td width='25%' class='firstrowfirstcolumn'>Date</td>";
-			row+=												"<td width='25%' class='firstrow'>Amount</td>";
-			row+=												"<td width='25%' class='firstrow'>Accept</td>";
-			row+=												"<td width='25%' class='firstrow'>Official</td>";
+			row+=												"<td class='firstrowfirstcolumn'>Amount</td>";
+			row+=												"<td class='firstrow'>Start from</td>";
+			row+=												"<td class='firstrow'>End to</td>";
+			row+=												"<td class='firstrow'>Is paid</td>";
 			row+=											"</tr>";
-			if(propertytaxs.length==0)
+			if(propertytaxitems==null||propertytaxitems.length==0)
 			{
 				row+=										"<tr>";
 				row+=											"<td colspan='4' class='firstcolumn' align='center'> This property has not paid any propety tax.</td>";
@@ -686,14 +560,14 @@ function showSinglePropertyResult(data)
 			}
 			else
 			{
-				for(s=0;s<propertytaxs.length;s++)
+				for(s=0;s<propertytaxitems.length;s++)
 				{
-					propertytax=propertytaxs[s];
+					propertytaxitem=propertytaxitems[s];
 					row+=									"<tr>";
-					row+=										"<td class='firstcolumn'>"+propertytax['datetime']+"</td>";
-					row+=										"<td class='normal'>"+propertytax['amount']+"</td>";
-					row+=										"<td class='normal'>"+propertytax['accepted']+"</td>";
-					row+=										"<td class='normal'>"+propertytax['staff']+"</td>";
+					row+=										"<td class='firstcolumn'>"+propertytaxitem['currency']+" "+propertytaxitem['amount']+"</td>";
+					row+=										"<td class='normal'>"+propertytaxitem['startdate']+"</td>";
+					row+=										"<td class='normal'>"+propertytaxitem['enddate']+"</td>";
+					row+=										"<td class='normal'>"+propertytaxitem['ispaid']+"</td>";
 					row+=									"</tr>";		
 				}
 			}
@@ -704,46 +578,15 @@ function showSinglePropertyResult(data)
 			
 			
 			
+			// action to generate property tax items
+			row+=							"<div>"
+			row+=								"<button type='button' id='generatetax" + plotid + "'>Generate property tax! </button>"
+			row+=							"</div>"
 			
 			
 			
 			
-			
-			
-			
-			
-			
-			// action: declare a value
-			
-			row+=							"<div>";
-			row+=								"<div style='line-height:30px;'><strong>Declare a new value for this propertry:</strong></div>";
-			row+=								"<div>";
-			row+=									"<table>";
-			row+=										"<tr>";
-			row+=											"<td>";
-			row+=												"<div style='width:100px; float:left;'>Amount:</div>";
-			row+=												"<div style='width:250px; float:left;'><input type='text' name='declare_amount' id='declare_amount'/> ($AUD)</div>";
-			row+=												"<div style='clear:both'></div>";
-			row+=											"</td>";
-			row+=										"</tr>";
-			row+=										"<tr>";
-			row+=											"<td>";
-			row+=												"<div style='width:100px; float:left;'>Citizen ID:</div>";
-			row+=												"<div style='width:250px; float:left;'><input id='citizenid' type='text' name='citizenid'/></div>";
-			row+=												"<div style='clear:both'></div>";
-			row+=											"</td>";
-			row+=										"</tr>";
-			row+=										"<tr>";
-			row+=											"<td colspan='2'><button id='button" + plotid + "' type='button'>Declare</button></td>";
-			row+=										"</tr>";
-			row+=										"</table>";
-			row+=									"</div>";									
-			row+=								"<div style='line-height:30px;color:red;' id='declare_amount_error'></div>";
-			row+=							"</div>";
-			
-			
-			
-			
+					
 			
 			
 			row+=						"</td>";
@@ -788,12 +631,12 @@ function showSinglePropertyResult(data)
 				{
 					feature.style=style_red;	
 				}
-				if(status != "greaterthan4")
+				if(status != "greaterthan4"&& status !="between34")
 				{
-					if(propertytaxs.length>0)
+					if(propertytaxitems!=null&&propertytaxitems.length>0)
 					{
-						propertytax = propertytaxs[0];
-						status = getDeclareValueStatus(propertytax['datetime']);
+						propertytaxitem = propertytaxitems[0];
+						status = getDeclareValueStatus(propertytaxitem['startdate']);
 						if(status =="lessthan1")
 						{
 							feature.style=style_pink;	
@@ -808,13 +651,13 @@ function showSinglePropertyResult(data)
 						}
 						if(status == "greaterthan4")
 						{
-							feature.style=style_red;	
+							feature.style=style_purple;	
 						}
 						
 					}
 					else
 					{
-						feature.style=style_black;
+						feature.style=style_purple;
 					}
 				}
 			}
@@ -836,61 +679,49 @@ function showSinglePropertyResult(data)
 		    map.addPopup(popup);
 		    
 		    
-		   $('button[id^="button"]').click(function(){
+		   $('button[id^="generatetax"]').click(function(){
 				id = $(this).attr('id');
-				plotid = id.replace("button","");
-				amount = $.trim($("#declare_amount").val());
-				citizenid = $.trim($("#citizenid").val());
-				if( amount=="" || isNaN(amount) )
-				{
-					$("#declare_amount_error").html("Please enter a valid amount!");
-					return false;
-				}
-				else if( citizenid=="" || isNaN(citizenid) )
-				{
-					$("#declare_amount_error").html("Please enter a valid citizenid!");
-					return false;
-				}
-				else
-				{
-					querystring = "plotid="+plotid+"&amount="+amount+"&citizenid="+citizenid;
-					$.ajax({
-						type:"get",
-						url: "/admin/ajax/declare_value/",
-						data: querystring,
-						success:function(data)
+				plotid = id.replace("generatetax","");
+				querystring = "plotid="+plotid;
+				$.ajax({
+					type:"get",
+					url: "/admin/ajax/generate_property_tax/",
+					data: querystring,
+					success:function(data)
+					{
+						if(data==""){return;}
+						else
 						{
-							if(data==""){return;}
-							else
+							var numCols = $('#propertytax_table tr:last td').length;
+							if(numCols<=1)
 							{
-								if(data=="OK")
+								$("#propertytax_table").find("tr:gt(0)").remove();
+							}
+							var propertytaxitems = data['propertytaxitems'];
+							if(propertytaxitems!=null)
+							{
+								for(i = 0;i<propertytaxitems.length;i++)
 								{
-									querystring = "plotid=" + plotid;
-									search_property_by_fields(querystring,true);
-									return true;
-								}
-								else
-								{
-									$("#declare_amount_error").html(data);
-									return false;
+									propertytaxitem = propertytaxitems[i];
+									var str="<tr>";
+									str+="<td class='firstcolumn'>"+propertytaxitem['currency']+" "+propertytaxitem['amount']+"</td>";
+									str+="<td class='normal'>"+propertytaxitem['startdate']+"</td>";
+									str+="<td class='normal'>"+propertytaxitem['enddate']+"</td>";
+									str+="<td class='normal'>"+propertytaxitem['ispaid']+"</td>";
+									str+="</tr>";			
+									$('#propertytax_table tr:last').after(str);
 								}
 							}
-						},
-						error: function(request)
-						{
-							alert(request.responseText);
 						}
-					});
-	
-					
-					return true;	
-				}
-				
-			});
-				    
-		    
-	
-		    
+					},
+					error: function(request)
+					{
+						alert(request.responseText);
+					}
+				});
+
+				return;
+			});			    		    
 		}
 	}
 	polygonLayer.removeFeatures(polygonLayer.features);

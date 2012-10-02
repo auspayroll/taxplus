@@ -1,136 +1,37 @@
-var lon = 30.05979;
-var lat = -1.94479;
-var zoom = 18;
-var polygon;
-var renderer = OpenLayers.Util.getParameters(window.location.href).renderer;
-renderer = (renderer) ? [renderer] : OpenLayers.Layer.Vector.prototype.renderers;
-var map; //complex object of type OpenLayers.Map
-var polygonLayer;
 var resultLayer;
-var newLayer;
 var property_str;
-var apiKey = "AqTGBsziZHIJYYxgivLBf0hVdrAk9mWO5cQcb8Yux8sW5M8c8opEC2lZqKR1ZZXf";
-var style = { 
-  strokeColor: '#0000ff', 
-  strokeOpacity: 0.5,
-  strokeWidth: 5
-};
-
-
-var style_green = { 
-   fillColor: "#00ff00",
-   fillOpacity: 0.25,
-   strokeColor: "#00ff00",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_orange = { 
-   fillColor: "#ffa500",
-   fillOpacity: 0.25,
-   strokeColor: "#ffa500",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_red = { 
-   fillColor: "#ff0000",
-   fillOpacity: 0.25,
-   strokeColor: "#ff0000",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
-
-
-var style_black = { 
-   fillColor: "black",
-   fillOpacity: 0.25,
-   strokeColor: "black",
-   strokeOpacity: 1, 
-   strokeWidth:1
-};
- 	
-//Initialise the 'map' object
 function init() 
 {
-   	map = new OpenLayers.Map 
-   	("map", {controls:
-    	[
-            new OpenLayers.Control.Navigation(),
-            new OpenLayers.Control.PanZoomBar(),
-            new OpenLayers.Control.Permalink(),
-            new OpenLayers.Control.ScaleLine({geodesic: true}),
-            new OpenLayers.Control.Permalink('permalink'),
-            new OpenLayers.Control.MousePosition(),                    
-            new OpenLayers.Control.Attribution()
-        ],
-        maxExtent: new OpenLayers.Bounds(-20037508.34,-20037508.34,20037508.34,20037508.34),
-        maxResolution: 156543.0339,
-        numZoomLevels: 19,
-        units: 'm',
-        projection: new OpenLayers.Projection("EPSG:900913"),
-        displayProjection: new OpenLayers.Projection("EPSG:4326")
-        });
-	
-	
-		
-	
-        // This is the layer that uses the locally stored tiles
-        //newLayer = new OpenLayers.Layer.OSM("Local Tiles");
-        
-	    var gsat = new OpenLayers.Layer.Google("Google Satellite",{type: google.maps.MapTypeId.SATELLITE, numZoomLevels: 19});
-    	map.addLayer(gsat);
-	    
-	    newLayer = new OpenLayers.Layer.OSM("Local Tiles", map_url+"/osm/${z}/${x}/${y}.png", {numZoomLevels: 19});
-	    newLayer.tileOptions={crossOriginKeyword: null};
-	    map.addLayer(newLayer);
-	    
-    	 var aerial = new OpenLayers.Layer.Bing({
-            name: "Aerial",
-            key: apiKey,
-            type: "Aerial",
-            numZoomLevels: 19
-        });	    
-	    map.addLayer(aerial);
-	    
-	   
-		polygonLayer = new OpenLayers.Layer.Vector("Polygon Layer", { renderers: renderer });
-		map.addLayer(polygonLayer);
-		polygon = new OpenLayers.Control.DrawFeature(
-			polygonLayer,
-			OpenLayers.Handler.Polygon,
-			{
-				handlerOptions: {holeModifier: "altKey"},
-			}
-		);
-		map.addControl(polygon);     
-		polygon.events.register("featureadded", '', controlFeatureHandler); 
-
-
-
-		resultLayer = new OpenLayers.Layer.Vector("Result Layer"); 
-		map.addLayer(resultLayer);
-
-
-                                                
-		map.addControl(new OpenLayers.Control.LayerSwitcher());
-		
-					
-	    if( ! map.getCenter() ){
-	        var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
-	    	map.setCenter (lonLat, zoom);
-	    }
-	    
-	
-		function controlFeatureHandler(data)
+	loadMap();
+	polygon = new OpenLayers.Control.DrawFeature(
+		polygonLayer,
+		OpenLayers.Handler.Polygon,
 		{
-			// deal with some data storing
-			//candraw = false;
-			getCoordinates();
-			polygon.deactivate();			
-		}	
+			handlerOptions: {holeModifier: "altKey"},
+		}
+	);
+	map.addControl(polygon);     
+	polygon.events.register("featureadded", '', controlFeatureHandler); 
+	
+	
+	
+	resultLayer = new OpenLayers.Layer.Vector("Result Layer"); 
+	map.addLayer(resultLayer);
+	
+	
+	                                        
+	map.addControl(new OpenLayers.Control.LayerSwitcher());
+	
+				
+	if( ! map.getCenter() ){
+	    var lonLat = new OpenLayers.LonLat(lon, lat).transform(new OpenLayers.Projection("EPSG:4326"), map.getProjectionObject());
+		map.setCenter (lonLat, zoom);
+	}
+	function controlFeatureHandler(data)
+	{
+		getCoordinates();
+		polygon.deactivate();			
+	}	
 }
     
 

@@ -198,3 +198,12 @@ table#declaree_value tr td
 	text-indent:4px;
 }
 
+
+
+table#transaction_table a:link,table#transaction_table a:visited{
+	color:black;
+}
+
+
+
+

@@ -25,12 +25,6 @@ function init()
 	        }
 	        $('#id_permissions_all').append($(selectedOptions).clone());
 	        $(selectedOptions).remove();
-		});
-		
+		});		
 	});
 }
-
-
-
-
-

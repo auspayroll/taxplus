@@ -38,6 +38,19 @@ class DeclaredValueMapper:
         
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
     Get the most recent declared value of a property
+    return {{DeclaredValue object}}
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""    
+    @staticmethod    
+    def getLastSecondDeclaredValueByPlotId(plotid):
+        declaredValues=DeclaredValueMapper.getDeclaredValuesByPlotId(plotid)
+        if not declaredValues or len(declaredValues) < 2:
+            return None
+        else:
+            return declaredValues[1]
+        
+    
+    """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+    Get the most recent declared value of a property
     Format: {{currency}} {{amount}}
     """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""    
     @staticmethod    

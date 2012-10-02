@@ -5,15 +5,9 @@
 {% block css %}
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
 {% endblock %}
 
 {% block javascript %}
-	<script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
-	<script type="text/javascript" src="/static/js/jquery-ui.min.js"></script>
-	<script src="http://openlayers.org/api/OpenLayers.js"></script>
-	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
-	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
 	<script type="text/javascript"  src="/static/js/admin/sector.js"></script>
 {% endblock %}
 
@@ -24,71 +18,70 @@
 	{% breadcrumb "Sector" "/admin/property/sector/" %} 
 	{% breadcrumb "Add sector" %}	
 {% endblock %}
-
-
 {% block mainbody %}
+{% csrf_token %}
 
-<div style="display:block">
-	<table width="100%" cellpadding="5" cellspacing="0">
-		<tr>
-			<!-- sidebar td -->
-			<td valign="top" align="left" width="300">
-				<div class="ui-tabs ui-widget ui-widget-content ui-corner-all">
-					<div style="height:30px; line-height: 30px;" class="tabs ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
-						Add a sector
+
+<div id="maparea">
+	<div id="leftpanels">
+		<div class="leftpanel">
+			<div class="panelcontent">
+				<div style="margin-left:15px;">
+					<div style="height:30px; margin-top:8px; line-height: 30px;">
+						<table cellpadding="0" width="100%" cellspacing="0">
+							<tr>
+								<td align="left" id="council_title">Add a sector:</td>
+							</tr>
+						</table>
 					</div >
-					<div style="margin-top:20px; margin-left:2px;">
-						<!-- <form onsubmit="return check_property_registration_form();" action="/admin/ajax/add_property/" method="post" >-->
-							{% csrf_token %}
-							<div>
-								<table style="font-size: 15px; line-height: 30px;" cellpadding="1" cellspacing="0">
-									<tr>
-										<td><strong>Sector name:</strong></td>
-										<td>{{form.name}}</td>
-									</tr>
-									<tr>
-										<td><strong>District: </strong></td>
-										<td>{{form.district}}</td>
-									</tr>
-									<tr>
-										<td><strong>Council: </strong></td>
-										<td>{{form.council}}</td>
-									</tr>
-								</table>
-							</div>
-							<div id="error" style="color:red; font-size:15px; margin-top:20px;">
-								&nbsp;
-							</div>
-							
-							<div style="margin-top:20px;">
-								<table cellpadding="0" cellspacing="0">
-									<tr>
-										<td><button type="button" id="addBoundary" onClick="toggle();">Add boundary</button></td>
-										<td><div id="boundary_error"></div></td>
-									</tr>
-								</table>
-							</div>		
-							<div style="margin-top:30px; margin-bottom:10px;">
-								<input type="submit" onclick="return check_sector_registration_form();" value="submit" name="submit"/>
-							</div>									
-							<div style="display:none">
-								{{form.boundary}}
-							</div>	
-						<!-- </form>-->
+					<div style="margin-top:20px;">
+						<table style="font-size: 15px; line-height: 30px;" cellpadding="1" cellspacing="0">
+							<tr>
+								<td><strong>Sector name:</strong></td>
+								<td>{{form.name}}</td>
+							</tr>
+							<tr>
+								<td><strong>District: </strong></td>
+								<td>{{form.district}}</td>
+							</tr>
+							<tr>
+								<td><strong>Council: </strong></td>
+								<td>{{form.council}}</td>
+							</tr>
+						</table>
+					</div>
+					<div id="error" style="color:red; font-size:15px; margin-top:20px;">
+						&nbsp;
+					</div>
+					
+					<div style="margin-top:20px;">
+						<table cellpadding="0" cellspacing="0">
+							<tr>
+								<td><button type="button" id="addBoundary" onClick="toggle();">Add boundary</button></td>
+								<td><div id="boundary_error"></div></td>
+							</tr>
+						</table>
+					</div>		
+					<div style="margin-top:30px; margin-bottom:10px;">
+						<input type="submit" onclick="return check_sector_registration_form();" value="submit" name="submit"/>
+					</div>									
+					<div style="display:none">
+						{{form.boundary}}
 					</div>
 				</div>
-			</td>
-			<td valign="top">
-				<div id="maparea" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
-					<div style="height:600px;">
-						<div style="width:100%; height:100%;border:1px solid #cccccc;" id="map"></div>
-					</div>
-				</div>
-			</td>
-		</tr>
-	</table>
-</div>	
-
+			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel"  style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
+		</div>
+	</div>
+	<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+</div>
+				
 {% endblock %}
 
 

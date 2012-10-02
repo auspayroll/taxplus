@@ -16,7 +16,7 @@ from jtax.forms.forms import tax_search_property_form
 from log.mappers.LogMapper import LogMapper
 from property.mappers.PropertyMapper import PropertyMapper
 from jtax.mappers.DeclaredValueMapper import DeclaredValueMapper
-from jtax.mappers.PropertyTaxMapper import PropertyTaxMapper
+from jtax.mappers.PropertyTaxItemMapper import PropertyTaxItemMapper
 from businesslogic.TaxBusiness import TaxBusiness
 from citizen.mappers.CitizenMapper import CitizenMapper
 from auth.mappers.ModuleMapper import ModuleMapper
@@ -50,7 +50,7 @@ def tax_default(request, permissions, action, content_type_name1):
                 property = PropertyMapper.getPropertyByPlotId(plotid)
                 summaryInfo = TaxBusiness.getTaxSummary(plotid)
                 declaredValues = DeclaredValueMapper.getCleanDeclaredValuesByPlotId(plotid)
-                propertyTaxes = PropertyTaxMapper.getCleanPropertyTaxesByPlotId(plotid)
+                propertyTaxes = PropertyTaxItemMapper.getCleanPropertyTaxItemsByPlotId(plotid)
                 geodata = PropertyMapper.getPropertyGeoData(property)
                 # summary infomation about this property
                 form = tax_search_property_form(initial={"suburb":request.session['suburb'], "streetname":request.session['streetname'], "streetno":request.session['streetno'], "plotid":request.session['plotid'], "citizenid":request.session['citizenid'], })

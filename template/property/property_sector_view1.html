@@ -5,15 +5,9 @@
 {% block css %}
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
-	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
 {% endblock %}
 
 {% block javascript %}
-	<script type="text/javascript" src="{% static "js/jquery-1.7.2.min.js" %}"></script>
-	<script type="text/javascript" src="{% static "js/jquery-ui.min.js" %}"></script>
-	<script src="http://openlayers.org/api/OpenLayers.js"></script>
-	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
-	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
 	<script type="text/javascript"  src="{% static "js/admin/sector_display.js" %}"></script>
 {% endblock %}
 
@@ -25,29 +19,18 @@
 	{% breadcrumb "Select sector" "/admin/property/sector/view_sector/" %} 
 	{% breadcrumb "View sector" %}	
 {% endblock %}
-
-
 {% block mainbody %}
 
-<div id="tabs">
-	<ul class='tabs'>
-	    <li><a href="#tab1">Map</a></li>
-	</ul>
-	<div id='tab1' style="margin-left:0px; margin-right:0px; padding-left:0.2em; padding-right: 0.2em;">
-		<div id="maparea" style="position:relative; border:1px solid #cccccc;">
 
-			<div style="height:600px;">
-				
-				<div id="leftpanel" style="position:absolute; padding-left:10px; text-align: left; width:300px; height: 100%; padding-bottom: 1px; margin: 0px; background-color:white; z-index:2000; left:0px; top:0px;">
+<div id="maparea">
+	<div id="leftpanels">
+		<div class="leftpanel">
+			<div class="panelcontent">
+				<div style="margin-left:15px;">
 					<div style="height:30px; margin-top:8px; line-height: 30px;">
-						<table cellpadding="0" width="100%" cellspacing="0">
-							<tr>
-								<td align="left" id="council_title">Sector Info:</td>
-								<td align="right"><img id="hidepanel" width="29" border="0" height="29" src='{% static "images/icons/left.jpg" %}' /></td>
-							</tr>
-						</table>
-							
+						Sector Info:
 					</div >
+					<div style="color:red; margin-top:20px; display: none; font-size:15px;" id="selectmessage">Please select a council from the map. </div>
 					<div style="margin-top:20px;" id="details">
 						<div style= "line-height:30px; font-size: 13px;">
 							<strong>Sector name: </strong>{{sector.name}}<br>
@@ -56,26 +39,23 @@
 						</div>
 					</div>
 				</div>
-				
-				
-				<div id="showpanel" style="position:absolute; display:none; text-align:left; margin-top:8px; z-index: 2000; height:30px; line-height:30px;">
-					<img id="hidepanel" width="29" border="0" height="29" src='{% static "images/icons/right.jpg" %}' />
-				</div>
-				<div style="width:100%;height:100%;border:1px solid #cccccc;" id="map"></div>
 			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel"  style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+			</div>
+			<div style="clear:both"></div>
 		</div>
-		<div style="clear:both;">&nbsp;</div>
+	</div>	
+	<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>	
+	<div style="display:none;" id="points">
+		{{points}}
 	</div>
-</div>
-
-
-
-		
-<div style="display:none;" id="points">
-	{{points}}
-</div>
-<div style="display:none;" id="displaytext">
-	{{sector.name}}
+	<div style="display:none;" id="displaytext">
+		{{sector.name}}
+	</div>
 </div>
 {% endblock %}
 

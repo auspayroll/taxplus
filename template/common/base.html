@@ -22,6 +22,10 @@
 		<script type="text/javascript"  src="{% static "js/jquery-1.7.2.min.js" %}"></script>
 		<script type="text/javascript"  src="{% static "js/jquery-ui.min.js" %}"></script>
 		<script type="text/javascript"  src="{% static "js/common.js" %}"></script>
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+		<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+		<script type="text/javascript"  src="{% static "js/loadmap.js" %}"></script>		
 		{% block css %}
 		{% endblock %}
 		{% block javascript %}
@@ -30,23 +34,35 @@
 	
 	
 	<body onload="init();">
-	{% block header %}
-		<div class='header'>
-			<a href="/admin/"><span class="title">KCC Tax Systems</span></a>
-			<div class="himg">
-			<a href="/admin/"><img width='96' border="0" height='96'  src='{% static "images/icons/home.png" %}' /></a>
-			<a href="/admin/edit_profile/"><img width='96' border="0" height='96'  src='{% static "images/icons/user_profile.png" %}' /></a>
-				<a href="/admin/logout/"><img width='96' border="0" height='96'  src='{% static "images/icons/user_logout.png" %}' /></a>
-				
+		<div style="width:100%; height:100px; overflow: hidden;">
+		{% block header %}
+			<div class='header'>
+				<div style="height:2px; line-height:2px;">&nbsp;</div>
+				<div style="height:96px; display:block; color:1px solid red">
+					<div style="display:inline; float:left;">
+						<div style="margin-left:10px;">
+							<a href="/admin/"><span class="title">KCC Tax Systems</span></a>	
+						</div>
+						{% block breadcrumbs %}
+						<div style="margin-left:10px; font-weight:bold; color:white; font-size:14px; text-decoration: none; height: 20px; line-height:20px; text-align:left;">
+							{% block crumbbody %}
+							{% endblock %}
+						</div>
+						{% endblock %}
+					</div>
+					<div style="display:inline; float:right; margin-right:60px;">
+						<a href="/admin/"><img align="aabsmiddle" width='96' border="0" height='96'  src='{% static "images/icons/home.png" %}' /></a>
+						<a href="/admin/edit_profile/"><img width='96' align="aabsmiddle" border="0" height='96'  src='{% static "images/icons/user_profile.png" %}' /></a>
+						<a href="/admin/logout/"><img width='96' align="aabsmiddle" border="0" height='96'  src='{% static "images/icons/user_logout.png" %}' /></a>
+					</div>
+					<div style="clear:both"></div>	
+				</div>
+				<div style="height:2px; line-height:2px;">&nbsp;</div>
 			</div>
-		</div>
-	{% endblock %}
-	{% block breadcrumbs %}
-		<div style="padding-left:10px;font-weight:bold;margin-bottom:10px; border-bottom:1px solid #999;text-align:left;padding-bottom:5px;">
-			{% block crumbbody %}
-			{% endblock %}
-		</div>
-	{% endblock %}
+		{% endblock %}
+		</div>	
+	
+	
 	{% block mainbody %}
 	{% endblock %}
 	

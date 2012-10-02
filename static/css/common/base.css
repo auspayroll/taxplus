@@ -10,7 +10,6 @@ body{
 	width:100%;
 	display:block;
 	text-align: left;
-	/* border-bottom:1px solid #CCCCCC; */
 	background:url('/static/images/header_bg.png') repeat-x;
 }
 
@@ -18,22 +17,11 @@ body{
 	
 	float:left;
 	font-size:50px;
-	margin-top:20px;
-	margin-left:55px;
+	line-height:72px;
 	font-family: 'Asap', sans-serif;
 	color:white;
 	
 }
-
-.himg{
-
-	margin-right:55px;
-	margin-top:2px;
-	display:inline;
-	float:right;
-	
-}
-
 .section_container{
 	display:block;
 }
@@ -118,7 +106,7 @@ body{
 
 .title a:link, a:visited{
 	text-decoration: none;
-	color:#222222;
+	color:white;
 }
 
 ul li .radio {
@@ -136,4 +124,118 @@ ul li .radio {
 	margin-left:10px;
 	margin-right:10px;
 }
+
+
+
+
+
+
+
+
+
+
+.user_dropdown{
+	display:block; 
+	position:relative;
+}
+
+.user_dropdown .keyword_div{
+	margin:0px;
+	padding:0px;
+}
+
+.user_dropdown .keyword_div input.keyword{
+	width:150px; 
+	height:18px; 
+	font-size:12px; 
+	padding:0px; 
+	line-height:16px;
+}
+
+.matched_users_div{
+	position:absolute; 
+	left:0px; 
+	line-height:22px; 
+	top:22px; 
+	width:154px; 
+	background-color:#EEEEEE;
+}
+
+.matched_users_div ul{
+	width:154px;
+	margin:0px; padding:0px; list-style: none;	
+}
+
+.matched_users_div ul li{
+	border-bottom: 1px dotted #cccccc;
+	font-size:12px;
+	width:154px;
+	text-indent:4px;
+}
+
+.user_action_title{
+	margin-top:15px;
+	margin-bottom:20px;
+	margin-left:10px;
+	display:block;
+	text-align:left;
+	font-size:18px;
+}
+
+
+div#maparea{
+	position:relative; border:1px solid #cccccc; width:100%; height:500px;
+}
+
+div#leftpanels{
+	position:absolute; text-align: left; height: 100%; 
+	padding-bottom: 1px; margin: 0px; background-color:white; 
+	z-index:2000; left:0px; top: 0px;
+}
+
+div.leftpanel{
+	display:inline; float:left; 
+	border-right:1px solid #cccccc;
+	height:100%;
+}
+
+div.panelcontent{
+	display:inline; float:left;
+}
+
+div.hidepanel{
+	display:inline; float:left; margin-top:15px; margin-left:10px;
+}
+
+div.hidepanel img, div.showpanel img{
+	width:20px;
+	height:20px;
+	border:0px;
+}
+
+div.showpanel{
+	display:inline; float:left; margin-top:15px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
