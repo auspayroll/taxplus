@@ -1,93 +1,77 @@
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (1,'Can view citizen','view_citizen',6);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (2,'Can add citizen','add_citizen',6);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (3,'Can change citizen','change_citizen',6);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (4,'Can delete citizen','delete_citizen',6);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (5,'Can view group','view_group',2);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (6,'Can add group','add_group',2);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (7,'Can change group','change_group',2);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (8,'Can delete group','delete_group',2);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (9,'Can view log','view_log',5);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (10,'Can add log','add_log',5);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (11,'Can change log','change_log',5);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (12,'Can delete log','delete_log',5);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (13,'Can view permission','view_permission',1);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (14,'Can add permission','add_permission',1);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (15,'Can change permission','change_permission',1);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (16,'Can delete permission','delete_permission',1);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (17,'Can view property','view_property',4);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (18,'Can add property','add_property',4);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (19,'Can change property','change_property',4);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (20,'Can delete property','delete_property',4);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (21,'Can view user','view_user',3);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (22,'Can add user','add_user',3);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (23,'Can change user','change_user',3);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (24,'Can delete user','delete_user',3);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (38,'Can view district','view_district',10);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (37,'Can add district','add_district',10);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (36,'Can delete tax','delete_tax',9);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (35,'Can change tax','change_tax',9);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (34,'Can add tax','add_tax',9);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (33,'Can view tax','view_tax',9);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (39,'Can change district','change_district',10);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (40,'Can delete district','delete_district',10);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (41,'Can view sector','view_sector',11);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (42,'Can add sector','add_sector',11);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (43,'Can change sector','change_sector',11);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (44,'Can delete sector','delete_sector',11);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (45,'Can view council','view_council',12);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (46,'Can add council','add_council',12);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (47,'Can change council','change_council',12);
-INSERT INTO auth_permission (id, name, codename, contenttype_id) VALUES (48,'Can delete council','delete_council',12);
-
-INSERT INTO auth_group (id, name, i_status) VALUES (1,'propertymode','active');
-
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,33);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,34);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,35);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,36);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,24);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,23);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,22);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,21);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,20);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,19);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,18);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,17);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,16);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,15);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,14);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,13);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,12);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,11);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,10);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,9);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,8);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,7);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,6);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,5);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,4);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,3);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,2);
-INSERT INTO auth_group_permissions (group_id, permission_id) VALUES (1,1);
+DROP TABLE jtax_propertytax;
 
 
-INSERT INTO auth_module (id, name, image, description) VALUES (1,'auth','','');
-INSERT INTO auth_module (id, name, image, description) VALUES (2,'property','','');
-INSERT INTO auth_module (id, name, image, description) VALUES (3,'log','','');
-INSERT INTO auth_module (id, name, image, description) VALUES (4,'citizen','','');
-INSERT INTO auth_module (id, name, image, description) VALUES (5,'tax','','');
+CREATE TABLE jtax_challengepropertytaxitem (
+id int4 DEFAULT nextval('jtax_challengepropertytaxitem_id_seq'::regclass) NOT NULL,
+propertytaxitemid_id int4 NOT NULL,
+citizenid int4 NOT NULL,
+staffid int4 NOT NULL,
+challengestartdate timestamptz(6) NOT NULL,
+challengeenddate timestamptz(6) NOT NULL
+)
+WITH (OIDS=FALSE)
 
+;
 
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (1,'permission','','',1);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (2,'group','icons/group.png','',1);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (3,'user','icons/user.png','',1);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (4,'property','icons/property.png','',2);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (5,'log','icons/logging.png','',3);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (6,'citizen','icons/citizen.png','',4);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (9,'tax','icons/tax.png','',5);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (10,'district','blank.jpg','',2);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (11,'sector','blank.jpg','',2);
-INSERT INTO auth_contenttype (id, name, image, model_name, module_id) VALUES (12,'council','blank.jpg','',2);
+CREATE TABLE jtax_challengepropertytaxitemmedia (
+id int4 DEFAULT nextval('jtax_challengepropertytaxitemmedia_id_seq'::regclass) NOT NULL,
+challengepropertytaxitemid_id int4 NOT NULL,
+mediatype varchar(4) NOT NULL,
+mediafile varchar(100) NOT NULL,
+staffid int4 NOT NULL,
+mediadatetime timestamptz(6) NOT NULL
+)
+WITH (OIDS=FALSE)
 
+;
 
-INSERT INTO auth_user (id, username, firstname, lastname, contactnumber, email, password, active, superuser, lastlogin, datejoined, i_status, council_id) VALUES (1,'JustinHopley','Justin','Hopley','','justin@propertymode.com.au','642841ac5168288de710c090272fdcba',1,1,'2012-08-21 04:59:17','2012-08-21 04:59:17','active',0);
+CREATE TABLE jtax_challengepropertytaxitemnote (
+id int4 DEFAULT nextval('jtax_challengepropertytaxitemnote_id_seq'::regclass) NOT NULL,
+challengepropertytaxitemid_id int4 NOT NULL,
+staffid int4 NOT NULL,
+note text NOT NULL
+)
+WITH (OIDS=FALSE)
+
+;
+
+CREATE TABLE jtax_paypropertytaxitem (
+id int4 DEFAULT nextval('jtax_paypropertytaxitem_id_seq'::regclass) NOT NULL,
+propertytaxitemid_id int4 NOT NULL,
+citizenid int4 NOT NULL,
+staffid int4 NOT NULL,
+paydate timestamptz(6) NOT NULL,
+note varchar(255) NOT NULL
+)
+WITH (OIDS=FALSE)
+
+;
+
+CREATE TABLE jtax_propertytaxitem (
+id int4 DEFAULT nextval('jtax_propertytaxitem_id_seq'::regclass) NOT NULL,
+plotid int4 NOT NULL,
+amount numeric(20,2) NOT NULL,
+currency varchar(4) NOT NULL,
+startdate timestamptz(6) NOT NULL,
+enddate timestamptz(6) NOT NULL,
+dategenerated timestamptz(6) NOT NULL,
+ispaid bool NOT NULL,
+ischanllenged bool NOT NULL,
+isreviewed bool NOT NULL,
+isaccepted bool NOT NULL,
+staffid int4 NOT NULL
+)
+WITH (OIDS=FALSE)
+
+;
+
+CREATE TABLE jtax_reviewpropertytaxitem (
+id int4 DEFAULT nextval('jtax_reviewpropertytaxitem_id_seq'::regclass) NOT NULL,
+challengepropertytaxitemid_id int4 NOT NULL,
+staffid int4 NOT NULL,
+reviewdate timestamptz(6) NOT NULL,
+note varchar(255) NOT NULL
+)
+WITH (OIDS=FALSE)
+
+;
