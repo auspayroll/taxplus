@@ -5,7 +5,8 @@ from django.http import Http404
 from django.forms import model_to_dict
 
 from log.forms.forms import LogSearchForm, LogRefineSearchForm
-
+# @todo: shit
+# @todo: more shit
 from log.mappers.LogMapper import LogMapper
 from citizen.mappers.CitizenMapper import CitizenMapper
 from auth.mappers.ModuleMapper import ModuleMapper
@@ -120,4 +121,4 @@ def construction(request):
     raise Http404
     #return render_to_response('admin/construction.html', {}, context_instance=RequestContext(request))
     
-    
+    # @TODO blash this stuffs

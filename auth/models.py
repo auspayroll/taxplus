@@ -14,6 +14,7 @@ class Module(models.Model):
     name = models.CharField(max_length = 50, help_text = 'Module name')
     image = models.ImageField(upload_to='module_images')
     description = models.CharField(max_length = 200, blank=True, help_text = 'Module description')
+    
     def __unicode__(self):
         return self.name
     
