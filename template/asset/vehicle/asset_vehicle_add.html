@@ -1,0 +1,43 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Vehicle" "/admin/asset/vehicle/"  %}
+	{% breadcrumb "Add vehicle" %}
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript" >
+        $(function() {
+        $("input#id_use_since").datepicker({ dateFormat: "dd/mm/yy" });
+        })
+    </script>
+{% endblock %}
+{% block mainbody %}
+
+<div style="text-align:left; margin-left:20px; font-weight:bold; font-size:16px; margin-top:20px;">
+	Add vehicle
+</div>
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="padded_div">
+<form action="/admin/asset/vehicle/add_vehicle/" method="post" >
+	{% csrf_token %}
+    {{ form }}
+	{% include "asset/ownership/_ownership_block.html" with asset_type="vehicle" %}	
+    <input type="submit" value="Add" name="submit"/>
+</form>
+<br/>
+</div>	
+
+{% endblock %}

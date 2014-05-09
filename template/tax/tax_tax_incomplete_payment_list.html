@@ -1,0 +1,589 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block css  %}
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+
+	<style>
+		#search_table div.selector
+		{
+			width:250px;
+		}
+		#search_table input[type=text]
+		{
+			width:250px;
+		}
+		#error_message
+		{
+			margin-bottom:30px;
+			display:none;
+			color:red;
+		}
+		#search_table label
+		{
+			font-weight:normal;
+			font-size:13px;
+		}
+		ul.errorlist
+		{
+			display:none;
+		}
+	</style>
+
+
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+
+ 
+	<script type="text/javascript">
+		$(function() {
+			$( ".date_picker" ).datepicker({ dateFormat: "dd/mm/yy" });
+			$("#search_table #id_tin").autocomplete({
+				source: "/admin/ajax/search_business/?stype=tin",
+				minLength: 3,
+				select: function (event, ui) {
+					event.preventDefault();
+					$("#search_table #id_tin").val(ui.item['tin']);
+				}
+			});
+			
+			$("#search_table #id_citizen_id").autocomplete({
+				source: "/admin/ajax/search_citizen_clean/?stype=nid",
+				minLength: 3,
+				select: function (event, ui) {
+					event.preventDefault();
+					$("#search_table #id_citizen_id").val(ui.item['nid']);
+					var fullname = ui.item['first_name'];
+					if(ui.item['middle_name']!='' && ui.item['middle_name']!='null' && ui.item['middle_name']!=null)
+					{
+						fullname += ' '+ui.item['middle_name'];
+					}
+					if(ui.item['last_name']!='')
+					{
+						fullname += ' '+ui.item['last_name'];
+					}
+					$("#search_table #id_tax_payer").val(fullname);
+				}
+			});
+
+			$("#search_table #id_tax_payer").autocomplete({
+				source: "/admin/ajax/search_citizen_clean/?stype=name",
+				minLength: 3,
+				select: function (event, ui) {
+				$("#add_table #id_cell").siblings("span").html('---------');
+					event.preventDefault();
+					$("#search_table #id_citizen_id").val(ui.item['nid']);
+					var fullname = ui.item['first_name'];
+					if(ui.item['middle_name']!='' && ui.item['middle_name']!='null')
+					{
+						fullname += ' '+ui.item['middle_name'];
+					}
+					if(ui.item['last_name']!='')
+					{
+						fullname += ' '+ui.item['last_name'];
+					}
+					$("#search_table #id_tax_payer").val(fullname);
+				}
+			});
+		});
+		
+	</script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% if not action %}
+		{% breadcrumb "Incomplete Payment" "" %}
+	{% else %}
+		{% breadcrumb "Incomplete Payment" "/admin/tax/incomplete_payment/" %}
+		{% ifequal action "add" %}	
+			{% breadcrumb "Add incomplete payment" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit incomplete payment" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+   
+<div style="text-align:center;">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box">
+			<div class="box_title" >
+				<table style="width:100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td style="vertical-align:middle;">Search incomplete payment</td>
+						<td style="padding-right:20px; text-align:right; line-height:36px;">
+							<a href="/admin/tax/incomplete_payment/add_payment/">Add incomplete payment</a>
+						</td>
+					</tr>
+				</table>
+			</div>
+			{% if payments %}
+				<div class="content" style="border-bottom:0px;">
+			{% else %}
+				<div class="content" style="border-bottom:1px solid #ccc;">
+			{% endif %}
+				<form method="GET" action="/admin/tax/incomplete_payment/search_payment/" style="margin:0px; padding:0px">
+					{% csrf_token %}
+					<table cellpadding="0" id="search1_table" cellspacing="0" style="width:100%">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0">
+									<tr>
+										<td>Tax Type:</td>
+										<td>{{search_incomplete_payment_form.tax_type}}</td>
+										<td>Tax payer:</td>
+										<td>{{search_incomplete_payment_form.tax_payer}}</td>
+										<td>TIN:</td>
+										<td>{{search_incomplete_payment_form.tin}}</td>
+										<td>Parcel ID:</td>
+										<td>{{search_incomplete_payment_form.parcel_id}}</td>
+									</tr>
+									<tr>
+										<td>Bank:</td>
+										<td>{{search_incomplete_payment_form.bank}}</td>
+										<td>Bank Receipt:</td>
+										<td>{{search_incomplete_payment_form.bank_receipt}}</td>
+										<td>Sector:</td>
+										<td>{{search_incomplete_payment_form.sector}}</td>
+										<td>Sector Receipt:</td>
+										<td >{{search_incomplete_payment_form.sector_receipt}}</td>
+									</tr>
+									<tr>
+										<td>Citizen ID:</td>
+										<td>{{search_incomplete_payment_form.citizen_id}}</td>
+										<td>Phone:</td>
+										<td>{{search_incomplete_payment_form.phone}}</td>
+										<td>Period from:</td>
+										<td>{{search_incomplete_payment_form.filter_period_from}}</td>
+										<td>Period to:</td>
+										<td>{{search_incomplete_payment_form.filter_period_to}}</td>
+									</tr>
+									<tr>
+										<td>Incomplete Payment ID:</td>
+										<td>{{search_incomplete_payment_form.id}}</td>
+										<td>Staff:</td>
+										<td colspan="6">{{search_incomplete_payment_form.user}}</td>
+									</tr>
+								</table>
+							</td>
+							<td valign="bottom"  style="text-align:right; padding-right:10px;"><button type="submit" class="my_button" name="submit">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+
+
+			<!-----------------------Default incomplete payment page ------------------->
+
+			{% if payments %}
+			<div class="box_title">
+				Incomplete payment list ( {{payments.paginator.count}} records found )
+
+			    <a href="{{ pagination_url }}&print=1" style="float: right; margin-right:30px; " title="Print all"  target="_blank"><img src="/static/images/printer.png" style="width:27px;" border="0" /></a>
+			</div>
+			<div class="content">
+				<div style="text-align:center; padding:15px;">
+	                <div style="margin-bottom:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		                <span>
+			                Page {{ payments.number }} of {{ payments.paginator.num_pages }}.
+			                &nbsp;&nbsp;&nbsp;&nbsp;			
+			                {% if payments.has_previous %}
+				                <a href="{{ pagination_url }}&page=1">first</a>
+			                {% else %}
+				                first
+			                {% endif %}
+							
+			                &nbsp;&nbsp;
+			                {% if payments.has_previous %}
+				                <a href="{{ pagination_url }}&page={{ payments.previous_page_number }}">previous</a>
+			                {% else %}
+				                previous
+			                {% endif %}
+			
+			                &nbsp;&nbsp;				
+			                {% if payments.has_next %}				
+				                <a href="{{ pagination_url }}&page={{ payments.next_page_number }}">next</a>
+			                {% else %}
+				                next
+			                {% endif %}
+			                &nbsp;&nbsp;
+			                {% if payments.has_next %}
+				                <a href="{{ pagination_url }}&page={{ payments.paginator.num_pages }}">last</a>
+			                {% else %}
+				                last
+			                {% endif %}
+		                </span>
+	                </div>
+
+					<table style="margin:0 auto; width:100%" class="tablesorter" cellpadding="0" cellspacing="0">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Tax type</th>
+								<th>Business/Sub Business</th>
+								<th>Amount Paid</th>
+								<th>Bank</th>
+								<th>B_receipt</th>
+								<th>S_receipt</th>
+								<th>District</th>
+								<th>Sector</th>
+								<th>Cell</th>
+								<th>Parcel ID</th>
+								<th>Taxpayer</th>
+								<th>Citizen ID</th>
+								<th>DOB</th>
+								<th>Phone</th>
+								<th>Staff</th>
+                                <th>Input on</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for payment in payments %}
+						<tr>
+                            <td>{{payment.id}}</td>
+							<td>
+								{% if payment.tax_type %}
+									{{ payment.tax_type_name}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.subbusiness %}
+									{{ payment.business.name }}{% if payment.business.tin %} (TIN: {{ payment.business.tin }}) {% endif %} - {{ payment.subbusiness.branch }}
+								{% elif payment.business %}
+									{{ payment.business.name }}{% if payment.business.tin %} (TIN: {{ payment.business.tin }}) {% endif %}
+                                {% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.paid_amount %}
+								{{ payment.paid_amount}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.bank %}
+								{{ payment.bank}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.bank_receipt %}
+								{{ payment.bank_receipt}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.sector_receipt %}
+								{{ payment.sector_receipt}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.district %}
+								{{ payment.district}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.sector %}
+								{{ payment.sector}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.cell %}
+								{{ payment.cell}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+								{% if payment.parcel_id %}
+								{{ payment.parcel_id}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.tax_payer %}
+								{{ payment.tax_payer}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.citizen_id %}
+								{{ payment.citizen_id}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.date_of_birth %}
+								{{ payment.date_of_birth}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							<td>
+							{% if payment.phone %}
+								{{ payment.phone}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+							
+							<td>
+								{% if payment.user %}
+								{{ payment.user.firstname}}&nbsp;{{ payment.user.lastname}}
+								{% else %}
+									N/A
+								{% endif %}
+							</td>
+                            <td>{{ payment.date_time|date:'d/m/Y'}}</td>
+							<td>
+								<a href="/admin/tax/incomplete_payment/change_payment/{{payment.id}}/">Edit</a> | 
+								<a href="/admin/tax/incomplete_payment/finalize_payment/{{payment.id}}/">Finalize</a> 
+							</td>
+						</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+
+	                <div style="margin-top:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		                <span>
+			                Page {{ payments.number }} of {{ payments.paginator.num_pages }}.
+			                &nbsp;&nbsp;&nbsp;&nbsp;			
+			                {% if payments.has_previous %}
+				                <a href="{{ pagination_url }}&page=1">first</a>
+			                {% else %}
+				                first
+			                {% endif %}
+							
+			                &nbsp;&nbsp;
+			                {% if payments.has_previous %}
+				                <a href="{{ pagination_url }}&page={{ payments.previous_page_number }}">previous</a>
+			                {% else %}
+				                previous
+			                {% endif %}
+			
+			                &nbsp;&nbsp;				
+			                {% if payments.has_next %}				
+				                <a href="{{ pagination_url }}&page={{ payments.next_page_number }}">next</a>
+			                {% else %}
+				                next
+			                {% endif %}
+			                &nbsp;&nbsp;
+			                {% if payments.has_next %}
+				                <a href="{{ pagination_url }}&page={{ payments.paginator.num_pages }}">last</a>
+			                {% else %}
+				                last
+			                {% endif %}
+		                </span>
+	                </div>
+				</div>
+			</div>
+			{% endif %}
+			<!-----------------------End of default user page ------------------->
+
+			<!-----------------------Start of add user page------------------->
+			{% ifequal action 'add' %}
+			<div class="box_title">
+				Add incomplete payment
+			</div>
+			<div class="content">
+				<div style="text-align:left; padding:20px; padding-left:5px;">
+					<div class="error_message" style="margin-bottom:20px;">
+						{% for field, errors in form.errors.items %}
+							Error in field ({{field}}):
+							{% for error in errors %}
+								{{error}}
+							{% endfor %}
+							<br>
+						{% endfor %}				
+					</div>
+					<form action="/admin/tax/incomplete_payment/add_payment/" id="incomplete_payment_form" method="post" >
+						{% csrf_token %}
+						<table id="search_table" >
+							{{form}}
+						</table>
+						
+						<div style="margin-top:30px;">
+							<button type="submit" class="my_button">Add</button>
+						</div>	
+					</form>
+				</div>
+			</div>
+			{% endifequal %}
+			<!-----------------------end of add user page-------------------->
+
+
+
+			<!-----------------------Start of edit incomplete payment page------------------->
+			{% ifequal action 'edit' %}
+			<div class="box_title">
+				Edit incomplete payment
+			</div>
+			<div class="content">
+				<div style="text-align:left; padding:20px; padding-left:5px;">
+					<div class="error_message" style="margin-bottom:20px;">
+						{% for field, errors in form.errors.items %}
+							Error in field ({{field}}):
+							{% for error in errors %}
+								{{error}}
+							{% endfor %}
+							<br>
+						{% endfor %}				
+					</div>
+					<form name="edit_incomplete_form" id="incomplete_payment_form" method="post" >
+						{% csrf_token %}
+						<table id="search_table">
+							{{form}}
+						</table>
+						<div>
+							<button type="submit" class="my_button">Update</button>
+						</div>	
+					</form>
+				</div>
+			</div>
+			{% endifequal %}
+			<!-----------------------end of edit incomplete payment page-------------------->
+			{% if not payments %}
+				{% if not action %}
+					<div class="box_title">
+						incomplete payment list
+					</div>
+					<div class="content">
+						<div style="text-align:left; padding:20px; padding-left:5px;">
+							No incomplete payments found!
+						</div>
+					</div>
+				{% endif %}
+			{% endif %}
+
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript" src="/static/js/admin/populate_geo.js"></script>
+<script>
+    $(document).ready(function(){
+        if($("#search1_table #id_district").val()=='')
+        {
+            $("#search1_table #id_sector").prop('disabled','disabled');
+            $("#search1_table #id_cell").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#search1_table #id_sector").prop('disabled',false);
+            if($("#search1_table #id_sector").val()=='')
+            {
+                $("#search1_table #id_cell").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#search1_table #id_cell").prop('disabled',false);
+            }
+        }
+
+
+        if($("#search_table #id_district").val()=='')
+        {
+            $("#search_table #id_sector").prop('disabled','disabled');
+            $("#search_table #id_cell").prop('disabled','disabled');
+            $("#search_table #id_village").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#search_table #id_sector").prop('disabled',false);
+            if($("#search_table #id_sector").val()=='')
+            {
+                $("#search_table #id_cell").prop('disabled','disabled');
+                $("#search_table #id_village").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#search_table #id_cell").prop('disabled',false);
+                if($("#search_table #id_cell").val()=='')
+                {
+                    $("#search_table #id_village").prop('disabled','disabled');
+                }
+                else
+                {
+                    $("#search_table #id_village").prop('disabled',false);
+                }
+            }
+        }
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+        $("#uniform-id_cell").after('<img style="margin-left:10px; display:none;" id="cell_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+
+        $("#incomplete_payment_form #id_business_select").autocomplete({
+            source: "/admin/ajax/search_business/",
+            minLength: 2,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#incomplete_payment_form #id_business_select").val(ui.item['name']);
+                $("#incomplete_payment_form #id_tin").val(ui.item['tin']);
+                $("#incomplete_payment_form #id_business").val(ui.item['id']);
+
+                branches = '<option value="" selected="selected">-----------</option>';
+                for (i in ui.item['branches']) {
+                    branches += '<option value="' + i + '" >' + ui.item['branches'][i] + '</option>';
+                }
+                $("#incomplete_payment_form #id_subbusiness").html(branches);
+            }
+        });
+
+        $("#incomplete_payment_form #id_tin").autocomplete({
+            source: "/admin/ajax/search_business/",
+            minLength: 2,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#incomplete_payment_form #id_business_select").val(ui.item['name']);
+                $("#incomplete_payment_form #id_tin").val(ui.item['tin']);
+                $("#incomplete_payment_form #id_business").val(ui.item['id']);
+
+                branches = '<option value="" selected="selected">-----------</option>';
+                for (i in ui.item['branches']) {
+                    branches += '<option value="' + i + '" >' + ui.item['branches'][i] + '</option>';
+                }
+                $("#incomplete_payment_form #id_subbusiness").html(branches);
+            }
+        });
+    });
+</script>
+
+{% endblock %}

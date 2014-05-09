@@ -1,0 +1,43 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Shop" "/admin/asset/shop/"  %}
+	{% breadcrumb "Add shop" %}
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript" >
+        $(function() {
+        $("input#id_date_started").datepicker({ dateFormat: "dd/mm/yy" });
+        })
+    </script>
+{% endblock %}
+{% block mainbody %}
+
+<div style="text-align:left; margin-left:20px; font-weight:bold; font-size:16px; margin-top:20px;">
+	Add shop
+</div>
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="padded_div">
+<form action="/admin/asset/shop/add_shop/" method="post" >
+	{% csrf_token %}
+    {{ form }}
+	{% include "asset/ownership/_ownership_block.html" with asset_type="shop" %}	
+    <input type="submit" value="Add" name="submit"/>
+</form>
+<br/>
+</div>	
+
+{% endblock %}

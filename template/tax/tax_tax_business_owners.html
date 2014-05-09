@@ -1,0 +1,76 @@
+{% extends "common/base_paytax_business.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">Business owner(s)</div>
+		<div class="content" style="padding-left:0px;">
+			{% if not ownerships %}
+				There are no owners for this property!
+			{% else %}
+				<div style="text-align:center;">
+					<table cellpadding="0" cellspacing="0" class="tablesorter" style="width:96%; margin:0 auto;">
+						<thead>
+							<tr>
+								<th>No</td>
+								<th>Citizen ID</td>
+								<th>First name</td>
+								<th>Middle name</td>
+								<th>Last name</td>
+								<th>Share(%)</td>
+								<th>Phone</td>
+								<th>Email</td>
+								<th>own from</td>
+								<th>own until</td>
+							</tr>
+						</thead>
+						<tbody>
+							{% for ownership in ownerships %}
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td>{{ownership.owner_citizen.citizen_id}}</td>
+								<td>{{ownership.owner_citizen.first_name}}</td>
+								<td>
+									{% if ownership.owner_citizen.middle_name %}
+									{{ownership.owner_citizen.middle_name}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+								<td>{{ownership.owner_citizen.last_name}}</td>
+								<td>{{ownership.share}}</td>
+								<td>
+									{% if ownership.owner_citizen.phone_1 %}
+									{{ownership.owner_citizen.phone_1}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+								<td>
+									{% if ownership.owner_citizen.email %}
+									{{ownership.owner_citizen.email}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+								<td>{{ownership.date_started|date:"Y-m-d"}}</td>
+								<td>
+									{% if ownership.date_ended %}
+									{{ownership.date_ended|date:'Y-m-d'}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+							</tr>
+							{% endfor %}					
+						</tbody>
+					</table>
+				</div>				
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}

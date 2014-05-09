@@ -1,0 +1,304 @@
+{% extends "common/base_report.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block right_panel_search_form %}
+	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+	<script type="text/javascript"  src="/static/js/loadmap.js" %}"></script>
+	<script type="text/javascript"  src="/static/js/admin/properties_with_unpaid_tax.js"></script>
+	<link rel="stylesheet"  MEDIA="print,screen"  type="text/css" href="/static/css/admin/properties_with_unpaid_tax.css" />
+	<style>
+		@media screen{
+			#navigator{
+				margin-top:20px; 
+				font-size:14px; 
+				text-align:center
+			}
+			#graph_title_section{
+				display:none;
+			}
+		}
+	
+		@media print{
+		
+		
+			#graph_title_section{
+				margin-bottom:20px;
+				text-align:left;
+				display:block;
+			}
+		
+			#properties_in_all_pages table tr:nth-child(even)
+			{
+				background:#eee;
+			}
+			#properties_in_all_pages table tr:nth-child(odd)
+			{
+				background:#fff;
+			}
+		
+		
+		
+			.box{
+				border:0px;
+				padding:0px;
+				margin:0px;
+			}
+			.box .box_title{
+				display:none;
+			}
+			.box .content{
+				border:0px;
+				padding:0px;
+				margin:0px;
+			}
+			#navigator{
+				display:none;
+			}
+			#print_bar{
+				display:none;
+			}
+			#results{
+				border:0px;
+			}			
+		}
+	</style>
+	
+	
+	
+	
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+		<div>
+			<table style="width:100%;" id="search_table">
+				<tr>
+					<td colspan="7">{{form.tax_types}}</td>
+				</tr>
+				<tr>
+					<td style="padding-left:10px;" width="60">District: </td>
+					<td width="220">{{form.district}}</td>
+					<td align="right" width="70">Sector: </td>
+					<td align="left" width="220">{{form.sector}}</td>
+					<td align="right" width="70">Cell: </td>
+					<td align="left" width="220">{{form.cell}}</td>
+					<td style="padding-right:20px; text-align:right;"><button type="submit" class="my_button">Get report</button></td>
+				</tr>
+			</table>
+		</div>
+	</form>
+{% endblock %}
+
+
+{% block right_panel_box_title %}
+	Properties with unpaid tax on map
+{% endblock %}
+
+{% block right_panel_content %}
+	{% if graph_title %}
+		<div id="graph_title_section">
+			{{graph_title}}
+		</div>
+	{% endif %}
+
+
+	<div id="maparea" style="height:500px;">
+		<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+		<div id="geodata" style="display:none;">
+			{% if geodata %}
+				{{geodata}}
+			{% endif %}
+		</div>
+		<div style="z-index:100000; background-color:transparent; position:absolute; right:6px; top:3px;">
+			<div id="panel"></div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block morebox %}
+	<div class="box_title" style="border-top:0px;">
+		Properties with unpaid tax
+	</div>
+	<div class="content" id="results" style="padding:20px;">
+		{% if not properties %}
+			No properties found with unpaid tax.
+		{% else %}
+			<div id="print_bar" style="text-align:right; margin-bottom:20px;">
+				<button type="button" class="my_button" id="printcurrent">Print current page</button>&nbsp;&nbsp;&nbsp;
+				<button type="button" class="my_button" id="printall">Print full list</button>
+			</div>
+		
+			<div>
+				<table style="margin:0 auto;" class="tablesorter" cellpadding="0" cellspacing="0">
+			        <thead>
+			        <tr>
+			        	<th>Map ID</th>
+				        <th>UPI</th>
+				        <th>Address</th>
+				        <th>Citizen Names</th>
+				        <th>Citizen IDs</th>
+				        <th>Business Name</th>
+				        <th>Phone</th>
+				        <th>Email</th>
+				        <th>Due taxes</th>
+			        </tr>
+			        </thead>
+			        <tbody>
+			        {% for property in properties  %}
+				        <tr>
+					        <td>{{forloop.counter}}</td>
+					        <td>
+					        	{% if property.upi %}
+					        		<span class="work_for_print">{{property.upi}}</span>
+					        		<span class="work_for_screen"><a href="/admin/property/property/view_property/{{property.id}}/" >{{property.upi}}</a></span>
+					        	{% else %}
+					        		&nbsp;
+					        	{% endif %}
+					        </td>
+					        <td>
+					        	<span class="work_for_print">{{property.address}}</span>
+					        	<span class="work_for_screen"><a href="/admin/property/property/view_property/{{property.id}}/" >{{property.address}}</a></span>
+					        </td>
+					        <td>
+					        	{% if property.associated_citizens %}
+					        		{% for citizen in property.associated_citizens %}
+					        			{{citizen.display_name}}<br>
+					        		{% endfor %}
+					        	{% else %}
+					        		&nbsp;
+					        	{% endif %}
+					        </td>
+					         <td>
+					        	{% if property.associated_citizens %}
+					        		{% for citizen in property.associated_citizens %}
+					        			{% if citizen.citizen_id %}
+					        				{{citizen.citizen_id}}<br>
+					        			{% endif %}
+					        		{% endfor %}
+					        	{% else %}
+					        		&nbsp;
+					        	{% endif %}
+					        </td>
+					        
+					        <td>
+					        	{% if property.businesses %}
+					        		{% for business in property.associated_businesses %}
+					        			{{business.name}}<br>
+					        		{% endfor %}
+					        	{% else %}
+					        		{% if property.subbusinesses %}
+					        			{% for subbusiness in property.subbusinesses %}
+					        				{{subbusiness.business.name}} (Branch: {{subbusiness.name}})<br>
+					        			{% endfor %}
+					        		{% endif %}
+					        	{% endif %}
+					        </td>
+					        
+					        <td>
+					        	{% if property.associated_citizens %}
+					        		{% for citizen in property.associated_citizens %}
+					        			{% if citizen.phone_1 %}
+					        				{{citizen.phone_1}}<br>
+					        			{% endif %}
+					        		{% endfor %}
+					        	{% else %}
+					        		{% if property.associated_businesses %}
+						        		{% for business in property.associated_businesses %}
+						        			{{business.phone1}}<br>
+						        		{% endfor %}
+						        	{% else %}
+						        		{% if property.subbusinesses %}
+						        			{% for subbusiness in property.subbusinesses %}
+						        				{{subbusiness.business.phone1}}<br>
+						        			{% endfor %}
+						        		{% endif %}
+						        	{% endif %}
+					        	{% endif %}
+					        </td>
+					        <td>
+					        	{% if property.associated_citizens %}
+					        		{% for citizen in property.associated_citizens %}
+					        			{% if citizen.email %}
+					        				{{citizen.email}}<br>
+					        			{% endif %}
+					        		{% endfor %}
+					        	{% else %}
+					        		{% if property.associated_businesses %}
+						        		{% for business in property.associated_businesses %}
+						        			{{business.email}}<br>
+						        		{% endfor %}
+						        	{% else %}
+						        		{% if property.subbusinesses %}
+						        			{% for subbusiness in property.subbusinesses %}
+						        				{{subbusiness.business.email}}<br>
+						        			{% endfor %}
+						        		{% endif %}
+						        	{% endif %}
+					        	{% endif %}
+					        </td>
+					        <td>{{property.tax_type}}</td>
+				        </tr>		
+			        {% endfor %}
+			        </tbody>							
+		        </table>
+			<div>
+
+			{% if paginator %}
+				<div id="navigator">
+					<span>
+						Total: {{paginator.count}}&nbsp;&nbsp;&nbsp;&nbsp;
+						Page {{ paginator.number }} of {{ paginator.num_pages }}.
+						&nbsp;&nbsp;&nbsp;&nbsp;
+						    	
+						{% if paginator.has_previous %}
+						    <a href="/admin/report/report/properties_with_unpaid_tax/?page=1">first</a>
+						{% else %}
+						    first
+						{% endif %}
+						        
+						&nbsp;&nbsp;
+						{% if paginator.has_previous %}
+						    <a href="/admin/report/report/properties_with_unpaid_tax/?page={{ paginator.previous_page_number }}">previous</a>
+						{% else %}
+						    previous
+						{% endif %}
+						        
+						&nbsp;&nbsp;
+						{% if paginator.has_next %}
+						    <a href="/admin/report/report/properties_with_unpaid_tax/?page={{ paginator.next_page_number }}">next</a>
+						{% else %}
+						    next
+						{% endif %}
+						&nbsp;&nbsp;
+						{% if paginator.has_next %}
+						    <a href="/admin/report/report/properties_with_unpaid_tax/?page={{ paginator.num_pages }}">last</a>
+						{% else %}
+						    last
+						{% endif %}
+					</span>
+				</div>
+			{% endif %}
+				
+		{% endif %}
+	</div>
+
+
+
+<div id="geodata" style="display:none;">
+	{% if geodata %}
+		{{geodata}}
+	{% endif %}
+</div>
+<div style="display:none" >
+	<div id="properties_in_all_pages">
+		
+	</div>
+</div>
+
+{% endblock %}
+
+
+
+
+

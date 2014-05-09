@@ -1,0 +1,92 @@
+{% extends "common/base_paytax_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+
+{% if fees %}
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+		<table style="margin:0 auto;" class="tablesorter" cellpadding="0" cellspacing="0">
+			<thead>
+			<tr>
+				<th>Fee Name</th>
+				<th width="120">Amount</th>
+				<th width="100">Due On</th>
+                <th >Media</th>
+				<th align="center" >Action</th>
+			</tr>	
+			</thead>
+			<tbody>
+			{% for i in fees %}
+				<tr>
+					<td>{{i.name}}<br/>{{i.target}}</td>
+					<td>							
+						{% if i.is_paid != 1 %}
+							{% if i.amount %}
+								<div class="pending">{{i.amount|currency}} {{i.currency|title}}</div>
+							{% else %}
+								<div class="pending">Not specified</div>
+							{% endif %}
+						{% else %}
+						<div class="paid">{{i.amount|currency}} {{i.currency|title}}<br/><b>PAID</b></div>
+						{% endif %}
+                            {% if i.past_payments_link %}
+                            <a href="{{ i.past_payments_link }}" class="fancy_box" >show past payments</a>
+                            {% endif %}
+					</td>
+                    <td>
+                        {% if i.due_date %}
+                            {{ i.due_date|date:"d/m/Y"}}
+						{% else %}
+							N/A
+						{% endif %}
+                    </td>
+                    <td>
+                        {% if i.medias %}
+                            {% for media in i.medias %}
+                            <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box"><img class="media_link" src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                            {% endfor %}
+						{% else %}
+							N/A
+						{% endif %}
+                    </td>
+                    <!--td><button class="button_styled" >more info</button></td>
+                    <td><button class="button_styled" >past payment</button></td-->
+                    <td>
+                        {% if i.has_pending_payment %}
+                            <i>Pending Payment waiting for approval.</i>
+                        {% else %}
+                            {% if i.is_paid != 1 %}
+                                {% if i.submit_link and i.fee_type == 'land_lease' %}
+									<a href="{{ i.submit_link }}"><button  class="my_button" >submit</button></a>
+                                {% endif %}
+                                {% if i.amount %}
+									<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}"><button class="my_button" >view ePay Invoice</button></a>
+                                {% endif %}
+                                {% if i.link %}
+									<a href="{{ i.link }}"><button class="my_button" >pay</button></a>
+                                {% endif %}
+                            {% else %}
+                                {% if i.receipt_links %}
+                                    {% for link in i.receipt_links %}
+                                        <a href="{{ link }}" target="_blank" class="invoice_link"><button  class="my_button" >view receipt</button></a>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endif %}
+                        {% endif %}
+				</tr>		
+			{% endfor %}
+			</tbody>							
+		</table>
+	</div>
+    {% else %}
+    No fee available.
+	{% endif %}
+
+
+
+
+</div>
+{% endblock %}

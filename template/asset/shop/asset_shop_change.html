@@ -1,0 +1,42 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Shop" "/admin/asset/shop/"  %}
+	{% breadcrumb "Update shop" %}
+{% endblock %}
+
+{% block mainbody %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if form %}
+<div class="user_action_title">
+	Update shop
+</div>
+
+<div class="padded_div">
+    <form  action="/admin/asset/shop/change_shop/{{ obj_id }}/" method="post" >
+	{% csrf_token %}
+    {{ form }}
+	{% include "asset/ownership/_ownership_block.html" with asset_type="shop" %}	
+    <input type="submit" value="Save" name="submit_update"/>
+    </form>
+</div>
+{% else %}
+
+{% include "asset/shop/_shop_search.html" with action="change" %}
+
+{% endif %}
+{% endblock %}

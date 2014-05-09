@@ -1,0 +1,40 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Office" "/admin/asset/office/"  %}
+	{% breadcrumb "Add office" %}
+{% endblock %}
+
+{% block mainbody %}
+
+<div style="width:60%; min-width:600px; margin-left:20px; text-align:left;">
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+	<div class="box">
+		<div class="box_title">
+			Add office
+		</div>
+		<div class="content">
+			<form action="/admin/asset/office/add_office/" method="post" >
+				{% csrf_token %}
+				{{ form }}
+				<div style="padding-right:22px;">
+					{% include "asset/ownership/_ownership_block.html" with asset_type="office" %}	
+				</div>
+				<div>
+					<input type="submit" value="Add" name="submit" class="my_button" />
+				</div>	
+			</form>
+		</div>	
+	</div>
+</div>
+
+{% endblock %}

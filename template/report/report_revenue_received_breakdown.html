@@ -1,0 +1,171 @@
+{% extends "common/base_report.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block right_panel_search_form %}
+<style type="text/css">
+	form input[type="submit"], form input[type="button"] {
+		background: #00B5D0;
+		padding: 5px 20px 5px 20px;
+		font-size: 15px;
+		font-weight: bold;
+		color: white;
+		cursor: pointer;
+	}
+	.my_button:hover {
+		background-color: rgb(47, 150, 180);
+	}
+	ul
+	{
+		padding-left:0px;
+		margin-top:10px;
+		margin-left:0px;
+	}
+	li
+	{
+		list-style-type:none;
+		margin-right:20px;
+		padding-left:5px;
+		float:left;
+		
+	}
+	li label
+	{
+		font-weight:normal;
+	}
+</style>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("div.legend table").css("top","-30px");
+	$("div.legend div").first().css("opacity",0);
+	legend_height = parseInt($("div.legend table").css("height"));
+	
+	
+	
+	$('#id_tax_types_0').change(function(){
+		if(this.checked)
+		{
+			$("input[id^='id_tax_types_']").each(function(){
+				$(this).attr('checked',true);
+				$(this).parent().addClass('checked');
+			});
+		}
+		if(!this.checked)
+		{
+			$("input[id^='id_tax_types_']").each(function(){
+				$(this).attr('checked',false);
+				$(this).parent().removeClass('checked');
+			});
+		}
+	});
+});
+</script>
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+		<div>
+			<table style="width:100%;" id="search_table">
+				<tr>
+					<td colspan="7">{{form.tax_types}}</td>
+				</tr>
+				<tr>
+					<td style="padding-left:10px;" width="60">District: </td>
+					<td width="220">{{form.district}}</td>
+					<td align="right" width="70">Sector: </td>
+					<td align="left" width="220">{{form.sector}}</td>
+					<td align="right" width="70">Cell: </td>
+					<td align="left" width="220">{{form.cell}}</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan="7">Select one or multiple years:&nbsp;&nbsp;&nbsp;
+						{{form.years}}
+					</td>					
+				</tr>
+				<tr>
+					<td><button type="submit" class="my_button">Get report</button></td>
+				</tr>
+			</table>
+		</div>
+	</form>
+{% endblock %}
+
+
+{% block printer %}
+	{% if graph_title %}
+		<form id="my_form" name="my_form" style="padding:0px; margin:0px;" action="" target="_blank" method="post">
+		{% csrf_token %}
+			<div style="display:none;">
+				<table>
+					<tr>
+						<td>{{form.tax_types}}</td>
+						<td>{{form.district}}</td>
+						<td>{{form.sector}}</td>
+						<td>{{form.cell}}</td>
+						<td>{{form.years}}</td>
+						<td><input type="text" name="toPrint" value="true" /></td>
+					</tr>
+				</table>
+			</div>
+			<a href="#" onclick="document.my_form.submit();"><img src="/static/images/printer.png" style="width:27px;" border="0" /></a>
+		</form>	
+	{% endif %}
+{% endblock %}
+
+
+
+{% block right_panel_box_title %}
+	Report on revenue received
+{% endblock %}
+
+
+
+{% block right_panel_content %}
+
+
+
+{% if line_chart_data %}
+<table cellpadding="0" cellspacing="0" width="100%">
+	<tr>
+		<td style="width:50%; padding-right:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Graph</span>
+				</h4>
+			</div>
+			<div class="content">
+				<div class="lines-chart" style="height: 230px; margin-top:30px;  width:100%;"></div>
+				<div style="display:none;" class="chart_data">{{line_chart_data}}</div>
+			</div>
+		</td>
+		<td style="width:50%; padding-left:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Summary</span>
+				</h4>
+			</div>
+			<div class="content" style="line-height:25px; font-size:13px;">
+				{% if total_revenues %}
+					{% for item in total_revenues %}
+						<div>Total revenue in year <span style="color:#3399cc;">{{item.year}}</span> is: RWF <span style="color:red ">{{item.revenue|currency}}</span></div>		
+					{% endfor %}
+				{% endif %}
+			</div>
+		</td>
+	</tr>
+</table>
+
+{% endif %}
+
+
+
+
+
+
+{% endblock %}
+
+

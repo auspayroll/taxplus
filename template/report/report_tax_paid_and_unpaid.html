@@ -1,0 +1,274 @@
+{% extends "common/base_report.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block right_panel_search_form %}
+<style type="text/css">
+	form input[type="submit"], form input[type="button"] {
+		background: #00B5D0;
+		padding: 5px 20px 5px 20px;
+		font-size: 15px;
+		font-weight: bold;
+		color: white;
+		cursor: pointer;
+	}
+	form input[type="text"]
+	{
+		width:220px;
+	}
+	.my_button:hover {
+		background-color: rgb(47, 150, 180);
+	}
+	ul
+	{
+		padding-left:0px;
+		margin-top:10px;
+		margin-left:0px;
+	}
+	li
+	{
+		list-style-type:none;
+		margin-right:20px;
+		padding-left:5px;
+		float:left;
+		
+	}
+	li label
+	{
+		font-weight:normal;
+	}
+	div.xAxis div.tickLabel
+	{
+		-webkit-transform: rotate(-45deg);
+
+		/* Firefox */
+		-moz-transform: rotate(-45deg);
+
+		/* IE */
+		-ms-transform: rotate(-45deg);
+
+		/* Opera */
+		-o-transform: rotate(-45deg);
+		font-size:12px;
+	}
+
+</style>
+<script type="text/javascript">
+
+$(document).ready(function(){
+	$("div.legend table").css("top","-50px");
+	$("div.legend div").first().css("opacity",0);
+	legend_height = parseInt($("div.legend table").css("height"));
+	//$("div.content div.stacked-bars-chart").css("margin-top",""+legend_height+"px");	
+
+	$('#id_tax_types_0').change(function(){
+		if(this.checked)
+		{
+			$("input[id^='id_tax_types_']").each(function(){
+				$(this).attr('checked',true);
+				$(this).parent().addClass('checked');
+			});
+		}
+		if(!this.checked)
+		{
+			$("input[id^='id_tax_types_']").each(function(){
+				$(this).attr('checked',false);
+				$(this).parent().removeClass('checked');
+			});
+		}
+	});
+
+});
+</script>
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+		<div>
+			<table style="width:100%;" id="search_table">
+				<tr>
+					<td colspan="9">{{form.tax_types}}</td>
+				</tr>
+				<tr>
+					<td width="40">District:</td>
+					<td width="220">{{form.district}}</td>
+					<td width="20"></td>
+					<td width="40">Sector:</td>
+					<td width="220">{{form.sector}}</td>
+					<td width="20"></td>
+					<td width="40">Cell:</td>
+					<td width="220">{{form.cell}}</td>
+					<td width="20"></td>
+					<td width="30">Year:</td>
+					<td width="220">{{form.calendar_year}}</td>
+					<td style="padding-right:20px; text-align:right;"><button type="submit" class="my_button">Get report</button></td>
+				</tr>
+			</table>
+		</div>
+	</form>
+{% endblock %}
+
+
+{% block right_panel_box_title %}
+	Report on tax paid and unpaid
+{% endblock %}
+
+{% block printer %}
+	{% if graph_title %}
+		<form id="my_form" name="my_form" style="padding:0px; margin:0px;" action="" target="_blank" method="post">
+		{% csrf_token %}
+			<div style="display:none;">
+				{{form.tax_types}}
+				{{form.district}}
+				{{form.sector}}
+				{{form.cell}}
+				{{form.calendar_year}}
+				<input type="text" name="toPrint" value="true" />
+			</div>
+			<a href="#" onclick="document.my_form.submit();"><img src="/static/images/printer.png" style="width:27px;" border="0" /></a>
+		</form>	
+	{% endif %}
+{% endblock %}
+
+{% block right_panel_content %}
+
+{% if bar_data or bar_data_monthly_list %}
+<table cellpadding="0" cellspacing="0" width="100%">
+	<tr>
+        <td style="text-align:left;" valign="top">
+        {% if bar_data %}
+		<div style="width:48%; margin: 1%; float: left; text-align:left;" >
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Yearly Graph for Tax/Fee Count</span>
+				</h4>
+			</div>
+			<div class="content yearly_chart">
+				<div class="order-bars-chart" style="height: 230px; margin-top:50px; width:100%;"></div>
+				<div style="display:none;" class="chart_data">{{bar_data}}</div>
+			</div>
+		</div>
+        {% endif %}
+        {% if bar_data_monthly_list %}
+            {% for name,bar_data_monthly in bar_data_monthly_list.items %}
+		<div style="width:48%; margin: 1%; float: left; text-align:left;" >
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Monthly Graph for {{name|title}} Count</span>
+				</h4>
+			</div>
+			<div class="content">
+				<div class="order-bars-chart" style="height: 230px; margin-top:50px; width:100%;"></div>
+				<div style="display:none;" class="chart_data">{{bar_data_monthly}}</div>
+			</div>
+		</div>
+            {% endfor %}
+        {% endif %}
+		<div style="width:48%; margin: 1%; float: left; text-align:left;" >
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Summary</span>
+				</h4>
+			</div>
+			<div class="content" style="line-height:25px; font-size:13px;">
+			    <div>Tax amount paid: {{result.paid_amount|currency}} RWF</div>
+			    <div>Tax amount unallocated: {{result.unallocated_amount|currency}} RWF</div>
+			    <div>Tax paid count: {{result.paid_count|currency}} <span style="color: #3399cc;">({{result.paid_percentage}})</span></div>
+			    <div>Tax unpaid count: {{result.unpaid_count|currency}} <span style="color: #3399cc;">({{result.unpaid_percentage}})</span></div>
+			    <div>Tax unallocated count: {{result.unallocated_count|currency}} <span style="color: #3399cc;">({{result.unallocated_percentage}})</span></div>
+			    <div>Total tax count: {{result.total_count|currency}}</div>
+			</div>
+		</div>
+        </td>
+	</tr>
+
+    {% if unpaid_list  %}
+    <tr>
+        <td colspan="2">
+            <br/>
+			<div class="title">
+				<h4 style="padding-bottom: 4px;">
+					<span class="icon16 icomoon-icon-grid"></span>
+					<span>Unpaid List (with overdue)</span>
+                    <!--button type="button" class="my_button" style="float: right;"><span aria-hidden="true" class="entypo-icon-email"></span>Send Email/SMS</button-->
+                    <a href="/admin/bulk_messaging/send/?list=unpaid" class="fancy_box" style="float: right; margin-right: 20px; margin-top: -3px; color: #3399cc; text-decoration: underline;">Send Email/SMS<!--img src="/static/images/send-email.png" border="0" title="Send Email/SMS"--></a>
+                    <div class="clear"></div>
+				</h4>
+			</div>
+	        <table style="margin:0 auto;" class="tablesorter" cellpadding="0" cellspacing="0">
+		        <thead>
+		        <tr>
+			        <th style="width:80px;">Citizen ID</th>
+			        <th class="{sorter: 'commaDigit'}">Citizen Name</th>
+			        <th style="width:120px;">Business</th>
+			        <th style="width:70px;">TIN</th>
+			        <th>Address</th>
+			        <th>Phone</th>
+			        <th>Email</th>
+			        <th style="width:240px;">Tax type</th>
+		        </tr>	
+		        </thead>
+		        <tbody>
+		        {% for i in unpaid_list  %}
+			        <tr>
+				        <td>{{i.citizen_id }}</td>
+				        <td>{% if i.cid %}<a href="/admin/citizen/citizen/view_citizen/{{i.cid}}/">{{i.citizen_name }}</a>{% endif%}</td>
+				        <td>{% if i.bid %}<a href="/admin/asset/business/change_business/{{i.bid}}/">{{i.business }}</a>{% endif%}</td>
+				        <td>{{i.tin }}</td>
+				        <td>{% if i.pid %}<a href="/admin/property/property/view_property/{{i.pid}}/">{{i.address }}</a>{% endif%}</td>
+				        <td>{{i.phone|linebreaks }}</td>
+				        <td>{{i.email }}</td>
+				        <td>{{i.tax_type|linebreaks  }}</td>
+			        </tr>		
+		        {% endfor %}
+		        </tbody>							
+	        </table>
+	        <div style="margin-top:20px; font-size:14px;">
+		        <span>
+			        Page {{ unpaid_list.number }} of {{ unpaid_list.paginator.num_pages }}.
+			        &nbsp;&nbsp;&nbsp;&nbsp;
+						{% if unpaid_list.has_previous %}
+				        <a href="/admin/report/report/tax_paid_and_unpaid/?page=1">first</a>
+			        {% else %}
+				        first
+			        {% endif %}
+						 &nbsp;&nbsp;
+			        {% if unpaid_list.has_previous %}
+				        <a href="/admin/report/report/tax_paid_and_unpaid/?page={{ unpaid_list.previous_page_number }}">previous</a>
+			        {% else %}
+				        previous
+			        {% endif %}
+						 &nbsp;&nbsp;
+			        {% if unpaid_list.has_next %}
+				        <a href="/admin/report/report/tax_paid_and_unpaid/?page={{ unpaid_list.next_page_number }}">next</a>
+			        {% else %}
+				        next
+			        {% endif %}
+						&nbsp;&nbsp;
+			        {% if unpaid_list.has_next %}
+				        <a href="/admin/report/report/tax_paid_and_unpaid/?page={{ unpaid_list.paginator.num_pages }}">last</a>
+			        {% else %}
+				        last
+			        {% endif %}
+		        </span>
+	        </div>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td colspan="2">
+            <br/><br/>
+            <h4>No overdue unpaid tax/fee found.</h4>
+        </td>
+    </tr>
+    {% endif %}
+</table>
+
+{% endif %}
+
+
+
+{% endblock %}
+
+

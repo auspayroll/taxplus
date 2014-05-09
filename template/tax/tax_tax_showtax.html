@@ -1,0 +1,271 @@
+{% extends "common/base_design.html" %}
+
+{% load staticfiles %}
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Verify Target" "/admin/tax/tax/verify_target/" %}
+	{% breadcrumb "Show Taxes" %}	
+{% endblock %}
+{% block mainbody %}
+
+<style type="text/css">
+	#taxes
+	{
+		font-family:Arial;
+		text-align:left;
+		padding: 2px;
+	}
+	#taxes th
+	{
+		border-bottom: 1px solid #c4c4c4;
+		font-size: 12px;
+	}
+	#taxes th,#taxes th
+	{
+		padding: 5px;
+	}
+    #taxes td.first_col
+    {
+        line-height: 16px;
+        padding-right: 15px;
+        width: 350px;
+    }
+	a:link, a:hover, a:visited{color:blue;}
+	#taxes .pending
+	{
+		color: red;
+	}
+	#taxes .paid
+	{
+		color: #00B5D0;
+        font-weight: bold;
+    }
+
+</style>
+
+<script type="text/javascript" src="{% static "js/fancybox/jquery.fancybox-1.3.4.pack.js" %}"></script>
+<link rel="stylesheet" href="{% static "js/fancybox/jquery.fancybox-1.3.4.css" %}" type="text/css" media="screen" />
+
+<script type="text/javascript">
+$(document).ready(function() {
+	$("a.fancybox").fancybox();	
+});
+</script>
+
+{% load humanize %}{% load simple_tags %}
+
+<div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
+
+        {% if type == 'citizen' %}
+        <fieldset class="target_details">
+            <legend><h2 class="style_heading">{{ type|title }} Details</h2></legend>
+            <div><label>Citizen ID:</label> {{ model.citizen_id }}&nbsp;</div>
+            <div><label>First Name:</label> {{ model.first_name }}&nbsp;</div>
+            <div><label>Middle Name:</label> {{ model.middle_name }}&nbsp;</div>
+            <div><label>Last Name:</label> {{ model.last_name }}&nbsp;</div>
+            <div><label>Gender:</label> {{ model.gender }}&nbsp;</div>
+            <div><label>Phone:</label> {{ model.phone_1 }}&nbsp;</div>
+            <div><label>Email:</label> {{ model.email }}&nbsp;</div>
+            <div><label>&nbsp;</label><a href="/admin/citizen/citizen/change_citizen/{{ model.id }}/?redirect=tax">Edit {{type}} details</a></div>
+            {% if model.photo != '' %}
+                <img src="/media/{{model.photo}}" />
+            {% endif %}
+        </fieldset>
+        <br/>
+	    <div class="note">In order to set up new:
+            <ul>
+                <li>Fix Asset Tax / Rental Income Tax: Please <a href="/admin/property/property/view_property/">add the new property</a> that owned by this citizen.</li>
+                <li>Trading License Tax: Please <a href="/admin/asset/business/add_business/?redirect=tax">add the new business</a> that owned by this citizen.</li>
+            </ul>
+        </div>
+        <br/>
+
+        {% elif type == 'business' %}
+        <fieldset class="target_details">
+            <legend><h2 class="style_heading">{{ type|title }} Details</h2></legend>
+            <div><label>TIN/RRA:</label> {{ model.tin }}&nbsp;</div>
+            <div><label>Name:</label> {{ model.name }}&nbsp;</div>
+            <div><label>Date Started:</label> {{ model.date_started|date:'Y-m-d' }}&nbsp;</div>
+            <div><label>Phone:</label> {{ model.phone1 }}&nbsp;</div>
+            <div><label>Email:</label> {{ model.email }}&nbsp;</div>
+            <div><label>VAT Register:</label> {% if model.vat_register %} Yes {% else %} No {% endif %} &nbsp;</div>
+            <div><label>&nbsp;</label><a href="/admin/asset/business/change_business/{{ model.id }}/?redirect=tax">Edit {{type}} details</a></div>
+        </fieldset>
+        <br/>
+	    <div class="note">In order to set up new Fix Asset Tax / Rental Income Tax, please <a href="/admin/property/property/view_property/">add the new property</a> that owned by this business.
+        </div>
+        <br/>
+
+        {% elif type == 'property' %}
+        <fieldset class="target_details">
+            <legend><h2 class="style_heading">{{ type|title }} Details</h2></legend>
+            <div><label>Plot ID:</label> {{ model.plot_id }}&nbsp;</div>
+            <div><label>Address:</label> {{ model.getDisplayName }}&nbsp;</div>
+            <div><label>Year Built:</label> {{ model.year_built }}&nbsp;</div>
+            <div><label>Is Leasing:</label> {% if model.is_leasing %} Yes {% else %} No {% endif %}&nbsp;</div>
+            <div><label>&nbsp;</label><a href="/admin/property/property/change_property/{{ model.id }}/?redirect=tax">Edit {{type}} details</a></div>
+        </fieldset>
+        <br/>
+	    <div class="note">
+        </div>
+        {% endif %} 
+
+
+	<h4>Taxes</h4>
+	<div>
+		{% if taxes %}
+
+		<table id="taxes" cellpadding="0" cellspacing="0">
+			<tr>
+					<th>Tax Name</th>
+					<th width="120">Amount</th>
+					<th width="100">Due On</th>
+                    <th width="200">Media</th>
+					<!--th></th>
+					<th></th-->
+					<th></th>
+			</tr>								
+				{% for i in taxes %}
+					<tr>
+						<td class="first_col">{{i.name}}<br/>{{i.target}}</td>
+						<td class="pending">							
+							{% if i.is_paid != 1 %}
+                                {% if i.amount %}
+								<div class="pending">{{i.amount|floatformat:2|currency}} {{i.currency|title}}</div>
+							    {% else %}
+							    <div class="pending">Not specified</div>
+							    {% endif %}
+							{% else %}
+							<div class="paid">PAID</div>
+							{% endif %}
+						</td>
+                        <td>
+                            {% if i.due_date %}
+                                {{ i.due_date|date:"d/m/Y"}}
+							{% else %}
+								N/A
+							{% endif %}
+                        </td>
+                        <td>
+                            {% if i.medias %}
+                                {% for media in i.medias %}
+                                <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box"><img class="media_link" src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                                {% endfor %}
+							{% else %}
+								N/A
+							{% endif %}
+                        </td>
+                        <!--td><button class="button_styled" >more info</button></td-->
+                        <td><a href="{{ i.past_payment_link }}" class="fancybox"><button class="button_styled" >past payments</button></a></td>
+                        <td>
+                            {% if i.is_paid != 1 %}
+                                <a href="{{ i.link }}"><button  class="button_styled" >pay</button></a>
+                            {% endif %}
+                        </td>
+					</tr>		
+				{% endfor %}
+		</table>
+        {% else %}
+        No tax available.
+		{% endif %}
+
+	</div>
+    <br/>
+	<h4>Fees</h4>
+
+	<div>
+		{% if fees %}
+		<table id="taxes" cellpadding="0" cellspacing="0">
+			<tr>
+					<th>Tax Name</th>
+					<th width="120">Amount</th>
+					<th width="100">Due On</th>
+                    <th width="200">Media</th>
+					<!--th></th>
+					<th></th-->
+					<th></th>
+			</tr>
+				{% for i in fees %}
+					<tr>
+						<td class="first_col">{{i.name}}</td>
+						<td class="pending">							
+							{% if i.is_paid != 1 %}
+                                {% if i.amount %}
+								<div class="pending">{{i.amount|floatformat:2|currency}} {{i.currency|title}}</div>
+							    {% else %}
+							    <div class="pending">Not specified</div>
+							    {% endif %}
+							{% else %}
+							<div class="paid">PAID</div>
+							{% endif %}
+						</td>
+                        <td>
+                            {% if i.due_date %}
+                                {{ i.due_date|date:"d/m/Y"}}
+							{% else %}
+								N/A
+							{% endif %}
+                        </td>
+                        <td>
+                            {% if i.medias %}
+                                {% for media in i.medias %}
+                                <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box"><img src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                                {% endfor %}
+							{% else %}
+								N/A
+							{% endif %}
+                        </td>
+                        <!--td><button class="button_styled" >more info</button></td-->
+                        <td><a href="{{ i.past_payment_link }}" class="fancybox"><button class="button_styled" >past payments</button></a></td>
+                        <td>
+                            {% if i.is_paid != 1 %}
+                                <a href="{{ i.link }}"><button class="button_styled" >pay</button></a>
+                            {% endif %}
+                        </td>
+					</tr>		
+				{% endfor %}
+		</table>
+        {% else %}
+        No fee available.
+		{% endif %}
+	</div>
+    <br/>
+	<h4>History</h4>
+	<div>
+		
+		{% if not historical_fees %}
+		No history available.
+		{% else %}	
+		<table cellpadding='0' cellspacing = '0'>
+			<tr>
+				<th width="50">Fee ID</th>
+				<th width="120">Fee Type</th>
+				<th width="80">Fee From</th>
+				<th width="80">Fee To</th>
+				<th width="120">Amount</th>
+				<th width="80">Late Fee</th>
+				<th width="60">Is Paid</th>
+				<th width="180">Invoince Number</th>
+			<tr>
+			{% for fee in historical_fees %}
+			<tr>
+				<td>{{fee.fee_id}}</td>
+				<td>{{fee.fee_type}}</td>
+				<td>{{fee.period_from|date:"Y-m-d"}}</td>
+				<td>{{fee.period_to|date:"Y-m-d"}}</td>
+				<td>{{fee.amount_due}}</td>
+				<td>{{fee.late_paymemt_penalty}}</td>
+				<td>{{fee.is_paid}}</td>
+				<td>{{fee.invoince_no}}</td>
+			<tr>
+			{% endfor %}
+		</table>
+		{% endif %}
+		
+	</div>
+
+
+</div>
+{% endblock %}

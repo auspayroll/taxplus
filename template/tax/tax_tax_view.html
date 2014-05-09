@@ -1,0 +1,212 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block javascript %}
+<script src="/static/js/jquery.maskedinput.min.js" type="text/javascript"></script>
+<script type="text/javascript"  src="/static/js/admin/geo_enable.js"></script>
+<script type="text/javascript">
+
+</script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Tax / Fee Settings" %}
+{% endblock %}
+
+{% block mainbody %}
+
+<script type="text/javascript" >
+$(function(){
+    $(".rates").keyup(function()
+    {
+        //clear rate field if user enter nonnumeric charater or value > 100%
+        if(isNaN($(this).val()) || parseFloat($(this).val()) > 100)
+        {
+            $(this).val('');
+        }
+    });
+
+    $(".due_date_field").mask("99-99");
+    $(".monthly_due_date_field").mask("99");
+
+    $("#setting_form").submit(function(){
+        var valid = true;
+
+        $("#setting_form input[type=text]").each(function(){
+            if($(this).val() == "")
+            {
+				$("#message").html("Missing setting value!");
+                $("#message").show();
+                $(this).css("border","1px solid red");
+                $(".messages").hide()
+                valid = false;
+            }
+            else
+            {
+                $(this).css("border","auto");
+            }
+        });
+
+        $(".monthly_due_date_field").each(function(){
+            if(parseInt($(this).val()) > 31)
+            {
+				$("#message").html("Invalid montly due date! Day of month should be in range of 1-31");
+                $("#message").show();
+                $(this).css("border","1px solid red");
+                $(".messages").hide()
+                valid = false;
+            }
+        });
+
+        return valid;
+    });
+
+    $("#council_select").change(function(){
+        window.location="/admin/tax/tax/change_settings/?council_id=" + $(this).val();    
+    });
+
+	$( ".date_picker" ).datepicker("option", "minDate", new Date);
+});
+function deleteForm(id)
+{
+    $("#target_form").val(id);
+    $("#dialog").dialog("open");
+    return false;
+}
+function addinput(ele){
+	$(ele).before('<input type="text" name="sub_types[]" /> => <input type="text" name="values[]"/>');
+}
+$(document).ready(function(){
+//	$("button.add_tax").onclick=function(e){
+//		$().before('<input type="text" name="values[]/><input type="text" name="sub_types[]" />');
+//	}
+	}); 
+
+</script>
+    <div style="margin-left:20px;">
+	    <div id="message" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin-bottom:15px;"></div>
+
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+    <fieldset class="setting_box">
+		<table id="search_table">
+			<tr>
+				<td>District:</td>
+				<td>{{form.district}}</td>
+				<td style="padding-left:20px;">Sector:</td>
+				<td>{{form.sector}}</td>
+				<td style="padding-left:20px;">Cell:</td>
+				<td>{{form.cell}}</td>
+				<td style="padding-left:20px;">Village:</td>
+				<td>{{form.village}}</td>
+				<td>
+				<div>
+                	
+                	<button type="submit" class="btn green">Get fee</button>
+
+            	</div>
+
+            	</td>
+            	<td style="text-align:right;">
+            	<div >
+                	<button class="btn black" onclick="window.print();">Print</button>
+                </div>
+            	</td>
+			</tr>
+		</table>
+
+        <!--select name="council_id" id="council_select" placeholder="Select a council" style="width:auto;">
+            <option id="council_select_label" {% if request.GET.council_id %} {% endif %}>-- Select a council --</option>
+            {% for i in councils %}
+            <option value="{{ i.id }}" {% if council_id == i.id %}  {% endif %} >{{ i.name}}</option>
+            {% endfor %}
+        </select-->
+    </fieldset>
+	</form>
+    <div>
+        <h2 style="margin-left: 20px;">{{settings_label}}</h2>
+    {% if list != None %}
+        {% if list|length > 0 %}
+        <form method="POST" id="setting_form">
+	    {% csrf_token %}
+    
+            {% for k, v in list.items  %}
+                <div class="setting_box">
+	                <div class="box">
+		                <div class="box_title">
+			                {{ k }} Settings
+		                </div>
+		                <div class="content">
+
+				            <div style="margin:10px;margin-left:0px;">
+					            <table cellpadding="0" cellspacing="0" class="tablesorter">
+						            <thead>
+							            <tr>
+								            <th>Setting Name</th>
+								            <th>Value</th>
+								            <th>Description</th>
+								            <th>Valid From</th>
+								            <!--th>Valid To</th-->
+							            </tr>
+						            </thead>
+						            <tbody>
+						            {% for name,content in v.items %}
+							            <tr>
+								            <td width="140">{{ name }}</td>
+                                            <td width="400">
+                                                {% if content.type == 'list' %}
+                                                    {% for sub_item in content.value %}
+                                                    <input type="text" name="sub_types[]" value="{{ sub_item.sub_type }}" disabled="disabled" /> => 
+                                                    {%if sub_item.value == '' %}
+                                                    	0
+                                                    {%else%}
+                                                    	{{ sub_item.value }}
+                                                    {% endif %}
+                                                    <input type="hidden" name="ids[]" value="{{ sub_item.id }}" />
+                                                    <br/>
+                                                    {% endfor %}
+                                                     
+                                                {% elif content.type == 'rate' %}
+                                                <input type="text" class="rates" maxlength="5" name="values[]" value="{{ content.value|floatformat:2 }}"  style="border: 1px solid red;" disabled/> %
+                                                <input type="hidden" name="ids[]" value="{{ content.id }}" />
+                                                {% else %}
+                                                <input type="text" name="values[]" value="{{ content.value }}" {% if name == "Due Date" %} class="due_date_field" {% elif name == "Monthly Due Date" %} class="monthly_due_date_field"  {% endif %} style="border: 1px solid red;" disabled/>
+                                                <input type="hidden" name="ids[]" value="{{ content.id }}" />
+                                                
+                                                {% endif %}
+                                            </td>
+								            <td width="350">{{ content.description }}</td>
+								            <td width="80">{{ content.valid_from|date:"d-m-Y" }}</td>
+								            <!--td width="80">{{ content.valid_to|date:"d-m-Y" }}</td-->
+							            </tr>
+						            {% endfor %}
+						            </tbody>
+					            </table>
+				            </div>
+		                </div>	
+	                </div>
+                </div>
+            {% endfor %}
+            <!--  <div style="margin-left: 40px;">
+                <b>New settings to be applied on</b> <input type="text" class="date_picker" name="valid_from" value="{% now "d/m/Y" %}" /><br/><br/>
+	            <input style="" type="submit" class="my_button" name="save_settings" value="Save Settings"/>
+            </div>-->
+        </form>
+        {% else %}
+	        <div class="note" style="margin-left: 40px;">There are no setting available. Please contact Admin.</div>
+        {% endif %}
+    {% endif %}
+    </div>
+<br/><br/>
+{% endblock %}

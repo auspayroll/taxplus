@@ -1,0 +1,195 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/pmode/jquery-ui-1.8.23.custom.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/custom.css" %}" />
+	
+{% endblock %}
+
+{% block javascript %}
+
+		<!-- Compulsory for tax system-->
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.tooltip_0.4.4.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.grow.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.pie.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.orderBars.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+    <!-- Init plugins -->
+    <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+    <script type="text/javascript" src="{% static "js/charts.js" %}"></script><!-- Init plugins only for page -->
+    <script type="text/javascript"  src="/static/js/admin/populate_geo.js"></script>
+    <script type="text/javascript"  src="/static/js/admin/property.js"></script>
+{% endblock %}
+
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Property" "/admin/property/property/" %} 
+	{% breadcrumb "Select property" %}	
+{% endblock %}
+
+
+{% block mainbody %}
+<style>
+    .form_element{
+        width:250px;
+        display: inline-block;
+        float: left;
+    }
+    .form_element_description{
+        width: 400px;
+        display: inline-block;
+        margin-left:10px;
+        line-height:30px;
+    }
+    .form_element_description img{
+        display: none;
+    }
+    .form_element_description img:hover{
+        cursor: pointer;
+    }
+
+</style>
+
+
+<div style="margin-top:20px; font-weight:bold; font-size:16px;text-align:left; margin-left:20px;">
+	<div>Please enter property details to search.</div>
+	<form action="/admin/property/property/view_property/" method="post" >
+		{% csrf_token %}
+		<div style="font-size:14px; font-weight:normal;margin-top:20px">
+			<table id="search_table">
+				<tr>
+					<td>UPI: </td><td>{{form.upi}}</td>
+				</tr>
+				<tr>
+					<td colspan='2'>&nbsp;</td>
+				</tr>
+				<tr>
+					<td colspan='2'><span style="color:red">-------------------- Or -------------------</span></td>
+				</tr>
+				<tr>
+					<td colspan='2'>&nbsp;</td>
+				</tr>
+				
+				<tr>	
+					<td>District: </td>
+                    <td>
+                        <div class="form_element">{{form.district}}</div>
+                        <div class="form_element_description"><img id='district_refresh' src="/static/images/refresh.png"/></div>
+                    </td>
+				</tr>
+				<tr>	
+					<td>Sector: </td>
+                    <td>
+                        <div class="form_element">{{form.sector}}</div>
+                        <div class="form_element_description"><img id='sector_refresh' src="/static/images/refresh.png"/></div>
+                    </td>
+				</tr>
+				<tr>	
+					<td>Cell: </td>
+                    <td>
+                        <div class="form_element">{{form.cell}}</div>
+                        <div class="form_element_description"></div>
+                    </td>
+				</tr>
+				<tr>
+					<td>Plot/Parcel ID: </td><td>{{form.parcel_id}}</td>
+				</tr>	
+			</table>
+		</div>
+		<div style="color:red; width:800px; height:25px; line-height: 25px; margin-top:5px; font-size:14px;" id="search_error">
+			{% if error_message	%}
+				{{error_message}}
+			{% endif%}
+		</div>
+		<div style="margin-top:20px;">
+			<button type="submit" class="my_button">Search</button> 
+		</div>
+	</form>
+</div>
+
+
+
+
+<script>
+    $(document).ready(function(){
+        if($("#search_table #id_district").val()=='')
+        {
+            $("#search_table #id_sector").prop('disabled','disabled');
+            $("#search_table #id_cell").prop('disabled','disabled');
+            $("#search_table #id_village").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#search_table #id_sector").prop('disabled',false);
+            if($("#search_table #id_sector").val()=='')
+            {
+                $("#search_table #id_cell").prop('disabled','disabled');
+                $("#search_table #id_village").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#search_table #id_cell").prop('disabled',false);
+                if($("#search_table #id_cell").val()=='')
+                {
+                    $("#search_table #id_village").prop('disabled','disabled');
+                }
+                else
+                {
+                    $("#search_table #id_village").prop('disabled',false);
+                }
+            }
+        }
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+        $("#uniform-id_cell").after('<img style="margin-left:10px; display:none;" id="cell_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+    });
+</script>
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

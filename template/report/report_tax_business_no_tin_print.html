@@ -1,0 +1,111 @@
+{% extends "common/base_report_print.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block mainbody %}
+
+
+<style type="text/css">
+
+		@media screen,print
+		{
+			table > thead > tr > th{
+				padding:5px;
+				text-align:left;
+			}
+			table > tbody > tr > td{
+				padding:5px;
+				text-align:left;
+			}
+		}
+	</style>
+
+
+
+
+<div style="padding:20px; width:900px; max-width:900px;">
+	<div style="margin-top:20px; margin-bottom:20px; font-size:14px; font-weight:normal;">
+		{{graph_title}}
+	</div>
+
+	{% if simple_pie_data %}
+	<div style="text-align:left;">
+		<table cellpadding="0" cellspacing="0" width="100%" style="border:0px; padding:0px; margin:0px;">
+			<tr>
+				<td style="width:100%;text-align:left;" valign="top">
+					<div style="padding-left:0px; margin-left:0px;" class="title">
+						<h4>
+							<span class="icon16 icomoon-icon-bars"></span>
+							<span>Graph</span>
+						</h4>
+					</div>
+					<div style="padding-left:0px; margin-left:0px;" class="content">
+						<div class="simple-pie" style="height: 230px; width:100%;"></div>
+						<div style="display:none;" class="chart_data">{{simple_pie_data}}</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td style="width:100%;text-align:left;" valign="top">
+					<div style="margin-top:30px;"></div>
+					<div class="title">
+						<h4>
+							<span class="icon16 icomoon-icon-bars"></span>
+							<span>Summary</span>
+						</h4>
+					</div>
+					<div class="content" style="line-height:25px; font-size:13px;">
+						<div>Businesses with TIN: {{figures.with_tin_number|currency}} <span style="color: #3399cc;">({{figures.with_tin_percentage}})</span></div>
+						<div>Businesses without TIN: {{figures.without_tin_number|currency}} <span style="color: #3399cc;">({{figures.without_tin_percentage}})</span></div>
+						<div>All: {{figures.all|currency}}</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	{% endif %}
+
+
+
+
+
+
+
+<div style="text-align:center; margin-top:30px;">
+	{% if not businesses %}
+		No businesses found without TIN.
+	{% else %}
+		<table cellpadding="0" cellspacing="0" width="100%" style="max-width:800px;" border="1">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Name</th>
+					<th>Date started</th>
+					<th>Primary phone</th>
+					<th>Secondary phone</th>
+					<th>Email</th>
+					<th>Address</th>
+				</tr>	
+			</thead>
+			<tbody>
+			{% for business in businesses %}
+				<tr>
+					<td >{{business.loopcount}}</td>
+					<td>{{business.name}}</td>
+					<td>{{business.date_started|date:'d/m/Y'}}</td>
+					<td>{{business.phone1 }}</td>
+					<td>{{business.phone2 }}</td>
+					<td>{{business.email }}</td>
+					<td>{{business.address }}</td>
+				</tr>		
+			{% endfor %}
+			</tbody>							
+			
+		</table>	
+	{% endif %}
+
+	
+</div>
+</div>
+
+{% endblock %}

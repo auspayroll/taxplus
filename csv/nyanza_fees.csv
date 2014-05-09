@@ -1,0 +1,46 @@
+Business,MARKET FEE - Constructed - City (on plot of 1.80m x 2.40m),"8,000",monthly per stall
+Business,MARKET FEE - Constructed - City (all other plots),"5,000",monthly per stall
+Business,MARKET FEE - Constructed - Trading Centre (Business Centre),"4,000",monthly per stall
+Business,MARKET FEE - Constructed - Rural Area,"2,000",monthly per stall
+Business,MARKET FEE - Unconstructed - City,"4,000",monthly per stall
+Business,MARKET FEE - Unconstructed - Trading Centre (Business Centre),"2,000",monthly per stall
+Business,MARKET FEE - Unconstructed - Rural Area,"1,000",monthly per stall
+Civil-Public,PUBLIC CEMETARY,"2,000", per tomb
+Civil-Public,CIVIL MARRIAGE ,"10,000",upfront per marriage conducted not on set day
+Property,CHANGE OWNERSHIP - Immovable Property,"20,000",upfront per doc
+Property,"DEBT MORTGAGE - Registration, Cancellation, Review, Assignment","1,200",upfront per doc
+Property,AUTHORIZATION - House Repair / Rehabilitation or Erect Fence - City of Kigali,"1,200",upfront per doc
+Property,BUILDING PERMIT - 0 to 100sqm,"20,000",upfront per doc
+Property,BUILDING PERMIT - 100 to 500sqm,"40,000",upfront per doc
+Property,BUILDING PERMIT - 500sqm and above,"60,000",upfront per doc
+Property,BUILDING PERMIT - Villages (Rural Areas),"5,000",upfront per doc
+Property,LAND LEASE TITLE - New / Changes,"5,000",upfront per doc
+Property,PLOT BOUNDARY MAP,"10,000",upfront per doc
+Business,COMPANY NAME CHANGE / SHARES CERTIFICATE,"20,000",upfront per doc
+Civil-Public,CIVIL STATUS CERTIFICATE,"3,000",upfront per doc
+Civil-Public,COPY OF CIVIL STATUS CERTIFICATE,"2,400",upfront per doc
+Civil-Public,SHORT CIVIL STATUS CERTIFICATE,"1,200",upfront per doc
+Civil-Public,LIVING / DEATH CERTIFICATE,"1,200",upfront per doc
+Civil-Public,IDENTITY CERTIFICATE,500,upfront per doc
+Civil-Public,BIRTH CERTIFICATE,500,upfront per doc
+Civil-Public,MARRIAGE CERTIFICATE,500,upfront per doc
+Civil-Public,CELIBACY CERTIFICATE,500,upfront per doc
+Civil-Public,AUTHENTIFICATION OF DOCUMENTS,"1,500",upfront per doc
+Civil-Public,AUTHENTIFICATION OF SIGNATURE ON DOCUMENTS,"1,200",upfront per doc
+Civil-Public,NOTARY SIGNATURE,"5,000",upfront per doc
+Civil-Public,NOTARY SIGNATURE ON AGREEMENT / CONTRACT ,"2,000", upfront per doc
+Property,PUBLIC AUCTION OF PRIVATE IMMOVABLE PROPERTY,"5,000",upfront per doc
+Civil-Public,MARRIAGE BOOKLET,"1,500",upfront per doc
+Civil-Public,ANY OTHER CERTIFICATE,"1,500",upfront per doc
+Business,ADVERTISING BILLBOARD / BANNER- Profit Orientated Activity,"20,000",annually per square meter - 2 sided banners pay each side
+Business,BANNER - Showing Advertising Message,"10,000",per day per square meter
+Business,ELECTRONIC BILLBOARDS,"60,000",annually per billboard (regardless size)
+Business,ADVERTISING BUSINESS - Billboard or Paint,"100,000",annually per billboard (regardless size)
+Vehicle,NUMBER PLATE - MOTORBOAT / SHIP,"15,000",upfront per plate
+Vehicle,"NUMBER PLATE - BOAT, without motor","5,000",upfront per plate
+Vehicle,NUMBER PLATE - MOTORBOAT REPLACEMENT,"15,000",upfront per plate
+Vehicle,"NUMBER PLATE - BOAT, without motor REPLACEMENT","5,000",upfront per plate
+Vehicle,NUMBER PLATE - BICYCLE ,"1,000",upfront per plate
+Business,COMMUNICATION TOWER ,"2,000",annually per meter vertical length
+Business,COMMUNICATION TOWER - on building,"1,000",annually per meter vertical length (incl height of building)
+Business,"PERMIT FOR CHARCOAL, BRICK AND TILE PROCESSING","10,000",annually

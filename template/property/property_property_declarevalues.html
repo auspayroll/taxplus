@@ -1,0 +1,84 @@
+{% extends "common/base_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">
+			Declared values
+		</div>
+		<div class="content" style="border-bottom:0px; padding:20px;">
+			{% if not declaredvalues %}
+				This property has not yet been declared!
+			{% else %}
+				<div style="text-align:center;">
+					<table cellpadding="0" cellspacing="0" class="tablesorter" style="margin:0 auto;">
+						<thead>
+							<tr>
+								<th>No</td>
+								<th>Currency</td>
+								<th>Amount</td>
+								<th>By citizen (ID)</td>
+								<th>By citizen (Name)</td>
+								<th>Staff</td>
+								<th>Accepted</td>
+								<th>Date</td>
+							</tr>
+						</thead>
+						<tbody>
+							{% for obj in declaredvalues %}
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td>{{obj.currency}}</td>
+								<td>{{obj.amount|currency}}</td>
+								<td>{{obj.citizen_id}}</td>
+								<td>{{obj.citizen_name}}</td>
+								<td>{{obj.staff}}</td>
+								<td>{{obj.accepted}}</td>
+								<td>{{obj.datetime}}</td>
+							</tr>
+							{% endfor %}					
+						</tbody>
+					</table>
+				</div>				
+			{% endif %}
+		</div>
+
+
+		<div class="box_title">Declare new value</div>
+		<div class="content">
+			<form onsubmit="return declare_value();" action="" method="post" style="padding:0px; margin:0px;">
+			{% csrf_token %}
+				<table>
+					<tr>
+						<td>Amount:</td>
+						<td><input type='text' name='declare_amount' id='declare_amount'/> (RWF)</td>
+						<td style="width:80px; text-align:right;">Citizen:</td>
+						<td>
+							<input id='citizen_id' style="display:none;" type='text' value="" name='citizen_id'/>
+							<input id="citizen_label" type="text" name="citizen_label" />
+						</td>
+						<td style="width:100px; text-align:right;">
+							<button type='submit' name="submit" class="my_button" id="declare_value_button">Declare</button>
+						</td>
+					</tr>
+				</table>
+			</form>
+			<div style='line-height:30px; display:none; color:red;' id='declare_amount_error'></div>
+		</div>
+	</div>
+
+    {% if back_link %}
+    <a href="{{ back_link }}"><button  class="my_button" ><< back to tax page</button></a>
+    {% endif %}
+</div>
+
+
+
+
+{% endblock %}
+
+

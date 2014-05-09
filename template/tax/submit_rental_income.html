@@ -1,0 +1,57 @@
+{% extends "tax/submit_fixed_asset.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+{% load breadcrumb %}
+
+
+	{% block heading %}Rental Income Tax{% endblock %}
+	{% block payment_link %}{% url 'pay_rental_income' tax.id %}{% endblock %}
+
+
+	{% block form %}
+		<tr><td>Property: </td><td>{{ tax.property }}</td></tr>
+		<tr><td>Tax Period: </td><td>{{ tax.date_from }} - {{ tax.date_to }}</td></tr>
+		<tr><td>Last Year Rental Income: </td><td>{{ form.rental_income }}{{ form.rental_income.errors }}</td></tr>  
+		<tr><td>Last Year Bank Interest Paid: </td><td>{{ form.interest_paid }}{{ form.interest_paid.errors }}</td></tr>
+		<tr><td>Tax Amount: </td><td>{{ tax.amount|currency }}</td></tr>
+		<tr><td>Paid: </td><td>{{ tax.is_paid|yesno }}</td></tr>
+		<tr><td>Amount Remaining: </td><td>{{ tax.remaining_amount|currency }}</td></tr>
+		<tr><td>Due Date: </td><td>{{ tax.due_date }}</td></tr>
+		<tr><td>Tax Exempt </td><td>{{ form.exempt }}</td></tr>
+		<tr><td>Months Deferred </td><td>{{ form.deferred }}</td></tr>
+		<tr><td>Submitted on: </td><td>{{ tax.submit_date }}</td></tr>
+		<tr><td>Submitted by: </td><td>{{ request.session.user }}</td></tr>
+	{% endblock %}
+
+	{% block calculation %}
+		<h3>Fee Calculation</h3>
+		<p>Last Year Rental Income: {{ formula_data.rental_income|currency }} {{ tax.currency }}</p>
+		<p>Last Year Bank Interest Paid: {{ formula_data.interest_paid|currency }} {{ tax.currency }}</p>
+		<table id="fee_calculation">
+		<thead>
+		<th>Period</th>
+		<th>Days</th>
+		<th>Taxable</th>
+		<th>Assessment calc</th>
+		<th>Amount</th></thead>
+		{% for period, value in formula_data.formula_data.iteritems %}
+		<tr><td>{{ period.0 }} to {{ period.1 }}</td>
+		<td>{{ value.days }}/{{ formula_data.days }}</td>
+		<td class="numeric">{{ formula_data.rental_income|currency }} - ({{ value.taxable_rate }} * {{ formula_data.rental_income|currency }} ) - {{ formula_data.interest_paid }} = <b>{{ value.taxable|currency }}</b></td>
+		
+		<td class="numeric">
+		{% for a in value.amounts %}
+			{{ a.taxable|currency }} * {{ a.rate }} = <b>{{ a.amount|currency }}</b><br />
+		{% endfor %}
+		</td>
+
+		<td class="numeric"><b>{{ value.amount|currency }}</b></td>
+		</tr>
+		{% endfor %}
+		<tr><td colspan="3"></td>
+		<td><b>TOTAL</b></td>
+		<td class="numeric"><b>{{ formula_data.amount|currency }}</b></td></tr>
+		</table>
+	{% endblock %}
+
+		

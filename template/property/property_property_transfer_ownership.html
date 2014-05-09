@@ -1,0 +1,257 @@
+{% extends "common/base_property.html" %}
+{% load staticfiles %}
+{% block javascript %}
+<script type="text/javascript" >
+$(document).ready(function(){
+    $("#ownership_block input[name=owner_type]").each(function(){
+        $(this).click(function(){
+            if($(this).val() == 'citizen')
+            {
+                $("#ownership_block #keyword").attr("placeholder","Enter citizen name or ID");
+            }
+            else
+            {
+                $("#ownership_block #keyword").attr("placeholder","Enter business name or TIN");
+            }
+        });
+    });
+	
+    $("#ownership_block #search_button").click(function(){
+        if($("#ownership_block input[name=owner_type]").length > 0)
+        {
+            $("#owner_type").val($("#ownership_block input[name=owner_type]:checked").val());
+        }
+
+        var owner_type = $("#owner_type").val();
+
+        if(owner_type == 'citizen')
+        {
+            url = '/admin/ajax/search_citizen_clean/';
+        }
+        else
+        {
+            url = '/admin/ajax/search_' + owner_type + '/';
+        }
+
+        $.get(url, { 'term' : $("#ownership_block #keyword").val() }, 
+			function (response) {
+				if (response) {
+					var result = '';
+					$.each(response, function (index, value) {
+                        result += '<option value="' + value.id + '" >' + value.value + '</option>';
+					});
+					$('#ownership_block #search_result select').html(result);
+                    //$('#ownership_block #search_result select').attr('selectedIndex', '1');  
+				}
+                else
+                {
+                    alert("No result found! Please retry with a different keyword");
+                }
+			}, 'json'
+        );
+
+        return false;
+    });
+
+    $("#ownership_block #add_button").click(function(){
+
+        var owner_ids = $("#owner_ids").val().split(',');
+        var selected = $("#ownership_block #search_result option:selected");
+        var share = $("#share_box").val();
+        var total_share = $("#total_share").val();
+        
+        if(selected.length > 0)
+        {
+            if( $.inArray(selected.val(), owner_ids) !== -1)
+            {
+                alert("This owner have already been set up, please remove the existing ownership if you want to add a new share %");
+            }
+            else if(share == '' || !(Math.floor(share) == share && $.isNumeric(share)) )
+            {
+                alert("Please input a valid % Share for this owner");
+            }
+            else if( ( parseInt(total_share) + parseInt(share) ) > 100 )
+            {
+                alert("Please make sure total % share equal 100%");
+            }
+            else
+            {
+                var owner_type = $("#owner_type").val();
+                var ownerJson = '{"id": "' + selected.val() + '", "share": "' + share + '", "type": "' + owner_type + '"},';
+
+                $("#existing_ownership select").append('<option value="' + selected.val() + 
+                        '" opt_share="' + share + '" opt_type="' + owner_type + '" >' + selected.html()  + ' [ ' + share + '% Share ]</option>');
+                $("#owner_ids").val( $("#owner_ids").val() + "," + selected.val());
+                $("#total_share").val( parseInt(total_share) + parseInt(share) );
+                $("#owners").val( $("#owners").val() + ownerJson );
+                $("#owner_select_options").val( $("#existing_ownership select").html() );
+            }     
+        }   
+        return false;
+    });
+
+    $("#ownership_block #remove_button").click(function(){
+        if($("#existing_ownership option:selected").length)
+        {
+            var selected = $("#existing_ownership option:selected");
+            var ownerJson = '{"id": "' + selected.val() + '", "share": "' + selected.attr('opt_share') + '", "type": "' + selected.attr('opt_type') + '"},';
+            $("#owner_ids").val( $("#owner_ids").val().replace(',' + selected.val(), '') );
+            $("#total_share").val( parseInt($("#total_share").val()) - parseInt( selected.attr('opt_share') ) );
+            $("#owners").val( $("#owners").val().replace(ownerJson, '') );
+
+            $("#existing_ownership option[value='" + selected.val() + "']").remove();
+            $("#owner_select_options").val( $("#existing_ownership select").html() );
+        }
+        return false;
+    });
+     
+})
+</script>
+{% endblock %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	
+
+	<div class="box">
+		<div class="box_title">
+			Current owner(s)
+		</div>
+		<div class="content" style="padding-left:0px;">
+			
+
+
+		{% if not ownerships and not newOwnerships %}
+			There are no owners for this property!
+		{% else %}
+			{% if ownerships %}		
+			<div style="text-align:left;">
+				<table cellpadding="0" cellspacing="0" class="tablesorter" style="width:97%; margin:0 auto;">
+					<thead>
+						<tr>
+							<th>No</th>
+							<th>Citizen ID</th>
+							<th>Citizen Name</th>
+							<th>TIN</th>
+							<th>Business Name</th>
+							<th>Share(%)</th>
+							<th>Phone</th>
+							<th>Email</th>
+							<th>Own from</th>
+							<th>Own until</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for ownership in ownerships %}
+						<tr>
+							<td>{{forloop.counter}}</td>
+							<td>{{ownership.owner_citizen.citizen_id}}</td>
+							<td>{{ownership.owner_citizen.getDisplayName }}</td>
+	                        <td>{{ownership.owner_business.tin}}</td>
+							<td>{{ownership.owner_business.name}}</td>
+							<td>{{ownership.share}}</td>
+							<td>
+								{% if ownership.owner_citizen.phone_1 %}
+								{{ownership.owner_citizen.phone_1}}
+								{% else %}
+								{{ownership.owner_business.phone_1}}
+								{% endif %}
+							</td>
+							<td>
+								{% if ownership.owner_citizen.email %}
+								{{ownership.owner_citizen.email}}
+								{% else %}
+								{{ownership.owner_business.email}}
+								{% endif %}
+							</td>
+							<td>{{ownership.date_started|date:"Y-m-d"}}</td>
+							<td>
+								{% if ownership.date_ended %}
+								{{ownership.date_ended|date:'Y-m-d'}}
+								{% else %}
+								N/A
+								{% endif %}
+							</td>
+						</tr>
+						{% endfor %}					
+					</tbody>
+				</table>
+			</div>		
+			{% endif %}		
+		
+		
+		{% endif %}
+
+
+
+
+		</div>	
+	</div>
+
+
+
+
+
+
+
+
+
+
+	
+	<div class="box">
+		<div class="box_title">
+			Transfer ownerships
+		</div>
+		<div class="content">
+			<form action="/admin/property/property/view_property/{{property.id}}/transfer_ownership/" method="POST">
+				{% csrf_token %}
+				<div id="ownership_block">
+					<div>
+						<label>Owner Type: </label>
+						<input type="radio" name="owner_type" value="citizen" checked="checked"/> Citizen
+						<input type="radio" name="owner_type" value="business" /> Business
+					</div>
+					<div style="margin-top:20px;">
+						<label>Date of transfer: </label>
+						<input type="text" name="date_of_transfer" class="date_picker" />
+					</div>
+					<br />
+					<input type="hidden" value="citizen" id="owner_type" />
+					<input type="text" id="keyword" placeholder="Enter citizen name or ID" size="40" autocomplete="off" />     
+					<button id="search_button">Search</button><br/>
+					<br/>
+					<div id="search_result">
+						<b>Search Result</b><br/>
+						<select size="10" style="width:350px;"></select>
+					</div>
+					<div id="command_block">
+						<br/><br/>
+						<button id="add_button">Add >>> </button><br/>
+						<input style="width:50px;" type="text" id="share_box" maxlength="3" size="3" value="100"/>% Share
+						<br/><br/><br/><br/><br/>
+						<button id="remove_button"><<< Remove </button>
+					</div>
+				</div>
+	
+
+				<div id="existing_ownership">
+					<b>Existing Ownership</b><br/>
+					<select size="10" style="width:350px;">{{ form.owner_select_options.value|safe }}</select>
+				</div>
+
+				<input type="hidden" id="owner_ids" name="owner_ids" value="" />
+				<input type="hidden" id="total_share" name="total_share" value="0" />
+				<input type="hidden" id="owners" name="owners" value="" />
+				<input type="hidden" id="owner_select_options" name="owner_select_options" value="" />
+				
+				<input style="margin-top:20px;" type="submit" class="my_button" value="Proceed to transfer"/>
+			</form>
+		</div>	
+	</div>
+
+</div>
+
+{% endblock %}
+
+

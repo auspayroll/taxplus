@@ -1,0 +1,129 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "View citizen" %}
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen_display.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:13px; color:#5a5a5a;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+	th{vertical-align:top;}
+	table#change_citizen_table tbody tr td { height:45px;}
+</style>
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; background:#f2f2f2; margin:20px 10px 10px 10px; box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1); ">
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="min-width:360px;border-right:1px solid #cccccc; background:#f2f2f2; padding:10px 10px;">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Citizen Info</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/edit_citizen/" id="view_citizen">Edit</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="info">						
+						<table cellpadding="2" cellspacing="0" >
+							<tr>
+								<td width="100"><strong>Citizen ID:</strong></td>
+								<td>{{citizen.citizen_id}}</td>
+							</tr>
+							<tr>
+								<td><strong>First name:</strong></td>
+								<td>{{citizen.first_name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Middle name:</strong></td>
+								<td>{{citizen.middle_name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Last name:</strong></td>
+								<td>{{citizen.last_name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Primary Phone:</strong></td>
+								<td>{{citizen.phone_1}}</td>
+							</tr>
+							<tr>
+								<td><strong>E-mail:</strong></td>
+								<td>{{citizen.email}}</td>
+							</tr>	
+                            {% if citizen.status.name != 'Active' %}
+                          	<tr>
+								<td><strong>Status:</strong></td>
+								<td><span style="color: red">{{citizen.status.name}} ({{citizen.deactivate_reason|title}})</span></td>
+							</tr>	                            
+                            {% endif %}
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Properties Owned</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/properties/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Business Owned</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/business/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<!--
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Add new property</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/add_property/" id="view_new_property">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					-->
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Associative Media</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/media/" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Logs</td>
+								<td align="right"><span class="edit"><a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/logs/" id="view_logs">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+				</div>
+			</td>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px;">
+				{% block rightpanel %}
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+
+{% endblock %}

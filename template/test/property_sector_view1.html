@@ -1,0 +1,54 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/test/property.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/test/tax.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="{% static "js/test/sector_display.js" %}"></script>
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "test" %} 
+{% endblock %}
+{% block mainbody %}
+
+
+<div id="maparea">	
+	<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>	
+	<div id="points">
+		{{points}}
+	</div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

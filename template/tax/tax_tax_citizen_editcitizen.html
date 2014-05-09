@@ -1,0 +1,86 @@
+{% extends "common/base_paytax_citizen.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+<style type="text/css">
+	input[type=text]{
+		width:300px;
+		margin-top:5px;
+	}
+</style>
+<div id="show_citizen" style="margin-left:20px;">
+	<form action="/admin/tax/tax/citizen/{{citizen.id}}/edit_citizen/" method="post"  style="margin-left:10px; text-align:left;">
+		{% csrf_token %}
+			<div style="display:none">
+				<input type="text" name="obj_id" value="{{citizen.id}}"/>
+			</div>
+
+			<div style="width:600px; margin-left:20px; text-align:left;">
+				<div class="box">
+					<div class="box_title">
+						Basic information
+					</div>
+					<div class="content">
+						<table cellpadding="0" cellspacing="0" style="margin-left:8px;">
+							<tr><td width="200">Citizen ID:</td><td>{{form.citizen_id}}</td></tr>
+							<tr><td>First name:</td><td>{{form.first_name}}</td></tr>
+							<tr><td>Middle name:</td><td>{{form.middle_name}}</td></tr>
+							<tr><td>Last name:</td><td>{{form.last_name}}</td></tr>
+							<tr><td>Gender:</td><td>{{form.gender}}</td></tr>
+					        <tr>
+						        <td>Date of birth (31/05/1980):</td>
+						        <td> 
+                                    {{ form.day_of_birth }} &nbsp;/&nbsp; {{ form.month_of_birth }} &nbsp;/&nbsp; {{ form.year_of_birth }} 
+							        <span id="date_of_birth_error">
+								        {% if form.date_of_birth.errors %}
+									        {{form.date_of_birth.errors|striptags }}
+								        {% endif %}
+							        </span>
+						        </td>
+					        </tr>							<tr><td>Foreign identity type:</td><td>{{form.foreign_identity_type}}</td></tr>
+							<tr><td>Foreign identity number:</td><td>{{form.foreign_identity_number}}</td></tr>									
+						</table>			
+					</div>	
+				</div>
+			
+				<div class="box">
+					<div class="box_title">
+						Contact details
+					</div>
+					<div class="content">
+						<table cellpadding="0" cellspacing="0" style="margin-left:8px;">
+							<tr><td width="200">Current address:</td><td>{{form.address}}</td></tr>
+							<tr><td>Po box:</td><td>{{form.po_box}}</td></tr>									
+							<tr><td>Primary phone:</td><td>{{form.phone_1}}</td></tr>
+							<tr><td>Secondary phone:</td><td>{{form.phone_2}}</td></tr>
+							<tr><td>Email:</td><td>{{form.email}}</td></tr>							
+						</table>			
+					</div>	
+				</div>
+
+
+				<div class="box">
+					<div class="box_title">
+						Other details
+					</div>
+					<div class="content">
+						<table cellpadding="0" cellspacing="0" style="margin-left:8px;">
+							<tr><td width="200">Foreign identity type:</td><td>{{form.foreign_identity_type}}</td></tr>
+							<tr><td>Foreign identity number:</td><td>{{form.foreign_identity_number}}</td></tr>		
+							<tr><td>Status:</td><td>{{form.status}}</td></tr>									
+							<tr><td valign="top">Photo:</td><td>
+							{% if photo_url %}
+							<div><img src ='{{photo_url}}'/></div>
+							{% endif %}
+							<div>{{form.photo}}</div></td></tr>
+						</table>			
+					</div>	
+				</div>
+			</div>
+			<div style="margin-left:20px;">
+				<input type="submit" value='Update' class="my_button">
+			</div>
+	</form>		
+</div>
+{% endblock %}

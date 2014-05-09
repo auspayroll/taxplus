@@ -1,0 +1,167 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/user.css" %}" />
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "Select citizen"  "/admin/citizen/citizen/change_citizen/" %}
+	{% breadcrumb "Change citizen" %}
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+<div class="group_container">
+	<div class="group_creation_table">
+		<form onsubmit="return check_citizen_change_form();" method="post" >
+			{% csrf_token %}
+			
+			<table cellpadding="0" cellspacing = "0" style="text-align:left; margin-top:30px; margin-left:10px;">
+				<tr>
+					<td> Citizen ID:</td>
+					<td> {{form.citizen_id}} *&nbsp;</td>
+					<td id="citizen_id_error" width="300">
+						{% if form.citizen_id.errors %}
+							{{form.citizen_id.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+				<tr>
+					<td width="150"> First Name:</td>
+					<td> {{form.first_name}} *&nbsp;</td>
+					<td id="first_name_error">
+						{% if form.first_name.errors %}
+							{{form.first_name.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+				<tr>
+					<td> Middle Name:</td>
+					<td> {{form.middle_name}}</td>
+					<td id="middle_name_error">
+						{% if form.middle_name.errors %}
+							{{form.middle_name.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+				<tr>
+					<td> Lastname:</td>
+					<td> {{form.last_name}} *&nbsp;</td>
+					<td id="last_name_error">
+						{% if form.last_name.errors %}
+							{{form.last_name.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+				<tr>
+					<td> Gender:</td>
+					<td> {{form.gender}}</td>
+					<td id="gender_error">
+						{% if form.gender.errors %}
+							{{form.gender.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+		
+				<tr>
+					<td>Date of birth (31/05/1980):</td>
+					<td> 
+                        {{ form.day_of_birth }} &nbsp;/&nbsp; {{ form.month_of_birth }} &nbsp;/&nbsp; {{ form.year_of_birth }} 
+						<span id="date_of_birth_error">
+							{% if form.date_of_birth.errors %}
+								{{form.date_of_birth.errors|striptags }}
+							{% endif %}
+						</span>
+					</td>
+				</tr>
+
+				<tr>
+					<td> Primary phone number:</td>
+					<td> {{form.phone_1}}</td>
+					<td id="phone_1_error">
+						{% if form.phone_1.errors %}
+							{{form.phone_1.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+
+				<tr>
+					<td> Secondary phone number:</td>
+					<td> {{form.phone_2}}</td>
+					<td id="phone_2_error">
+						{% if form.phone_2.errors %}
+							{{form.phone_2.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+
+				<tr>
+					<td> Email:</td>
+					<td> {{form.email}}</td>
+					<td id="email_error">
+						{% if form.email.errors %}
+							{{form.email.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+
+				<tr>
+					<td> PO Box:</td>
+					<td> {{form.po_box}}</td>
+					<td id="po_box_error">
+						{% if form.po_box.errors %}
+							{{form.po_box.errors|striptags }}
+						{% endif %}
+					</td>
+				</tr>
+
+				<tr>
+					<td>Citizen Photo</td>
+					<td>{{form.photo}}</td>
+					<td id="photo_error">{% if form.pohoto.errors %}{{form.photo.errors|striptags}}{% endif %}</td>
+				</tr>
+				
+				<tr>
+					<td>Status</td>
+					<td>{{form.status}}</td>
+					<td id="status_error"></td>
+				</tr>
+				
+				
+		
+		
+				<tr>
+					<td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+				</tr>
+				<tr>	
+					<td> <input type="submit" onclick="return check_citizen_registration_form();" value="submit" name="submit"/></td>
+					<td> &nbsp;</td>
+					<td>&nbsp;</td>
+				</tr>
+			</table>
+			{% for field, errors in form.errors.items %}
+			{{field}}
+			{{errors}}
+			{% endfor %}
+
+		</form>
+	</div>
+</div>
+{% endblock %}

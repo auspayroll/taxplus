@@ -1,0 +1,26 @@
+{% load staticfiles %}
+<script type="text/javascript"  src="{% static "js/jQueryRotateCompressed.js" %}"></script>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var value = 0
+        $("#rotate_left_btn").click(function () {
+            value += 90;
+            $("#previewing_media").rotate({ animateTo: value })
+        });
+        $("#rotate_right_btn").click(function () {
+            value -= 90;
+            $("#previewing_media").rotate({ animateTo: value })
+        });
+    });
+</script>		
+
+
+<div id="media_preview_panel">
+    <img src="/media/{{ media.path }}" id="previewing_media" />
+</div>
+<br /><br />
+<div id="media_preview_control">
+    <img src="{% static "images/rotate_left.jpg" %}" id="rotate_left_btn" />&nbsp;&nbsp;&nbsp;
+    <img src="{% static "images/rotate_right.jpg" %}" id="rotate_right_btn"  />
+</div>

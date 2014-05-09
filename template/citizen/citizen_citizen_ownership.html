@@ -1,0 +1,46 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+
+{% block rightpanel %}
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">
+		Properties owned
+		</div>
+		<div class="content" style="padding:20px;">
+			{% if not ownerships %}
+				No properties owned by this citizen!
+			{% else %}
+				<div style="text-align:center;">
+					<table cellpadding="0" style="margin:0 auto;" cellspacing="0" class="tablesorter" id="owned_properties_table">
+						<thead>
+							<tr>
+								<th>No</td>
+								<th>Unique Property ID (UPI)</td>
+								<th>Plot ID</td>
+								<th>Village</td>
+								<th>Cell</td>
+								<th>Sector</td>
+								<th>Share</td>
+							</tr>
+						</thead>
+						<tbody>
+							{% for ownership in ownerships %}
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td><a href="/admin/property/property/view_property/{{ownership.asset_property.id}}/">{{ownership.asset_property.upi}}</a></td>
+								<td>{{ownership.asset_property.parcel_id}}</td>
+								<td>{{ownership.asset_property.village}}</td>
+								<td>{{ownership.asset_property.cell}}</td>
+								<td>{{ownership.asset_property.sector.name}}</td>
+								<td>{{ownership.share}}</td>
+							</tr>
+							{% endfor %}					
+						</tbody>
+					</table>
+				</div>				
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}

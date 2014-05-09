@@ -1,0 +1,60 @@
+<html>
+	<head>
+		<title></title>
+	</head>
+	<body>
+		<div style="font-size:16px; font-weight:bold;">REPUBLIC OF RWANDA</div>
+		<div style="margin-top:10px; margin-left:30px;">
+			<img width='101' height='109' src="{{domain_name}}static/images/rwanda_logo.jpeg"/>
+		</div>
+		<div style="margin-top:30px;">
+			<table style="line-height:20px; font-size:16px; font-weight:bold; ">
+				<tr>
+					<td valign='top' style="width:400px;">
+						Province: {{location_and_tin.province}}<br>
+						District: {{location_and_tin.district}}
+					</td>
+					<td valign='top'>
+						Date: {{today}}
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div style="margin-top:40px; font-weight:bold;">
+			{{citizen.salutation}} {{citizen.fullname}}<br>
+			TIN: {{location_and_tin.tin}}<br>
+			P.O.BOX: {{citizen.po_box}}
+		</div>
+		
+		<div style="margin-top:30px; text-align:justify">
+			Dear Madam/Sir,<br/><br/>
+			<strong>Subject:</strong> Warning letter ({{tax_description}})<br/><br/><br/>
+			
+			Reference is made to the article 30 of the law n<sup style='font-size:8px;'>0</sup> 59/2011 of 31/12/2011 establishing the 
+			sources of revenue and property of decentralised entities and governing their management, we hereby inform you that you unpaid 
+			tax debt amounts to {{late_fee_detail.total}} <strong>Rwf</strong> detailed as follows:
+		<div>
+		<div style="margin-left:20px;">
+			<span style="font-family: Arial Unicode MS, Lucida Grande">&#10004;</span> the tax due of {{late_fee_detail.due_amount}} <strong>Rwf</strong><br/>
+			<span style="font-family: Arial Unicode MS, Lucida Grande">&#10004;</span> penalties of 0 <strong>Rwf</strong><br/>
+			<span style="font-family: Arial Unicode MS, Lucida Grande">&#10004;</span> and interests of {{late_fee_detail.interest}} <strong>Rwf</strong> on late payment up to the month of {{current_month}}<br/>
+			<span style="font-family: Arial Unicode MS, Lucida Grande">&#10004;</span> surcharge of {{late_fee_detail.surcharge}} <strong>Rwf</strong><br/>
+		</div>
+		<br>
+		<div>
+			<p>
+				This tax debt must be paid not later than five days (30) upon receipt of this letter.<br><br>
+				We also take this opportunity to remind you that this debt increases with interests on late payment of 1.5% per month and penalties according to the article 23 of 
+				the Ministerial Order n<sup style='font-size:8px;'>0</sup>005/12/10/TC determining the modalities for the implementation of the law n<sup style='font-size:8px;'>0</sup>
+			 	59/2011 of 31/12/2011 establishing the sources of revenue and property of decentralised entities and governing their management. 
+			</p>
+			<p>
+				You are therefore advised to comply with this legal requirement in order to avoid further enforcement actions that may be taken or be prosecuted by the competent courts.
+			</p>
+			<br/>
+			Regards<br/><br/>
+			<span>Executive Secretary of the district</span>
+		</div>
+	</body>
+</html>

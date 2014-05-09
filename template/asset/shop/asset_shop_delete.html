@@ -1,0 +1,40 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Shop" "/admin/asset/shop/"  %}
+	{% breadcrumb "View shop" %}
+{% endblock %}
+
+{% block mainbody %}
+
+{% if form %}
+<div class="user_action_title">
+	View shop
+</div>
+
+<div class="padded_div">
+    <form class="readonly_form">
+    {{ form }}
+    <div class="read_only_overlay"></div>
+    </form>
+</div>
+{% else %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% include "asset/shop/_shop_search.html" with action="delete" %}
+
+{% endif %}
+{% endblock %}

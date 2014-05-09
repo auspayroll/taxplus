@@ -1,0 +1,200 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Property" "/admin/property/property/"  %}
+	{% breadcrumb "Select property"  "/admin/property/property/view_property/" %}
+	{% breadcrumb "View property" %}
+{% endblock %}
+
+{% block mainbody %}
+
+<script type="text/javascript" src="{% static 'js/jquery.ba-throttle-debounce.js' %}"></script>
+
+<script type="text/javascript"  src="/static/js/admin/property1.js"></script>
+
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:13px; color:#5a5a5a;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+	th{vertical-align:top;}
+	table#change_citizen_table tbody tr td { height:45px;}
+</style>
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; background:#f2f2f2; margin:20px 10px 10px 10px; box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1); ">
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="min-width:360px;border-right:1px solid #cccccc; background:#f2f2f2; padding:10px 10px;">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Property Info</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/map/" id="view_citizen">Show map</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="info">
+                        <table cellpadding="2" cellspacing="0" >
+							<tr>
+								<td width="100"><strong>UPI:</strong></td>
+								<td>{{property.upi}}</td>
+							</tr>
+							<tr>
+								<td><strong>Parcel ID:</strong></td>
+								<td>{{property.parcel_id}}</td>
+							</tr>
+							<tr>
+								<td><strong>Village:</strong></td>
+								<td>{{property.village}}</td>
+							</tr>
+							<tr>
+								<td><strong>Cell:</strong></td>
+								<td>{{property.cell}}</td>
+							</tr>
+							<tr>
+								<td><strong>Sector:</strong></td>
+								<td>{{property.sector.name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Property Purpose:</strong></td>
+								<td valign="bottom"><select id="land_use_type_select" >
+                                <option value="">-----------------</option>
+                                {% for i in land_use_types %}
+                                <option value="{{i.0}}" {% if property.land_use_type == i.0 %} selected="selected" {% endif %} >{{i.1}}</option>
+                                {%endfor%}
+                                </select>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>Area Type:</strong></td>
+								<td valign="bottom"><select id="land_lease_type_select" >
+                                <option value="">-----------------</option>
+                                {% for i in land_lease_types %}
+                                <option value="{{i.0}}" {% if property.land_lease_type == i.0 %} selected="selected" {% endif %} >{{i.1}}</option>
+                                {%endfor%}
+                                </select>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>Size:</strong></td>
+								<td>
+                                    {% if property.land_lease_type == 'Agriculture' %}
+                                    <input type="text" id="property_size" name="land_lease_size" value="{% if property.size_hectare %}{{property.size_hectare}}{% endif%}" style="width: 95px;"/>                                
+                                    <span id="size_type">Hectares</span>
+                                    {% else %}
+                                    <input type="text" id="property_size" name="land_lease_size" value="{% if property.size_sqm %}{{property.size_sqm}}{% endif%}" style="width: 95px;"/>                                
+                                    <span id="size_type">M&sup2;</span>
+                                    {% endif %}
+                                    <span style="color:red; margin-left:10px;" id='size_error'></span>
+                                </td>
+							</tr>
+							<tr>
+								<td><strong>Rental Income Tax Applicable:</strong></td>
+								<td valign="bottom"> <input type="checkbox" {% if property.is_leasing %} checked="checked" {% endif %} id="leasing_checkbox" />
+								<input type="hidden" value="{{ property.id }}" id="property_id"/>
+								</td>
+							</tr>
+							<tr>
+								<td><strong>Land Lease Fee Applicable:</strong></td>
+								<td valign="bottom"> <input type="checkbox" {% if property.is_land_lease %} checked="checked" {% endif %} id="land_lease_checkbox" />
+								</td>
+							</tr>
+							<tr>
+								<td><strong>Tax Exemption:</strong></td>
+                                <td valign="bottom"> {% if property.is_tax_exempt %} 
+                                <i>Yes</i> (Reason: <i>{{ property.tax_exempt_reason }}</i>){% if property.tax_exempt_note %} [{{ property.tax_exempt_note }}] {% endif %}
+                                {% else %}
+                                <i>No</i> 
+                                {% endif %}
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
+                                {% if property.is_tax_exempt %} <a href="{{property.getTaxExemptProofUrl}}" class="fancy_box">[ View Proof ]</a> {% endif %}
+                                <a href="/admin/property/property/update_taxexempt/{{property.id}}/" class="fancy_box" >[ Update Tax Exempt Status ]</a>
+								</td>
+							</tr>
+						</table>
+					</div>
+
+                    {% if hasOwnershipData %}
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Current and Past Owners</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/owners/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Transfer Ownership</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/transfer_ownership/" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+                    {% else %}
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Assign Ownership</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/assign_ownership/" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+                    {% endif %}
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Declared Values</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/declarevalues/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Payment History</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/payment_history/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Attached Media</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/media/" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Logs</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/logs/" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+				</div>
+			</td>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px;">
+				{% block rightpanel %}
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+<div style="display:none" id="points">
+	{{points}}
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "common/base_design.html" %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Pay tax" %}	
+{% endblock %}
+
+{% block mainbody %}
+
+<script type="text/javascript">
+    $(function(){
+        $("#payment_reverse_form").submit(function(){
+
+            if( $("#id_reason").val() == '' )
+            {
+                $("#message").html("Please enter the reason for this reverse");
+                $("#message").show();
+                return false;
+            }
+
+            $("#submit_btn").hide();
+
+        });
+	});
+</script>
+<div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
+	<h2 class="style_heading">Reverse Payment</h2>	
+
+    {% if success %}
+    <div style="color: #00B5D0; font-weight: bold;" >Payment is reversed successfully. You can now <a href="{{ show_tax_link }}">pay again</a> with the correct information.</div>
+
+    {% else %}
+
+    <h4>Payment Information</h4>
+	<div id="message" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin: 15px;"></div>
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+	<div style="margin-top:10px;">
+		<form method="post" id="payment_reverse_form" enctype='multipart/form-data' >
+			{% csrf_token %}
+            <div><label>Type:</label> {{ type }} &nbsp;</div>
+            {% if not multi_payments %}
+            <div><label>Reference:</label> {{ reference }} &nbsp;</div>
+            <div><label>Declaration Period:</label> {{ tax.period_from|date:'d/m/Y' }} - {{ tax.period_to|date:'d/m/Y' }} &nbsp;</div>
+            <div><label>Due Date:</label> {{ tax.due_date|date:'d/m/Y' }} &nbsp;</div>
+            {% endif %}
+            <div><label>Amount:</label> {{ amount }} &nbsp;</div>
+            <!--div><label>Paid by:</label> {{ citizen.first_name }} {{ citizen.last_name }} (CID: {{ citizen.citizen_id }}) &nbsp;</div-->
+            <div><label>Paid Date:</label> {{ payment.paid_date|date:'d/m/Y' }} &nbsp;</div>
+            <div><label>Processed by Staff:</label> {{ staff.firstname }} {{ staff.lastname }} &nbsp;</div>
+            <div><label>Processed on:</label> {{ payment.date_time|date:'d/m/Y H:i:s' }} &nbsp;</div>
+            {{ form }}
+            <br/>
+            {% include "media/_upload_media_box.html" with file_list=file_list id=tax_upload_media %}
+
+	        <div class="warning">*** Please double check all the payment information before proceeding to reverse payment ***</div>
+            <div>
+                <input type="submit" id="submit_btn" value="Reverse and Upload Supported Media"/>
+                <input type="button" id="" value="Cancel" onClick="javascript:window.location='/admin/tax/tax/payment_search/'"/>
+            </div>
+		</form>
+	</div>
+
+    {% endif %}
+</div>
+{% endblock %}

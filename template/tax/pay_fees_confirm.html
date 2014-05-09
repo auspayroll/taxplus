@@ -1,0 +1,45 @@
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+	<form action="{% url 'pay_fees' %}" method="post">
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<h3>Confirm Payment</h3>
+	<table>
+	<tr><td>Receipt no:</td><td>{{ form.receipt_no.value }}<input type="hidden" name="receipt_no" value="{{ form.receipt_no.value }}" /></td></tr>
+	<tr><td>Bank:</td><td>{{ form.bank.value }}<input type="hidden" name="bank" value="{{ form.bank.value }}" /></td></tr>
+	<tr><td>Paid on:</td><td>{{ form.paid_on.value }}<input type="hidden" name="paid_on" value="{{ form.paid_on.value }}" /></td></tr>
+	<tr><td>Manual Receipt:</td><td>{{ form.manual_receipt.value }}<input type="hidden" name="manual_receipt" value="{{ form.manual_receipt.value }}" /></td></tr>
+	<tr><td>Notes:</td><td>{{ form.note.value }}<input type="hidden" name="note" value="{{ form.note.value }}" /></td></tr>
+	<tr><td>Fee Amount:</td><td>{{ total_amount|currency }}</td></tr>
+	<tr><td>Late Fees:</td><td>{{ late_fees|currency }}</td></tr>
+	<tr><td>Total Payment:</td><td><b>{{ total_payment|currency }}</b></td></tr>
+	<tr><td><input type="submit" name="confirm" value="Confirm Payment" /></td></tr>
+	</table>
+	{% csrf_token %}
+
+</div>
+<p></p>
+<div>
+<h3>Payment is for the following fees:</h3>
+<table cellpadding="4" border="1">
+<tr><th>Fee</th><th>Amount due</th><th>Due Date</th><th>Months Late</th><th>Late Fees</th><th>Total</th></tr>
+{% for fee in fees %}
+	<tr><td>{{ fee }}<input type="hidden" name="tax_id" value="{{ fee.id }}" /></td>
+	<td>{{ fee.payment.amount_due }}</td>
+	<td>{{ fee.payment.due_date }}</td>
+	<td>{{ fee.payment.months_late }}</td>
+	<td>{{ fee.payment.late_fees }}</td>
+	<td>{{ fee.payment.total }}</td>
+	</tr>
+{% endfor %}
+	<tr><td></td><td><b>{{ total_amount|currency }}</b></td><td></td><td></td><td><b>{{ late_fees|currency }}</b></td><td><b>{{ total_payment|currency }}</b></td></tr>
+</table>
+</div>
+	<input type="hidden" name="business_pk" value="{{ business.pk }}" />
+	<input type="hidden" name="citizen_pk" value="{{ citizen.pk }}" />
+	<input type="hidden" name="property_pk" value="{{ property.pk }}" />
+	<input type="hidden" name="template_type" value="{{ template_type }}" />
+	</form>
+{% endblock %}

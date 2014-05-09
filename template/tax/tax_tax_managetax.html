@@ -1,0 +1,229 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/tax.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script src="http://openlayers.org/api/OpenLayers.js"></script>
+	<script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+	<script src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>
+	<script type="text/javascript"  src="/static/js/loadmap.js" %}"></script>
+	<script type="text/javascript"  src="/static/js/admin/managetax.js"></script>
+{% endblock %}
+
+
+
+
+
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Tax management" %}	
+{% endblock %}
+{% block mainbody %}
+
+
+<div id="maparea" style="height:700px;">
+	<div id="leftpanels">
+		<div class="leftpanel">
+			<div class="panelcontent">
+				<div style="margin-left:15px;">
+					<div style="height:45px; line-height: 45px; font-weight: bold;">
+						Map search:
+					</div >
+					<div style="margin-top:20px;font-size:14px;">
+						<div id="search_error" style="margin-top:15px; height:20px; font-size:14px; line-height:20px;text-align:left; font-weight:bold; color:red;">
+							&nbsp;
+						</div>
+						
+						<div style="margin-top:15px;">
+							<button onClick="toggle();" type="button">Select area</button>&nbsp;&nbsp;
+							<span style="font-size:14px; font-weight:bold; color:red;" id='boundary_error'></span>
+						</div>
+						
+						
+							
+						<div style="margin-top:15px;">
+							<button type="button" onclick="return check_search_conditions();" name="search">Search</button>
+						</div>
+						
+						<div style="display:none">
+							<input type="text" id="id_boundary" style="display:none">
+						</div>	
+					</div>
+					
+					<div style="height:45px; margin-top:30px; line-height: 45px; font-weight: bold;">
+						Text Search:
+					</div >
+					<div style="margin-top: 10px; font-size:14px; line-height:30px;">
+						<table cellpadding="0" cellspacing="4">
+							<tr>
+								<td><strong>Plot/Parcel ID:</strong></td>
+								<td>
+									{{form.parcel_id}}
+								</td>
+							</tr>
+							<!--
+							<tr>
+								<td><strong>Village:</strong></td>
+								<td>
+									{{form.village}}
+								</td>
+							</tr>-->
+							<tr>
+								<td><strong>Cell:</strong></td>
+								<td>
+									{{form.cell}}
+								</td>
+							</tr>
+							<tr>
+								<td width="100"><strong>Sector:</strong></td>
+								<td width="140">
+									{{form.sector}}
+								</td>
+							</tr>
+							
+							<tr><td style="text-align:center;font-weight:bold;color:red;" colspan="2">OR</td></tr>
+							<tr>
+								<td><strong>UPI:</strong></td>
+								<td>
+									{{form.upi}}
+								</td>
+							</tr>
+						</table>
+					</div>
+					<div style="margin-top:10px; color:red;  font-weight:bold; font-style:italic; height:20px; line-height:20px; font-size:14px;" id="keyword_error">
+						&nbsp;
+					</div>
+					<div style="margin-top:15px;font-size:14px;">
+						<button onclick="return keyword_search();" type="button">Search</button>
+					</div>
+				</div>	
+			</div>
+			<div class="hidepanel">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel"  style="display:none;">
+				<img src='{% static "images/icons/right.jpg" %}' />	
+				<div class="rotate" >
+					Search
+				</div>
+			</div>
+			<div style="clear:both"></div>
+		</div>
+		
+		
+		
+		
+		<div class="leftpanel">
+			<div class="panelcontent" style="display:none">
+				<div style="margin-left:20px;">
+					<div class="property_table" style="border:0; width:450px;">
+						<table cellpadding="0" cellspacing="0" id="search_declared_values">
+						</table>	
+					</div>
+				</div>
+			</div>
+			<div class="hidepanel" style="display:none">
+				<img src='{% static "images/icons/left.jpg" %}' />
+			</div>
+			<div class="showpanel" >
+				<img src='{% static "images/icons/right.jpg" %}' />	
+				<div class="rotate" >
+					Details
+				</div>
+			</div>
+			<div style="clear:both"></div>
+		</div>
+	</div>
+	
+	<div style="width:inherit; height:100%; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+	
+	<div style="position:absolute; bottom:0px; height:270px; text-align:left; right:0px; background-color:white; z-index: 2100;">
+		<div id="color_info" class="panelcontent" style="display:none;">
+			<table style="font-family:Arial; font-size:14px;" cellpadding="2" cellspacing="2">
+				<tr>
+					<td colspan="2"><strong>Last declared date till now: </strong></td>
+				</tr>
+				<tr>
+					<td width="20" style="background-color:#00ff00">&nbsp;</td>
+					<td style="padding-left:10px;padding-right:20px;">&lt;3 year</td>
+				</tr>
+				<tr>								
+					<td width="20" style="background-color:#ffa500">&nbsp;</td>
+					<td style="padding-left:10px;padding-right:20px;">Between 3 and 4 years</td>
+				</tr>
+				<tr>
+					<td width="20" style="background-color:red">&nbsp;</td>
+					<td style="padding-left:10px; padding-right:20px;">&gt;4 years</td>
+				</tr>
+				<tr>
+					<td width="20" style="background-color:black">&nbsp;</td>
+					<td style="padding-left:10px;">Never</td>
+				</tr>
+			</table>
+			
+			<div style="margin-top:10px;">&nbsp;</div>
+			<table cellpadding="2" cellspacing="2">
+				<tr>
+					<td colspan="2"><strong>Last tax paid date till now:</strong></td>
+				</tr>
+				<tr>
+					<td width="20" style="background-color:#ffc0cb">&nbsp;</td>
+					<td style="padding-left:10px;padding-right:20px;">&lt;1 year</td>
+				</tr>
+				<tr>								
+					<td width="20" style="background-color:#87ceeb">&nbsp;</td>
+					<td style="padding-left:10px;padding-right:20px;">between 1 and 3 years</td>
+				</tr>
+				<tr>
+					<td width="20" style="background-color:#a020f0">&nbsp;</td>
+					<td style="padding-left:10px;padding-right:20px;">Over 3 years or never</td>
+				</tr>
+			</table>	
+		</div>
+		
+		<div class="hidepanel" style="display:none;">
+			<img src='{% static "images/icons/right.jpg" %}' />
+		</div>
+		<div class="showpanel" style="position:relative">
+			<img src='{% static "images/icons/left.jpg" %}' />
+			<div class="rotate" >
+				Colors
+			</div>
+		</div>
+		<div style="clear:both"></div>
+	</div>
+	<div style="z-index:100000; background-color:transparent; position:absolute; right:6px; top:3px;">
+		<div id="panel"></div>
+	</div>
+</div>
+<div style="display:none">
+	<input type="text" name="plot_id" id="id_plot_id" value="{{plot_id}}"/>
+</div>
+
+
+
+
+{% if plot_id %}
+	<script type="text/javascript">
+		declare();
+		$("div.showpanel img").each(function(index){
+			if(index<2)
+			{
+				$(this).parent().hide();
+				$(this).parent().parent().find("div.panelcontent").show();
+				$(this).parent().parent().find("div.hidepanel").show();
+			}
+		});
+	</script>
+{% endif %}
+
+
+{% endblock %}

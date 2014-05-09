@@ -1,0 +1,40 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Billboard" "/admin/asset/billboard/"  %}
+	{% breadcrumb "View billboard" %}
+{% endblock %}
+
+{% block mainbody %}
+
+{% if form %}
+<div class="user_action_title">
+	View billboard
+</div>
+
+<div class="padded_div">
+    <form class="readonly_form">
+    {{ form }}
+    <div class="read_only_overlay"></div>
+    </form>
+</div>
+{% else %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% include "asset/billboard/_billboard_search.html" with action="delete" %}
+
+{% endif %}
+{% endblock %}

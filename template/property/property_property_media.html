@@ -1,0 +1,13 @@
+{% extends "common/base_property.html" %}
+{% load staticfiles %}
+
+{% block rightpanel %}
+
+<div style="text-align:center; margin-left:20px; margin-right:20px;">
+	<div class='box' style="text-align:left;">			
+        {% include "media/_media_box.html" with media=media upload_allowed=upload_allowed type="property" id=property.id %}						
+	</div>
+</div>
+{% endblock %}
+
+

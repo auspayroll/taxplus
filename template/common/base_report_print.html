@@ -1,0 +1,272 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en" >
+	<head>
+		<title>{% block title %}Council Tax Evalution System{% endblock %}</title>
+		<link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+
+		<link rel="stylesheet" type="text/css" href="{% static "css/ui-lightness/jquery-ui-1.8.23.custom.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/base.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/map.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/table_sorter.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+		<link href='http://fonts.googleapis.com/css?family=Asap' rel='stylesheet' type='text/css'>
+		<script type="text/javascript"  src="{% static "js/jquery-1.7.2.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery-ui.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery.tablesorter.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery.tablesorter.staticrow.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/common.js" %}"></script>
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,700'  rel='stylesheet' type='text/css' /> <!-- Headings -->
+		<link href='http://fonts.googleapis.com/css?family=Droid+Sans:400,700' rel='stylesheet' type='text/css' /> <!-- Text -->
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/icons.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />	
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/main.css" %}" />
+		<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/custom.css" %}" />
+		<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.tooltip_0.4.4.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.grow.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.pie.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.orderBars.js" %}"></script>
+		<script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+		<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+		<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+		<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+		<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+		<!-- Init plugins -->
+		<script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+		<script type="text/javascript" src="{% static "js/charts.js" %}"></script><!-- Init plugins only for page -->
+	</head>
+
+	<body topmargin="0" leftmargin="0" style="border:0px">
+		<style type="text/css">
+			@media screen,print
+			{
+
+				/*input[type=text]
+				{
+					margin-bottom:0px;
+				}
+				textarea
+				{
+					width:300px;
+					height:60px;
+					margin-bottom:0px;
+				}
+				td
+				{
+					padding:3px;
+				
+				}
+				td.label
+				{
+					color:black;
+					background:none;
+					text-decoration:none;
+					text-shadow: 0 0px 0 rgba(0,0,0,0.25);
+					padding-top:7px;
+				}
+				select
+				{
+					line-height:20px;
+				}
+				html
+				{
+					background-color:white;
+					background-image:none;
+				}
+				body
+				{
+					background-image:none;
+					background-color:white;
+				}
+				input[type=text]
+				{
+					margin-bottom: 0px;
+				}
+
+				textarea
+				{
+					width: 300px;
+					height: 60px;
+					margin-bottom: 0px;
+				}
+
+				td
+				{
+					padding: 3px;
+				}
+
+					td.label
+					{
+						color: black;
+						background: none;
+						text-decoration: none;
+						text-shadow: 0 0px 0 rgba(0,0,0,0.25);
+						padding-top: 7px;
+					}
+
+				select
+				{
+					height: 25px;
+					line-height: 20px;
+				}
+
+
+				.custom_title
+				{
+					font-size: 16px;
+					line-height: 25px;
+					text-align: left;
+					border-bottom: 1px solid #cccccc;
+					margin-top: 20px;
+					margin-bottom: 20px;
+				}
+
+				.edit
+				{
+					color: #0060AC;
+					font-size: 14px;
+				}
+
+				.info
+				{
+					line-height: 20px;
+					font-size: 13px;
+					color: black;
+					color: #5a5a5a;
+				}
+
+					.info table
+					{
+						text-align: left;
+						margin-top: 10px;
+					}
+
+				.edit a:link, .edit a:active, .edit a:visited
+				{
+					text-decoration: none;
+					color: #0060AC;
+				}
+
+				th
+				{
+					vertical-align: top;
+				}
+
+				table#change_citizen_table tbody tr td
+				{
+					height: 45px;
+				}
+
+
+
+				form input[type="submit"], form input[type="button"]
+				{
+					background: #00B5D0;
+					padding: 5px 20px 5px 20px;
+					font-size: 15px;
+					font-weight: bold;
+					color: white;
+					cursor: pointer;
+				}
+
+				.my_button:hover
+				{
+					background-color: rgb(47, 150, 180);
+				}
+
+				ul
+				{
+					padding-left: 0px;
+					margin-top: 10px;
+					margin-left: 0px;
+				}
+
+				li
+				{
+					list-style-type: none;
+					margin-right: 20px;
+					padding-left: 5px;
+					float: left;
+				}
+
+				li label
+				{
+					font-weight: normal;
+				}*/
+
+				
+				/*
+				div.xAxis div.tickLabel
+				{
+					-webkit-transform: rotate(-45deg);
+					-moz-transform: rotate(-45deg);
+					-ms-transform: rotate(-45deg);
+					-o-transform: rotate(-45deg);
+					font-size: 12px;
+				}
+				
+				div.box,div.box:hover
+				{
+					border:0px;
+				}
+				div.content, div.content:hover
+				{
+					border:0px;
+					margin-bottom:0px;
+				}
+				*/
+			}
+
+		</style>
+
+
+
+
+
+
+
+
+
+
+
+		<div class="box" style="margin-top:0px;">
+			{% block mainbody %}
+		
+			{% endblock %}
+		</div>
+		<script type="text/ecmascript">
+			$(function(){
+				jQuery.tablesorter.addParser({
+					  id: "commaDigit",
+					  is: function(s) {
+						return /^[0-9]?[0-9,\.]*$/.test(s);
+					  },
+					  format: function(s) {
+						return jQuery.tablesorter.formatFloat(s.replace(/,/g, ""));
+					  },
+					  type: "numeric"
+				});
+			
+
+				var mydigits= function(node)  {
+					var s=node.innerHTML;
+					return s.replace(/,/g, "");
+				}
+
+				$(function() {
+					$("table.tablesorter").tablesorter({widgets: ["zebra","staticRow"],textExtraction:mydigits});
+				});
+				$( ".date_picker" ).datepicker({ dateFormat: "dd/mm/yy" });
+				$(".date_picker").attr("autocomplete", "off");
+				window.print();
+			})
+		</script>
+	</body>
+</html>

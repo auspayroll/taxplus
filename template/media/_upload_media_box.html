@@ -1,0 +1,34 @@
+<fieldset>
+    <legend><h3>Supported Media</h3></legend>
+    {% if file_list %} 
+        {% for file, title, desc in file_list %}
+        <div class="media_upload_box">
+            <div style="color: red;">Invalid file upload: {{ file }}. Please select another file.</div>
+            <label>URL</label> <input type="file" id="url" name="media_urls"  /><br/>
+            <label>Title</label> <input type="text" id="title" name="media_titles" value="{{ title }}" maxlength="150" /><br/>
+            <label>Description</label> <textarea id="desc" name="media_descs"  value="{{ desc }}" ></textarea>
+            <div class="clear"></div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="media_upload_box">
+        <label>URL</label> <input type="file" id="url" name="media_urls" /><br/>
+        <label>Title</label> <input type="text" id="title" name="media_titles" maxlength="150" /><br/>
+        <label>Description</label> <textarea id="desc" name="media_descs" ></textarea>
+        <div class="clear"></div>
+    </div>
+    {% endif %}
+    <div class="clear"></div>
+    <a href="javascript:addMediaField();" >Add more support media</a>
+</fieldset>
+
+<script type="text/javascript">
+function addMediaField()
+{
+    var box = $(".media_upload_box").last().clone();
+    box.find("#url").val('');
+    box.find("#title").val('');
+    box.find("#desc").val('');
+    $(".media_upload_box").last().after( box );
+}
+</script>

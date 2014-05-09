@@ -1,0 +1,281 @@
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Verify Target" "/admin/tax/tax/verify_target/" %}
+	{% breadcrumb "Show Taxes" show_tax_url %}	
+	{% breadcrumb "Pay tax" %}	
+{% endblock %}
+{% block rightpanel %}
+<style type="text/css">
+	#payment_form TR
+	{
+		border-bottom: 1pt #cccccc solid;
+		padding: 4px;
+	}
+
+</style>
+
+<script type="text/javascript" src="{% static "js/fancybox/jquery.fancybox-1.3.4.pack.js" %}"></script>
+<link rel="stylesheet" href="{% static "js/fancybox/jquery.fancybox-1.3.4.css" %}" type="text/css" media="screen" />
+
+<script type="text/javascript" src="{% static "js/jquery.formatCurrency-1.4.0.min.js" %}"></script>
+
+<script type="text/javascript">
+    $(function(){
+		$("#id_amount").data('value', $("#id_amount").val());
+		if( !isNaN(parseInt($("#id_fine").val())) ){
+				$("#id_fine_description").removeAttr("readonly");
+		}
+		
+		$("#id_fine_amount").keyup(function(){
+			if(parseInt($(this).val()) < 0 ){
+				$(this).val('0');
+			}
+
+			var fine_amount = parseFloat($(this).val().replace(/,/gi,''))
+			
+			/*
+			if(isNaN(fine_amount)){
+				$("#id_amount").val($("#id_amount").data('value'));
+			}
+			else{
+				amount = parseFloat( $("#id_amount").data('value').replace(/,/gi,''));
+				var final_amount = (fine_amount + amount).toFixed(2);
+				final_amount = final_amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+				$("#id_amount").val( final_amount);
+			}
+			*/
+			
+		});
+
+		$("#id_fine_amount").focus(function(){
+			$("#id_fine_description").removeAttr("readonly");
+		});
+
+		$("#id_fine").blur(function(){
+			if(isNaN(parseInt($(this).val())) ){
+				$("#id_fine_description").attr('readonly','readonly');
+			}
+		});
+
+
+		//$( ".date_picker" ).datepicker("option", "minDate", "01/01/" + (new Date).getFullYear());
+		$( ".date_picker" ).datepicker("option", "maxDate", 0);
+
+	    $("a.fancybox").fancybox();	
+
+        {% if formula.last_year_income %}
+        //precalculate rental tax if there is last year income prefilled
+        if($("#id_last_year_income").length > 0)
+        {
+            calculateRentalIncomeTax();
+        }
+        {% endif %}
+
+        //set up pending payment dialog
+        $('<div id="dialog"></div>').appendTo('body')
+            .html('<div>Payment Amount is not equal to the expected Tax Due! Are you sure this is the correct input?'
+            + '<br/> - If this is a typo mistake, please click [No] and re-input'
+            + '<br/> - If this is the correct amount, please select the reason for this and click on [Yes] to set this payment to Pending and waiting for Approval.'
+            + '<br/><br/><label><b>Reason</b></label><select id="pending_reason">{% for i in pending_payment_reasons %}<option value="{{i.0}}">{{i.1}}</option>{% endfor %}</select>'
+            + '<br/><label><b>Note</b></label><textarea maxlength="500" id="pending_note"></textarea>'
+            + '</div>')
+            .dialog({
+            width: 500,
+            autoOpen: false,
+            title: "Confirmation of Pending Payment",
+            modal: true,
+            buttons : {
+                "Yes" : function() {
+                    $("#id_submit_pending").val(1);
+                    $("#id_pending_reason").val($("#pending_reason").val());
+                    $("#id_pending_note").val($("#pending_note").val());
+                    $("#pay_tax_form").submit();
+                },
+                "No" : function() {
+                    $(this).dialog("close");
+			        $("#id_amount_paid").focus();
+                }
+                }
+        });
+
+        $("#pay_tax_form").submit(function(){
+
+            var final_tax_due = $("#final_tax_due").asNumber();
+            if ( final_tax_due =='' || isNaN(final_tax_due) || parseInt(final_tax_due) <= 0)
+            {
+			    $("#message").html("Please input data to calculate Final Tax Due !");
+                $("#message").show();
+                return false;	
+            }
+
+            var amount = $("#id_amount").asNumber();
+		    if(amount=='' || isNaN(amount) || parseInt(amount) <= 0 )
+		    {
+			    $("#id_amount_paid").focus();
+			    $("#message").html("Please enter your Payment Amount!");
+                $("#message").show();
+			    return false;	
+		    }
+
+		    if($("#id_receipt_no"))
+		    {
+			    if($("#id_receipt_no").val()=='')
+			    {
+				    $("#id_receipt_no").focus();
+				    $("#message").html("Please enter receipt number!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_bank"))
+		    {
+			    if($("#id_bank").val()=='')
+			    {
+				    $("#message").html("Please select a bank!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_paid_date"))
+		    {
+			    if($("#id_paid_date").val()=='')
+			    {
+				    $("#id_paid_date").focus();
+				    $("#message").html("Please pick a paid date!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+
+            //request for fine description if there is a input fine amount
+		    if( $("#fines").length > 0 && parseInt($("#fines").val().replace(/,/g, '')) > 0 && $("#fines_description").val() == "" )
+		    {
+			    $("#fines_description").focus();
+			    $("#message").html("Please enter description for the inputted fine amount!");
+                $("#message").show();
+			    return false;	
+		    }
+            else
+            {
+                if($("#fines").length > 0)
+                {
+                    $("#id_fine_amount").val( $("#fines").asNumber());
+                    $("#id_fine_description").val( $("#fines_description").val());
+                }
+            }
+
+		    if(parseInt(amount) != final_tax_due && $("#id_submit_pending").val() == '')
+		    {
+                $("#dialog").dialog("open");
+			    return false;	
+		    }
+
+            /*
+		    if ( parseFloat(amount) + parseFloat($("#id_credit").val()) > parseFloat(final_tax_due) )
+		    {
+			    $("#id_amount_paid").focus();
+			    if (!confirm('Are you sure to overpay the amount?')) 
+			    {
+				    $("#message").hide(); 
+				    return false;	
+			    }				
+			    //$("#message").html("Your payment amount is greater than the expected tax due!");
+		    }
+            */
+
+            //if all is validated, start reformat any currency fields to number before submit
+            $("#id_amount").val($("#id_amount").asNumber());
+            $(".pay_tax_btn").hide();
+        });
+
+		$("input[name='payer_type']").change(function(){ 
+			var payer_type = $(this).val();
+			$('#payer_selector').remove();
+			$("input[name='payer_type']").last().parent().append('<div id="payer_selector" style="float:right"><input type="text" name="payer_name" id="citizen_search"></div>');
+			if (payer_type == 'citizen'){
+				var ajax_source = "/admin/ajax/search_citizen_clean/";
+				var id_field = "#id_citizen_id";
+				$("#id_business_id").val('');
+				$("#citizen_search").before('Search for citizen<br/>');
+			}
+			if (payer_type == 'business'){
+				var ajax_source = "/admin/ajax/search_business/";
+				var id_field = "#id_business_id";
+				$("#id_citizen_id").val('');
+				$("#citizen_search").before('Search for business<br/>');
+			}		
+			
+			$('#payer_selector INPUT').focus();
+			$("#citizen_search").autocomplete({
+				source: ajax_source,
+				minLength: 2,
+				select: function (event, ui) {
+					$(id_field).val(ui.item['id']);
+					$("#payer_name").hide();
+				}
+			});
+		});
+
+		{% if citizen or business %}
+			$("input[name='payer_type']").last().parent().parent().parent().parent().prepend('<div id="payer_name">{{ business|default:'' }}{{ citizen|default:'' }}</div>');
+			$("LI>label[for^='id_payer_type']").hide(); // hide the radio selection for payer
+
+		{% endif %}
+
+
+    });
+
+</script>
+<div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
+	{% block heading %}
+		<h3>Land Lease - Payment</h3>
+		<div><a href="{% url 'submit_land_lease' tax.id %}">View Fee Details</a></div>
+	{% endblock %}
+
+	<form method="post" action="{{ request.build_absolute_uri }}">
+	<div style="margin-top:10px;">
+		<table id="payment_form">
+			{% csrf_token %}
+				{% block payment_details %}
+				<tr><th>Property</th><td>{{ tax.property }}</td></tr>
+				{% endblock %}
+				<tr><th>Fee Amount</th><td>{{ tax.amount|currency }}</td></tr>
+				<tr><th>Amount Remaining</th><td><b>{{ tax.get_remaining_amount|currency }}</b></td></tr>
+				<tr><th>Amount Due</th><td>{{ payment.amount_due|currency }} {% if payment.due_date %} on {{ payment.due_date }}{% endif %}</td></tr>
+				<!--<tr><td>Late Fees</td><td>{{ payment.late_fees|currency }}</td></tr>-->
+				<!--
+				<tr><td>Late Fee Calculation</td><td>
+				({{ payment.months_late }} months late * {{ payment.interest_rate  }}% * {{ tax.remaining_amount|currency }} = {{ payment.interest|currency }} <i>interest</i> ) + 
+					{% if payment.surcharge < payment.surchage_rate %}
+						( {{ payment.remaining_amount|currency }} * {{ payment.surcharge_rate }}% = {{ payment.surcharge }} <i>surcharge</i> )
+					{% else %}
+						( {{ payment.surcharge|currency }} <i>surcharge</i> )
+					{% endif %}
+				 </td></tr>
+				 -->
+				<!--<tr><td>Total Due</td><td>{{ payment.total_due|currency }}</td></tr>-->
+				<tr>
+					{{ form }}
+				</tr>
+				<tr>
+					<td colspan="2" style="line-height:50px;">
+						{% if payment.amount_due >= tax.remaining_amount %}
+							<input type="submit" class="pay_tax_btn" name="finalize" value="Finalize" />
+						{% else %}
+							<input type="submit" class="pay_tax_btn" name="finalize" value="Make Payment" />
+						{% endif %}
+                    </td>
+				</tr>
+			</table>
+            <br/>
+		</div>
+		</form>
+</div>
+{% endblock %}

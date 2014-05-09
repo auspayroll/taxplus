@@ -1,0 +1,52 @@
+{% extends "tax/submit_fixed_asset.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+{% load breadcrumb %}
+
+
+	{% block heading %}Land Lease Fee{% endblock %}
+	{% block payment_link %}{% url 'pay_land_lease' tax.id %}{% endblock %}
+
+
+	{% block form %}
+		<tr><td>Property: </td><td>{{ tax.property }}</td></tr>
+		<tr><td>District / Sector: </td><td>{{ tax.property.sector.district }} / {{ tax.property.sector }}</td></tr>
+		<tr><td>Cell / Village</td><td>{{ tax.property.cell }} / {{ tax.property.village }}</td></tr>
+		<tr><td>Citizen: </td><td>{{ tax.citizen }}</td></tr>
+		<tr><td>Tax Period: </td><td>{{ date_from }} - {{ date_to }}</td></tr>
+		<tr><td>Land Lease Type: </td><td>{{ form.land_lease_type }}{{ form.land_lease_type.errors }}</td></tr>  
+		<tr><td>Land Size: </td><td>{% if tax.property.boundary %}{{ tax.property.boundary.size }} square meters <br />{{ tax.property.boundary.hectares }} hectares{% endif %}</td></tr>
+		<tr><td>Tax Amount: </td><td>{{ tax.amount|currency }}</td></tr>
+		<tr><td>Paid: </td><td>{{ tax.get_paid_amount.0|currency }}</td></tr>
+		<tr><td>Amount Remaining: </td><td>{{ tax.get_remaining_amount|currency }}</td></tr>
+		<tr><td>Due Date: </td><td>{{ tax.due_date }}</td></tr>
+		<tr><td>Fee Exempted</td><td>{% if tax.installments.count == 0 %}N/A - No installments{% else %}{{ form.exempt }}{% endif %}</td></tr>
+		<tr><td>Submitted on: </td><td>{{ tax.submit_date }}</td></tr>
+		<tr><td>Submitted by: </td><td>{{ request.session.user }}</td></tr>
+	{% endblock %}
+
+	{% block calculation %}
+		<h3>Fee Calculation</h3>
+		<table id="fee_calculation">
+		<thead><th>Period</th><th>Days</th><th>Tax Rate</th>
+		<th>{{ formula_data.units }}</th>
+		<th>Amount</th>
+		<th>Region</th>
+		</thead>
+		{% for period, value in formula_data.formula_data.iteritems %}
+		<tr>
+		<td>{{ period.0  }} to {{ period.1 }}</td>
+		<td>{{ value.days }}/{{ formula_data.days }}</td>
+		<td class="numeric">{{ value.tax_rate|currency }}</td>
+		<td class="numeric">{{ value.size|currency }}</td>
+		<td class="numeric">{{ value.amount|currency }}</td>
+		<td>{{ value.region|default:"Global Default" }}</td>
+		</tr>
+		{% endfor %}
+		<tr><td colspan="3"></td>
+		<td><b>TOTAL</b></td>
+		<td class="numeric"><b>{{ formula_data.amount|currency }}</b></td></tr>
+		</table>
+	{% endblock %}
+
+		

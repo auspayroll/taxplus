@@ -1,0 +1,172 @@
+{% extends "common/base_report_print.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block mainbody %}
+	<style type="text/css">
+
+		@media screen,print
+		{
+			ul
+			{
+				padding-left: 0px;
+				margin-top: 10px;
+				margin-left: 0px;
+			}
+
+			li
+			{
+				list-style-type: none;
+				margin-right: 20px;
+				padding-left: 5px;
+				float: left;
+			}
+
+				li label
+				{
+					font-weight: normal;
+				}
+
+			div.xAxis div.tickLabel
+			{
+				#-webkit-transform: rotate(-45deg);
+				/* Firefox */
+				#-moz-transform: rotate(-45deg);
+				/* IE */
+				#-ms-transform: rotate(-45deg);
+				/* Opera */
+				#-o-transform: rotate(-45deg);
+				font-size: 12px;
+                margin-left: 40px;
+			}
+
+			table > thead > tr > th{
+				padding:5px;
+				text-align:left;
+			}
+			table > tbody > tr > td{
+				padding:5px;
+				text-align:left;
+			}
+		}
+	</style>
+
+    {% if bar_data or bar_data_monthly_list %}
+		<div style="margin-top:20px; margin-left:20px; margin-bottom:20px; font-size:14px; font-weight:normal;">
+			{{graph_title}}
+		</div>
+		<div style="text-align:center;">
+			<table cellpadding="0" cellspacing="0" width="100%" style="border:0px;">
+                {% if bar_data %}
+				<tr>
+					<td style="padding-left:20px; text-align:left;" valign="top">
+						<div class="title" style="width:920px">
+							<h4>
+								<span class="icon16 icomoon-icon-bars"></span>
+								<span>Graph</span>
+							</h4>
+						</div>
+						<div class="content" style=" width:900px; padding-top:60px;border-width:1px;">
+							<div class="order-bars-chart" style="height:230px; width:850px;"></div>
+							<div style="display:none;" class="chart_data">{{bar_data}}</div>
+						</div>
+					</td>
+				</tr>
+                {% endif %}
+                {% if bar_data_monthly_list %}
+                    {% for name,bar_data_monthly in bar_data_monthly_list.items %}
+				<tr>
+					<td style="padding-left:20px; text-align:left;" valign="top">
+						<div style="margin-top:30px;"></div>
+						<div class="title" style="width:920px">
+							<h4>
+								<span class="icon16 icomoon-icon-bars"></span>
+								<span>Monthly Graph for {{name|title}} Fee</span>
+							</h4>
+						</div>
+						<div class="content" style=" width:900px; padding-top:60px;border-width:1px;">
+							<div class="order-bars-chart" style="height:230px; width:850px;"></div>
+							<div style="display:none;" class="chart_data">{{bar_data_monthly}}</div>
+						</div>
+					</td>
+				</tr>
+                    {% endfor %}
+                {% endif %}
+
+				<tr>
+					<td style="width:100%; padding-left:20px; text-align:left;" valign="top">
+						<div style="margin-top:30px;"></div>
+						<div class="title" style="width:920px;">
+							<h4>
+								<span class="icon16 icomoon-icon-bars"></span>
+								<span>Summary</span>
+							</h4>
+						</div>
+						<div class="content" style="line-height:25px; font-size:13px; width:900px;">
+			                <div>Tax amount paid: {{result.paid_amount|currency}} RWF</div>
+			                <div>Tax amount unallocated: {{result.unallocated_amount|currency}} RWF</div>
+			                <div>Tax paid count: {{result.paid_count|currency}} <span style="color: #3399cc;">({{result.paid_percentage}})</span></div>
+			                <div>Tax unpaid count: {{result.unpaid_count|currency}} <span style="color: #3399cc;">({{result.unpaid_percentage}})</span></div>
+			                <div>Tax unallocated count: {{result.unallocated_count|currency}} <span style="color: #3399cc;">({{result.unallocated_percentage}})</span></div>
+			                <div>Total tax count: {{result.total_count|currency}}</div>
+						</div>
+					</td>
+				</tr>
+                {% if unpaid_list  %}
+                <tr>
+                    <td colspan="2">
+                        <br/>
+			            <div class="title">
+				            <h4>
+					            <span class="icon16 icomoon-icon-grid"></span>
+					            <span>Unpaid List</span>
+				            </h4>
+			            </div>
+                        <div style="text-align:center;">
+		                    <table cellpadding="0" cellspacing="0" width="100%"  border="1">
+		                        <thead>
+		                        <tr>
+			                        <th style="width:80px!important;">Citizen ID</th>
+                                    <th class="{sorter: 'commaDigit'}">Citizen Name</th>
+                                    <th >Business</th>
+                                    <th >TIN</th>
+                                    <th>Address</th>
+                                    <th>Phone</th>
+                                    <th>Email</th>
+                                    <th style="width:240px!important;">Tax type</th>
+		                        </tr>	
+		                        </thead>
+		                        <tbody>
+		                        {% for i in unpaid_list  %}
+			                        <tr valign="top">
+				                        <td>{{i.citizen_id }}</td>
+				                        <td>{{i.citizen_name }}</td>
+				                        <td>{{i.business }}</td>
+				                        <td>{{i.tin }}</td>
+				                        <td>{{i.address }}</td>
+				                        <td>{{i.phone|linebreaks }}</td>
+				                        <td>{{i.email }}</td>
+				                        <td>{{i.tax_type|linebreaks  }}</td>
+			                        </tr>		
+		                        {% endfor %}
+		                        </tbody>							
+	                        </table>
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
+			</table>
+		</div>
+	{% endif %}
+
+	<script type="text/javascript">
+		$(document).ready(function(){
+			$("div.legend table").css("top","-50px");
+			$("div.legend div").first().css("opacity",0);
+			legend_height = parseInt($("div.legend table").css("height"));
+		});
+	</script>
+
+
+
+{% endblock %}

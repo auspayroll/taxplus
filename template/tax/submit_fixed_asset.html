@@ -1,0 +1,256 @@
+{# extends "common/base_design.html" #}
+
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Verify Target" "/admin/tax/tax/verify_target/" %}
+	{% block parent_link %}
+		{% with id=tax.property.id|stringformat:"s" %}
+			{% with parent_link="/admin/tax/tax/property/"|add:id %}
+				{% breadcrumb "Property" parent_link %}	
+			{% endwith %}
+		{% endwith %}
+	{% endblock %}
+	{% breadcrumb "Pay tax" %}	
+{% endblock %}
+
+{% block ccss %}
+	#id_declared_by_search{
+		width:100%;
+	}
+
+	#citizen_id_display{
+		font-weight: bold;
+		color: grey;
+	}
+
+	#citizen_help_text{
+		font-size:10px;
+		font-style:italic;
+	}
+{% endblock %}
+
+{% block jquery %}
+	$("#id_declared_by_search").autocomplete({
+		source: "/admin/ajax/search_citizen_clean/",
+		minLength: 2,
+		select: function (event, ui) {
+			$("#id_declared_by").val(ui.item['id']);
+		}
+	});
+
+	function submitInstallmentDate(dateText){
+		dateText = this.value;
+		installment_id = this.id.split("_");
+		_this = this;
+		$months = { 1: 'Jan', 2:'Feb', 3:'Mar', 4:'Apr', 5:'May', 6:'June', 7:'July', 8:'Aug', 9:'Sep', 10:'Oct', 11:'Nov', 12:'Dec' }
+		$("#installment_message_"+installment_id[1]).text("Updating..").slideDown("slow");
+		$.ajax({
+			url : "{% url 'update_installment_date' %}",
+			type: "POST",
+			data : { 'id':installment_id[1], 'due_date':dateText },
+			success: function(data, textStatus, jqXHR)
+			{
+				$("#installment_message_"+installment_id[1]).text("Due date has been updated").delay(2000).slideUp('slow');
+				$("#overdue_"+installment_id[1]).slideUp("slow");
+				if(_this !== $(".date_picker_dialog").last()[0]){
+					last_month = new Date(Date.parse(_this.value));
+					next_month = new Date(last_month);
+					next_month.setMonth(last_month.getMonth()+3);
+					if(last_month.getDate() > 28 && next_month.getDate() == 1){
+						next_month = new Date(next_month.setDate(0));
+					}
+					formatted_month = $months[next_month.getMonth() + 1] + " " + next_month.getDate() + ", " + next_month.getFullYear();
+					index = $(".date_picker_dialog").index(_this);
+					next_installment = $(".date_picker_dialog").slice(index + 1)[0];
+					next_installment.value = formatted_month;
+					$(next_installment).trigger('change');
+				}
+				
+
+					
+			},
+			error: function (jqXHR, textStatus, errorThrown)
+			{
+				alert('there was a submission error');
+			}
+		});
+	}
+	$(".date_picker_dialog").datepicker( { dateFormat: "M dd, yy"});
+	$(".date_picker_dialog").change(submitInstallmentDate);
+{% endblock %}
+
+{% block rightpanel %}
+
+<script type="text/javascript" src="{% static "js/fancybox/jquery.fancybox-1.3.4.pack.js" %}"></script>
+<link rel="stylesheet" href="{% static "js/fancybox/jquery.fancybox-1.3.4.css" %}" type="text/css" media="screen" />
+
+<script type="text/javascript" src="{% static "js/jquery.formatCurrency-1.4.0.min.js" %}"></script>
+
+<div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
+<form onsubmit="" method="post" action="{{ request.build_absolute_uri }}">
+	{% block header %}
+		<h2>{% block heading %}Fixed Asset Tax{% endblock %}</h2>
+		<div>
+		{% if tax.submit_date %}
+			{% if tax.submit_date %}
+				<a href="{% block payment_link %}{% url 'pay_fixed_asset' tax.id %}{% endblock %}">Make a Payment</a>
+			{% endif %}
+			&nbsp;<a href="/admin/tax/tax/generate_epayinvoice/?type={{ tax_type }}&id={{ tax.id }}">EPay Invoice</a>
+		{% endif %}
+	{% endblock %}
+
+	<div style="margin-top:10px;">
+	    <div id="message" style="display: none; border-bottom-color:red; font-size:14px; background: #eaeaea; padding: 10px; margin: 15px; margin-left:0px;"></div>
+			{% csrf_token %}
+			<div style="float:left;">
+			
+			<table id="payment_form">
+				{% block form %}
+					<tr><td>Property: </td><td><a href="/admin/tax/tax/property/{{ tax.property.pk }}/">{{ tax.property }}</a></td></tr>
+					<tr><td>District / Sector: </td><td>{{ tax.property.sector.district }} / {{ tax.property.sector }}</td></tr>
+					<tr><td>Cell / Village</td><td>{{ tax.property.cell }} / {{ tax.property.village }}</td></tr>
+					<tr><td>Owners: </td><td>{% for owner in tax.property.currentOwners %}{{ owner }}<br />{% endfor %}</td></tr>
+					<tr><td>Land Size </td><td>{{ tax.property.boundary.size }} square meters<br />{{ tax.property.boundary.hectares }} hectares</td></tr>
+					<tr><td>Land Use Type: </td><td>{{ form.land_use_type }}{{ form.land_use_type.errors }}</td></tr>  
+					<tr><td>Total Number of floors</td><td>{{ form.floor_count }}{{ form.floor_count.errors }}</td></tr>  
+					<tr><td>Total square meters of all floors</td><td>{{ form.floor_total_square_meters }}{{ form.floor_total_square_meters.errors }}</td></tr>  
+					<tr><td>Year of construction</td><td>{{ form.year_built }}{{ form.year_built.errors }}</td></tr>  
+
+					<tr><td rowspan="6">Market Value <br />{{ tax.declared_value.amount|currency }} {{ tax.currency }}</td>
+					<tr><td>Declared Residential amount {{ form.declared_residential_amount }} {{ tax.currency }}{{ form.declared_residential_amount.errors }}</td>
+					<tr><td>Declared Commercial amount {{ form.declared_commercial_amount }} {{ tax.currency }}{{ form.declared_commercial_amount.errors }}</td></tr>
+					<tr><td>Declared Agricultural amount {{ form.declared_agriculture_amount }} {{ tax.currency }}{{ form.declared_agriculture_amount.errors }}</td></tr>
+					<tr><td>Declared by
+					{{ form.declared_by_search }}{% if tax.property.declaredValue.citizen.citizen_id %}<div id="citizen_id_display">CID: {{ tax.property.declaredValue.citizen.citizen_id|chunks }}</div>{% endif %}
+					<div id="citizen_help_text">{{ form.declared_by_search.help_text }}</div>{{ form.declared_by }}{{ form.declared_by_search.errors }}
+					</td></tr>
+					<tr><td>Declared on<br />
+					{{ form.declared_on }} {{ form.declared_on.errors }}</td></tr>
+					<tr><td>Tax Period: </td><td>{{ tax.date_from }} - {{ tax.date_to }}</td></tr>
+					<tr><td>Tax Amount: </td><td>{{ tax.amount|currency }} {{ tax.currency }}</td></tr>
+					<tr><td>Paid: </td><td>{{ tax.is_paid|yesno }}</td></tr>
+					<tr><td>Amount Remaining: </td><td>{{ tax.remaining_amount|currency }} {{ tax.currency }}</td></tr>
+					<tr><td>Due Date: </td><td>{{ tax.due_date }}</td></tr>
+					<tr><td>Tax Exempt </td><td>{{ form.exempt }}</td></tr>
+					<tr><td>Months Deferred </td><td>{{ form.deferred }}</td></tr>
+					<tr><td>Submitted on: </td><td>{{ tax.submit_date }}</td></tr>	
+					<tr><td>Submitted by: </td><td>{{ request.session.user }}</td></tr>
+
+				{% endblock %}
+				<tr>
+					<td colspan="2" style="line-height:50px;">
+						{# if not tax.is_paid #}
+							<input type="submit" class="pay_tax_btn" name="calculate" value="Submit" />
+						{# endif #}
+                    </td>
+				</tr>
+			</table>
+			</div>
+		
+		{% block right_panel %}
+
+		<div class="right_panel">
+			
+			<h3>Installments</h3>
+			{% if installments %}		
+				<table id="installments">
+				<thead><th>ID</th><th></th><th>Due date</th><th>Amount</th><th>Paid</th>
+				<th>Remaining</th></thead>
+				{% for installment in installments %}
+					<tr>
+					<td>{{ installment.pk }}</td>
+					<td>Installment {{ forloop.counter }}</td>
+					<td>
+					
+					<div >
+					{% if installment.paid %}
+						{{ installment.due }}
+					{% else %}
+						<input type="text" class="date_picker_dialog" id="installment_{{ installment.pk }}" value="{{ installment.due|date:'b. d, Y'|capfirst }}" />
+					{% endif %}
+					</div><div id="installment_message_{{ installment.pk }}" class="ajax_message">Due date has been updated</div></td>
+					<td class="numeric">{{ installment.amount|currency }}</td>
+					<td>{{ installment.paid|currency }}</td>
+					<td>{{ installment.owed|currency }} <span id="overdue_{{ installment.pk }}" style="color:red">{% if installment.is_late %}-overdue{% endif %}</span></td>
+					</tr>
+				{% endfor %}
+				</table>	
+			{% else %}
+			<p>There are no installments currently set.</p>
+			{% endif %}
+			{% if tax.submit_date %}
+				{% if installments %}
+					<input type="submit" class="pay_tax_btn" name="delete_installments" value="Delete Installments" />
+				{% else %}
+					<input type="submit" class="pay_tax_btn" name="create_installments" value="Create Installments" />
+				{% endif %}
+			{% else %}
+				<p>This tax/fee must be first submitted before installments can be created.</p>
+			{% endif %}
+			
+		</div>
+
+		<div class="right_panel">
+			<h3>Payments</h3>
+			{% if payments %}		
+				<table id="payments">
+				<thead><TH>ID</TH><th>Total</th><th>Fines</th><th>Paid Date</th>
+				<th>Receipt No.</th><th>Manual Receipt No.</th>
+				</thead>
+				{% for payment in payments %}
+					<tr>
+					<td>{{ payment.pk }}</td>
+					<td>{{ payment.amount|currency }}</td>
+					<td>{{ payment.fine_amount|currency }}</td>
+					<td class="numeric">{{ payment.paid_date }}</td>
+					<td>{{ payment.receipt_no }}</td>
+					<td>{{ payment.manual_receipt_no }}</td>
+					<td><a href="/admin/tax/tax/generate_invoice/?type={{ tax_type }}&id={{ payment.pk }}" target="_blank">Receipt</a></td>
+					</tr>
+				{% endfor %}
+				</table>	
+			{% else %}
+			<p>There have been no payments.</p>
+			{% endif %}
+		</div>
+
+		{% if formula_data %}
+			<div class="right_panel">
+			{% block calculation %}
+			<h3>Fee Calculation</h3>
+			<table id="fee_calculation">
+			<thead><th>Period</th>
+			<th>Days</th>
+			<th>Tax Rate</th>
+			<th>Taxable -{{ tax.currency }}</th>
+			<th>Amount -{{ tax.currency }}</th>
+			</thead>
+			{% for period, value in formula_data.formula_data.iteritems %}
+				<tr><td>{{ period.0 }} to {{ period.1 }}</td>
+				<td>{{ value.days }}/{{ formula_data.days }}</td>
+				<td class="numeric">{{ value.tax_rate }}</td>
+				<td class="numeric">{{ value.taxable|currency }}</td>
+				<td class="numeric">{{ value.amount|currency }}</td>
+				</tr>
+			{% endfor %}
+			<tr><td colspan="3"></td>
+			<td><b>TOTAL</b></td>
+			<td class="numeric"><b>{{ formula_data.amount|currency }}</b></td></tr>
+			</table>
+			{% endblock %}
+			</div>
+		{% endif %}
+
+	{% endblock %}
+	</div>
+</form>
+</div>
+
+{% endblock %}

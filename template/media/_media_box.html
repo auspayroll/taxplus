@@ -1,0 +1,65 @@
+<div style="width:100%; text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Attached Media
+		</div>
+		<div class="content">
+			{% if upload_allowed %}
+				<a href="/admin/media/media/?{{ type }}_id={{ id }}&redirect={{ type }}" >Upload media</a>
+				<br/><br/>
+			{% endif %}
+			{% if media %}
+				<div style="margin:10px;margin-left:0px;">
+					<table cellpadding="0" cellspacing="0" class="tablesorter">
+						<thead>
+							<tr>
+								<th width="50">Date Upload</th>
+								<th>Title</th>
+								<th>Description</th>
+								<th>Tags</th>
+								<th>Associative Entities</th>
+                                <th width="150">Thumbnail</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody>
+						{% for i in media %}
+							<tr>
+								<td>{{ i.date|date:"d/m/Y" }}</td>
+								<td>{{ i.title }}</td>
+								<td><textarea id="description_{{ i.id}}" class="ajax_description" style="width: 96%;">{{ i.description }}</textarea></td>
+								<td>{{ i.tags }}</td>
+								<td>{{ i.associations|safe  }}</td>
+                                <td>{% if 'image/' in i.file_type %}<a href="/media/{{ i.path }}" class="fancy_box"><img src="/media/{{ i.path }}" width="140"  /></a>{% endif %}</td>
+								<td><a href="/media/{{ i.path }}" target="_blank">Download</a></td>
+							</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+                {% load staticfiles %}
+
+                <script type="text/javascript" src="{% static 'js/jquery.ba-throttle-debounce.js' %}"></script>
+
+                <script type="text/javascript" language="javascript">
+                    $(function(){
+                        function updateMediaDescription(){
+                            var id = $(this).attr("id").replace("description_","");
+                            $.ajax({
+                                type: "GET",
+                                url: "/admin/media/media/update/",
+                                data: { id: id, description: $(this).val() }
+                            }).done(function( msg ) {
+                            });
+                        }
+
+                        $(".ajax_description").keyup($.debounce( 800, updateMediaDescription));
+                    })                 
+                </script>
+			{% else %}
+				<div class="note" >This {{ type }} has no Associative media.</div>
+			{% endif %}
+			<br/>
+		</div>	
+	</div>
+</div>

@@ -1,0 +1,9 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+
+
+{% block rightpanel %}
+<div style="padding:20px; display:block;">
+	{% include "media/_media_box.html" with media=media type="citizen" id=citizen.id %}
+</div>
+{% endblock %}

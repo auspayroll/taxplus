@@ -1,0 +1,111 @@
+@media screen,print
+{
+	body
+	{
+		font-family: Arial;
+	}
+
+	#receipt
+	{
+		display: block!important;
+		border: 1px solid #c4c4c4;
+		position: relative;
+		padding: 10px;
+		line-height: 16px;
+		width: 1000px;
+		text-align: left;
+		font-family: Arial;
+	}
+
+		#receipt h2
+		{
+			font-size: 16px;
+			text-align: left;
+			font-family: Arial;
+		}
+
+		#receipt h3
+		{
+			font-size: 13px;
+			color: red;
+			text-decoration: underline;
+			text-align: left;
+		}
+
+		#receipt .pay_details
+		{
+			position: absolute;
+			top: 10px;
+			right: 20px;
+		}
+
+			#receipt .pay_details label
+			{
+				float: left;
+				display: block;
+				width: 80px;
+			}
+            #receipt.epay .pay_details label
+			{
+				width: 100px;
+			}
+            #receipt.multipay .pay_details label
+			{
+				width: 120px;
+			}
+		#receipt #payments th, #receipt #payments td
+		{
+			border-bottom: 1px solid black;
+			padding: 5px;
+			width: 200px;
+			text-align: left;
+		}
+
+		#receipt #payments .reference_col
+		{
+			width: 400px;
+		}
+		#receipt.epay #payments .reference_col
+		{
+			width: 600px;
+		}
+		#receipt.multipay #payments .reference_col
+		{
+			width: 600px;
+		}
+
+		#receipt #payments .center
+		{
+			text-align: center;
+		}
+
+		#receipt #payments .no_border td
+		{
+			border: 0px;
+		}
+
+		#receipt #payments .total_amount
+		{
+			border: 1px solid black;
+			padding: 3px 5px 3px 5px;
+		}
+
+		#receipt .note
+		{
+			width: 300px;
+			position: absolute;
+			bottom: 10px;
+			right: 20px;
+		}
+
+		#receipt .warning
+		{
+			color: red;
+			font-style: italic;
+		}
+
+		#receipt #future_payments td
+		{
+			padding: 10px 20px 10px 20px;
+		}
+}

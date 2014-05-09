@@ -1,0 +1,25 @@
+from django.conf.urls import patterns, include, url
+
+urlpatterns = patterns('',
+	url(r'^letter','mytest.views.letter'),
+	url(r'^generate_tax_reminder','mytest.views.generate_tax_reminder'),
+					
+	#url(r'^fk_test','mytest.views.fk_test'),				
+	#url(r'^populateCellAndVillage','mytest.views.populateCellAndVillage'),
+	#url(r'^exportUPI','mytest.views.exportUPI'),
+	#url(r'^populateFee','mytest.views.populateFee'),
+	#url(r'^populateDeclareValue1','mytest.views.populateDeclareValue1'),
+	#url(r'^populateLog','mytest.views.populateLog'),
+	#url(r'^populatePropertyForPropertyTaxItem$','mytest.views.populatePropertyForPropertyTaxItem'),
+	#url(r'^$','mytest.views.importcode'),
+	#url(r'^$','mytest.views.graph'),
+	#url(r'^import_ownership_data','mytest.views.home'),
+    #url(r'^$','mytest.views.test'),
+	#url(r'^import_citizen_and_business_data','mytest.views.import_citizen_and_business_data'),
+	#url(r'^import_property_data$','mytest.views.import_property_data'),
+	#url(r'^merge_property$','mytest.views.merge_property'),
+	#url(r'^generate_cental_point_for_boundaries','mytest.views.generate_cental_point_for_boundaries'),
+	#url(r'^mytest','mytest.views.mytest'),
+	#url(r'^import_historical_data','mytest.views.import_historical_data'),
+	#url(r'^import_citizen_own_property_from_excel','mytest.views.import_citizen_own_property_from_excel'),
+)

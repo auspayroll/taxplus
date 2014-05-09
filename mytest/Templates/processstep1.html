@@ -1,0 +1,50 @@
+<html>
+<head><title></title></head>
+
+<body>
+
+<h2> {{file}} - Data (not Imported YET)</h2>
+
+<table>
+<tr>
+    <th>Data</th>
+    <th>NEW</th>
+    <th>FOUND / Not Updated</th>
+    <th>FOUND / Updated</th>
+    <th>Bad Record</td>
+    <th>Total</th>
+</tr>
+{% if citizenlist %}
+<tr>
+    <td>{{citizenlist.new}}</td>
+    <td>{{citizenlist.notupdated}}</td>
+    <td>{{citizenlist.updated}}</td>
+    <td>{{citizenlist.bad}}</td>
+    <td>{{citizenlist.total}}</td>
+</tr>
+{% endif %}
+
+{% if propertylist %}
+<tr>
+    <td>{{propertylist.new}}</td>
+    <td>{{propertylist.notupdated}}</td>
+    <td>{{propertylist.updated}}</td>
+    <td>{{propertylist.bad}}</td>
+    <td>{{propertylist.total}}</td>
+</tr>
+{% endif %}
+
+{% if ownershiplist %}
+<tr>
+    <td>{{ownershiplist.new}}</td>
+    <td>{{ownershiplist.notupdated}}</td>
+    <td>{{ownershiplist.updated}}</td>
+    <td>{{ownershiplist.bad}}</td>
+    <td>{{ownershiplist.total}}</td>
+</tr>
+{% endif %}
+
+
+
+</body>
+</html>

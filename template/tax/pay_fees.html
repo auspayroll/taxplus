@@ -1,0 +1,35 @@
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+	<form action="{% url 'pay_fees' %}" method="post">
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<h3>Enter Payment Details</h3>
+	<table>
+	{{ form }}
+	<tr><td><input type="submit" name="preview" value="Preview Payment" /></td></tr>
+	</table>
+	{% csrf_token %}
+
+</div>
+<p></p>
+<div>
+<h3>Payment is for the following fees:</h3>
+<table cellpadding="4" border="1">
+	<tr><th>Fee</th><th>Amount</th><th>Due on</th></tr>
+{% for fee in fees %}
+	<tr>
+	<td>{{ fee }}<input type="hidden" name="tax_id" value="{{ fee.id }}" /></td>
+	<td>{{ fee.amount|currency|default:'Not Specified' }}</td>
+	<td>{{ fee.due_date }}</td>
+	</tr>
+{% endfor %}
+</table>
+</div>
+	<input type="hidden" name="business_pk" value="{{ business.pk }}" />
+	<input type="hidden" name="citizen_pk" value="{{ citizen.pk }}" />
+	<input type="hidden" name="property_pk" value="{{ property.pk }}" />
+	<input type="hidden" name="template_type" value="{{ template_type }}" />
+	</form>
+{% endblock %}

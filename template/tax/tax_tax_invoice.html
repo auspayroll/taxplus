@@ -1,0 +1,417 @@
+{% extends "common/base_design.html" %}
+
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Receipt" %}	
+{% endblock %}
+{% block mainbody %}
+
+	<script type="text/javascript" src="/static/js/jquery.printElement.min.js"></script>
+
+	<script type="text/javascript">
+        $(function(){
+            {% if tablet_printing %}
+            var html = $("#receipt").html();
+            $("#header").hide(); 
+            $(".positionbar").hide(); 
+            $("#wrapper div fieldset").hide(); 
+            $("#wrapper div h4").hide(); 
+            $("#receipt").parent().attr("style",'');
+            $("#receipt").css('border','none');
+            $("body").css('background','white');
+            {% endif %}
+
+            $("#print_btn").click(function(e){
+                e.preventDefault();
+                if( /Linux; Android/i.test(navigator.userAgent) ) {
+                    window.open("{{tablet_print_link}}");
+                }
+                else
+                {
+                    $("#receipt").printElement({printMode:'popup',pageTitle:'Print Receipt',
+                    overrideElementCSS:['/static/css/common/print_receipt.css']
+                    });
+                }
+
+                return false;
+            });
+
+            $("#send_email_input_check").click(function(){
+                if(!$("#send_email_input_check").is(':checked'))
+                {
+                    $("#send_email_input").val('');
+                }   
+            });
+            $("#send_sms_input_check").click(function(){
+                if(!$("#send_sms_input_check").is(':checked'))
+                {
+                    $("#send_sms_input").val('');
+                }   
+            });
+
+            $("#send_email_input").keyup(function(){
+                if($("#send_email_input").val() == '')
+                {
+                    $("#send_email_input_check").removeAttr('checked');
+                }   
+                else
+                {
+                    $("#send_email_input_check").attr('checked','checked');
+                }
+            });
+            $("#send_sms_input").keyup(function(){
+                if($("#send_sms_input").val() == '')
+                {
+                    $("#send_sms_input_check").removeAttr('checked');
+                }   
+                else
+                {
+                    $("#send_sms_input_check").attr('checked','checked');
+                }
+            });
+
+            $("#send_receipt_form").submit(function(){
+                if( ($("input[name='send_sms_list[]']:checked").length <= 0 )
+                && ($("input[name='send_email_list[]']:checked").length <= 0 )
+                && ($("#send_email_input").val() == '' )
+                && ($("#send_sms_input").val() == '') )
+                {
+                    $(".messages .error").html("Please input send receipt details!");
+                    $(".messages").show();
+                    return false;
+                }
+            });
+        });
+    
+        function addCustomInput(type)
+        {
+            var clone = $("#custom_" + type + "_input").clone();
+            clone.find("#send_" + type + "_input_check").removeAttr('checked');
+            clone.find("#send_" + type + "_input").val('');
+            clone.find("#send_" + type + "_info_input").val('');
+            clone.insertBefore($("#add_" + type + "_custom_input"));
+        }
+    </script>
+
+{% load humanize %}{% load simple_tags %}
+
+<div style="text-align:left; line-height:30px; margin:10px;margin-top:20px;">
+    <!--{{ tax_label }}-->
+
+    <fieldset>
+	    <legend><h4><b>Support Documents</b></h4></legend>
+
+        <form enctype="multipart/form-data" class="xupload-form file_upload" id="media_form" action="/admin/media/media/upload_ajax/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="tax_type" value="{{ tax_type }}" />
+            <input type="hidden" name="tax_id" value="{{ tax.id }}" />
+            <input type="hidden" name="payment_id" value="{{ payment.id }}" />
+            <input type="hidden" name="business_id" value="{{ business_id }}" />
+            <input type="hidden" name="citizen_id" value="{{ citizen_id }}" />
+            <input type="hidden" name="property_id" value="{{ property_id }}" />
+
+            <input type="hidden" value="" name="file">
+            <input multiple="multiple" name="file" id="path_original" type="file">
+            <button class="my_button">Upload</button><div>Choose file to upload</div>
+        </form>
+        <table id="files">
+        </table>
+
+        <input type="button" class="my_button" id="start_uploads" value="Upload Selected Files" name="Save" style="display: none;">
+
+        {% if media %}
+		    {% include "media/_media_box_invoice.html" with media=media %}						
+        {% endif %}
+
+
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload.js"></script>
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload-ui.js"></script>
+        <script type="text/javascript">
+        /*<![CDATA[*/
+
+		var fileCount = 0;
+		var fileCheck = 0;
+
+        jQuery(function($) {
+            jQuery('#media_form').fileUploadUI({'beforeSend':function (event, files, index, xhr, handler, callBack) {
+				                handler.uploadRow.find(".file_upload_start button").click(function(){
+					            /*var regexp = /\.(png)|(jpg)|(gif)|(jpeg)$/i;
+					            if (!regexp.test(files[index].name)) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>ONLY IMAGES ALLOWED!</strong></div></div>");
+						            setTimeout(
+							            function () {handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else  */ 
+                                if (files[index].size > 2097152) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>FILE TOO BIG!</strong></div></div>");
+						            setTimeout(
+							            function () { handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else {
+						            fileCheck++;
+						            callBack();
+					            }
+				                } );
+				            },'onComplete':function (event, files, index, xhr, handler, callBack) {
+			            fileCount++;
+			            if(fileCheck == fileCount) {
+				            window.location = window.location;
+			            }
+			            },'onChange':function (event, files, index, xhr, handler, callBack)
+                                    {
+                                        $("#start_uploads").show();
+                                    },'buttonLabel':'Choose file to upload','uploadTable':'#files','downloadTable':'#files','buildUploadRow':function (file, index) {
+	            return $('<tr>'+
+		            '<td class="filename">'+file[index].name+'</td>'+
+		            //'<td class="filesize">'+file[index].size+'</td>'+
+		            '<td class="file_upload_progress" colspan="3"><div></div></td>'+
+		            '<td class="file_upload_start" style="display:none">'+
+			            '<button class="ui-state-default ui-corner-all" title="Start Upload">'+
+				            '<span class="ui-icon ui-icon-circle-arrow-e">Start Upload</span>'+
+			            '</button>'+
+		            '</td>'+
+		            '<td class="file_upload_cancel">'+
+			            '<button class="ui-state-default ui-corner-all">'+
+				            '<span class="ui-icon ui-icon-cancel">Cancel</span>'+
+			            '</button>'+
+		            '</td>'+
+	            '</tr>');
+            },'buildDownloadRow':function (files, index) {
+	            return $('<tr style="border-bottom: 1px solid #c4c4c4;" class="media_row"><td id="file_name"><input type="hidden" id="id" value="" /><b>' + files.name + '</b><\/td>' +
+    	            '<td class="file_upload_progress"><\/td>' +
+
+                    '<td class="file_upload_cancel">' +
+                    '<button class="ui-state-default ui-corner-all" title="Cancel">' +
+                    '<span class="ui-icon ui-icon-cancel" onclick="removeMediaRow(this)">Cancel<\/span>' +
+                    '<\/button><hr/><\/td><\/tr>');
+            }});
+
+            $("#start_uploads").click(function(){
+			    $('.file_upload_start button').click();
+            });
+        });
+        /*]]>*/
+        </script>
+    </fieldset>
+    <br/>
+
+	<h4><b>Receipt Preview</b></h4>
+    <div style="border: 2px inset #c4c4c4; background: #c4c4c4;">
+	    <div id="receipt" >
+            <div class="pay_details">
+                {% if receipt.paid_at %}<label>Paid At:</label> {{ receipt.paid_at}} <br/>{% endif %}
+                <label>Date Paid:</label> {{ receipt.paid_date|date:"d/m/Y"}} <br/>
+                <label>ePay No:</label> {{ receipt.epay_no}} <br/>
+            </div>		
+            <h2>PAYMENT RECEIPT FOR CITY OF KIGALI</h2>
+            {{ receipt.payer.name }}<br/>
+            {% if receipt.payer.address %}
+                {{ receipt.payer.address }}<br/>
+            {% endif %}
+            {{ receipt.payer.idString }}
+
+            Owners: {% if owners_string %}{{ owners_string }} {% else %} N/A {% endif %}<br>
+
+            <h2>SUMMARY OF GOVERNMENT CHARGES</h2>
+            {% if receipt.note %}
+                <div style="font-style:italic; ">{{ receipt.note }}</div><br />
+            {% endif %}
+            <table id="payments" cellpadding="0" cellspacing="0">
+			    <tr>
+				    <th>Tax / Fee</th>
+				    <th class="reference_col">Reference</th>
+                    {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
+                    <th class="center">Manual Receipt No.</th>
+                    {% endif %}
+				    <th class="center">Receipt No.</th>
+				    <th class="center">Bank Receipt No.</th>
+				    <th style="text-align:right; padding: 0px 11px 0px 0px;" >Amount Paid</th>
+			    </tr>	
+                {% if receipt.taxes %}
+                    {% for i in receipt.taxes %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td class="reference_col">{{ i.reference }}</td>
+                        {% if i.manual_receipt %}
+                        <td class="center">{{i.manual_receipt}}</td>
+                        {% endif %}
+                        <td class="center">{{ i.invoice_no }}</td>
+                        <td class="center">{{ i.bank_receipt }}</td>
+                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|currency }} {{i.currency|title}}</td>
+                    </tr>			
+                    {% endfor %}
+                {% endif %}
+                {% if receipt.late_fees %}
+                    {% for i in receipt.late_fees %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td class="reference_col">{{ i.reference }}</td>
+                        {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
+                        <td class="center">{{ receipt.taxes.0.manual_receipt }}</td>
+                        {% endif %}
+                        <td class="center">{{ i.invoice_no }}</td>
+                        <td class="center">{{ i.bank_receipt }}</td>
+                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|currency}} {{i.currency|title}}</td>
+                    </tr>			
+                    {% endfor %}
+                {% endif %}
+                {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
+                <tr class="no_border"><td colspan="6"><br/></td></tr>
+                <tr class="no_border">
+                    <td colspan="5" style="text-align:right;" ><b>PAID<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|currency }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>	
+				<tr class="no_border">
+                    <td colspan="5" style="text-align:right;" ><b>Total Outstanding as at {% now "d/m/Y" %}<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total_outstanding|currency }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>	
+                {% else %}
+                <tr class="no_border"><td colspan="5"><br/></td></tr>
+                <tr class="no_border">
+                    <td colspan="4" style="text-align:right;" ><b>PAID<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|currency }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>	
+				<tr class="no_border">
+                    <td colspan="4" style="text-align:right;" ><b>Total Outstanding as at {% now "d/m/Y" %}<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total_outstanding|currency }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>		
+                {% endif %}
+
+            </table>
+            <br/>
+			{% if receipt.installments %}
+				<h3>Installments:</h3>
+			    <table cellpadding="0" cellspacing="0" id="Table1" border="1">
+				<thead><th>Due</th>
+				<th style="text-align:right;">Amount</th>
+				<th style="text-align:right;">Paid</th>
+				<th style="text-align:right;">Outstanding</th></thead>
+                    {% for i in receipt.installments %}
+                     <tr>
+                        <td width="100" >{{ i.due|date:"d/m/y" }}</td>
+                        <td width="70" style="text-align:right;">{{ i.amount|currency }}</td>
+                        <td width="70" style="text-align:right;">{{ i.paid|currency }}</td>
+						<td width="100" style="text-align:right;">{{ i.owed|currency }}</td>
+                    </tr>			
+                    {% endfor %}
+                </table>
+				<br />
+			{% endif %}
+            {% if receipt.future_payments %}
+                <h3>Future Payments Due On:</h3>
+                <table cellpadding="0" cellspacing="0" id="future_payments">
+                    {% for i in receipt.future_payments %}
+                     <tr>
+                        <td width="50">{{ i.due_date|date:"d/m/y" }}</td>
+                        <td width="320">{{ i.name }}</td>
+                        {% if i.amount and i.amount > 0 %}<td>{{ i.amount|currency }} {{i.currency|title}}</td>{% endif %}
+                    </tr>			
+                    {% endfor %}
+                </table>
+                <div class="warning">* All payments after the due date will incure a fee</div>
+            {% else %}
+                <br/><br/><br/><br/><br/><br/>
+
+            {% endif %}
+            <div class="note">Please check all entries and report any apparent error or possible unauthorised transactions immediately.
+                We may subsequently adjust debits and credits. For information on resolving problems or enquiries contact Kigali Council on 000 000 000</div>
+	    </div>
+    </div>
+    <br/>
+    <fieldset>
+	    <legend><h4><b>Receipt Options</b></h4></legend>
+
+        <form method="post" id="send_receipt_form">
+			{% csrf_token %}
+            <table>
+                <tr><td colspan="2">
+                    <ul class="messages" style="margin: 0px; {% if send_receipt_message or send_receipt_error %} {% else %} display:none; {% endif %}" >                    
+                        {% if send_receipt_message %}<li class="success">{{ send_receipt_message }}</li>{% endif%}
+                        {% if send_receipt_error %}<li class="error">{{ send_receipt_error }}</li>{% endif%}
+                    </ul>
+                </td></tr>
+                <tr>
+                    <td valign="top"><label>SMS to</label></td>
+                    <td valign="top">
+                        {% if smsList %}
+                            {% for i in smsList %}
+                                {% if i %}
+                                <input type="checkbox" name="send_sms_list[]" value="{{ i }}" {% if sendSmsList == None or i in sendSmsList %} checked="checked" {% endif %}/> {{ i }}
+                                <br/>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if smsInputPairList %}
+                            {% for i,e in smsInputPairList %}
+                            <div id="custom_sms_input">
+                                <input type="checkbox" id="send_sms_input_check"  checked="checked" />
+                                <input type="text" id="send_sms_input" name="send_sms_input[]" style="width:200px;" value="{{ i }}" placeholder="Enter custom phone number" />
+                                <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />        
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div id="custom_sms_input">
+                            <input type="checkbox" id="send_sms_input_check"  />
+                            <input type="text" id="send_sms_input" name="send_sms_input[]" style="width:200px;" value="" placeholder="Enter custom phone number" />
+                            <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />        
+                        </div>
+                        {% endif%}
+                        <a id="add_sms_custom_input" href="javascript:addCustomInput('sms');">Add more custom input</a>                
+                    </td>
+                </tr>
+                <tr>
+                    <td valign="top"><label>Email as PDF to</label></td>
+                    <td valign="top">
+                        {% if emailList %}
+                            {% for i in emailList %}
+                                {% if i %}
+                                <input type="checkbox" name="send_email_list[]" value="{{ i }}" {% if sendEmailList == None or i in sendEmailList %} checked="checked" {% endif %} /> {{ i }}
+                                <br/>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        {% if emailInputPairList %}
+                            {% for i,e in emailInputPairList %}
+                            <div id="custom_sms_input">
+                                <input type="checkbox" id="send_email_input_check"  checked="checked" />
+                                <input type="text" id="send_email_input" name="send_email_input[]" style="width:200px;" value="{{ i }}" placeholder="Enter custom email" />
+                                <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />        
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div id="custom_email_input">
+                            <input type="checkbox" id="send_email_input_check" />
+                            <input type="text" id="send_email_input" name="send_email_input[]"  style="width:200px;" value="" placeholder="Enter custom email" />
+                            <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />                        
+                        </div>
+                        {% endif%}
+                        <a id="add_email_custom_input" href="javascript:addCustomInput('email');">Add more custom input</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <input type="submit" name="send_receipt" value="send receipt" />
+                        <button id="print_btn"  class="button_styled" >print receipt</button>
+                        {% if tax_url %}
+                        <button  class="button_styled" onclick="window.location='{{ tax_url }}';return false;" >pay another tax</button>
+                        {% endif %}
+                        <button  class="button_styled" onclick="window.location='/admin/tax/tax/';return false;">back to tax menu</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </fieldset>
+
+    <br/>    
+    <br/>
+
+</div>
+{% endblock %}

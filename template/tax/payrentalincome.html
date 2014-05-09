@@ -1,0 +1,9 @@
+{% extends "tax/paylandlease.html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block heading %}
+	<h3>Rental Income Tax - Payment</h3>
+	<div><a href="{% url 'submit_rental_income' tax.id %}">View Tax Details</a></div>
+{% endblock %}

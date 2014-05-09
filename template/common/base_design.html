@@ -1,0 +1,166 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html lang="en" >
+	<head>
+		<title>{% block title %}Council Tax Evalution System{% endblock %}</title>
+		<link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+		{% load staticfiles %}
+		{% load settings_value %}
+		{% load breadcrumb %}
+		<script type="text/javascript">
+			site_url= "{% settings_value 'SITE_URL' %}"
+			map_url= "{% settings_value 'MAP_URL' %}"
+			color_provice = "{% settings_value 'COLOR_PROVINCE' %}"
+			color_council = "{% settings_value 'COLOR_COUNCIL' %}"
+			color_district = "{% settings_value 'COLOR_DISTRICT' %}"
+			color_sector = "{% settings_value 'COLOR_SECTOR' %}"
+			color_house = "{% settings_value 'COLOR_HOUSE' %}"
+			color_declaredvalue = "{% settings_value 'COLOR_DECLAREDVALUE' %}"
+			color_tax = "{% settings_value 'COLOR_TAX' %}"
+			date_format = "{% settings_value 'DATE_FORMAT' %}"
+			function currency(x) {
+				return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+			}
+
+		</script>
+		<link rel="stylesheet" type="text/css" href="{% static "css/ui-lightness/jquery-ui-1.8.23.custom.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/base.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/map.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/common/table_sorter.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "js/fancybox/jquery.fancybox-1.3.4.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+		<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+		<link href='http://fonts.googleapis.com/css?family=Asap' rel='stylesheet' type='text/css'>
+		<script type="text/javascript"  src="{% static "js/jquery-1.7.2.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery-ui.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery.tablesorter.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/jquery.tablesorter.staticrow.min.js" %}"></script>
+		<script type="text/javascript"  src="{% static "js/fancybox/jquery.fancybox-1.3.4.js" %}"></script>
+
+		<script type="text/javascript"  src="{% static "js/common.js" %}"></script>
+
+        <link rel="stylesheet" href="{% static "js/fileupload-ui/jquery.fileupload-ui.css" %}" />
+
+		<script type="text/javascript">
+
+
+
+		$(document).ready(function(){
+			jQuery.tablesorter.addParser({
+				  id: "commaDigit",
+				  is: function(s) {
+					return /^[0-9]?[0-9,\.]*$/.test(s);
+				  },
+				  format: function(s) {
+					return jQuery.tablesorter.formatFloat(s.replace(/,/g, ""));
+				  },
+				  type: "numeric"
+			});
+			
+
+			var mydigits= function(node)  {
+				var s=node.innerHTML;
+				return s.replace(/,/g, "");
+			}
+
+			$(function() {
+				$("table.tablesorter").tablesorter({widgets: ["zebra","staticRow"],textExtraction:mydigits});
+			});
+			$( ".date_picker" ).datepicker({ dateFormat: "dd/mm/yy" });
+            $(".date_picker").attr("autocomplete", "off");
+            $(".fancy_box").fancybox();
+			{% block jquery %}{% endblock %}
+		});
+		</script>
+
+		{% block css %}
+		{% endblock %}
+
+		{% block javascript %}
+		{% endblock %}
+
+		<style type="text/css">
+			{% block ccss %}
+			{% endblock %}
+			input[type=text]
+			{
+				margin-bottom:0px;
+			}
+			textarea
+			{
+				width:300px;
+				height:60px;
+				margin-bottom:0px;
+			}
+			td
+			{
+				padding:3px;
+				
+			}
+			td.label
+			{
+				color:black;
+				background:none;
+				text-decoration:none;
+				text-shadow: 0 0px 0 rgba(0,0,0,0.25);
+				padding-top:7px;
+			}
+			select
+			{
+				line-height:20px;
+			}
+
+			INPUT[type=text].numeric
+			{
+				text-align:right;
+			}
+		</style>
+
+	</head>
+
+	<body topmargin="0" leftmargin="0" onload="init();">
+	<div id="header" style="height:67px!important;">
+        <div class="navbar">
+            <div class="navbar-inner">
+              <div class="container-fluid">
+                <a class="brand" href="/admin/" style="padding-left:0px; margin-left:0px;">
+					<img border="0" style="vertical-align:middle; width:200px; line-height:45px; margin:0px; padding:0px; max-width:100%;" width="200" src="{% static "images/propertymode-logo.png" %}" /> <span id="header_title">tax system plus</span>
+                </a>
+                <div class="nav-no-collapse" style="display:inline; margin-top:0px; padding-top:0px; float:right;">
+                    <ul class="nav pull-right usernav" >
+                        <li><h5 style="margin:0px; line-height: 35px;" >Logged in as {{  request.session.user }}</h5></li>
+                        <!--li><a href="/admin/edit_profile/">Edit Profile</a></li-->
+						<li><a href="/admin/logout/">Logout</a></li>
+                    </ul>
+                </div><!-- /.nav-collapse -->
+              </div>
+            </div><!-- /navbar-inner -->
+          </div><!-- /navbar --> 
+		 <div style="clear:both"></div>
+    </div><!-- End #header -->
+	
+	
+	<!-- You are here bar -->
+	<div class="positionbar">
+		You are here: 
+		{% block breadcrumbs %}
+				{% block crumbbody %}
+				{% endblock %}
+		{% endblock %}
+	</div>
+
+	{% if messages %}
+	<ul class="messages">
+		{% for message in messages %}
+		<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</li>
+		{% endfor %}
+	</ul>
+	{% endif %}
+
+    <div id="wrapper">
+	{% block mainbody %}
+	{% endblock %}
+  
+    </div><!-- End #wrapper -->
+	</body>
+</html>

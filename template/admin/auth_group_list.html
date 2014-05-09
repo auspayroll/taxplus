@@ -1,0 +1,344 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css  %}
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% if not action %}
+		{% breadcrumb "Group" "" %}
+	{% else %}
+		{% breadcrumb "Group" "/admin/auth/group/" %}
+		{% ifequal action "add" %}	
+			{% breadcrumb "Add group" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit group" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+
+
+	<script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/admin/populate_geo.js" %}"></script>
+
+	<!-- Init plugins -->
+	<script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+	<script type="text/javascript"  src="/static/js/admin/group.js"></script>
+
+
+	<style>
+		
+		ul.tax_type_list
+		{
+			margin:0px;
+			padding:0px;
+			list-style-type:none;
+			display:block;
+		}
+		ul.tax_type_list > li
+		{
+			margin-right:10px;
+		}
+		
+		ul.tax_type_list > li > label
+		{
+			font-weight:normal;
+			font-size:14px;
+		}
+		
+		
+	</style>
+	
+
+<div style="text-align:center;">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box">
+			<div class="box_title" >
+				<table style="width:100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td style="vertical-align:middle;">Search Group</td>
+						<td style="padding-right:20px; text-align:right; line-height:36px;">
+							<a href="/admin/auth/group/add_group/">Add group</a>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="content" style="border-bottom:0px;">
+				<form method="POST" action="/admin/auth/group/" style="margin:0px; padding:0px">
+					{% csrf_token %}
+					<table cellpadding="0" cellspacing="0" style="width:100%">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0">
+									<tr>
+										<td>Group name:</td>
+										<td width="230">{{search_group_form.name}}</td>
+										<td>Status:</td>
+										<td width="230">{{search_group_form.i_status}}</td>
+									</tr>
+								</table>
+							</td>
+							<td valign="bottom"  style="text-align:right; padding-right:10px;"><button type="submit" class="my_button" name="submit">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+
+
+			<!-----------------------Default group page ------------------->
+
+			{% if groups %}
+			<div class="box_title">
+				Group list
+			</div>
+			<div class="content">
+				<div style="text-align:center; padding:15px;">
+					<table style="margin:0 auto; width:100%" class="tablesorter" cellpadding="0" cellspacing="0">
+						<thead>
+						<tr>
+							<th>Name</th>
+							<th>Status</th>
+							<th>Action</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for group in groups %}
+						<tr>
+							<td><a href="/admin/auth/group/change_group/{{group.id}}/">{{group.name}}</a></td>
+							<td>{{ group.i_status|title }}</td>
+							<td>
+								<a href="/admin/auth/group/change_group/{{group.id}}/">Edit</a> | 
+								{% ifequal group.i_status 'active' %}
+									<a href="/admin/auth/group/deactivate_group/{{group.id}}/"><span style="color:darkgray;">Deactivate</span></a>
+								{% endifequal %}
+								{% ifequal group.i_status 'inactive' %}
+									<a href="/admin/auth/group/activate_group/{{group.id}}/"><span style="color:green;">Activate</span></a>
+								{% endifequal %}
+							</td>
+						</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			{% endif %}
+			<!-----------------------End of default group page ------------------->
+
+			<!-----------------------Start of add group page------------------->
+			{% ifequal action 'add' %}
+			<div class="box_title">
+				Add a group
+			</div>
+			<div class="content">
+				<form style="margin:0px;padding:0px;padding-bottom:20px;" onsubmit="return check_permissions();" action="" method="post" >
+					{% csrf_token %}
+					
+					<div style="margin-top:20px; margin-bottom:20px; margin-left:10px;">
+						Group name: <input type="text" id="id_group_name" name="group_name" value="" />
+						&nbsp;&nbsp;<span class="error_message" id="error_message"></span>
+					</div>
+					
+					<div style="margin-top:30px; margin-bottom:30px; padding-left:5px;">
+						<button type="button" onclick='add_permission();' class="my_button"> Add a permission </button>
+					</div>
+					
+					<div id="permissions"></div>
+					<div style="margin-top:20px; padding-left:5px;">
+						<button type="submit" class="my_button">Add group</button>
+					</div>
+				</form>
+			</div>	
+			{% endifequal %}
+			<!-----------------------end of add group page-------------------->
+
+
+
+			<!-----------------------Start of edit group page------------------->
+			{% ifequal action 'edit' %}
+			<div class="box_title">
+			Change group
+			</div>
+			<div class="content">
+				<form id="add_group_form" onsubmit="return check_permissions();" action="" method="post" >
+				{% csrf_token %}
+					<div style="margin-top:20px; margin-bottom:20px; margin-left:10px;">
+						Group name: <input type="text" id="id_group_name" name="group_name" value="{{group.name}}" />
+						&nbsp;&nbsp;<span class="error_message" id="error_message"></span>
+					</div>
+					
+					<div style="margin-top:30px; margin-bottom:30px; padding-left:5px;">
+						<button type="button" onclick='add_permission();' class="my_button"> Add a permission </button>
+					</div>
+					<div id="permissions">
+						{% if group.all_permissions %}
+							{% for permission in group.all_permissions %}
+								<div class="box" style="width:900px;">
+									<div class="box_title">
+										Permission 
+										<span class="deletebox"></span>
+										<span class="minimizebox"></span>
+										<span style="display:none;" class="maximizebox"></span>
+									</div>
+									<div class="content">
+										<div>
+											<table id="search_table">
+												<tr>
+													<td width="50">Province: </td>
+													<td width="200">
+														<select style="opacity:0;" name="province_{{forloop.counter}}" id="id_province_{{forloop.counter}}">
+															<option value="">----------</option>
+															{% for province in permission.province_list %}
+																<option {% if permission.province %} {% ifequal permission.province.id province.id %}selected{% endifequal %}{% endif %} value="{{province.id}}">{{province.name}}</option>
+															{% endfor %}
+														</select>
+													</td>
+													<td style="padding-left:20px;" width="50">District: </td>
+													<td width="200">
+														<select style="opacity:0" name="district_{{forloop.counter}}" id="id_district_{{forloop.counter}}">
+															<option value="">-----------</option>
+															{% if permission.district_list %}
+																{% for district in permission.district_list %}
+																	<option {% if permission.district %} {% ifequal permission.district.id district.id %}selected{% endifequal %}{% endif %} value="{{district.id}}">{{district.name}}</option>
+																{% endfor %}
+															{% endif %}
+														</select>
+													</td>
+													<td style="padding-left:20px;" width="50">Sector: </td>
+													<td width="200">
+														<select style="opacity:0" name="sector_{{forloop.counter}}" id="id_sector_{{forloop.counter}}">
+															<option value="">-----------</option>
+															{% if permission.sector_list %}
+																{% for sector in permission.sector_list %}
+																	<option {% if permission.sector %} {% ifequal permission.sector.id sector.id %}selected{% endifequal %}{% endif %}   value="{{sector.id}}">{{sector.name}}</option>
+																{% endfor %}
+															{% endif %}
+														</select>
+													</td>
+												</tr>
+											<table>
+										</div>
+										<div style="margin-top:30px; color:#888; font-size:15px; font-style:italic;">Please select tax types allowed by this permission.</div>
+										<div style="margin-top:10px;">
+											<ul class="tax_type_list">
+												{% for tax_type in permission.all_tax_types %}
+													<li style="display:inline-block; float:left;">
+														<label for="id_tax_types_{{forloop.parentloop.counter}}_{{forloop.counter}}" >
+															<input {% if tax_type.tick %} checked {% endif %} type="checkbox" name="tax_types_{{forloop.parentloop.counter}}[]" value="{{tax_type.id}}" id="id_tax_types_{{forloop.parentloop.counter}}_{{forloop.counter}}" style="opacity:0;" >						
+															{{tax_type.displayname}}
+														</label>
+													</li>
+												{% endfor %}
+											</ul>
+											<div style="clear:both;"></div>
+										</div>
+										<div style="margin-top:30px; color:#888; font-size:15px; font-style:italic;">Please add the actions allowed by this permission to the right box.</div>
+										<div style="margin-top:10px;">
+											<table cellpadding="0" cellspacing="0">
+												<tr>
+													<td>
+														<select multiple="multiple" name="actions_{{forloop.counter}}" id="id_actions_{{forloop.counter}}" style="width:250px;" size="10">
+															{% if permission.non_selected_actions %}
+																{% for action in permission.non_selected_actions %}
+																	<option value="{{action.id}}">{{action.name}}</option>
+																{% endfor %}
+															{% endif %}
+														</select>
+													</td>
+													<td width="80" valign="middle" align="center">
+														<div>
+															<button id="add_{{forloop.counter}}" type="button" class="btn">&gt;&gt;</button>
+														</div>
+														<div style="margin-top:30px;">
+															<button id="remove_{{forloop.counter}}" type="button" class="btn">&lt;&lt;</button>
+														</div>
+													</td>
+													<td>
+														<select multiple="multiple" name="selected_actions_{{forloop.counter}}" id="id_selected_actions_{{forloop.counter}}" style="width:250px;" size="10">
+														{% if permission.actions %}
+															{% for action in permission.selected_actions %}
+																<option value="{{action.id}}">{{action.name}}</option>
+															{% endfor %}
+														{% endif %}
+														</select>
+													</td>
+												</tr>
+											</table>
+										</div>
+										<div class="error_message" id="error_message_{{forloop.counter}}"></div>
+									</div>
+								</div>
+							{% endfor %}
+						{% endif %}
+					</div>
+					<div style="margin-top:20px; padding-left:5px;">
+						<button type="submit" class="my_button">Update group</button>
+					</div>
+				</form>
+			</div>	
+			{% endifequal %}
+			<!-----------------------end of edit user page-------------------->
+			{% if not groups %}
+				{% if not action %}
+					<div class="box_title">
+						Group list
+					</div>
+					<div class="content">
+						<div style="text-align:left; padding:20px; padding-left:5px;">
+							No groups found!
+						</div>
+					</div>
+				{% endif %}
+			{% endif %}
+		</div>
+	</div>
+	
+</div>
+
+
+<div style="display:none">
+	{% if provinces %}
+		<select id="all_provinces">
+			{% for province in provinces %}
+				<option value="{{province.id}}">{{province.name}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+	
+	{% if actions %}
+		<select id="all_actions">
+			{% for action in actions %}
+				<option value="{{action.id}}">{{action.name}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+	{% if tax_types %}
+		<select id="all_taxtypes">
+			{% for tax_type in tax_types %}
+				<option value="{{tax_type.id}}">{{tax_type.displayname}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+</div>
+
+
+{% endblock %}

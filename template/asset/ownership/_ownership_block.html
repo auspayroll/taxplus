@@ -1,0 +1,155 @@
+{% block javascript %}
+<script type="text/javascript" >
+$(document).ready(function(){
+    $("#ownership_block input[name=owner_type]").each(function(){
+        $(this).click(function(){
+            if($(this).val() == 'citizen')
+            {
+                $("#ownership_block #keyword").attr("placeholder","Enter citizen name or ID");
+            }
+            else
+            {
+                $("#ownership_block #keyword").attr("placeholder","Enter business name or TIN");
+            }
+        });
+    });
+
+    $("#ownership_block #search_button").click(function(){
+        if($("#ownership_block input[name=owner_type]").length > 0)
+        {
+            $("#owner_type").val($("#ownership_block input[name=owner_type]:checked").val());
+        }
+
+        var owner_type = $("#owner_type").val();
+
+        if(owner_type == 'citizen')
+        {
+            url = '/admin/ajax/search_citizen_clean/';
+        }
+        else
+        {
+            url = '/admin/ajax/search_' + owner_type + '/';
+        }
+
+        $.get(url, { 'term' : $("#ownership_block #keyword").val() }, 
+			function (response) {
+				if (response) {
+					var result = '';
+					$.each(response, function (index, value) {
+                        result += '<option value="' + value.id + '" >' + value.value + '</option>';
+					});
+					$('#ownership_block #search_result select').html(result);
+                    //$('#ownership_block #search_result select').attr('selectedIndex', '1');  
+				}
+                else
+                {
+                    alert("No result found! Please retry with a different keyword");
+                }
+			}, 'json'
+        );
+
+        return false;
+    });
+
+    $("#ownership_block #add_button").click(function(){
+
+        var owner_ids = $("#owner_ids").val().split(',');
+        var selected = $("#ownership_block #search_result option:selected");
+        var share = $("#share_box").val();
+        var total_share = $("#total_share").val();
+        
+        if(selected.length > 0)
+        {
+            if( $.inArray(selected.val(), owner_ids) !== -1)
+            {
+                alert("This owner have already been set up, please remove the existing ownership if you want to add a new share %");
+            }
+            else if(share == '' || !(Math.floor(share) == share && $.isNumeric(share)) )
+            {
+                alert("Please input a valid % Share for this owner");
+            }
+            else if( ( parseInt(total_share) + parseInt(share) ) > 100 )
+            {
+                alert("Please make sure total % share equal 100%");
+            }
+            else
+            {
+                var owner_type = $("#owner_type").val();
+                var ownerJson = '{"id": "' + selected.val() + '", "share": "' + share + '", "type": "' + owner_type + '"},';
+
+                $("#existing_ownership select").append('<option value="' + selected.val() + 
+                        '" opt_share="' + share + '" opt_type="' + owner_type + '" >' + selected.html()  + ' [ ' + share + '% Share ]</option>');
+                $("#owner_ids").val( $("#owner_ids").val() + "," + selected.val());
+                $("#total_share").val( parseInt(total_share) + parseInt(share) );
+                $("#owners").val( $("#owners").val() + ownerJson );
+                $("#owner_select_options").val( $("#existing_ownership select").html() );
+            }     
+        }   
+        return false;
+    });
+
+    $("#ownership_block #remove_button").click(function(){
+        if($("#existing_ownership option:selected").length)
+        {
+            var selected = $("#existing_ownership option:selected");
+            var ownerJson = '{"id": "' + selected.val() + '", "share": "' + selected.attr('opt_share') + '", "type": "' + selected.attr('opt_type') + '"},';
+            $("#owner_ids").val( $("#owner_ids").val().replace(',' + selected.val(), '') );
+            $("#total_share").val( parseInt($("#total_share").val()) - parseInt( selected.attr('opt_share') ) );
+            $("#owners").val( $("#owners").val().replace(ownerJson, '') );
+
+            $("#existing_ownership option[value='" + selected.val() + "']").remove();
+            $("#owner_select_options").val( $("#existing_ownership select").html() );
+        }
+        return false;
+    });
+     
+})
+</script>
+{% endblock %}
+
+<div style="width:100%;text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Ownership
+		</div>
+		<div class="content">
+			<div id="ownership_block">
+				{{ form.owners.errors }}
+				{% if action != 'view' %}
+					{% if asset_type != 'business' %}
+
+					<input type="radio" name="owner_type" value="citizen" checked="checked"/> Citizen
+					<input type="radio" name="owner_type" value="business" /> Business &nbsp;&nbsp;&nbsp;&nbsp;
+					{% endif %}
+
+					<input type="hidden" value="citizen" id="owner_type" />
+				
+					<input type="text" id="keyword" placeholder="Enter citizen name or ID" size="40" autocomplete="off" />     
+					<button id="search_button">Search</button><br/>
+					<br/>
+					<div id="search_result">
+						<b>Search Result</b><br/>
+						<select  size="10"></select>
+					</div>
+					<div id="command_block">
+						<br/><br/>
+						<button id="add_button">Add >>> </button><br/>
+						<input type="text" style="width:50px;" id="share_box" value="100"/>% Share
+						<br/><br/><br/><br/><br/>
+						<button id="remove_button"><<< Remove </button>
+					</div>
+				{% endif %}
+			</div>
+			<div id="existing_ownership">
+				<b>Existing Ownership</b><br/>
+				<select  size="10">
+					{{ form.owner_select_options.value|safe }}
+				</select>
+			</div>
+			<input type="hidden" id="owner_ids" name="owner_ids" value="{{ form.owner_ids.value }}" />
+			<input type="hidden" id="total_share" name="total_share" value="{{ form.total_share.value }}" />
+			<input type="hidden" id="owners" name="owners" value="{{ form.owners.value }}" />
+			<input type="hidden" id="owner_select_options" name="owner_select_options" value="{{ form.owner_select_options.value }}" />
+		</div>	
+	</div>
+</div>

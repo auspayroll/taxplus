@@ -1,0 +1,115 @@
+{% extends "common/base_property.html" %}
+{% load staticfiles %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">
+			Tax Payment History
+		</div>
+		<div class="content" style="padding-left:0px;">
+			{% if not paid_taxes %}
+				<div style="margin-left:10px;">There is no tax payment applicable for this property!</div>
+			{% else %}
+				<div style="text-align:center;">
+					<table cellpadding="0" cellspacing="0" class="tablesorter" style="width:97%; margin:0 auto;">
+						<thead>
+							<tr style="border-bottom:1px solid #555;">
+								<th>No</td>
+								<th>Tax type</td>
+								<th>Currency</td>
+								<th>Amount</td>
+								<th>Remaining</td>
+								<th>From</td>
+								<th>To</td>
+								<th>Due on</td>
+								<th>Staff</td>
+								<th>Is paid</td>	
+							</tr>
+						</thead>
+						<tbody>
+							{% for obj in paid_taxes %}
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td>{{obj.type}}</td>
+								<td>{{obj.currency}}</td>
+								<td>{{obj.amount}}</td>
+								<td>{{obj.remaining_amount}}</td>
+								<td>{{obj.period_from|date:"Y-m-d"}}</td>
+								<td>{{obj.period_to|date:"Y-m-d"}}</td>
+								<td>{{obj.due_date|date:"Y-m-d"}}</td>
+								<td>
+									{% if obj.staff %}
+									{{obj.staff}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+								<td>{{obj.is_paid}}</td>
+							</tr>
+							{% endfor %}					
+						</tbody>
+					</table>
+				</div>				
+			{% endif %}
+		</div>
+	</div>
+</div>
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">
+			Fee Payment History
+		</div>
+		<div class="content" style="padding-left:0px;">
+			{% if not fees %}
+				<div style="margin-left:10px;">There is no fee payment applicable for this property!</div>
+			{% else %}
+				<div style="text-align:center;">
+					<table cellpadding="0" cellspacing="0" class="tablesorter" style="width:97%; margin:0 auto;">
+						<thead>
+							<tr style="border-bottom:1px solid #555;">
+								<th>No</td>
+								<th>Fee type</td>
+								<th>Currency</td>
+								<th>Amount</td>
+								<th>Remaining</td>
+								<th>From</td>
+								<th>To</td>
+								<th>Due on</td>
+								<th>Staff</td>
+								<th>Is paid</td>	
+							</tr>
+						</thead>
+						<tbody>
+							{% for obj in fees %}
+							<tr>
+								<td>{{forloop.counter}}</td>
+								<td>{{obj.type}}</td>
+								<td>{{obj.currency}}</td>
+								<td>{{obj.amount}}</td>
+								<td>{{obj.remaining_amount}}</td>
+								<td>{{obj.period_from|date:"Y-m-d"}}</td>
+								<td>{{obj.period_to|date:"Y-m-d"}}</td>
+								<td>{{obj.due_date|date:"Y-m-d"}}</td>
+								<td>
+									{% if obj.staff %}
+									{{obj.staff}}
+									{% else %}
+									N/A
+									{% endif %}
+								</td>
+								<td>{{obj.is_paid}}</td>
+							</tr>
+							{% endfor %}					
+						</tbody>
+					</table>
+				</div>				
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+

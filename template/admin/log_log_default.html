@@ -1,0 +1,199 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block css  %}
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Log" "" %}
+{% endblock %}
+
+{% block mainbody %}
+<script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+<!-- Init plugins -->
+<script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+<script type="text/javascript"  src="/static/js/admin/log.js"></script>
+
+
+
+<div style="text-align:center">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box">
+			<div class="box_title" >
+				Search Log
+			</div>
+			<div class="content" style="border-bottom:0px;">
+				<form method="GET" style="margin:0px; padding:0px;">
+					{% csrf_token %}
+					<table cellpadding="0" cellspacing="0" style="width:100%">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0">
+									<tr>
+										<td>Username:</td>
+										<td width="230">{{form.username}}</td>
+										<td style="padding-left:20px;">UPI:</td>
+										<td >{{form.upi}}</td>
+										<td style="padding-left:30px;">Citizen ID:</td>
+										<td>{{form.citizen_id}}</td>
+                                        <td style="padding-left:30px;">Business:</td>
+										<td>{{form.business}}</td>
+                                        <td style="padding-left:30px;">TIN:</td>
+										<td>{{form.tin}}</td>
+									</tr>
+									<tr>
+										<td>Date from:</td>
+										<td><input class="date_picker"  value="{{form.period_from.value}}" type="text" id="id_period_from" name="period_from" /></td>
+										<td>Date to:</td>
+										<td><input class="date_picker"  value="{{form.period_to.value}}" type="text" id="id_period_to" name="period_to" /></td>
+										<td style="float:right;">Message</td>
+										<td>{{form.message}}</td>
+									</tr>
+								</table>
+							</td>
+							<td valign="bottom"  style="text-align:right; padding-right:10px;"><button type="submit" class="my_button" name="submit_search">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+			<div class="box_title">
+				Logs
+			</div>
+			<div class="content">
+			{% if logs %}
+                <div style="margin-bottom:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		            <span>
+			            Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
+			            &nbsp;&nbsp;&nbsp;&nbsp;			
+			            {% if logs.has_previous %}
+				            <a href="{{ pagination_url }}&page=1">first</a>
+			            {% else %}
+				            first
+			            {% endif %}
+							
+			            &nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="{{ pagination_url }}&page={{ logs.previous_page_number }}">previous</a>
+			            {% else %}
+				            previous
+			            {% endif %}
+			
+			            &nbsp;&nbsp;				
+			            {% if logs.has_next %}				
+				            <a href="{{ pagination_url }}&page={{ logs.next_page_number }}">next</a>
+			            {% else %}
+				            next
+			            {% endif %}
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="{{ pagination_url }}&page={{ logs.paginator.num_pages }}">last</a>
+			            {% else %}
+				            last
+			            {% endif %}
+		            </span>
+	            </div>
+				<table cellpadding="0"  cellspacing="0" id="tablesorter" class="tablesorter" style="width:100%">
+					<thead>
+						<tr>
+							<th width="40">ID</th>
+							<th width="80">Date</th>
+							<th width="120">UPI</th>
+							<th width="115">Citizen</th>
+							<th width="150">Business</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for log in logs %}
+						<tr>
+                            <td>{{log.id}}</td>
+							<td>{{log.date_time|date:'d/m/y@H:i'}}</td>
+							<!--<td>{{log.username}}</td>-->
+							<td>
+								{% if not log.upi %}
+									<font style="color:#999;">{{log.upi}}</font>
+								{% else %}
+									{{log.upi}}
+								{% endif %}
+							</td>
+						<td>
+							{% if log.citizen %}
+							{{log.citizen}} <br />
+							<span style="font-size:smaller">(CID: <b>{{ log.citizen.citizen_id|default:'-' }}</b>)</span>
+							{% endif %}
+						</td>
+						<td>
+							{% if log.business %}
+							{{log.business}} <br />
+							<span style="font-size:smaller">(TIN: <b>{{ log.business.tin|default:'-' }}</b>)</span>
+							{% endif %}
+						</td>
+							<!--<td>						
+								{% if not log.transaction_id %}
+								<font style="color:#999;">{{log.transaction_id}}</font>
+								{% else %}
+								{{log.transaction_id}}						
+								{% endif %}
+								</td>
+							-->
+							<td class="message">{{log.message|safe|linebreaksbr }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+                <div style="margin-top:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		                <span>
+			                Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
+			                &nbsp;&nbsp;&nbsp;&nbsp;			
+			                {% if logs.has_previous %}
+				                <a href="{{ pagination_url }}&page=1">first</a>
+			                {% else %}
+				                first
+			                {% endif %}
+							
+			                &nbsp;&nbsp;
+			                {% if logs.has_previous %}
+				                <a href="{{ pagination_url }}&page={{ logs.previous_page_number }}">previous</a>
+			                {% else %}
+				                previous
+			                {% endif %}
+			
+			                &nbsp;&nbsp;				
+			                {% if logs.has_next %}				
+				                <a href="{{ pagination_url }}&page={{ logs.next_page_number }}">next</a>
+			                {% else %}
+				                next
+			                {% endif %}
+			                &nbsp;&nbsp;
+			                {% if logs.has_next %}
+				                <a href="{{ pagination_url }}&page={{ logs.paginator.num_pages }}">last</a>
+			                {% else %}
+				                last
+			                {% endif %}
+		                </span>
+	                </div>
+			{% else %}
+				No logs found.	
+			{% endif %}	
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}

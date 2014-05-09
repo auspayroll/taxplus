@@ -1,0 +1,13 @@
+{% extends "tax/paylandlease.html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block heading %}
+	<h3>Trading License Tax - Payment</h3>
+	<div><a href="{% url 'pay_trading_license' tax.id %}">View Fee Details</a></div>
+{% endblock %}
+
+{% block payment_details %}
+<tr><td>Business</td><td>{{ tax.business }}</td></tr>
+{% endblock %}

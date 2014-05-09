@@ -1,0 +1,137 @@
+@media screen
+{
+	#print_panel
+	{
+		margin-bottom:20px;
+	}
+	.work_for_print
+	{
+		display:none;
+	}
+	.work_for_screen
+	{
+		display:inline-block;
+	}
+	.work_for_print
+	{
+		display:none;
+	}
+	.work_for_screen
+	{
+		display:inline-block;
+	}
+}
+@media print
+{
+	.work_for_screen
+	{
+		display:none;
+	}
+	.work_for_print
+	{
+		display:inline-block;
+	}
+
+	table#template_table
+	{
+		border:0px;
+	}
+	table#template_table tr td:first-child
+	{
+		display:none;
+	}
+	#results table thead tr th:first-child{
+		display:none;
+	}
+	#results table tbody tr td:first-child{
+		display:none;
+	}
+	
+	
+	
+	
+	
+	
+	div#wrapper
+	{
+		border:0px;
+	}
+	#search_table{
+		display:none;
+	}
+	 
+
+
+	#navigator
+	{
+		display:none;
+	}
+	#print_panel
+	{
+		display:none;
+	}
+	#leftpanels
+	{
+		display:none;
+	}
+	#header
+	{
+		display:none;
+	}
+	.positionbar
+	{
+		display:none;
+	}
+	#maparea
+	{
+		z-index:999;
+	}
+	#wrapper
+	{
+		margin:0px;
+		padding:0px;
+	}
+	.work_for_screen
+	{
+		display:none;
+	}
+	.work_for_print
+	{
+		display:inline-block;
+	}
+}
+
+form input[type="submit"], form input[type="button"] {
+	background: #00B5D0;
+	padding: 5px 20px 5px 20px;
+	font-size: 15px;
+	font-weight: bold;
+	color: white;
+	cursor: pointer;
+}
+.my_button:hover {
+	background-color: rgb(47, 150, 180);
+}
+ul	
+{
+	padding-left:0px;
+	margin-top:10px;
+	margin-left:0px;
+}
+li
+{
+	list-style-type:none;
+	margin-right:20px;
+	padding-left:5px;
+	float:left;
+	
+}
+li label
+{
+	font-weight:normal;
+}
+
+
+
+
+	

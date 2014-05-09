@@ -1,0 +1,39 @@
+{% block javascript %}
+	<script type="text/javascript" >
+        $(function() {
+            $("#name_key").autocomplete({
+                  source: "/admin/ajax/search_billboard/",
+                  minLength: 2,
+                  select: function( event, ui ) {
+                    $("#search_form").attr("action","/admin/asset/billboard/{{ action }}_billboard/" + ui.item['id'] + "/")
+                  }
+                });
+
+        })
+    </script>
+{% endblock %}
+
+<div class="user_action_title">
+	Please billboard's name and pick from our suggestion list to {{ action }} billboard:
+</div>
+
+<div>
+	<form id="search_form" action="" method="post" >
+		<div class="padded_div">
+			{% csrf_token %}
+
+			<input autocomplete="off" value="" type="text" placeholder="Enter Billboard Name or TIN" size="40" class="keyword" id="name_key" />
+			<input style="margin-left:20px;" class="my_button" type="submit" value="{{ action }} billboard"/>	
+			<div>
+				<br>
+				<span style="color:red; font-weight:bold;" id="name_error">&nbsp;</span>
+				<span style ="display:none" id="fullname"></span>
+			</div>
+			<br>
+			<div>
+					
+			</div>	
+		</div>
+		<br><br><br>
+	</form>
+</div>

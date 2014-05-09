@@ -1,0 +1,167 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Tax" "/admin/tax/tax/"  %}
+	{% breadcrumb "Verify target"  "/admin/tax/tax/verify_target/" %}
+	{% breadcrumb "Business" %}
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/business_display.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:13px;color:#5a5a5a;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+	th{vertical-align:top;}
+	table#change_citizen_table tbody tr td { height:45px;}
+	#taxes .pending
+	{
+		color: red;
+	}
+	#taxes .paid
+	{
+		color: #00B5D0;
+        font-weight: bold;
+    }
+table.fixed { table-layout:fixed; }
+table.fixed td { overflow: hidden; }
+</style>
+
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; margin:20px 10px 10px 10px; box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1); ">
+	<table class="fixed" width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="min-width:360px;border-right:1px solid #cccccc; padding:10px 10px;" class="menu_panel">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Business Info</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/edit_business/">Edit</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="info">						
+						<table cellpadding="2" cellspacing="0" >
+							<tr>
+								<td width="100"><strong>TIN/RRA:</strong></td>
+								<td>{{business.tin}}</td>
+							</tr>
+							<tr>
+								<td><strong>Name:</strong></td>
+								<td>{{business.name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Date started:</strong></td>
+								<td>{{business.date_started|date:'d/m/Y'}}</td>
+							</tr>
+							<tr>
+								<td><strong>Phone:</strong></td>
+								<td>
+									{% if business.phone1 %}
+									{{business.phone1}}
+									{% else %}
+									N/A
+									{%endif%}
+								</td>
+							</tr>
+							<tr>
+								<td><strong>E-mail:</strong></td>
+								<td>
+									{% if business.email %}
+									{{business.email}}
+									{% else %}
+									N/A
+									{%endif%}
+								</td>
+							</tr>
+							<tr>
+								<td><strong>VAT Register:</strong></td>
+								<td>
+									{% if business.vat_register %} Yes {% else %} No {% endif %}
+								</td>
+							</tr>	
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Business Owner(s)</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/owners/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Taxes</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/taxes/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Fees</td>
+								<td align="right"><span class="edit"><a href="{% url 'misc_fee_business' business.pk %}">Add</a> | <a href="/admin/tax/tax/business/{{business.id}}/fees/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<!--
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Miscellaneous Fees</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/miscellaneous_fees/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					-->
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">History</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/history/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Attached Media</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/media/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Logs</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/logs/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+				</div>
+			</td>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px; background:white; padding-left:25px;">
+				{% block rightpanel %}
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+
+{% endblock %}

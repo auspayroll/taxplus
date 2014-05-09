@@ -1,0 +1,186 @@
+{% extends "common/base_report.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block right_panel_search_form %}
+<style type="text/css">
+	form input[type="submit"], form input[type="button"] {
+		background: #00B5D0;
+		padding: 5px 20px 5px 20px;
+		font-size: 15px;
+		font-weight: bold;
+		color: white;
+		cursor: pointer;
+	}
+	.my_button:hover {
+		background-color: rgb(47, 150, 180);
+	}
+	#search_table input[type=text]
+	{
+		width:220px;
+	}
+
+
+	div.xAxis div.tickLabel
+	{
+		-webkit-transform: rotate(-45deg);
+
+		/* Firefox */
+		-moz-transform: rotate(-45deg);
+
+		/* IE */
+		-ms-transform: rotate(-45deg);
+
+		/* Opera */
+		-o-transform: rotate(-45deg);
+		font-size:12px;
+	}
+
+</style>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$("div.legend table").css("top","-30px");
+	$("div.legend div").first().css("opacity",0);
+	legend_height = parseInt($("div.legend table").css("height"));
+	
+	
+	
+	
+	$("#search_table #id_sector").change(function(){
+		$("#search_table #id_cell").children("option[value!='']").remove();
+		$("#search_table #id_cell").siblings("span").html('---------');
+		
+		sector_id = $("#search_table #id_sector").val();
+		
+		$.ajax({
+			type:"get",
+			url: "/admin/ajax/getObjectsByParentId/?object_type=sector&object_id="+sector_id,
+			success:function(data)
+			{
+				cells = data['objects'];
+				for(i=0; i<cells.length; i++)
+				{
+					cell = cells[i];
+					$("#search_table #id_cell").append('<option value="'+ cell['key'] +'">'+ cell['value'] +'</option>');
+				}
+			},
+			error: function(request)
+			{
+				//alert(request.responseText);
+			}
+		});	
+	});
+	
+});
+
+</script>
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+		<div>
+			<table id="search_table" style="width:100%;">
+				<tr>
+					<td width="50">District:</td>
+					<td width="220">{{form.district}}</td>
+					<td width="20">&nbsp;</td>
+					<td width="50">Sector:</td>
+					<td width="220">{{form.sector}}</td>
+					<td width="20">&nbsp;</td>
+					<td width="30">Cell:</td>
+					<td width="220">{{form.cell}}</td>
+					<td>&nbsp;</td>
+				</tr>
+				<tr>
+					<td>UPI:</td>
+					<td>{{form.upi}}</td>
+					<td width="20">&nbsp;</td>
+					<td>Year:</td>
+					<td>{{form.calendar_year}}</td>
+					<td align="right" colspan='4' style="padding-right:20px;"><button type="submit" class="my_button">Get report</button></td>
+				</tr>
+			</table>
+		</div>
+		<div>
+			
+		</div>
+	</form>
+{% endblock %}
+
+
+
+{% block printer %}
+	{% if graph_title %}
+		<form id="my_form" name="my_form" style="padding:0px; margin:0px;" action="" target="_blank" method="post">
+		{% csrf_token %}
+			<div style="display:none;">
+				<table>
+					<tr>
+						<td>{{form.council}}</td>
+						<td>{{form.sector}}</td>
+						<td>{{form.cell}}</td>
+						<td>{{form.upi}}</td>
+						<td>{{form.calendar_year}}</td>
+						<td><input type="text" name="toPrint" value="true" /></td>
+					</tr>
+				</table>
+			</div>
+			<a href="#" onclick="document.my_form.submit();"><img src="/static/images/printer.png" style="width:27px;" border="0" /></a>
+		</form>	
+	{% endif %}
+{% endblock %}
+
+
+
+
+
+
+{% block right_panel_box_title %}
+	Report on log activities
+{% endblock %}
+
+
+
+{% block right_panel_content %}
+
+{% if line_chart_data %}
+<table cellpadding="0" cellspacing="0" width="100%">
+	<tr>
+		<td style="width:50%; padding-right:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Graph</span>
+				</h4>
+			</div>
+			<div class="content">
+				<div class="lines-chart" style="height: 230px; margin-top:30px;  width:100%;"></div>
+				<div style="display:none;" class="chart_data">{{line_chart_data}}</div>
+			</div>
+		</td>
+		<td style="width:50%; padding-left:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Summary</span>
+				</h4>
+			</div>
+			<div class="content" style="line-height:25px; font-size:13px;">
+				<div>Total log activities in the past 12 months: <span style="color: #3399cc;">{{total_log_activities|currency}}</span></div>
+			</div>
+		</td>
+	</tr>
+</table>
+
+{% endif %}
+
+{% for field, errors in form.errors.items %}
+	{% for error in errors %}
+		{{error}}
+	{% endfor %}
+{% endfor %}
+
+
+
+{% endblock %}
+
+

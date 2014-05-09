@@ -1,0 +1,304 @@
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<script type="text/javascript" src="{% static "js/jquery.formatCurrency-1.4.0.min.js" %}"></script>
+
+<script type="text/javascript">
+    $(function(){
+		//$( ".date_picker" ).datepicker("option", "minDate", "01/01/" + (new Date).getFullYear());
+		$( ".date_picker" ).datepicker("option", "maxDate", 0);
+
+	    $("a.fancybox").fancybox();	
+
+        var sortObjectByKey = function(obj){
+            var keys = [];
+            var sorted_obj = {};
+
+            for(var key in obj){
+                if(obj.hasOwnProperty(key)){
+                    keys.push(key);
+                }
+            }
+
+            // sort keys
+            keys.sort();
+
+            // create new array based on Sorted Keys
+            jQuery.each(keys, function(i, key){
+                sorted_obj[key] = obj[key];
+            });
+
+            return sorted_obj;
+        };
+
+        var fee_types = {
+            {% for type,sub_types in fee_types.items%}
+            '{{type}}':{
+                {% for sub_type,value in sub_types.items %}
+                '{{sub_type}}':'{{value}}',
+                {% endfor %}
+            },
+            {% endfor %}
+        }
+
+        $("#fee_type").change(function(){
+            var sub_types = sortObjectByKey(fee_types[$(this).val()]);
+            var sub_type_html = '<option value="0" disabled selected>-- Select Fee --</option>'
+            for(var i in sub_types)
+            {
+                if(sub_types[i] != '' && sub_types[i] != 'Manual Input')
+                {
+                    sub_type_html += '<option value="' + sub_types[i] + '">' + i + '</option>';
+                }
+                else
+                {
+                    sub_type_html += '<option value="Manual Input in Payment Amount field">' + i + '</option>';
+                }
+            }
+            $("#fee_amount").html('');
+            $("#fee_sub_type").html(sub_type_html);
+        });
+
+        $("#fee_sub_type").change(function(){
+            var amount = $(this).val();
+            $("#fee_sub_type_name").val($('#fee_sub_type option:selected').text());
+            if(isNaN(amount))
+            {
+                $("#fee_amount").html($(this).val());
+            }
+            else
+            {
+                $("#fee_amount").html($(this).val());
+                $("#fee_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});        
+                $("#fee_amount").html( $("#fee_amount").html() + " RWF");
+                $("#id_amount").val($(this).val());
+                $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+        });
+
+        $('form').click(function(event) {
+          $(this).data('clicked',$(event.target))
+        });
+
+        $("#pay_tax_form").submit(function(){
+            var final_tax_due = $("#fee_amount").asNumber();
+            var amount = $("#id_amount").asNumber();
+
+            if ((isNaN(final_tax_due) || final_tax_due == 0))
+            {
+                if($("#fee_amount").html() == 'Manual Input in Payment Amount field')
+                {
+                    if (amount=='' || isNaN(amount) || parseInt(amount) <= 0)
+                    {
+			            $("#id_amount_paid").focus();
+			            $("#message").html("Please enter manual input Fee Amount !");
+                        $("#message").show();
+			            return false;	
+                    }
+                }
+                else
+                {
+			        $("#message").html("Please select a fee !");
+                    $("#message").show();
+                    return false;	
+                }
+            }
+
+            //if is tax submit only, ignore the rest of the valiations
+            if ($(this).data('clicked').is('[name=submit]')) 
+            {
+                //if all is validated, start reformat any currency fields to number before submit
+                $("#id_amount").val($("#id_amount").asNumber());
+                $(".pay_tax_btn").hide();
+                return true;
+            }
+
+            
+		    if(amount=='' || isNaN(amount) || parseInt(amount) <= 0 )
+		    {
+			    $("#id_amount_paid").focus();
+			    $("#message").html("Please enter your Payment Amount!");
+                $("#message").show();
+			    return false;	
+		    }
+        
+		    if($("#id_receipt_no"))
+		    {
+			    if($("#id_receipt_no").val()=='')
+			    {
+				    $("#id_receipt_no").focus();
+				    $("#message").html("Please enter receipt number!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_bank"))
+		    {
+			    if($("#id_bank").val()=='')
+			    {
+				    $("#message").html("Please select a bank!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_paid_date"))
+		    {
+			    if($("#id_paid_date").val()=='')
+			    {
+				    $("#id_paid_date").focus();
+				    $("#message").html("Please pick a paid date!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+
+            //request for fine description if there is a input fine amount
+		    if( $("#fines").length > 0 && parseInt($("#fines").val().replace(/,/g, '')) > 0 && $("#fines_description").val() == "" )
+		    {
+			    $("#fines_description").focus();
+			    $("#message").html("Please enter description for the inputted fine amount!");
+                $("#message").show();
+			    return false;	
+		    }
+            else
+            {
+                if($("#fines").length > 0)
+                {
+                    $("#id_fine_amount").val( $("#fines").asNumber());
+                    $("#id_fine_description").val( $("#fines_description").val());
+                }
+            }
+
+		    if ( final_tax_due != '' && parseFloat(amount) != parseFloat(final_tax_due) )
+		    {
+			    $("#id_amount_paid").focus();
+			    $("#message").html("Your payment amount is not equal to the expected fee amount ! Please re-input.");
+		    }
+
+            //if all is validated, start reformat any currency fields to number before submit
+            $("#id_amount").val($("#id_amount").asNumber());
+            $(".pay_tax_btn").hide();
+        });
+    });
+
+</script>
+<div style="text-align:left; margin:15px;">
+    <fieldset >
+	    <legend><h4>Pay Miscellaneous Fees</h4></legend>
+	    <div class="note"></div>
+	    <div style="margin-top:10px;">
+		    <form id="pay_tax_form" method="post" style="background:white;padding:10px; border: 1px solid #c4c4c4;" >
+			    {% csrf_token %}
+                <table>
+                    <tr><td colspan="2"><div class="note">Please select a fee:</div></td></tr>
+                    <tr>
+                        <td colspan="2">
+                            <table id="tax_calculation" class="land_lease" border="1"  cellpadding="0" cellspacing="0" >
+                                <tr>
+                                    <th>Category</th>
+                                    <td>
+                                        <select  id="fee_type" name="fee_type">
+                                            <option value="0" disabled selected>-- Select Category --</option>
+                                            {% for k,v in fee_types.items  %}
+                                            <option value="{{ k }}" >{{ k|title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                </tr>        
+                                <tr>
+                                    <th>Fee Name</th>
+                                    <td>
+                                        <select  id="fee_sub_type" ></select>
+                                        <input type="hidden" id="fee_sub_type_name" name="fee_sub_type" value="" />
+                                    </td>
+                                </tr>                      
+                                <tr>               
+                                    <th>Amount</th>
+                                    <td>
+                                        <span id="fee_amount"></span>
+                                    </td>
+                                </tr>  
+                            </table>
+                        </td>
+                    </tr>
+                    <tr><td colspan="2"><br/></td></tr>
+                    <tr><td colspan="2"><div class="note">Please enter the following payment details:</div></td></tr>
+	                <tr><td colspan="2">
+	                    <div id="message" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin: 15px; margin-left:0px;"></div>
+                        {% if messages %}
+                            <ul class="messages">
+                                {% for message in messages %}
+                                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+    
+                        {% for field in form %}
+                        {{field.errors}}
+                        {% endfor %}
+                    </td>
+				    </tr>
+				    <tr>
+					    {{ form }}
+				    </tr>
+				    <tr>
+					    <td colspan="2" style="line-height:50px;">
+                            <input type="submit" class="pay_tax_btn" name="submit" value="Submit" />
+                            <input type="submit" class="pay_tax_btn" name="finalize" value="Finalize" />
+                        </td>
+				    </tr>
+                </table>
+                <br/>
+		    </form>
+	    </div>
+        <div class="clear"></div>
+    </fieldset>
+    <br/><br/>
+    <div>
+        <h4>Submitted Miscellaneous Fees</h4>
+    {% if fees %}
+	    <div style="margin-left:20px;margin-right:20px;text-align:center;">
+		    <table style="margin:0 auto;" class="tablesorter" cellpadding="0" cellspacing="0">
+			    <thead>
+			    <tr>
+				    <th>Fee Name</th>
+				    <th width="120">Amount</th>
+                    <th width="150">Media</th>
+				    <th align="center" width="210">Action</th>
+			    </tr>	
+			    </thead>
+			    <tbody>
+			    {% for i in fees %}
+				    <tr>
+					    <td>{{i.fee_type|title}} - {{i.fee_sub_type|title}}</td>
+					    <td>							
+						    <div class="paid">{{i.amount|currency}} {{i.currency|title}}</div>
+					    </td>
+                        <td>
+                            {% if i.medias %}
+                                {% for media in i.medias %}
+                                <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box"><img class="media_link" src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                                {% endfor %}
+						    {% else %}
+							    N/A
+						    {% endif %}
+                        </td>
+                        <!--td><button class="button_styled" >more info</button></td>
+                        <td><button class="button_styled" >past payment</button></td-->
+                        <td>
+							<a href="{{ i.epay_invoice_link }}"><button  class="my_button" >view ePay Invoice</button></a>
+                        </td>
+				    </tr>		
+			    {% endfor %}
+			    </tbody>							
+		    </table>
+	    </div>
+        {% else %}
+        No fee available.
+	    {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% block javascript %}
+	<script type="text/javascript" >
+        $(function() {
+            $("#name_key").autocomplete({
+                  source: "/admin/ajax/search_vehicle/",
+                  minLength: 2,
+                  select: function( event, ui ) {
+                    $("#search_form").attr("action","/admin/asset/vehicle/{{ action }}_vehicle/" + ui.item['id'] + "/")
+                  }
+                });
+
+        })
+    </script>
+{% endblock %}
+
+<div class="user_action_title">
+	Please vehicle's plate number and pick from our suggestion list to {{ action }} vehicle:
+</div>
+
+<div>
+	<form id="search_form" action="" method="post" >
+		<div class="padded_div">
+			{% csrf_token %}
+
+			<input autocomplete="off" value="" type="text" placeholder="Enter Vehicle Name or TIN" size="40" class="keyword" id="name_key" />
+            <br/>
+			<input type="submit" value="{{ action }} vehicle"/>	
+			<div>
+				<br>
+				<span style="color:red; font-weight:bold;" id="name_error">&nbsp;</span>
+				<span style ="display:none" id="fullname"></span>
+			</div>
+			<br>
+			<div>
+					
+			</div>	
+		</div>
+		<br><br><br>
+	</form>
+</div>

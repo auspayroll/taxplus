@@ -1,0 +1,54 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Billboard" "/admin/asset/billboard/"  %}
+	{% breadcrumb "Add billboard" %}
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript" >
+        $(function() {
+        $("input#id_date_started").datepicker({ dateFormat: "dd/mm/yy" });
+        })
+    </script>
+{% endblock %}
+{% block mainbody %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+
+
+<div style="width:60%; min-width:600px; text-align:left; margin-left:20px;">
+	<div class="box">
+		<div class="box_title">
+			Add billboard
+		</div>
+		<div class="content">
+			<form action="/admin/asset/billboard/add_billboard/" method="post" enctype="multipart/form-data" >
+				{% csrf_token %}
+				{{ form }}
+				<div style="margin-top:20px;padding-right:20px; display:block;">
+					{% include "asset/ownership/_ownership_block.html" with asset_type="billboard" %}		
+				</div>
+
+                {% include "media/_upload_media_box.html" with file_list=file_list id=taxupload_media %}
+                <br/>
+				<div>
+					<input type="submit" value='Add' class="my_button">
+				</div>	
+			</form>
+		</div>	
+	</div>
+</div>
+&nbsp;
+{% endblock %}

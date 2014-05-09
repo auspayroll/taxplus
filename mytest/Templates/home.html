@@ -1,0 +1,24 @@
+<html>
+<head><title></title></head>
+
+<body>
+LOADED ::-
+
+{% if G %}
+    <ul>
+    {% for GD in G %}
+        <li>{{ GD }}</li>
+    {% endfor %}
+    <br />Total Parcels : {{ UP }}<br />
+    Total People : {{ NI }}
+    Total FU's : {{ fu }}
+    </ul>
+{% else %}
+    <p>No records are available.</p>
+{% endif %}
+
+
+{{ content }}
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "Select citizen" %}
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+<div class="user_action_title">
+	Enter citizen's name or ID to search:
+</div>
+
+
+<div class="user_registration_form">
+	<form onsubmit="return check_citizen_select_or_not();" id="citizen_form" action="/admin/citizen/citizen/view_citizen/" method="post" >
+		<div style="text-align:left; margin-left: 20px;">
+			{% csrf_token %}
+			
+			<table cellpadding="0" cellspacing="0">
+				<tr>
+					<td width="200">
+						<div class="user_dropdown">
+							<div class="keyword_div">
+								<input autocomplete="off" type="text" class="keyword"  name ="keyword" id="id_keyword" style="width:350px"/>
+							</div>
+							<div id="matched_citizens_list" class="matched_users_div">
+							</div>
+						</div>
+					</td>
+					<td>
+						<input style="margin-left:20px;" type="submit" class="my_button" value="view citizen"/>	
+					</td>
+				</tr>
+			</table>
+			
+			<div>
+				<br>
+				<span style="color:red; font-weight:bold;" id="name_error">&nbsp;</span>
+				<span style ="display:none" id="fullname"></span>
+			</div>
+			<br>
+			<div>
+					
+			</div>	
+		</div>
+		<br><br><br>
+		<div style="display:none;">
+			{{form.citizen_id}}
+		</div>
+	</form>
+</div>
+{% endblock %}

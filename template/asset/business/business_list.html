@@ -1,0 +1,656 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css  %}
+
+    <link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+
+
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% if not action %}
+		{% breadcrumb "Business" "" %}
+	{% else %}
+		{% breadcrumb "Business" "/admin/asset/business/" %}
+		{% ifequal action "add" %}
+			{% breadcrumb "Add business" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit business" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+
+	<style>
+		ul.tax_type_list
+		{
+			margin:0px;
+			padding:0px;
+			list-style-type:none;
+			display:block;
+		}
+		ul.tax_type_list > li
+		{
+			margin-right:10px;
+		}
+		
+		ul.tax_type_list > li > label
+		{
+			font-weight:normal;
+			font-size:14px;
+		}
+		
+		.group_select_box{
+			width:210px !important;
+		}
+
+        #branches select
+        {
+            margin-bottom:0px;
+            width:160px!important;
+        }
+        #branches input[type=text]
+        {
+            width:160px!important;
+        }
+        span#add_branch_button
+        {
+            border-collapse: collapse;
+            color:#3399cc;
+            cursor: auto;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 36px;
+            text-align: right;
+        }
+        span#add_branch_button:hover
+        {
+            text-decoration: underline;
+            cursor:pointer;
+        }
+        div.selector{
+            width:200px!important;
+        }
+
+		
+	</style>
+    <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+    <!-- Init plugins -->
+    <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+
+    {% block javascript %}
+        <script type="text/javascript" >
+
+            function remove_branch(id)
+            {
+                $("tr[id='branch_" + id + "']").remove();
+                if($("#branch_table").children('tr').length==0)
+                {
+                    $("#error_message").hide();
+                    $("#message").show();
+                }
+            }
+            function populateCell(row_no)
+            {
+                if($("#sector_"+row_no).val()==0)
+                {
+                    // remove cells when no sector is selected ...
+                    $("#cell_"+row_no).children("option[value!='0']").remove();
+                }
+                else
+                {
+                    $("#cell_"+row_no).children("option[value!='0']").remove();
+                    sector_id = $("#sector_"+row_no).val();
+                    $.ajax({
+                        type:"get",
+                        url: "/admin/ajax/getObjectsByParentId/?object_type=sector&object_id="+sector_id,
+                        success:function(data)
+                        {
+
+                            cells = data['objects'];
+                            for(i=0; i<cells.length; i++)
+                            {
+                                cell = cells[i];
+                                $("#cell_"+row_no).append('<option value="'+ cell['key'] +'">'+ cell['value'] +'</option>');
+                            }
+                        },
+                        error: function(request)
+                        {
+                            alert(request.responseText);
+                        }
+                    });
+                }
+            }
+
+            function validateBranches()
+            {
+                error = 0;
+                $("#branch_table").find("input[name^='branchname_']").each(function(){
+                    if($(this).val()=='')
+                    {
+                        $("#error_message").show();
+                        $("#error_message").html("Please enter branch name.");
+                        $(this).focus();
+                        error = 1;
+                        return false;
+                    }
+                });
+                if(error==0){return true;}
+                else{return false;}
+            }
+
+            $(function() {
+                $("#id_filter_business_name").autocomplete({
+                      source: "/admin/ajax/search_business/",
+                      minLength: 2,
+                      select: function( event, ui ) {
+                          event.preventDefault();
+                          $("#id_filter_business_name").val(ui.item['name']);
+                          $("#id_filter_tin").val(ui.item['tin']);
+                      }
+                });
+
+                $("#id_filter_tin").autocomplete({
+                      source: "/admin/ajax/search_business/",
+                      minLength: 2,
+                      select: function( event, ui ) {
+                          event.preventDefault();
+                          $("#id_filter_business_name").val(ui.item['name']);
+                          $("#id_filter_tin").val(ui.item['tin']);
+                      }
+                });
+
+
+                $("input#id_date_started").datepicker({ dateFormat: date_format });
+
+                $("#add_branch_button").click(function(){
+                    if(validateBranches())
+                    {
+                        $("#error_message").hide();
+                        $("#error_message").hide();
+
+                        // do something here if the existing branches are all valid
+
+                        max_id = 0;
+
+                        $("#branch_table").find("input[name^='branchname_']").each(function(){
+                            name = $(this).prop('name');
+                            id  = parseInt(name.replace('branchname_',''));
+                            if(id>max_id){max_id = id;}
+                        });
+                        max_id = max_id + 1;
+                        str = "";
+                        str +=  '<tr id="branch_'+ max_id +'">';
+                        str += 	'<td>Branch name:</td>';
+                        str +=  '<td width="180"><input id="branchname_'+max_id+'" type="text" name="branchname_'+max_id+'" /></td>';
+                        str +=	'<td>Sector:<td>';
+                        str +=	'<td width="180">';
+                        str +=	'	<select id="sector_'+max_id+'" onchange="populateCell('+max_id+')" name="sector_'+max_id+'">';
+                        str +=			$("#id_sector").html();
+                        str +=	'	</select>';
+                        str +=	'</td>';
+                        str +=	'<td>Cell:<td>';
+                        str +=	'<td width="180">';
+                        str +=		'<select id="cell_'+max_id+'"  name="cell_'+max_id+'">';
+                        str +=			'<option value="">Select a cell</option>';
+                        str +=		'</select>';
+                        str +=	'</td>';
+                        str +=	'<td>Parcel ID:<td>';
+                        str +=	'<td width="180"><input id="parcel_id_'+max_id+'"  type="text" name="parcel_id_'+max_id+'" /></td>';
+                        str +=	'<td>';
+                        str +=		'<button id="remove_branch_'+max_id+'" onclick="remove_branch('+max_id+')" type="button" class="my_button">Remove</button>';
+                        str +=	'</td>';
+                        str +=	'</tr>';
+                        $("#branch_table").append(str);
+                        if(max_id == 1)
+                        {
+                            $("#message").hide();
+                            $("#error_message").hide();
+                            $("#error_message").html("Please enter branch name.");
+                        }
+                    }
+                });
+
+                //reformat the form to be better look
+                $(".column").parents('p').css("float",'left');
+                $(".column").parents('p').css("margin-right",'30px');
+
+            })
+        </script>
+    {% endblock %}
+
+<div style="text-align:center;">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+
+		<div class="box" style="border-bottom: 1px solid #ccc;">
+			<div class="box_title" >
+				<table style="width:100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td style="vertical-align:middle;">Search Business</td>
+						<td style="padding-right:20px; text-align:right; line-height:36px;">
+							<a href="/admin/asset/business/add_business/">Add business</a>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="content" style="border-bottom:0px;">
+				<form method="POST" action="/admin/asset/business/search_business/" style="margin:0px; padding:0px">
+					{% csrf_token %}
+					<table cellpadding="0" cellspacing="0" style="width:100%">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0">
+									<tr>
+										<td>Business Name:</td>
+										<td width="230">{{search_business_form.filter_business_name}}</td>
+										<td>TIN:</td>
+										<td>{{search_business_form.filter_tin}}</td>
+									</tr>
+								</table>
+							</td>
+							<td valign="bottom"  style="text-align:right; padding-right:10px;"><button type="submit" class="my_button" name="submit">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+
+
+			<!-----------------------Default user page ------------------->
+
+			{% if businesses %}
+			<div class="box_title">
+				Business list
+			</div>
+			<div class="content">
+				<div style="text-align:center; padding:15px;">
+					<table style="margin:0 auto; width:100%" class="tablesorter" cellpadding="0" cellspacing="0">
+						<thead>
+						<tr>
+							<th>Business Name</th>
+							<th>Tin</th>
+							<th>Business Type</th>
+                            <th>Sector</th>
+                            <th>Area Type</th>
+							<th>Phone</th>
+							<th>Email</th>
+							<th>PO BOX</th>
+							<th>Status</th>
+							<th>Action</th>
+						</tr>
+						</thead>
+						<tbody>
+						{% for business in businesses %}
+						<tr>
+							<td><a href="/admin/asset/business/change_business/{{business.id}}/">{{business.name}}</a></td>
+							<td>{{ business.tin }}</td>
+							<td>{{ business.business_type }}</td>
+							<td>
+                                {% if business.sector %}
+                                    {{ business.sector.name }}
+                                {% endif %}
+                            </td>
+							<td>{{ business.area_type }}</td>
+							<td>{{ business.phone1 }}</td>
+							<td>{{ business.email }}</td>
+							<td>{{ business.po_box }}</td>
+							<td>{{ business.i_status }}</td>
+							<td>
+								<a href="/admin/asset/business/change_business/{{business.id}}/">Edit</a> {% if not business.closed_date %}| <a href="{% url 'close_business' business.pk %}">Close</a>{% endif %}
+							</td>
+						</tr>
+						{% endfor %}
+						</tbody>
+					</table>
+
+                    {% if paginator %}
+                    <div style="margin-top: 20px;">
+
+                        <div id="navigator">
+                            <span>
+                                Total: {{paginator.count}}&nbsp;&nbsp;&nbsp;&nbsp;
+                                Page {{ paginator.number }} of {{ paginator.num_pages }}.
+                                &nbsp;&nbsp;&nbsp;&nbsp;
+
+                                {% if paginator.has_previous %}
+                                    <a href="/admin/asset/business/search_business/?page=1">first</a>
+                                {% else %}
+                                    first
+                                {% endif %}
+
+                                &nbsp;&nbsp;
+                                {% if paginator.has_previous %}
+                                    <a href="/admin/asset/business/search_business/?page={{ paginator.previous_page_number }}">previous</a>
+                                {% else %}
+                                    previous
+                                {% endif %}
+
+                                &nbsp;&nbsp;
+                                {% if paginator.has_next %}
+                                    <a href="/admin/asset/business/search_business/?page={{ paginator.next_page_number }}">next</a>
+                                {% else %}
+                                    next
+                                {% endif %}
+                                &nbsp;&nbsp;
+                                {% if paginator.has_next %}
+                                    <a href="/admin/asset/business/search_business/?page={{ paginator.num_pages }}">last</a>
+                                {% else %}
+                                    last
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                {% endif %}
+
+				</div>
+			</div>
+			{% endif %}
+			<!-----------------------End of default user page ------------------->
+
+			<!-----------------------Start of add user page------------------->
+			{% ifequal action 'add' %}
+			<div class="box_title">
+				Add business
+			</div>
+			<div class="content">
+                <form onsubmit="return validateBranches();" method="post">
+                    {% csrf_token %}
+                    <div id='search_table'>
+                        {{ form.as_p }}
+                    </div>
+                    <input type="hidden" id="cell_value" name="cell_value" value="{{cell_value}}" />
+                    {{form.owner_ids}}
+                    <div style="margin-top:20px;display:block;">
+                        {% include "asset/ownership/_ownership_block.html" with asset_type="business" %}
+                    </div>
+
+                    <div class="box">
+                        <div class="box_title">
+                            <table style="width:100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="vertical-align:middle;">Branch</td>
+                                    <td style="padding-right:20px; text-align:right; line-height:36px;">
+                                        <span id="add_branch_button">
+                                            Add branch
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="content">
+                            <div id="branches">
+                                <table cellpadding="0" cellspacing="0">
+                                    <tbody id="branch_table">
+                                    {% if branches %}
+                                        {% for branch in branches %}
+                                            <tr id="branch_{{forloop.counter}}">
+                                                <td>Branch name:</td>
+                                                <td width="180">
+                                                    <input type="text" hidden style="display:none;" name="branchid_{{forloop.counter}}" value="{{branch.id}}" />
+                                                    <input value="{{branch.branch}}" id="branchname_{{forloop.counter}}" type="text" name="branchname_{{forloop.counter}}" />
+                                                </td>
+                                                <td>Sector:<td>
+                                                <td width="180">
+                                                    <select id="sector_{{forloop.counter}}" onchange="populateCell({{forloop.counter}})" name="sector_{{forloop.counter}}">
+                                                        <option value="">Select sector ...</option>
+                                                        {% for sector_option in branch.sector_list %}
+                                                            {% ifequal branch.sector sector_option %}
+                                                                <option selected value="{{sector_option.id}}">{{sector_option.name}}</option>
+                                                            {% else %}
+                                                                <option value="{{sector_option.id}}">{{sector_option.name}}</option>
+                                                            {% endifequal %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </td>
+                                                <td>Cell:<td>
+                                                <td width="180">
+                                                    <select id="cell_{{forloop.counter}}"  name="cell_{{forloop.counter}}">
+                                                        <option value="">Select a cell</option>
+                                                        {% for cell_option in branch.cell_list %}
+                                                            {% ifequal branch.cell cell_option %}
+                                                                <option selected value="{{cell_option.id}}">{{cell_option.name}}</option>
+                                                            {% else %}
+                                                                <option value="{{cell_option.id}}">{{cell_option.name}}</option>
+                                                            {% endifequal %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </td>
+                                                <td>Parcel ID:<td>
+                                                <td width="180"><input value="{{branch.parcel_id}}" id="parcel_id_{{forloop.counter}}"  type="text" name="parcel_id_{{forloop.counter}}" /></td>
+                                                <td>
+                                                    <button id="remove_branch_{{forloop.counter}}" onclick="remove_branch({{forloop.counter}})" type="button" class="my_button">Remove</button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if branches %}
+                                <div id="message" class="message" style="display:none">
+                            {% else %}
+                                <div id="Div1" class="message">
+                            {% endif %}
+                                There are no branches for this business.
+                            </div>
+                            <div style="margin-top:10px; display:none;" id="error_message" class="error_message">
+
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="submit" value='Add Business' class="my_button">Add Business</button>
+                        <button type="submit" value='Add Business and Go To Tax Screen' name="redirect_tax" class="my_button">Add Business and Go To Tax Screen</button>
+                    </div>
+                </form>
+			</div>
+			{% endifequal %}
+			<!-----------------------end of add user page-------------------->
+
+
+
+			<!-----------------------Start of edit user page------------------->
+			{% ifequal action 'edit' %}
+			<div class="box_title">
+				Edit business
+				<div style="padding-right:20px; float:right; line-height:36px;">
+				<a href="{% url 'close_business' form.instance.pk %}">Close this business</a>
+				</div>
+			</div>
+			<div class="content">
+				{% if form %}
+                    <form method="post">
+                    {% csrf_token %}
+                    <div id='search_table'>
+                    {{ form.as_p }}
+                    </div>
+                    <div style="margin-top:20px; display:block;">
+                        {% include "asset/ownership/_ownership_block.html" with asset_type="business" %}
+                    </div>
+                    <div style="margin-top:20px;display:block;">
+                        {% include "media/_media_box.html" with media=media type="business" id=obj_id %}
+                    </div>
+                    <div class="box">
+                        <div class="box_title">
+                            <table style="width:100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="vertical-align:middle;">Branch</td>
+                                    <td style="padding-right:20px; text-align:right; line-height:36px;">
+                                        <span id="add_branch_button">
+                                            Add branch
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="content">
+                            <div id="branches">
+                                <table cellpadding="0" cellspacing="0">
+                                    <tbody id="branch_table">
+
+                                    {% if branches %}
+                                        {% for branch in branches %}
+                                            <tr id="branch_{{forloop.counter}}">
+                                                <td>Branch name:</td>
+                                                <td width="180">
+                                                    <input type="text" hidden style="display:none;" name="branchid_{{forloop.counter}}" value="{{branch.id}}" />
+                                                    <input value="{{branch.branch}}" id="branchname_{{forloop.counter}}" type="text" name="branchname_{{forloop.counter}}" />
+                                                </td>
+                                                <td>Sector:<td>
+                                                <td width="180">
+                                                    <select id="sector_{{forloop.counter}}" onchange="populateCell({{forloop.counter}})" name="sector_{{forloop.counter}}">
+                                                        <option value="">Select sector ...</option>
+                                                        {% for sector_option in branch.sector_list %}
+                                                            {% ifequal branch.sector sector_option %}
+                                                                <option selected value="{{sector_option.id}}">{{sector_option.name}}</option>
+                                                            {% else %}
+                                                                <option value="{{sector_option.id}}">{{sector_option.name}}</option>
+                                                            {% endifequal %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </td>
+                                                <td>Cell:<td>
+                                                <td width="180">
+                                                    <select id="cell_{{forloop.counter}}"  name="cell_{{forloop.counter}}">
+                                                        <option value="">Select a cell</option>
+                                                        {% for cell_option in branch.cell_list %}
+                                                            {% ifequal branch.cell cell_option %}
+                                                                <option selected value="{{cell_option.id}}">{{cell_option.name}}</option>
+                                                            {% else %}
+                                                                <option value="{{cell_option.id}}">{{cell_option.name}}</option>
+                                                            {% endifequal %}
+                                                        {% endfor %}
+                                                    </select>
+                                                </td>
+                                                <td>Parcel ID:<td>
+                                                <td width="180"><input value="{{branch.parcel_id}}" id="parcel_id_{{forloop.counter}}"  type="text" name="parcel_id_{{forloop.counter}}" /></td>
+                                                <td>
+                                                    <button id="remove_branch_{{forloop.counter}}" onclick="remove_branch({{forloop.counter}})" type="button" class="my_button">Remove</button>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    {% endif %}
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            {% if branches %}
+                                <div id="message" style="display:none" class="message">
+                            {% else %}
+                                <div id="message" class="message">
+                            {% endif %}
+                                There are no branches for this business.
+                            </div>
+                            <div style="margin-top:10px; display:none;" id="error_message" class="error_message">
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div>
+                        <button type="submit" name="submit_update" value='Save' class="my_button">Save</button>
+                    </div>
+                </form>
+                {% else %}
+                    {% include "asset/business/_business_search.html" with action="change" %}
+                {% endif  %}
+			</div>
+			{% endifequal %}
+			<!-----------------------end of edit user page-------------------->
+			{% if not businesses %}
+				{% if not action %}
+					<div class="box_title">
+						Business list
+					</div>
+					<div class="content">
+						<div style="text-align:left; padding:20px; padding-left:5px;">
+							No businesses found!
+						</div>
+					</div>
+				{% endif %}
+			{% endif %}
+
+		</div>
+	</div>
+</div>
+
+
+<div style="display:none">
+	{% if provinces %}
+		<select id="all_provinces">
+			{% for province in provinces %}
+				<option value="{{province.id}}">{{province.name}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+	
+	{% if actions %}
+		<select id="all_actions">
+			{% for action in actions %}
+				<option value="{{action.id}}">{{action.name}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+	{% if tax_types %}
+		<select id="all_taxtypes">
+			{% for tax_type in tax_types %}
+				<option value="{{tax_type.id}}">{{tax_type.displayname}}</option>
+			{% endfor %}
+		</select>
+	{% endif %}
+</div>
+<br>
+<script type="text/javascript"  src="/static/js/admin/populate_geo.js"></script>
+<script>
+    $(document).ready(function(){
+        if($("#id_district").val()=='')
+        {
+            $("#id_sector").prop('disabled','disabled');
+            $("#id_cell").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#id_sector").prop('disabled',false);
+            if($("#id_sector").val()=='')
+            {
+                $("#id_cell").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#id_cell").prop('disabled',false);
+            }
+        }
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +
+                'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' +
+                'src="/static/images/refresh' +
+                '.png"/>');
+
+    });
+</script>
+{% endblock %}

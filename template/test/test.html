@@ -1,0 +1,145 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/test/property.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/test/tax.css" %}" />
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="{% static "js/test/sector_display.js" %}"></script>
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "test" %} 
+{% endblock %}
+{% block mainbody %}
+
+
+
+	{% load googlecharts %}
+
+	<table>
+		<tr>
+			<td><div id="pie_chart_div"></div></td>
+			<td><div id="line_chart_div"></div></td>
+			<td><div id="bar_chart_div"></div></td>
+		</tr>
+		<tr>
+			<td><div id="column_chart_div"></td>
+			<td><div id="area_chart_div"></td>
+			<!--<td id="table_chart_div"></td>-->
+		</tr>
+	</table>
+
+	{% googlecharts %}
+		{% data values "pie_chart_data" %}
+			{% col "string" "Name" %}"{{ val }}"{% endcol %}
+			{% col "number" "Value" %}{{ val }}{% endcol %}
+		{% enddata %}
+		{% data line_values "line_chart_data" %}
+			{% col "string" "Name" %}"{{ val }}"{% endcol %}
+			{% col "number" "Sales" %}{{ val }}{% endcol %}
+			{% col "number" "Expense" %}{{ val }}{% endcol %}
+		{% enddata %}
+
+		
+		{% options "pie_chart_options" %}
+			kind: "PieChart",
+			options: {
+				title: 'Google chart testing',
+				width: 600,
+				height: 480,
+			}
+		{% endoptions %}
+
+
+		{% options "line_chart_options" %}
+			kind: "LineChart",
+			options: {
+				<!--title: 'Google chart testing',-->
+				width: 600,
+				height: 480,
+				vAxis:{title: 'Vertical axis title here', titleTextStyle: {color: 'red'}},
+				hAxis:{title: 'Horizontal axis title here', titleTextStyle: {color: 'red'}}
+			}
+		{% endoptions %}
+
+
+		{% options "bar_chart_options" %}
+			kind: "BarChart",
+			options: {
+				<!--title: 'Google chart testing',-->
+				width: 600,
+				height: 480,
+				vAxis:{title: 'Vertical axis title here', titleTextStyle: {color: 'red'}},
+				hAxis:{title: 'Horizontal axis title here', titleTextStyle: {color: 'red'}}
+			}
+		{% endoptions %}
+
+		{% options "column_chart_options" %}
+			kind: "ColumnChart",
+			options: {
+				<!--title: 'Google chart testing',-->
+				width: 600,
+				height: 480,
+				vAxis:{title: 'Vertical axis title here', titleTextStyle: {color: 'red'}},
+				hAxis:{title: 'Horizontal axis title here', titleTextStyle: {color: 'red'}}
+			}
+		{% endoptions %}
+
+		
+		{% options "area_chart_options" %}
+			kind: "AreaChart",
+			options: {
+				<!--title: 'Google chart testing',-->
+				width: 600,
+				height: 480,
+				vAxis:{title: 'Vertical axis title here', titleTextStyle: {color: 'red'}},
+				hAxis:{title: 'Horizontal axis title here', titleTextStyle: {color: 'red'}}
+			}
+		{% endoptions %}
+
+					
+
+		{% graph "pie_chart_div" "pie_chart_data" "pie_chart_options" %}
+		{% graph "bar_chart_div" "line_chart_data" "bar_chart_options" %}
+		{% graph "line_chart_div" "line_chart_data" "line_chart_options" %}
+		{% graph "column_chart_div" "line_chart_data" "column_chart_options" %}
+		{% graph "area_chart_div" "line_chart_data" "area_chart_options" %}
+	
+
+
+	{% endgooglecharts %}
+
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

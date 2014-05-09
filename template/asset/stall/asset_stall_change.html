@@ -1,0 +1,42 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Stall" "/admin/asset/stall/"  %}
+	{% breadcrumb "Update stall" %}
+{% endblock %}
+
+{% block mainbody %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if form %}
+<div class="user_action_title">
+	Update stall
+</div>
+
+<div class="padded_div">
+    <form  action="/admin/asset/stall/change_stall/{{ obj_id }}/" method="post" >
+	{% csrf_token %}
+    {{ form }}
+	{% include "asset/ownership/_ownership_block.html" with asset_type="stall" %}	
+    <input type="submit" value="Save" name="submit_update"/>
+    </form>
+</div>
+{% else %}
+
+{% include "asset/stall/_stall_search.html" with action="change" %}
+
+{% endif %}
+{% endblock %}

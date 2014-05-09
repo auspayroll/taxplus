@@ -1,0 +1,84 @@
+<div id="bulk_messaging_box">
+    <div class="box">
+	    <div class="box_title">
+		    Bulk Messaging
+	    </div>
+	    <div class="content">
+            {% if result %}
+                <h4>
+                    {% if result.sms_success %}
+                        - Successfully sent {{ result.sms_success }} SMS messages.</br>
+                    {% endif %}
+                    {% if result.sms_error %}
+                        <span style="color: red;" >- Failed to send SMS to {{ result.sms_error|length }} phone numbers.</span></br>
+                    {% endif %}
+
+                    {% if result.email_success %}
+                        - Successfully sent {{ result.email_success }} email messages.</br>
+                    {% endif %}
+                    {% if result.email_error %}
+                        <span style="color: red;" >- Failed to send email to {{ result.email_error|length }} email addresses.</span></br>
+                    {% endif %}
+                </h4>
+    
+                <div><input type="button" class="my_button" value="Close" onclick="javascript:$.fancybox.close();"></div>
+
+            {% else %}
+		    <div id="error" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin-right: 10px; margin-bottom:20px;"></div>
+		    {% if messages %}
+			    <ul class="messages">
+				    {% for message in messages %}
+				    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+				    {% endfor %}
+			    </ul>
+		    {% endif %}
+                <form method="post" action="/admin/bulk_messaging/send/?list={{list}}" id="bulk_messaging_form" >
+			    {% csrf_token %}
+                {{ form }}
+
+                <br/><br/><br/>
+                <div><input type="submit" class="my_button" id="send_btn" value="Send" name="send_message" ></div>
+            </form>
+            <style type="text/css">
+            #bulk_messaging_form label { margin-top: 5px; }
+            #bulk_messaging_form #id_subject { width: 450px; }
+            #bulk_messaging_form #id_message { width: 450px; height: 200px;}
+            #bulk_messaging_form input[type=checkbox] { margin-top: -3px; }
+            #bulk_messaging_form .errorlist { width: 100%; float: left}
+            </style>
+            {% block javascript %}
+            <script type="text/javascript">
+            $('#bulk_messaging_form').submit(function() { // catch the form's submit event
+                data = $(this).serialize();
+                $.ajax({ // create an AJAX call...
+                    data:data, // get the form data
+                    type: $(this).attr('method'), // GET or POST
+                    url: $(this).attr('action'), // the file to call
+                    success: function(response) { // on success..
+                        $('#bulk_messaging_box').parent().html(response); // update the DIV
+                    }
+                });
+                return false;
+            });
+
+            $(function(){
+                $("#id_method_0").click(function(){
+                    if($("#id_method_0").attr('checked'))
+                    {
+                        $("#id_message").attr("placeholder","Limit to 160 characters for sms content");
+                        $("#id_message").attr("maxlength",160);
+                    }
+                    else
+                    {
+                        $("#id_message").attr("placeholder","Limit to 2000 characters.");
+                        $("#id_message").attr("maxlength",2000);
+                    }
+                });
+            });
+            </script>
+            {% endblock %}
+            {% endif %}
+	    </div>
+    </div>
+
+</div>

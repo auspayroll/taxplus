@@ -1,0 +1,109 @@
+{% extends "common/base_report_print.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block mainbody %}
+
+
+<style type="text/css">
+
+		@media screen,print
+		{
+			table > thead > tr > th{
+				padding:5px;
+				text-align:left;
+			}
+			table > tbody > tr > td{
+				padding:5px;
+				text-align:left;
+			}
+		}
+	</style>
+
+
+
+
+<div style="padding:20px;">
+
+
+
+<div style="margin-top:20px;margin-bottom:20px; font-size:14px; font-weight:normal;">
+	{{graph_title}}
+</div>
+
+
+{% if summary %}
+
+<div style="text-align:left;">
+	<table style=" width:auto; margin-bottom:30px;" class="tablesorter" border='0' cellspacing="0">
+		<thead>
+			<tr>
+				<th width="150"></th>
+				{% for key in summary %}
+					<th style="width:140px;">{{key}}</th>
+				{% endfor %}	
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>Number of tax payers</td>
+				{% for key, value in summary.items %}
+					<td>{{value}}</td>
+				{% endfor %}
+			</tr>
+		</tbody>
+	</table>
+</div>
+{% endif %}
+
+
+
+
+
+<div style="text-align:center;">
+	{% if not tax_payers %}
+		No tax payers found.
+	{% else %}
+		<table cellpadding="0" cellspacing="0" width="100%" style="max-width:800px;" border="1">
+			<thead>
+				<tr>
+					<th>Citizen ID</th>
+					<th>Name</th>
+					<th>Gender</th>
+					<th>DOB</th>
+					<th>Phone_1</th>
+					<th>Phone_2</th>
+					<th>Email</th>
+					<th>Address</th>
+					<th>Tax type</th>
+				</tr>	
+			</thead>
+			<tbody>
+			{% for citizen in tax_payers %}
+				<tr>
+					<td>{{citizen.citizen_id}}</td>
+					<td>
+						{% if citizen.middle_name %}
+							{{citizen.first_name}} {{citizen.middle_name}} {{citizen.last_name}}
+						{% else %}
+							 {{citizen.first_name}} {{citizen.last_name}}
+						{% endif %}
+					</td>
+					<td>{{citizen.gender }}</td>
+					<td>{{citizen.date_of_birth|date:"d/m/Y" }}</td>
+					<td>{{citizen.phone_1 }}</td>
+					<td>{{citizen.phone_2 }}</td>
+					<td>{{citizen.email }}</td>
+					<td>{{citizen.address }}</td>
+					<td>{{citizen.tax_type }}</td>
+				</tr>		
+			{% endfor %}
+			</tbody>							
+			
+		</table>	
+	{% endif %}
+</div>
+	
+</div>
+
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "tax/paylandlease.html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block heading %}
+	<h3>Fixed Asset Tax - Payment</h3>
+	<div><a href="{% url 'submit_fixed_asset' tax.id %}">View Fee Details</a></div>
+{% endblock %}

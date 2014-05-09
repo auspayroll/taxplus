@@ -1,0 +1,380 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block css  %}
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+
+	<style>
+		#search_table div.selector
+		{
+			width:250px;
+		}
+		#search_table input[type=text]
+		{
+			width:250px;
+		}
+		#error_message
+		{
+			margin-bottom:30px;
+			display:none;
+			color:red;
+		}
+		#search_table label
+		{
+			font-weight:normal;
+			font-size:13px;
+		}
+		ul.errorlist
+		{
+			display:none;
+		}
+	</style>
+
+
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+	<script type="text/javascript" src="/static/js/admin/populate_geo.js"></script>
+	<script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+
+ 
+	<script type="text/javascript">
+		$(function() {
+			$( ".date_picker" ).datepicker({ dateFormat: "dd/mm/yy" });
+			$("#search_table #id_tin").autocomplete({
+				source: "/admin/ajax/search_business/?stype=tin",
+				minLength: 3,
+				select: function (event, ui) {
+					event.preventDefault();
+					$("#search_table #id_tin").val(ui.item['tin']);
+				}
+			});
+			
+			$("#search_table #id_citizen_id").autocomplete({
+				source: "/admin/ajax/search_citizen_clean/?stype=nid",
+				minLength: 3,
+				select: function (event, ui) {
+					event.preventDefault();
+					$("#search_table #id_citizen_id").val(ui.item['nid']);
+					var fullname = ui.item['first_name'];
+					if(ui.item['middle_name']!='' && ui.item['middle_name']!='null' && ui.item['middle_name']!=null)
+					{
+						fullname += ' '+ui.item['middle_name'];
+					}
+					if(ui.item['last_name']!='')
+					{
+						fullname += ' '+ui.item['last_name'];
+					}
+					$("#search_table #id_tax_payer").val(fullname);
+				}
+			});
+
+			$("#search_table #id_tax_payer").autocomplete({
+				source: "/admin/ajax/search_citizen_clean/?stype=name",
+				minLength: 3,
+				select: function (event, ui) {
+				$("#add_table #id_cell").siblings("span").html('---------');month_range
+					event.preventDefault();
+					$("#search_table #id_citizen_id").val(ui.item['nid']);
+					var fullname = ui.item['first_name'];
+					if(ui.item['middle_name']!='' && ui.item['middle_name']!='null')
+					{
+						fullname += ' '+ui.item['middle_name'];
+					}
+					if(ui.item['last_name']!='')
+					{
+						fullname += ' '+ui.item['last_name'];
+					}
+					$("#search_table #id_tax_payer").val(fullname);
+				}
+			});
+
+            $('<div id="reject_dialog"></div>').appendTo('body')
+              .html('<div>The payment will be removed and the associated will become unpaid. Are you sure you want to reject this payment?</div>')
+              .dialog({
+               autoOpen: false,
+               title: "Reverse Payment",
+               modal: true,
+               buttons : {
+                    "Yes" : function() {
+                        window.location=$("#reject_payment").val();
+                    },
+                    "No" : function() {
+                      $(this).dialog("close");
+                    }
+                  }
+                });
+
+            $('<div id="approve_dialog"></div>').appendTo('body')
+              .html('<div>This pending payment will be converted into a valid payment with the inputted amount. Are you sure you want to approve this payment?</div>')
+              .dialog({
+               autoOpen: false,
+               title: "Approve Payment",
+               modal: true,
+               buttons : {
+                    "Yes" : function() {
+                        window.location=$("#approve_payment").val();
+                    },
+                    "No" : function() {
+                      $(this).dialog("close");
+                    }
+                  }
+                });
+		});
+
+        function approvePayment(type, id)
+        {
+            $("#approve_payment").val("/admin/tax/pending_payment/approve/?type=" + type + "&id=" + id);
+            $("#approve_dialog").dialog("open");
+            return false;
+        }
+
+        function rejectPayment(type, id)
+        {
+            $("#reject_payment").val("/admin/tax/pending_payment/reject?type=" + type + "&id=" + id);
+            $("#reject_dialog").dialog("open");
+            return false;
+        }
+		
+	</script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% if not action %}
+		{% breadcrumb "Pending Payment" "" %}
+	{% else %}
+		{% breadcrumb "Pending Payment" "/admin/tax/pending_payment/" %}
+		{% ifequal action "add" %}	
+			{% breadcrumb "Add pending payment" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit pending payment" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+   
+<div style="text-align:center;">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box">
+			<div class="box_title" >
+				<table style="width:100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td style="vertical-align:middle;">Search pending payment</td>
+					</tr>
+				</table>
+			</div>
+			{% if payments %}
+				<div class="content" style="border-bottom:0px;">
+			{% else %}
+				<div class="content" style="border-bottom:1px solid #ccc;">
+			{% endif %}
+				<form method="GET" action="/admin/tax/pending_payment/search/" style="margin:0px; padding:0px">
+					{% csrf_token %}
+					<table cellpadding="0" id="search1_table" cellspacing="0" style="width:100%">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0">
+									<tr>
+										<td>Bank Receipt:</td>
+										<td>{{search_pending_payment_form.receipt_no}}</td>
+										<td>Sector Receipt:</td>
+										<td >{{search_pending_payment_form.invoice_id}}</td>
+										<td>Manual Receipt:</td>
+										<td>{{search_pending_payment_form.manual_receipt}}</td>
+									</tr>
+									<tr>
+										<td>Citizen ID:</td>
+										<td>{{search_pending_payment_form.citizen_id}}</td>
+										<td>TIN:</td>
+										<td>{{search_pending_payment_form.tin}}</td>
+                                        <td>UPI:</td>
+                                        <td>{{search_pending_payment_form.upi}}</td>
+									</tr>
+									<tr>
+										<td>Tax Type:</td>
+										<td>{{search_pending_payment_form.tax_type}}</td>
+										<td>Bank:</td>
+										<td>{{search_pending_payment_form.bank}}</td>
+									</tr>
+									<tr>
+										<td>Period from:</td>
+										<td>{{search_pending_payment_form.period_from}}</td>
+										<td>Period to:</td>
+										<td>{{search_pending_payment_form.period_to}}</td>
+									</tr>
+								</table>
+							</td>
+							<td valign="bottom"  style="text-align:right; padding-right:10px;"><button type="submit" class="my_button" name="submit_search">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+
+			{% if payments %}
+			<div class="box_title">
+				Pending payment list
+			</div>
+			<div class="content">
+                <h4>Only maximum last {{ limit }} pending payments are displayed. Currently showing {{ page.paginator.count }} payments:</h4>
+				<div style="text-align:center;">
+                    {% if payments %}
+                    {% endif %}
+	                <div style="margin-bottom:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		                <span>
+			                Page {{ page.number }} of {{ page.paginator.num_pages }}.
+			                &nbsp;&nbsp;&nbsp;&nbsp;			
+			                {% if page.has_previous %}
+				                <a href="{{ pagination_url }}&page=1">first</a>
+			                {% else %}
+				                first
+			                {% endif %}
+							
+			                &nbsp;&nbsp;
+			                {% if page.has_previous %}
+				                <a href="{{ pagination_url }}&page={{ page.previous_page_number }}">previous</a>
+			                {% else %}
+				                previous
+			                {% endif %}
+			
+			                &nbsp;&nbsp;				
+			                {% if page.has_next %}				
+				                <a href="{{ pagination_url }}&page={{ page.next_page_number }}">next</a>
+			                {% else %}
+				                next
+			                {% endif %}
+			                &nbsp;&nbsp;
+			                {% if page.has_next %}
+				                <a href="{{ pagination_url }}&page={{ page.paginator.num_pages }}">last</a>
+			                {% else %}
+				                last
+			                {% endif %}
+		                </span>
+                    </div>
+					<table style="margin:0 auto; width:100%" class="tablesorter" cellpadding="0" cellspacing="0">
+						<thead>
+				            <tr>
+					            <th>Receipt ID</th>
+					            <th>Manual Receipt ID</th>
+					            <th>Citizen ID</th>
+					            <th>UPI (Property)</th>
+                                <th>Business</th>
+					            <th>Tax / Fee Name</th>
+					            <th>Bank</th>
+					            <th>Bank Receipt No.</th>
+					            <th>Paid Date</th>
+					            <th>Amount Paid</th>
+					            <th>Amount Due</th>
+                                <th>Note</th>
+                                <th>Staff</th>
+                                <th>Input On</th>
+                                <th>Media</th>
+                                <th>Pending Reason & Note</th>
+					            <th>Actions</th>
+				            </tr>
+			            </thead>
+			            <tbody>
+			            {% if not payments %}
+				            <tr>
+					            <td colspan="15" class="firstcolumn" style="text-align:center;">No payment found!</td>
+				            </tr>
+                        {% elif exceed_limit %}
+				            <tr>
+					            <td colspan="15" class="firstcolumn" style="text-align:center; color: red">Search result exceed display limit of {{limit}} records! Please refine the search or use Download PDF link for the full list of result records</td>
+				            </tr>
+			            {% else %}
+				            {% for payment in payments %}
+				            <tr class="{% cycle 'odd' 'even' %}">
+					            <td>{{payment.invoice_id}}</td>
+					            <td>{% if payment.manual_receipt %} {{payment.manual_receipt}} {% else %} N/A {% endif %}</td>
+					            <td>{{payment.citizen_id}}</td>
+					            <td>{{payment.upi}}</td>
+					            <td>{{payment.business}}</td>
+					            <td>{{payment.tax_name}}</td>
+					            <td>{{payment.bank}}</td>
+					            <td>{{payment.receipt_no}}</td>
+					            <td>{{payment.paid_date|date:'d-m-Y'}}</td>
+					            <td>{{payment.amount|currency}} RWF</td>
+					            <td>{{payment.amount_due|currency}} RWF</td>
+                                <td>{{payment.note|linebreaksbr}}</td>
+                                <td>{% if payment.staff %} {{payment.staff.firstname}} {{payment.staff.lastname}} {% endif %}</td>
+					            <td>{{payment.date_time|date:'d-m-Y H:i:s'}}</td>
+                                <td>    
+                                    {% if payment.medias %}
+                                        {% for media in payment.medias %}
+                                        <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box media_link"><img src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                                        {% endfor %}
+						            {% else %}
+							            N/A
+						            {% endif %}
+                                </td>
+                                <td><b>{{payment.pending_reason}}</b>{% if payment.pending_note%} <br/>{{payment.pending_note}} {%endif%}</td>
+                                <td>
+                                    <a href="javascript:approvePayment('{{ payment.type }}','{{payment.id}}');" >Approve</a><br />
+                                    <a href="javascript:rejectPayment('{{ payment.type }}','{{payment.id}}');" >Reject</a>
+                                </td>
+				            </tr>	
+				            {% endfor %}
+			            {% endif %}
+			            </tbody>
+					</table>
+                    <input type="hidden" id="approve_payment" value="" />
+                    <input type="hidden" id="reject_payment" value="" />
+	                <div style="margin-top:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		                <span>
+			                Page {{ page.number }} of {{ page.paginator.num_pages }}.
+			                &nbsp;&nbsp;&nbsp;&nbsp;			
+			                {% if payments.has_previous %}
+				                <a href="{{ pagination_url }}&page=1">first</a>
+			                {% else %}
+				                first
+			                {% endif %}
+							
+			                &nbsp;&nbsp;
+			                {% if page.has_previous %}
+				                <a href="{{ pagination_url }}&page={{ page.previous_page_number }}">previous</a>
+			                {% else %}
+				                previous
+			                {% endif %}
+			
+			                &nbsp;&nbsp;				
+			                {% if page.has_next %}				
+				                <a href="{{ pagination_url }}&page={{ page.next_page_number }}">next</a>
+			                {% else %}
+				                next
+			                {% endif %}
+			                &nbsp;&nbsp;
+			                {% if page.has_next %}
+				                <a href="{{ pagination_url }}&page={{ page.paginator.num_pages }}">last</a>
+			                {% else %}
+				                last
+			                {% endif %}
+		                </span>
+	                </div>
+				</div>
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}

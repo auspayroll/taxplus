@@ -1,0 +1,348 @@
+{% extends "common/base_design.html" %}
+
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+    {% breadcrumb "Incomplete Payment" "/admin/tax/incomplete_payment/" %}
+	{% breadcrumb "Receipt" %}	
+{% endblock %}
+{% block css %}
+	<style type="text/css">
+		
+		.error_message{
+			margin-bottom:10px;
+			display:block;
+			color:red;
+		}
+		ul.errorlist
+		{
+			display:none;
+		}
+	</style>
+{% endblock %}
+
+
+{% block javascript %}
+<script type="text/javascript" src="/static/js/admin/populate_geo.js"></script>
+{% endblock %}
+
+
+
+
+
+
+
+{% block mainbody %}
+
+	<script type="text/javascript" src="/static/js/jquery.printElement.min.js"></script>
+
+	<script type="text/javascript">
+        $(function(){
+			
+			
+			$("#id_tin").autocomplete({
+				source: "/admin/ajax/search_business/?stype=tin",
+				minLength: 3,
+				select: function (event, ui) {
+					event.preventDefault();
+					$("#id_tin").val(ui.item['tin']);
+				}
+			});
+	
+        
+            {% if tablet_printing %}
+            var html = $("#receipt").html();
+            $("#header").hide(); 
+            $(".positionbar").hide(); 
+            $("#wrapper div fieldset").hide(); 
+            $("#wrapper div h4").hide(); 
+            $("#receipt").parent().attr("style",'');
+            $("#receipt").css('border','none');
+            $("body").css('background','white');
+            {% endif %}
+
+            $("#print_btn").click(function(e){
+                e.preventDefault();
+                if( /Linux; Android/i.test(navigator.userAgent) ) {
+                    window.open("{{tablet_print_link}}");
+                }
+                else
+                {
+                    $("#receipt").printElement({printMode:'popup',pageTitle:'Print Receipt',
+                    overrideElementCSS:['/static/css/common/print_receipt.css']
+                    });
+                }
+
+                return false;
+            });
+
+        });
+ 
+    </script>
+
+{% load humanize %}{% load simple_tags %}
+
+<div style="text-align:left; line-height:30px; margin:10px;margin-top:20px;">
+    <!--{{ tax_label }}-->
+
+    <fieldset>
+	    <legend><h4><b>Support Documents</b></h4></legend>
+
+        <form enctype="multipart/form-data" class="xupload-form file_upload" id="media_form" action="/admin/media/media/upload_ajax/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="tax_type" value="{{ tax_type }}" />
+            <input type="hidden" name="tax_id" value="{{ tax.id }}" />
+            <input type="hidden" name="payment_id" value="{{ payment.id }}" />
+            <input type="hidden" name="business_id" value="{{ business_id }}" />
+            <input type="hidden" name="citizen_id" value="{{ citizen_id }}" />
+            <input type="hidden" name="property_id" value="{{ property_id }}" />
+            <input type="hidden" name="incomplete_payment_id" value="{{ incomplete_payment.id }}" />
+
+            <input type="hidden" value="" name="file">
+            <input multiple="multiple" name="file" id="path_original" type="file">
+            <button class="my_button">Upload</button><div>Choose file to upload</div>
+        </form>
+        <table id="files">
+        </table>
+
+        <input type="button" class="my_button" id="start_uploads" value="Upload Selected Files" name="Save" style="display: none;">
+
+        {% if media %}
+		    {% include "media/_media_box_invoice.html" with media=media %}						
+        {% endif %}
+
+
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload.js"></script>
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload-ui.js"></script>
+        <script type="text/javascript">
+        /*<![CDATA[*/
+
+		var fileCount = 0;
+		var fileCheck = 0;
+
+        jQuery(function($) {
+            jQuery('#media_form').fileUploadUI({'beforeSend':function (event, files, index, xhr, handler, callBack) {
+				                handler.uploadRow.find(".file_upload_start button").click(function(){
+					            /*var regexp = /\.(png)|(jpg)|(gif)|(jpeg)$/i;
+					            if (!regexp.test(files[index].name)) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>ONLY IMAGES ALLOWED!</strong></div></div>");
+						            setTimeout(
+							            function () {handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else  */ 
+                                if (files[index].size > 2097152) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>FILE TOO BIG!</strong></div></div>");
+						            setTimeout(
+							            function () { handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else {
+						            fileCheck++;
+						            callBack();
+					            }
+				                } );
+				            },'onComplete':function (event, files, index, xhr, handler, callBack) {
+			            fileCount++;
+			            if(fileCheck == fileCount) {
+				            window.location = window.location;
+			            }
+			            },'onChange':function (event, files, index, xhr, handler, callBack)
+                                    {
+                                        $("#start_uploads").show();
+                                    },'buttonLabel':'Choose file to upload','uploadTable':'#files','downloadTable':'#files','buildUploadRow':function (file, index) {
+	            return $('<tr>'+
+		            '<td class="filename">'+file[index].name+'</td>'+
+		            //'<td class="filesize">'+file[index].size+'</td>'+
+		            '<td class="file_upload_progress" colspan="3"><div></div></td>'+
+		            '<td class="file_upload_start" style="display:none">'+
+			            '<button class="ui-state-default ui-corner-all" title="Start Upload">'+
+				            '<span class="ui-icon ui-icon-circle-arrow-e">Start Upload</span>'+
+			            '</button>'+
+		            '</td>'+
+		            '<td class="file_upload_cancel">'+
+			            '<button class="ui-state-default ui-corner-all">'+
+				            '<span class="ui-icon ui-icon-cancel">Cancel</span>'+
+			            '</button>'+
+		            '</td>'+
+	            '</tr>');
+            },'buildDownloadRow':function (files, index) {
+	            return $('<tr style="border-bottom: 1px solid #c4c4c4;" class="media_row"><td id="file_name"><input type="hidden" id="id" value="" /><b>' + files.name + '</b><\/td>' +
+    	            '<td class="file_upload_progress"><\/td>' +
+                    '<td class="file_upload_cancel">' +
+                    '<button class="ui-state-default ui-corner-all" title="Cancel">' +
+                    '<span class="ui-icon ui-icon-cancel" onclick="removeMediaRow(this)">Cancel<\/span>' +
+                    '<\/button><hr/><\/td><\/tr>');
+            }});
+
+            $("#start_uploads").click(function(){
+			    $('.file_upload_start button').click();
+            });
+        });
+        /*]]>*/
+        </script>
+    </fieldset>
+    <br/>
+
+	<h4><b>Receipt Preview</b></h4>
+    <div style="border: 2px inset #c4c4c4; background: #c4c4c4;">
+	    <div id="receipt" >
+            <div class="pay_details">
+                <label>Paid At:</label> {{incomplete_payment.bank}} <br/>
+                <label>Date Paid:</label> {{ incomplete_payment.paid_date|date:"d/m/Y"}} <br/>
+            </div>		
+            <h2>PAYMENT RECEIPT FOR KIGALI CITY COUNCIL</h2>
+            {% if incomplete_payment.property %}
+            	{{incomplete_payment.property.upi}}<br/>
+            	{{incomplete_payment.property.address}}<br/>
+            {% elif incomplete_payment.business %}
+            	{{incomplete_payment.business.name}}<br/>
+            	TIN/RRA: {{incomplete_payment.business.tin}}<br/>            	
+            {% endif %}
+            
+         
+            <h2>SUMMARY OF GOVERNMENT CHARGES</h2>
+            <table id="payments" cellpadding="0" cellspacing="0">
+			    <tr>
+				    <th>Tax / Fee</th>
+				    <th class="reference_col">Reference</th>
+				    <th class="center">Receipt No.</th>
+				    <th class="center">Bank Receipt No.</th>
+				    <th style="text-align:right; padding: 0px 11px 0px 0px;" >Amount Paid</th>
+			    </tr>	
+                <tr>
+                    <td>{{ incomplete_payment.tax_or_fee }}</td>
+                    <td class="reference_col">
+                    	{% if incomplete_payment.reference.period %}
+                    		{{ incomplete_payment.reference.message}}<br>
+                    		{{ incomplete_payment.reference.period }}
+                    	{% else %}
+                    		{{ incomplete_payment.reference.message }}
+                    	{% endif %}
+                    </td>
+                    <td class="center">{{ incomplete_payment.sector_receipt }}</td>
+                    <td class="center">{{ incomplete_payment.bank_receipt }}</td>
+                    <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ incomplete_payment.paid_amount|currency }} RWF</td>
+                </tr>			
+                
+                <tr class="no_border"><td colspan="5"><br/></td></tr>
+                <tr class="no_border">
+                    <td colspan="4" style="text-align:right;" ><b>TOTAL<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ incomplete_payment.paid_amount|currency }} RWF</div></td>
+                </tr>			
+            </table>
+            <br/>
+            <br/><br/><br/><br/><br/><br/>
+            <div class="note">Please check all entries and report any apparent error or possible unauthorised transactions immediately.
+                We may subsequently adjust debits and credits. For information on resolving problems or enquiries contact Kigali Council on 000 000 000</div>
+	    </div>
+    </div>
+    <br/>
+    <fieldset><legend><h4><button id="print_btn"  class="button_styled" >print receipt</button></h4></legend></fieldset>
+    <div class="error_message" >
+    	{% if form.errors %}
+			{% for field, errors in form.errors.items %}
+				Error in field ({{field}}):
+				{% for error in errors %}
+					{{error}}
+				{% endfor %}
+				<br>
+			{% endfor %}
+		{% endif %}				
+	</div>
+    
+    <form method="post" id="incomplete_payment_form" >
+		{% csrf_token %}
+        <table id="search_table">
+        	{{form}}
+            <tr>
+                <td>
+                	<div style="margin-top:20px;">
+                		<input type="submit" name="submit" value="Finalize payment" />
+                	</div>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <br/>
+
+</div>
+
+
+<script>
+    $(document).ready(function(){
+        if($("#search_table #id_district").val()=='')
+        {
+            $("#search_table #id_sector").prop('disabled','disabled');
+            $("#search_table #id_cell").prop('disabled','disabled');
+            $("#search_table #id_village").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#search_table #id_sector").prop('disabled',false);
+            if($("#search_table #id_sector").val()=='')
+            {
+                $("#search_table #id_cell").prop('disabled','disabled');
+                $("#search_table #id_village").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#search_table #id_cell").prop('disabled',false);
+                if($("#search_table #id_cell").val()=='')
+                {
+                    $("#search_table #id_village").prop('disabled','disabled');
+                }
+                else
+                {
+                    $("#search_table #id_village").prop('disabled',false);
+                }
+            }
+        }
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+        $("#uniform-id_cell").after('<img style="margin-left:10px; display:none;" id="cell_refresh" ' + 'src="/static/images/refresh' +'.png"/>');
+
+        $("#incomplete_payment_form #id_business_select").autocomplete({
+            source: "/admin/ajax/search_business/",
+            minLength: 2,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#incomplete_payment_form #id_business_select").val(ui.item['name']);
+                $("#incomplete_payment_form #id_tin").val(ui.item['tin']);
+                $("#incomplete_payment_form #id_business").val(ui.item['id']);
+
+                branches = '<option value="" selected="selected">-----------</option>';
+                for (i in ui.item['branches']) {
+                    branches += '<option value="' + i + '" >' + ui.item['branches'][i] + '</option>';
+                }
+                $("#incomplete_payment_form #id_subbusiness").html(branches);
+            }
+        });
+
+        $("#incomplete_payment_form #id_tin").autocomplete({
+            source: "/admin/ajax/search_business/",
+            minLength: 2,
+            select: function (event, ui) {
+                event.preventDefault();
+                $("#incomplete_payment_form #id_business_select").val(ui.item['name']);
+                $("#incomplete_payment_form #id_tin").val(ui.item['tin']);
+                $("#incomplete_payment_form #id_business").val(ui.item['id']);
+
+                branches = '<option value="" selected="selected">-----------</option>';
+                for (i in ui.item['branches']) {
+                    branches += '<option value="' + i + '" >' + ui.item['branches'][i] + '</option>';
+                }
+                $("#incomplete_payment_form #id_subbusiness").html(branches);
+            }
+        });
+    });
+</script>
+
+
+
+
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "common/base_paytax_business.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+{% block css %}
+    <link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+
+
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+{% endblock %}
+
+{% block rightpanel %}
+    <style>
+		ul.tax_type_list
+		{
+			margin:0px;
+			padding:0px;
+			list-style-type:none;
+			display:block;
+		}
+		ul.tax_type_list > li
+		{
+			margin-right:10px;
+		}
+
+		ul.tax_type_list > li > label
+		{
+			font-weight:normal;
+			font-size:14px;
+		}
+
+		.group_select_box{
+			width:210px !important;
+		}
+
+        #branches select
+        {
+            margin-bottom:0px;
+            width:160px!important;
+        }
+        #branches input[type=text]
+        {
+            width:160px!important;
+        }
+        span#add_branch_button
+        {
+            border-collapse: collapse;
+            color:#3399cc;
+            cursor: auto;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 36px;
+            text-align: right;
+        }
+        span#add_branch_button:hover
+        {
+            text-decoration: underline;
+            cursor:pointer;
+        }
+        div.selector{
+            width:200px!important;
+        }
+
+
+	</style>
+
+    <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+
+
+
+
+
+
+<script type="text/javascript" >
+    $(function() {
+        $("input#id_date_started").datepicker({ dateFormat: "dd/mm/yy" });
+        $(".column").parents('p').css("float",'left');
+        $(".column").parents('p').css("margin-right",'30px');
+    })
+</script>
+
+<div style="margin-left:20px;">
+
+	<div style="margin-right:30px; text-align:left;">
+		<div class="box">
+		    <div class="box_title">
+				Edit business
+			</div>
+			<div class="content">
+				{% if form %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div id='search_table'>
+                            {{ form.as_p }}
+                        </div>
+                        <div style="margin-top:20px; display:block;">
+                            {% include "asset/ownership/_ownership_block.html" with asset_type="business" %}
+                        </div>
+                        <div style="margin-top:20px;display:block;">
+                            {% include "media/_media_box.html" with media=media type="business" id=obj_id %}
+                        </div>
+                        <div>
+						    <button type="submit" class="my_button">Save</button>
+					    </div>
+                    </form>
+                {% endif %}
+            </div>
+		</div>
+	</div>
+
+
+
+
+
+
+	
+</div>
+
+<script type="text/javascript"  src="/static/js/admin/populate_geo.js"></script>
+<script>
+    $(document).ready(function(){
+        if($("#id_district").val()=='')
+        {
+            $("#id_sector").prop('disabled','disabled');
+            $("#id_cell").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#id_sector").prop('disabled',false);
+            if($("#id_sector").val()=='')
+            {
+                $("#id_cell").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#id_cell").prop('disabled',false);
+            }
+        }
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +
+                'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' +
+                'src="/static/images/refresh' +
+                '.png"/>');
+
+    });
+</script>
+{% endblock %}

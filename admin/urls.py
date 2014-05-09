@@ -1,0 +1,38 @@
+from django.conf.urls import patterns, include, url
+
+urlpatterns = patterns('',
+    url(r'^edit_profile/$','admin.views.construction'),
+    url(r'^ajax/add_property/$','admin.ajax.add_property'),
+    url(r'^ajax/add_district/$','admin.ajax.add_district'),
+    url(r'^ajax/getPropertySector/$','admin.ajax.getPropertySector'),
+    url(r'^ajax/add_sector/$','admin.ajax.add_sector'),
+    #url(r'^ajax/generate_property_tax/$','admin.ajax.generate_property_tax'),
+    url(r'^ajax/add_council/$','admin.ajax.add_council'),
+    #url(r'^ajax/declare_value/$','admin.ajax.declare_value'),
+    url(r'^ajax/search_user/$','admin.ajax.search_user'),
+    url(r'^ajax/search_object_names/$','admin.ajax.search_object_names'),
+    #url(r'^ajax/search_district/$','admin.ajax.search_district'),
+    url(r'^ajax/search_citizen/$','admin.ajax.search_citizen'),
+    url(r'^ajax/search_property_in_area/$','admin.ajax.search_property_in_area'),
+    url(r'^ajax/search_property_field/$','admin.ajax.search_property_field'),
+    url(r'^ajax/search_property_by_fields/$','admin.ajax.search_property_by_fields'),
+	url(r'^ajax/search_properties_for_printing/$','admin.ajax.search_properties_for_printing'),
+	
+    url(r'^ajax/search_business/$','admin.ajax.search_business'),
+    url(r'^ajax/search_citizen_clean/$','admin.ajax.search_citizen_clean'),
+    url(r'^ajax/search_property_by_plot_id/$','admin.ajax.search_property_by_plot_id'),
+    url(r'^ajax/search_property_by_upi/$','admin.ajax.search_property_by_upi'),
+
+    url(r'^ajax/search_office/$','admin.ajax.search_office'),
+    url(r'^ajax/search_shop/$','admin.ajax.search_shop'),
+    url(r'^ajax/search_stall/$','admin.ajax.search_stall'),
+    url(r'^ajax/search_billboard/$','admin.ajax.search_billboard'),
+    url(r'^ajax/search_vehicle/$','admin.ajax.search_vehicle'),
+
+	url(r'^ajax/getObjectsByParentId/$','admin.ajax.getObjectsByParentId'),
+    url(r'^ajax/getPaymentSubcategory/$','admin.ajax.getPaymentSubcategory'),
+    url(r'^ajax/getPaymentAmount/$','admin.ajax.getPaymentAmount'),
+    url(r'^logout/$','admin.views.logout'),
+    url(r'^temppassword/','admin.views.set_temp_password'),
+    url(r'^$','admin.views.login'),
+)

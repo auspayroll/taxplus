@@ -1,0 +1,46 @@
+{% extends "common/base_report_print.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block mainbody %}
+
+{% if simple_pie_data %}
+	<div style="margin-top:20px; margin-left:20px; margin-bottom:20px; font-size:14px; font-weight:normal;">
+		{{graph_title}}
+	</div>
+	<div style="text-align:center;">
+		<table cellpadding="0" cellspacing="0" width="100%" style="max-width:900px; border:0px;">
+			<tr>
+				<td style="width:100%; padding-left:20px; text-align:left;" valign="top">
+					<div class="title">
+						<h4>
+							<span class="icon16 icomoon-icon-bars"></span>
+							<span>Graph</span>
+						</h4>
+					</div>
+					<div class="content">
+						<div class="simple-pie" style="height: 230px; width:100%;"></div>
+						<div style="display:none;" class="chart_data">{{simple_pie_data}}</div>
+					</div>
+				</td>
+			</tr>
+			<tr>
+				<td style="width:100%; padding-left:20px; text-align:left;" valign="top">
+					<div style="margin-top:30px;"></div>
+					<div class="title">
+						<h4>
+							<span class="icon16 icomoon-icon-bars"></span>
+							<span>Summary</span>
+						</h4>
+					</div>
+					<div class="content" style="line-height:25px; font-size:13px;">
+						<div>Properties with contact: {{result.with_contact|currency}} <span style="color: #3399cc;">({{result.with_contact_percentage}})</span></div>
+						<div>Properties without contact: {{result.without_contact|currency}} <span style="color: #3399cc;">({{result.without_contact_percentage}})</span></div>
+						<div>All: {{result.both|currency}}</div>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+{% endif %}
+{% endblock %}

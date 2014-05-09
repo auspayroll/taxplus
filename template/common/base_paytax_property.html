@@ -1,0 +1,152 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Tax" "/admin/tax/tax/"  %}
+	{% breadcrumb "Verify target"  "/admin/tax/tax/verify_target/" %}
+	{% breadcrumb "Property" %}
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/property1.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:13px; color:#5a5a5a;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+
+</style>
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; ">
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="min-width:360px; border-right:1px solid #cccccc; padding:10px 10px;" class="menu_panel">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Property Info</td>
+								<td align="right"><span class="edit"><a href="/admin/property/property/view_property/{{property.id}}/declarevalues/?redirect=tax">Edit</a> <b>/</b> <a href="/admin/tax/tax/property/{{property.id}}/map/">Show map</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="info">						
+						<table cellpadding="2" cellspacing="0" >
+							<tr>
+								<td width="100"><strong>UPI:</strong></td>
+								<td>{{property.getUPI}}</td>
+							</tr>
+							<tr>
+								<td><strong>Parcel ID:</strong></td>
+								<td>{{property.parcel_id}}</td>
+							</tr>
+							{% if property.village %}
+							<tr>
+								<td><strong>Village:</strong></td>
+								<td>{{property.village}}</td>
+							</tr>
+							{% endif %}
+							<tr>
+								<td><strong>Cell:</strong></td>
+								<td>{{property.cell}}</td>
+							</tr>
+							<tr>
+								<td><strong>Sector:</strong></td>
+								<td>{{property.sector.name}}</td>
+							</tr>
+							<!--tr>
+								<td><strong>Rental Income Tax Applicable:</strong></td>
+								<td valign="bottom"><input type="checkbox" {% if property.is_leasing %} checked="checked" {% endif %} id="leasing_checkbox" />
+								<input type="hidden" value="{{ property.id }}" id="property_id"/>
+								</td>
+							</tr-->
+							<tr>
+								<td><strong>Rental Income Tax Applicable:</strong></td>
+								<td valign="bottom">{% if property.is_leasing %} Yes {% else %} No {% endif %}
+								</td>
+							</tr>
+							<tr>
+								<td><strong>Land Lease Fee Applicable:</strong></td>
+								<td valign="bottom">{% if property.is_land_lease %} Yes {% else %} No {% endif %}
+							</tr>
+							<tr>
+								<td><strong>Tax Exemption:</strong></td>
+                                <td valign="bottom"> {% if property.is_tax_exempt %} 
+                                Yes (Reason: <i>{{ property.tax_exempt_reason }}</i>){% if property.tax_exempt_note %} [{{ property.tax_exempt_note }}] {% endif %}
+                                {% else %}
+                                <i>No</i> 
+                                {% endif %}
+								</td>
+							</tr>
+							<tr>
+								<td colspan="2">
+                                {% if property.is_tax_exempt %} <a href="{{property.getTaxExemptProofUrl}}" class="fancy_box">[ View Proof ]</a> {% endif %}
+								</td>
+							</tr>
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Taxes</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/property/{{property.id}}/taxes/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Fees</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/property/{{property.id}}/fees/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">History</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/property/{{property.id}}/history/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Attached Media</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/property/{{property.id}}/media/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Logs</td>
+								<td align="right"><span class="edit"><a href="/admin/tax/tax/property/{{property.id}}/logs/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+				</div>
+			</td>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px; background:white; padding-left:30px;">
+				{% block rightpanel %}
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+<div style="display:none" id="points">
+	{{points}}
+</div>
+{% endblock %}

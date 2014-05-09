@@ -1,0 +1,349 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Citizen" "/admin/citizen/citizen/"  %}
+	{% breadcrumb "Select citizen"  "/admin/citizen/citizen/view_citizen/" %}
+	{% breadcrumb "View citizen" %}
+{% endblock %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen_display.js"></script>
+{% endblock %}
+
+{% block mainbody %}
+
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:12px; color:black;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+	th{vertical-align:top;}
+	table#change_citizen_table tbody tr td { height:45px;}
+</style>
+<script type="text/javascript">
+$(document).ready(function(){
+	$("a[id^='view_']").click(function(){
+		id = $(this).attr('id');
+		id = id.replace('view_','show_');
+		$("div[id^='show_']").hide();
+		$("#"+id).show();
+	});
+	$(".tablesorter").tablesorter(); 
+});
+</script>
+
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; background:#f2f2f2; margin:20px 10px 10px 10px; box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1); ">
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="border-right:1px solid #cccccc; background:#f2f2f2; padding:10px 10px;">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Citizen Info</td>
+								<td align="right"><span class="edit"><a href="#" id="view_citizen">Edit</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="info">						
+						<table cellpadding="2" cellspacing="0" >
+							<tr>
+								<td width="100"><strong>Citizen ID:</strong></td>
+								<td>{{citizen.citizen_id}}</td>
+							</tr>
+							<tr>
+								<td><strong>First name:</strong></td>
+								<td>{{citizen.first_name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Middle name:</strong></td>
+								<td>{{citizen.middle_name}}</td>
+							</tr>
+							<tr>
+								<td><strong>Last name:</strong></td>
+								<td>{{citizen.last_name}}</td>
+							</tr>	
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Properties Owned</td>
+								<td align="right"><span class="edit"><a href="#" id="view_owned_property">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Add new property</td>
+								<td align="right"><span class="edit"><a href="#" id="view_new_property">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Associative Media</td>
+								<td align="right"><span class="edit"><a href="#" id="view_media">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Logs</td>
+								<td align="right"><span class="edit"><a href="#" id="view_logs">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					
+				</div>
+			</td>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px;">
+				<div id="show_media" style="text-align: left; display:none; padding: 0px 0px 10px 10px; border-bottom: 1px solid #eaeaea;">
+					{% include "media/_media_box.html" with media=media type="citizen" id=citizen.id %}
+				</div>
+				<div id="show_citizen" style="margin-left:20px;">
+					<form action="/admin/citizen/citizen/view_citizen/" method="post"  style="margin-left:10px; text-align:left;">
+						{% csrf_token %}
+							<fieldset id="citizen_basic_info" style="width:500px;">
+								<legend><h3 class="style_heading_1">Basic information</h3></legend>
+								<table cellpadding="0" cellspacing="0" style="margin-top:10px; margin-left:8px;">
+									<tr><td width="160">Citizen ID:</td><td>{{citizen_change_form.citizen_id}}</td></tr>
+									<tr><td>First name:</td><td>{{citizen_change_form.first_name}}</td></tr>
+									<tr><td>Middle name:</td><td>{{citizen_change_form.middle_name}}</td></tr>
+									<tr><td>Last name:</td><td>{{citizen_change_form.last_name}}</td></tr>
+									<tr><td>Gender:</td><td>{{citizen_change_form.gender}}</td></tr>
+					                <tr>
+						                <td>Date of birth (31/05/1980):</td>
+						                <td> 
+                                            {{ citizen_change_form.day_of_birth }} &nbsp;/&nbsp; {{ citizen_change_form.month_of_birth }} &nbsp;/&nbsp; {{ citizen_change_form.year_of_birth }} 
+						                </td>
+					                </tr>
+									<tr><td>Foreign identity type:</td><td>{{citizen_change_form.foreign_identity_type}}</td></tr>
+									<tr><td>Foreign identity number:</td><td>{{citizen_change_form.foreign_identity_number}}</td></tr>									
+								</table>		
+							</fieldset>
+							
+							<fieldset id="citizen_contact_details" style="width:500px; margin-top:30px;">
+								<legend><h3 class="style_heading_1">Contact details</h3></legend>
+								<table cellpadding="0" cellspacing="0" style="margin-top:10px; margin-left:8px;">
+									<tr><td width="160">Current address:</td><td>{{citizen_change_form.address}}</td></tr>
+									<tr><td>Po box:</td><td>{{citizen_change_form.po_box}}</td></tr>									
+									<tr><td>Primary phone:</td><td>{{citizen_change_form.phone_1}}</td></tr>
+									<tr><td>Secondary phone:</td><td>{{citizen_change_form.phone_2}}</td></tr>
+									<tr><td>Email:</td><td>{{citizen_change_form.email}}</td></tr>
+								</table>		
+							</fieldset>
+							
+							<fieldset id="citizen_other_details" style="width:500px; margin-top:30px;">
+								<legend><h3 class="style_heading_1">Other etails</h3></legend>
+								<table cellpadding="0" cellspacing="0" style="margin-top:10px; margin-left:8px;">
+									<tr><td width="160">Foreign identity type:</td><td>{{citizen_change_form.foreign_identity_type}}</td></tr>
+									<tr><td>Foreign identity number:</td><td>{{citizen_change_form.foreign_identity_number}}</td></tr>		
+									<tr><td>Status:</td><td>{{citizen_change_form.status}}</td></tr>									
+									<tr><td valign="top">Photo:</td><td>{{citizen_change_form.photo}}</td></tr>
+									
+								</table>		
+							</fieldset>
+							<br/>
+							<input type="submit" value="Update" name="submit"/>
+					</form>		
+				</div>
+				<div id="show_new_property" style="display:none;">
+					<table cellpadding="0" cellspacing="0" width="100%" height="100%">
+						<tr>
+							<td>
+								<div style="font-size:13px; font-weight:normal;margin-top:5px; margin-left:20px;">
+									<table cellpadding="0" cellspacing="0" style="text-align: left; line-height:28px;">
+										<tr>
+											<td width="120">Plot ID# </td><td>{{form.plot_id}}</td>
+										</tr>
+										<tr>	
+											<td>Parcel ID: </td><td>{{form.parcel_id}}</td>
+										</tr>
+										<tr>	
+											<td>Village: </td><td>{{form.village}}</td>
+										</tr>
+										<tr>	
+											<td>Cell: </td><td>{{form.cell}}</td>
+										</tr>
+										<tr>	
+											<td>Sector: </td><td>{{form.sector}}</td>
+										</tr>
+									</table>
+								</div>
+								<div style="margin-top:10px; margin-left:10px;">
+									<table cellpadding="0" cellspacing="0">
+										<tr>
+											<td>
+												<button id="search_property">Search Property</button>		
+											</td>
+											<td>
+												<div style="color:red; margin-left:10px; text-align:left; margin-top:5px; font-size:14px;" id="search_error">
+												</div>
+											</td>
+										</tr>						
+									</table>						
+								</div>
+								<div style="margin-top:20px;margin-bottom:30px;margin-left:10px;">
+									<table cellpadding="0" cellspacing="0">
+										<tr>
+											<td>Share: </td>
+											<td><input type="text" name="share" style="width:80px;" id="share"/>%</td>
+											<td>&nbsp;&nbsp;<button id="add_property">Add Property</button></td>
+											<td>
+												<div style="color:red; margin-left:10px; text-align:left; margin-top:5px; font-size:14px;" id="add_property_error">
+												</div>
+											</td>
+										</tr>
+									</table>			
+								</div>
+							</td>
+						</tr>
+						<tr>
+							<td align="center">
+								<div style="width:98%; height:500px; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+							</td>
+						</tr>
+					</table>
+				</div>				
+
+
+
+				<div id="show_owned_property" style="text-align:left; margin-top:5px; display:none;">
+					{% if not ownerships %}
+						No properties owned by this citizen!
+					{% else %}
+						<div class="log_table">
+							<table cellpadding="0" cellspacing="0" class="tablesorter" style="width:96%" id="owned_properties_table">
+								<thead>
+									<tr style="border-bottom:1px solid #555;">
+										<th class="firstrowfirstcolumn">No</td>
+										<th>Plot ID</td>
+										<th>Parcel ID</td>
+										<th>Village</td>
+										<th>Cell</td>
+										<th>Sector</td>
+										<th>Share</td>
+									</tr>
+								</thead>
+								<tbody>
+									{% for ownership in ownerships %}
+									<tr>
+										<td>{{forloop.counter}}</td>
+										<td>{{ownership.asset_property.plot_id}}</td>
+										<td>{{ownership.asset_property.parcel_id}}</td>
+										<td>{{ownership.asset_property.village}}</td>
+										<td>{{ownership.asset_property.cell}}</td>
+										<td>{{ownership.asset_property.sector.name}}</td>
+										<td>{{ownership.share}}</td>
+									</tr>
+									{% endfor %}					
+								</tbody>
+							</table>
+						</div>				
+					{% endif %}
+				</div>
+				
+				<div id="show_logs" style="display:none;">
+					{% if not logs|length %}
+						<div style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+							No logs found.	
+						</div>
+					{% else %}
+						<div class="log_table">
+							<table cellpadding="0" cellspacing="0"  class="tablesorter" style="width:96%">
+								<thead>
+									<tr style="border-bottom:1px solid #555;">
+										<th class="firstrowfirstcolumn">Date</th>
+										<th>Plot</th>
+										<th>Tran ID</th>
+										<th>Message</th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for log in logs %}
+									<tr>
+										<td class="firstcolumn">{{log.date_time|date:'d/m/y@H:i'}}</td>
+										<!--<td>{{log.username}}</td>-->
+										<td>
+											{% if not log.plot_id %}
+												<font style="color:#999;">{{log.plot_id}}</font>
+											{% else %}
+												{{log.plot_id}}
+											{% endif %}
+										</td>
+										<td>						
+											{% if not log.transaction_id %}
+											<font style="color:#999;">{{log.transaction_id}}</font>
+											{% else %}
+											{{log.transaction_id}}						
+											{% endif %}
+											</td>
+										<td class="message">{{log.message | safe}}</td>
+									</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+			
+						<div style="margin-top:20px; font-size:14px;" id="page_navigator">
+							<span>
+								Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
+								&nbsp;&nbsp;&nbsp;&nbsp;
+				    	
+				    			{% if logs.has_previous %}
+									<a href="/admin/citizen/citizen/view_citizen/?page=1">first</a>
+								{% else %}
+				        			first
+								{% endif %}
+				        
+								&nbsp;&nbsp;
+								{% if logs.has_previous %}
+									<a href="/admin/citizen/citizen/view_citizen/?page={{ logs.previous_page_number }}">previous</a>
+								{% else %}
+				        			previous
+								{% endif %}
+				        
+								&nbsp;&nbsp;
+								{% if logs.has_next %}
+									<a href="/admin/citizen/citizen/view_citizen/?page={{ logs.next_page_number }}">next</a>
+								{% else %}
+				        			next
+								{% endif %}
+								&nbsp;&nbsp;
+								{% if logs.has_next %}
+									<a href="/admin/citizen/citizen/view_citizen/?page={{ logs.paginator.num_pages }}">last</a>
+								{% else %}
+				        			last
+								{% endif %}
+							</span>
+						</div>
+			
+					{% endif %}
+			
+					<div id="search_plot_id" style="display:none">
+					</div>
+			
+					<div id="citizen_id" style="display:none">
+						{{citizen.citizen_id}}
+					</div>
+				</div>
+			</td>
+		</tr>
+	</table>
+</div>
+
+{% endblock %}

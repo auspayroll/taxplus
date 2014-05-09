@@ -1,0 +1,846 @@
+{% extends "common/base_design.html" %}
+
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Verify Target" "/admin/tax/tax/verify_target/" %}
+	{% breadcrumb "Show Taxes" show_tax_url %}	
+	{% breadcrumb "Pay tax" %}	
+{% endblock %}
+{% block mainbody %}
+
+<script type="text/javascript" src="{% static "js/fancybox/jquery.fancybox-1.3.4.pack.js" %}"></script>
+<link rel="stylesheet" href="{% static "js/fancybox/jquery.fancybox-1.3.4.css" %}" type="text/css" media="screen" />
+
+<script type="text/javascript" src="{% static "js/jquery.formatCurrency-1.4.0.min.js" %}"></script>
+
+<script type="text/javascript">
+    $(function(){
+		//$( ".date_picker" ).datepicker("option", "minDate", "01/01/" + (new Date).getFullYear());
+		$( ".date_picker" ).datepicker("option", "maxDate", 0);
+
+	    $("a.fancybox").fancybox();	
+
+        {% if tax_type == 'rental_income' %}
+        //start hardcode tax calculate here
+        function calculateRentalIncomeTax(){
+            var income = $("#id_last_year_income").asNumber();
+            var bank_interest = $("#id_bank_interest_paid").asNumber();
+            if( bank_interest == '')
+            {
+                bank_interest = 0;
+                $("#id_bank_interest_paid").val('0');
+            }
+
+            if( income != '' && !isNaN(income) && parseInt(income) > 0 && income != '' && !isNaN(bank_interest) && parseInt(bank_interest) >= 0)
+            {
+                if(parseInt(bank_interest) >= parseInt(income))
+                {
+                    //reset bank interest if over the income
+                    $("#id_bank_interest_paid").val(0);
+                    bank_interest = 0;
+                }
+                var taxable = 0;
+                if(bank_interest > 0)
+                {
+                    taxable = income - (income* {{formula.rate_with_bank_interest}}) - bank_interest;
+                    $("#taxable_formula").html("Taxable Amount = Rental Income - (Rental Income * {{formula.rate_with_bank_interest_percentage}}%) - Bank Interest Paid");
+                    $("#taxable_amount").html(taxable);
+                }
+                else
+                {
+                    
+                    taxable = income - (income*{{formula.rate}});
+                    $("#taxable_formula").html("Taxable Amount = Rental Income - (Rental Income * {{formula.rate_percentage}}%)");
+                    $("#taxable_amount").html(taxable);
+                }
+
+                $("#taxable_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+                var tax = 0;
+                if(parseInt(taxable) <= 180000)
+                {
+                    tax = 0;
+                    $("#tax_1").html(0);
+                    $("#tax_2").html(0);
+                }
+                else if(parseInt(taxable) <= 1000000 && parseInt(taxable) > 180000 )
+                {
+                    taxable = taxable - 180000;
+                    tax = Math.round(taxable * 0.2);
+                    $("#tax_1").html(tax);
+                    $("#tax_2").html(0);
+
+                }
+                else
+                {
+                    tax_1 = Math.round((1000000 - 180000) * 0.2);
+                    taxable = taxable - 1000000;
+                    tax_2 = Math.round(taxable * 0.3)
+                    tax = tax_1 + tax_2;
+                    $("#tax_1").html(tax_1);
+                    $("#tax_2").html(tax_2);
+                }
+
+                $("#tax_1").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#tax_2").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+                var fines = $("#tax_calculation.rental_income #fines").asNumber();
+                if( fines != '' && !isNaN(fines) && fines > 0)
+                {
+                    tax = tax + parseInt(fines);
+                    //enable fine description
+                    $("#fines_description").removeAttr("disabled");
+                }
+                else
+                {
+                    //disable fine description
+                    $("#fines_description").attr("disabled","disabled");
+                    $("#tax_calculation.rental_income #fines").val(0);
+                }
+
+                $("#final_tax_due").html(tax);
+                $("#id_amount").val(tax);
+                $("#id_final_tax_due").val(tax);
+
+                $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+            else
+            {
+                $("#id_last_year_income").val(0);
+                $("#id_amount").val(0);
+                $("#taxable_amount").html(0);
+                $("#tax_1").html(0);
+                $("#tax_2").html(0);
+                $("#final_tax_due").html(0);
+                $("#id_final_tax_due").val(0);
+            }
+        }       
+
+        //rental income tax
+        $("#tax_calculation.rental_income #id_last_year_income").keyup(function(){
+            calculateRentalIncomeTax();
+        });
+        $("#tax_calculation.rental_income #id_bank_interest_paid").keyup(function(){
+            calculateRentalIncomeTax();
+        });
+        $("#tax_calculation.rental_income #fines").keyup(function(){
+            calculateRentalIncomeTax();
+        });
+
+        {% endif %}
+
+        function calculateTradingLicenseTax()
+        {
+            var total = 0;
+
+            if($("#id_yearly_turnover").length > 0)
+            {
+                total = $("#id_yearly_turnover").val();
+            }
+            else if ($("#activities_label").length > 0)
+            {
+                taxes = { 'a1': 4000, 'a2':6000, 'a3': 8000,
+                        'b1': 4000, 'b2':6000, 'b3': 8000,
+                        'c1': 20000, 'c2':30000, 'c3': 40000,
+                        'd1': 40000, 'd2':40000, 'd3': 40000,
+                        'e1': 20000, 'e2':20000, 'e3': 20000,
+                        'f1': 20000, 'f2':30000, 'f3': 40000
+                 };
+                
+                $("#tax_calculation.trading_license input[type=text]").each(function(){
+                    if($(this).val()  != '' && !isNaN($(this).val() ) && $(this).val()  > 0 && $(this).attr('id') != 'fines' && $(this).attr('id') != 'fines' && $(this).attr('id') != 'fines_description'  )
+                    {
+                        total += taxes[ $(this).attr('id') ] * $(this).val();
+                    }
+                });
+
+                $("#tax_calculation.trading_license input:checked").each(function(){
+                    total += taxes[ $(this).attr('id') ];
+                });
+            }
+            else
+            {
+                total = parseInt($("#id_tax_due").asNumber());
+            }
+
+            $("#id_tax_due").html(total);
+            $("#id_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+        
+            if($("#partial_tax").length > 0)
+            {
+                var percent = $("#partial_percent").asNumber();
+                total = Math.round(total * parseInt(percent) / 100);
+                $("#partial_tax").html(total);
+                $("#partial_tax").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+
+            var fines = $("#tax_calculation.trading_license #fines").asNumber();
+            if( fines != '' && !isNaN(fines) && fines > 0)
+            {
+                total = parseInt(total) + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+            }
+            else
+            {
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#tax_calculation.trading_license #fines").val(0);
+            }
+
+            $("#id_amount").val( total);
+            $("#final_tax_due").html( total);                    
+            $("#id_final_tax_due").val(total);
+
+            $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+        }
+
+        //set up event listeners to calculate taxes:
+        //pay remaining amounts
+        $("#tax_calculation.pay_remaining #fines").keyup(function(){
+            var fines = $("#tax_calculation.pay_remaining #fines").asNumber();
+            var total = $("#tax_calculation.pay_remaining #remaining_tax_due").asNumber();
+                
+            //plus late fee if applicable
+            if($("#late_fee_surcharge").length > 0)
+            {
+                total = Math.round(parseFloat(total) + parseFloat($("#late_fee_surcharge").val()) + parseFloat($("#late_fee_interest").val()))
+            }
+
+            if( fines != '' && !isNaN(fines) && fines > 0)
+            {
+                total = parseInt(total) + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+            }
+            else
+            {
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#tax_calculation.pay_remaining #fines").val(0);
+            }
+
+            $("#id_amount").val( total);
+            $("#final_tax_due").html( total);
+            $("#id_final_tax_due").val(total);
+        });
+
+
+        //trading license tax
+        $("#tax_calculation.trading_license #id_yearly_turnover").change(function(){
+            calculateTradingLicenseTax();
+        });
+
+        $("#tax_calculation.trading_license input").each(function(){
+            $(this).change(function(){ calculateTradingLicenseTax(); });
+            $(this).keyup(function(){ calculateTradingLicenseTax(); });
+        });
+
+        $("#tax_calculation.fixed_asset #fines").keyup(function(){
+            var fines = $("#fines").val();
+            if(fines == '' || isNaN(fines) || parseInt(fines) < 0)
+            {
+                $("#fines").val(0);
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#final_tax_due").html($("#final_tax_without_other_fine").val());
+                $("#id_final_tax_due").val($("#final_tax_without_other_fine").val());
+                $("#id_amount").val($("#final_tax_without_other_fine").val());
+
+                $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+            else
+            {
+                var final_tax = parseInt($("#final_tax_without_other_fine").val()) + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+                $("#final_tax_due").html(final_tax);
+                $("#id_final_tax_due").val(final_tax);
+                $("#id_amount").val(final_tax);
+
+                $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+        });
+
+        //update the late fees if Paid Date is updated if exist
+        {% if formula.late_fee_surcharge_rate %}
+        if($("#id_due_date").length > 0)
+        {
+            $("#id_paid_date").change(function(){
+
+                var paid_date_info = $(this).val().split("/");
+                var due_date_info = $("#id_due_date").html().split("/");
+                var paid_date = new Date(paid_date_info[2],paid_date_info[1] - 1,paid_date_info[0]);
+                var due_date = new Date(due_date_info[2],due_date_info[1] - 1,due_date_info[0]);
+                var overdue_month = 0;
+                var late_fee_interest = 0;
+                var late_fee_surcharge = 0;
+                if($("#remaining_tax_due").length > 0)
+                {
+                    var tax_due = $("#remaining_tax_due").asNumber();
+                }
+                else if($("#id_fee").length > 0)
+                {
+                    var tax_due = $("#id_fee").asNumber();
+                }
+                else
+                {
+                    var tax_due = $("#id_tax_due").asNumber();
+                }
+
+                if(paid_date > due_date)
+                {
+                    month1 = parseInt(paid_date_info[1]);
+                    month2 = parseInt(due_date_info[1]);
+                    date1 = parseInt(paid_date_info[0]);
+                    date2 = parseInt(due_date_info[0]);
+                    year_diff = parseInt(due_date_info[2]) - parseInt(paid_date_info[2]);
+                    if( month2 > month1)
+                    {
+                        overdue_month = (month1 - month2) + (12 * year_diff);
+                    }
+                    else
+                    {
+                        overdue_month = month1 - month2;
+                    }
+            
+                    if (date1 > date2)
+                    {                        
+                        overdue_month = overdue_month + 1;
+                    }
+
+                    late_fee_interest = parseFloat(tax_due) * {{ formula.late_fee_interest_rate}} * overdue_month;
+                    late_fee_surcharge = Math.round(parseFloat(tax_due) * {{ formula.late_fee_surcharge_rate}});
+                    if(late_fee_surcharge > {{formula.late_fee_surcharge_max}})
+                    {
+                        late_fee_surcharge = {{formula.late_fee_surcharge_max}};
+                    }
+                }
+
+                final_amount = Math.round(parseFloat(tax_due) + late_fee_interest + late_fee_surcharge);
+
+                $("#overdue_months").html(overdue_month);
+                $("#late_fee_surcharge_label").html(late_fee_surcharge);
+                $("#late_fee_interest_label").html(late_fee_interest);
+                $("#late_fee_surcharge").val(late_fee_surcharge);
+                $("#late_fee_interest").val(late_fee_interest);
+                $("#final_tax_due").html(final_amount);
+                $("#id_final_tax_due").val(final_amount);
+                $("#id_amount").val(final_amount);
+
+                $("#late_fee_surcharge_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#late_fee_interest_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+                $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+            });
+        }
+        {% endif %}
+
+        {% if formula.last_year_income %}
+        //precalculate rental tax if there is last year income prefilled
+        if($("#id_last_year_income").length > 0)
+        {
+            calculateRentalIncomeTax();
+        }
+        {% endif %}
+
+        //set up pending payment dialog
+        $('<div id="dialog"></div>').appendTo('body')
+            .html('<div>Payment Amount is not equal to the expected Tax Due! Are you sure this is the correct input?'
+            + '<br/> - If this is a typo mistake, please click [No] and re-input'
+            + '<br/> - If this is the correct amount, please select the reason for this and click on [Yes] to set this payment to Pending and waiting for Approval.'
+            + '<br/><br/><label><b>Reason</b></label><select id="pending_reason">{% for i in pending_payment_reasons %}<option value="{{i.0}}">{{i.1}}</option>{% endfor %}</select>'
+            + '<br/><label><b>Note</b></label><textarea maxlength="500" id="pending_note"></textarea>'
+            + '</div>')
+            .dialog({
+            width: 500,
+            autoOpen: false,
+            title: "Confirmation of Pending Payment",
+            modal: true,
+            buttons : {
+                "Yes" : function() {
+                    $("#id_submit_pending").val(1);
+                    $("#id_pending_reason").val($("#pending_reason").val());
+                    $("#id_pending_note").val($("#pending_note").val());
+                    $("#pay_tax_form").submit();
+                },
+                "No" : function() {
+                    $(this).dialog("close");
+			        $("#id_amount_paid").focus();
+                }
+                }
+        });
+
+        $("#pay_tax_form").submit(function(){
+
+            var final_tax_due = $("#final_tax_due").asNumber();
+            if ( final_tax_due =='' || isNaN(final_tax_due) || parseInt(final_tax_due) <= 0)
+            {
+			    $("#message").html("Please input data to calculate Final Tax Due !");
+                $("#message").show();
+                return false;	
+            }
+
+            var amount = $("#id_amount").asNumber();
+		    if(amount=='' || isNaN(amount) || parseInt(amount) <= 0 )
+		    {
+			    $("#id_amount_paid").focus();
+			    $("#message").html("Please enter your Payment Amount!");
+                $("#message").show();
+			    return false;	
+		    }
+
+		    if($("#id_receipt_no"))
+		    {
+			    if($("#id_receipt_no").val()=='')
+			    {
+				    $("#id_receipt_no").focus();
+				    $("#message").html("Please enter receipt number!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_bank"))
+		    {
+			    if($("#id_bank").val()=='')
+			    {
+				    $("#message").html("Please select a bank!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+		    if($("#id_paid_date"))
+		    {
+			    if($("#id_paid_date").val()=='')
+			    {
+				    $("#id_paid_date").focus();
+				    $("#message").html("Please pick a paid date!");
+                    $("#message").show();
+				    return false;	
+			    }
+		    }
+
+            //request for fine description if there is a input fine amount
+		    if( $("#fines").length > 0 && parseInt($("#fines").val().replace(/,/g, '')) > 0 && $("#fines_description").val() == "" )
+		    {
+			    $("#fines_description").focus();
+			    $("#message").html("Please enter description for the inputted fine amount!");
+                $("#message").show();
+			    return false;	
+		    }
+            else
+            {
+                if($("#fines").length > 0)
+                {
+                    $("#id_fine_amount").val( $("#fines").asNumber());
+                    $("#id_fine_description").val( $("#fines_description").val());
+                }
+            }
+
+		    if(parseInt(amount) != final_tax_due && $("#id_submit_pending").val() == '')
+		    {
+                $("#dialog").dialog("open");
+			    return false;	
+		    }
+
+            /*
+		    if ( parseFloat(amount) + parseFloat($("#id_credit").val()) > parseFloat(final_tax_due) )
+		    {
+			    $("#id_amount_paid").focus();
+			    if (!confirm('Are you sure to overpay the amount?')) 
+			    {
+				    $("#message").hide(); 
+				    return false;	
+			    }				
+			    //$("#message").html("Your payment amount is greater than the expected tax due!");
+		    }
+            */
+
+            //if all is validated, start reformat any currency fields to number before submit
+            $("#id_amount").val($("#id_amount").asNumber());
+            $(".pay_tax_btn").hide();
+        });
+    });
+
+</script>
+<div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
+	<h4>{{ tax_label }}</h4>
+	<div class="note">Amount Due is calculated as follow:</div>
+
+	<div style="margin-top:10px;">
+		<form id="pay_tax_form" method="post" >
+			{% csrf_token %}
+			<table cellpadding="0" cellspacing="0" >
+                {% if tax.remaining_amount != None and tax.remaining_amount < tax.amount %}
+                <tr>
+                    <td colspan="2">
+                        <table id="tax_calculation" class="pay_remaining" border="1"  cellpadding="0" cellspacing="0" >
+                            <tr>
+                                <th><label>Amount Due</label></th>
+                                <td>{{ tax.amount|currency  }} {{tax.currency|title}}</td>
+                            </tr>     
+                            <tr>
+                                <th><label>Past Payment Amount (<a href="/admin/tax/tax/past_payments/?type={{ tax_type }}&id={{ tax.id }}" class="fancybox">more info</a>)</label></th>
+                                <td>{{ formula.past_payment_amount|currency  }} {{tax.currency|title}}</td>
+                            </tr>        
+                            <tr>
+                                <th><label>Remaining Amount = Amount Due - Past Payment Amount</label></th>
+                                <td><b><span id="remaining_tax_due">{{ tax.remaining_amount|currency  }}</span> {{tax.currency|title}}</b></td>
+                            </tr>  
+                            {% if formula.late_fee_surcharge and formula.late_fee_surcharge > 0 %}
+                            <tr>
+                                <th><label>Due Date</label></th>
+                                <td id="id_due_date" >{{ formula.due_date|date:"d/m/Y" }}</td>
+                            </tr>  
+                            <tr>
+                                <th><label>Number of Months Overdue</label></th>
+                                <td id="overdue_months">{{ formula.late_fee_month}}</td>
+                            </tr>  
+                            <tr>
+                                <th><label>Late Penalty = {{formula.late_fee_surcharge_formula}}</label></th>
+                                <td><span id="late_fee_surcharge_label" >{{ formula.late_fee_surcharge|currency }}</span> {{tax.currency|title}}
+                                    <input type="hidden" id="late_fee_surcharge" name="late_fee_surcharge" value="{{ formula.late_fee_surcharge}}" />
+                                </td>
+                            </tr>  
+                            <tr>
+                                <th><label>Late Fee Interest = {{ formula.late_fee_interest_formula }}</label></th>
+                                <td><span id="late_fee_interest_label" >{{ formula.late_fee_interest|currency }}</span> {{tax.currency|title}}
+                                    <input type="hidden" id="late_fee_interest" name="late_fee_interest" value="{{ formula.late_fee_interest}}" />
+                                </td>
+                            </tr>       
+                            {% endif %}
+                            <tr>
+                                <th class="first_col"><label>Fines (if applicable)</label></th>
+                                <td colspan="3"  class="first_col"><input type="text" id="fines" value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}</td>
+                            </tr>      
+                            <tr>
+                                <th class="first_col"><label>Fine Description (if applicable)</label></th>
+                                <td colspan="3"  class="first_col"><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+                            </tr>    
+                            <tr>
+                                <th><label>Final Amount = Remaining Amount{% if formula.late_fee_surcharge and formula.late_fee_surcharge > 0 %} + Late Fee Surchage + Late Fee Interest{% endif %} + Fines</label></th>
+                                <td><b><span id="final_tax_due">{{ formula.final_amount|currency  }}</span> {{tax.currency|title}}</b></td>
+                            </tr>  
+                        </table>
+                    </td>
+                </tr>
+                {% elif tax_type == 'trading_license' %}
+                    {% if tax.business.vat_register == False or tax.subbusiness.business.vat_register == False %} 
+                    <tr>
+                        <td colspan="2">
+                            <table id="tax_calculation" class="trading_license" cellpadding="0" cellspacing="0"  border="1" style="text-align:center;">
+                                {% if not formula.amount > 0 %}
+                                <tr>
+                                    <th id="activities_label" class="first_col">Activity (Tag your group)</th>
+                                    <th>Rural</th>
+                                    <th>Town</th>
+                                    <th>Kigali</th>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">A) Vendors without shops, small scale technicians who do not use machine</th>
+                                    <td>4,000 Rwf <br/> <input type="checkbox" id="a1"  /></td>
+                                    <td>6,000 Rwf <br/> <input type="checkbox" id="a2"  /></td>
+                                    <td>8,000 Rwf <br/> <input type="checkbox" id="a3"  /></td>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">B) Transport of people and goods on motorcycles</th>
+                                    <td>4,000 Rwf / each <br/> <input type="text" id="b1" /></td>
+                                    <td>6,000 Rwf / each <br/> <input type="text" id="b2" /></td>
+                                    <td>8,000 Rwf / each <br/> <input type="text" id="b3" /></td>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">C) Traders and technicians who use machines</th>
+                                    <td>20,000 Rwf <br/> <input type="checkbox" id="c1"  /></td>
+                                    <td>30,000 Rwf <br/> <input type="checkbox" id="c2"  /></td>
+                                    <td>40,000 Rwf <br/> <input type="checkbox" id="c3"  /></td>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">D) All other vehicle besides bicycles (e.g. cars)</th>
+                                    <td>40,000 Rwf / each <br/> <input type="text" id="d1" /></td>
+                                    <td>40,000 Rwf / each <br/> <input type="text" id="d2" /></td>
+                                    <td>40,000 Rwf / each <br/> <input type="text" id="d3" /></td>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">E) For transport activities by motor boat</th>
+                                    <td>20,000 Rwf / each <br/> <input type="text" id="e1" /></td>
+                                    <td>20,000 Rwf / each <br/> <input type="text" id="e2" /></td>
+                                    <td>20,000 Rwf / each <br/> <input type="text" id="e3" /></td>
+                                </tr>
+                                <tr>
+                                    <th class="first_col">F) Other profit otiented activity</th>
+                                    <td>20,000 Rwf <br/> <input type="checkbox" id="c1"  /></td>
+                                    <td>30,000 Rwf <br/> <input type="checkbox" id="c2"  /></td>
+                                    <td>40,000 Rwf <br/> <input type="checkbox" id="c3"  /></td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <th class="first_col">Sum of Activity Taxes {{ tax_type }}</th>
+                                    <td colspan="3" style="text-align:left;"><span id="id_tax_due">{{ formula.sum_activity_tax|currency  }}</span> {{tax.currency|title}}</td>
+                                </tr>  
+                                {% if formula.partial_percent %}
+                                <tr>
+                                    <th class="first_col">Days Covered</th>
+                                    <td colspan="3" style="text-align:left;"><span id="day_covered">{{ formula.tax_days }}</span> days</td>
+                                </tr>  
+                                <tr>
+                                    <th class="first_col">Percentage out of full year</th>
+                                    <td colspan="3" style="text-align:left;"><span id="partial_percent">{{ formula.partial_percent }}%</span></td>
+                                </tr>  
+                                <tr>
+                                    <th class="first_col">Tax Due for this period = Sum of Activity Taxes * Percentage out of full year</th>
+                                    <td colspan="3" style="text-align:left;"><span id="partial_tax">{{ formula.partial_tax|currency  }}</span> {{tax.currency|title}}</td>
+                                </tr>  
+                                {% endif %}
+                                <tr>
+                                    <th class="first_col"><label>Fines (if applicable)</label></th>
+                                    <td colspan="3"  class="first_col"><input type="text" id="fines"  value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}</td>
+                                </tr>      
+                                <tr>
+                                    <th class="first_col"><label>Fine Description (if applicable)</label></th>
+                                    <td colspan="3"  class="first_col"><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+                                </tr>    
+                                <tr>
+                                    <th class="first_col">Final Tax Due</th>
+                                    <td colspan="3"  style="text-align:left;"><b><span id="final_tax_due">{{ formula.final_amount|currency  }}</span> {{tax.currency|title}}</b></td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="2">
+                            <table id="tax_calculation" class="trading_license" border="1"  cellpadding="0" cellspacing="0" >
+                                <tr>
+                                    <th>Yearly Turnover:</th>
+                                    <td>
+                                        {% if formula.yearly_turnover %}
+                                        <span >
+                                            {% for k,v in formula.yearly_turnover_tax.items %}
+                                                {% if v == formula.yearly_turnover %}
+                                                    {{ k }}
+                                                {% endif %}
+                                            {% endfor %} {{tax.currency|title}}
+                                        </span>
+                                        {% else %}
+                                        <select id="id_yearly_turnover" name="yearly_turnover">
+                                            <option value="0" >--- Select yearly turnover ---</option>
+                                            {% for k,v in formula.yearly_turnover_tax.items %}
+                                                <option value="{{v}}" {% if formula.yearly_turnover == v %} selected="selected" {% endif %} >{{ k }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {% endif %}
+                                    </td>
+                                </tr>  
+                                {% if formula.partial_percent %}
+                                <tr>
+                                    <th>Days Covered</th>
+                                    <td><span id="day_covered">{{ formula.tax_days }}</span> days</td>
+                                </tr>  
+                                <tr>
+                                    <th>Percentage out of full year</th>
+                                    <td><span id="partial_percent">{{ formula.partial_percent }}%</span></td>
+                                </tr>  
+                                <tr>
+                                    <th>Tax Due for this period</th>
+                                    <td><span id="partial_tax">{{ formula.partial_tax|currency  }}</span> {{tax.currency|title}}</td>
+                                </tr>  
+                                {% endif %}
+                                <tr>
+                                    <th>Fines (if applicable)</th>
+                                    <td><input type="text" id="fines" value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}</td>
+                                </tr>  
+                                <tr>
+                                    <th>Fine Description (if applicable)</th>
+                                    <td><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+                                </tr>
+                                <tr>
+                                    <th><label>Final Tax Due</label></th>
+                                    <td><b><span id="final_tax_due">{{ formula.final_amount|currency  }}</span> {{tax.currency|title}}</b></td>
+                                </tr>  
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% elif tax_type == 'rental_income' %}
+                <tr>
+                    <td colspan="2">
+                        <table id="tax_calculation" class="rental_income" border="1"  cellpadding="0" cellspacing="0" >
+                            <tr>
+                                <th><label>Rental Income Tax Year {{ tax_year|add:"-1" }}</label></th>
+                                <td>
+                                    {% if formula.last_year_income %}
+                                        {{ formula.last_year_income|currency }}
+                                        <input type="hidden" id="id_last_year_income" value="{{formula.last_year_income}}" />
+                                    {% else %}
+                                        {{ form.last_year_income }}
+                                    {% endif %} {{tax.currency|title}}</td>
+                            </tr>              
+                            <tr>
+                                <th><label>Bank Interest Paid</label></th>
+                                <td>{% if formula.last_year_income %}
+                                        {{ formula.bank_interest_paid|currency  }}
+                                        <input type="hidden" id="id_bank_interest_paid" value="{{formula.bank_interest_paid}}" />
+                                    {% else %}
+                                        {{ form.bank_interest_paid }}
+                                    {% endif %} {{tax.currency|title}}</td>
+                            </tr>     
+                            <tr>
+                                <th><label id="taxable_formula">Taxable Amount = Rental Income - (Rental Income * {{formula.rate_percentage}}%)</label></th>
+                                <td><span id="taxable_amount">0</span> {{tax.currency|title}}</td>
+                            </tr>     
+                            <tr>
+                                <th><label>The first {{formula.range_limit_1|currency}} Rwf Taxable Rental Income is tax free</label></th>
+                                <td>0 {{tax.currency|title}}</td>
+                            </tr>        
+                            <tr>
+                                <th><label>The Taxable Rental Income between {{formula.range_limit_1|currency}} and {{formula.range_limit_2|currency}} Rwf is taxed with {{formula.range_percentage_2}}%</label></th>
+                                <td><span id="tax_1">0</span> {{tax.currency|title}}</td>
+                            </tr>   
+                            <tr>
+                                <th><label>The Taxable Rental Income above {{formula.range_limit_2|currency}} Rwf is taxed with {{formula.range_percentage_3}}%</label></th>
+                                <td><span id="tax_2">0</span> {{tax.currency|title}}</td>
+                            </tr>   
+                            <tr>
+                                <th>Fines (if applicable)</th>
+                                <td><input type="text" id="fines" value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}</td>
+                            </tr>  
+                            <tr>
+                                <th>Fine Description (if applicable)</th>
+                                <td><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+                            </tr>
+                            <tr>
+                                <th><label>Final Tax Due</label></th>
+                                <td><b><span id="final_tax_due">{{ formula.final_amount|currency }}</span> {{tax.currency|title}}</b></td>
+                            </tr>  
+                        </table>
+                    </td>
+                </tr>                
+                {% elif tax_type == 'fixed_asset' %}
+                <tr>
+                    <td colspan="2">
+                        <table id="tax_calculation" class="fixed_asset" border="1"  cellpadding="0" cellspacing="0" >
+                            <tr>
+                                <th rowspan="4" ><label>Tax Due</label></th>
+                                <td><label>Property Purpose</label></td>
+                                <td>{{ formula.purpose }}</td>
+                            </tr>  
+                            <tr>
+                                <td><label>Latest Declared Value</label></td>
+                                <td>{{ formula.declared_value|currency }} {{tax.currency|title}}</td>
+                            </tr>  
+                            <tr>
+                                <td><label>Taxable Amount = {{ formula.taxable_amount_formula }}</label></td>
+                                <td>{{ formula.taxable_amount|currency }} {{tax.currency|title}}</td>
+                            </tr>  
+                            <tr>                                
+                                <td><label>Tax Due = Taxable Amount * {{ formula.tax_rate_label}}</label></td>
+                                <td><span id="id_tax_due">{{ formula.tax_due|currency }}</span> {{tax.currency|title}}</td>
+                            </tr>  
+                            {% if formula.partial_percent %}
+                            <tr>
+                                <th rowspan="3" ><label>Partial Tax Amount From {{ tax.period_from|date:"d/m/Y" }} - {{ tax.period_to|date:"d/m/Y" }}</label></th>
+                                <td><label>Days Covered</label></td>
+                                <td><span id="day_covered">{{ formula.tax_days }}</span> days</td>
+                            </tr>  
+                            <tr>
+                                <td><label>Percentage out of full year</label></td>
+                                <td><span id="partial_percent">{{ formula.partial_percent }}%</span></td>
+                            </tr>  
+                            <tr>
+                                <td><label>Tax Due for this period</label></td>
+                                <td><span id="partial_tax">{{ formula.partial_tax|currency }}</span> {{tax.currency|title}}</td>
+                            </tr>  
+                            {% endif %}
+                            <tr>
+                                <th rowspan="6" ><label>Fines</label></th>
+                                <td><label>Due Date</label></td>
+                                <td id="id_due_date">{{ formula.due_date|date:"d/m/Y" }}</td>
+                            </tr>  
+                            <tr>
+                                <td><label>Number of Months Overdue</label></td>
+                                <td id="overdue_months">{{ formula.late_fee_month}}</td>
+                            </tr>  
+                            <tr>
+                                <th><label>Late Fee Surcharge = {{formula.late_fee_surcharge_formula}}</label></th>
+                                <td><span id="late_fee_surcharge_label" >{{ formula.late_fee_surcharge|currency}}</span> {{tax.currency|title}}
+                                    <input type="hidden" id="late_fee_surcharge" name="late_fee_surcharge" value="{{ formula.late_fee_surcharge}}" />
+                                </td>
+                            </tr>  
+                            <tr>
+                                <th><label>Late Fee Interest = {{ formula.late_fee_interest_formula }}</label></th>
+                                <td><span id="late_fee_interest_label" >{{ formula.late_fee_interest|currency}}</span> {{tax.currency|title}}
+                                    <input type="hidden" id="late_fee_interest" name="late_fee_interest" value="{{ formula.late_fee_interest}}" />
+                                </td>
+                            </tr>          
+                            <tr>
+                                <td><label>Other Fines</label></td>
+                                <td><input type="text" id="fines" value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}
+                                    <input type="hidden" id="final_tax_without_other_fine" value="{{formula.final_amount}}" />
+                                </td>
+                            </tr>  
+                            <tr>
+                                <td><label>Other Fine Description (incomeplete or misleading fine, etc)</label></td>
+                                <td><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+                            </tr>  
+                            <tr>
+                                <th colspan="2" ><label>Final Remaining Tax Due = Remaining Amount + Late Fee Surchage + Late Fee Interest + Other Fines</label></th>
+                                <td><b><span id="final_tax_due">{{ formula.final_amount|currency }}</span> {{tax.currency|title}}</td>
+                            </tr>  
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
+
+                {% include "tax/_fee_calculation.html" with fee=tax formula=formula %}
+
+                <tr><td colspan="2"><br/></td></tr>
+                <tr><td colspan="2"><div class="note">Please enter the following payment details:</div></td></tr>
+	            <tr><td colspan="2">
+	                <div id="message" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin: 15px; margin-left:0px;"></div>
+                    {% if messages %}
+                        <ul class="messages">
+                            {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+    
+                    {% for field in form %}
+                    {{field.errors}}
+                    {% endfor %}
+                </td>
+				</tr>
+				<tr>
+					<th>
+						<label>Remaining Credit:</label>
+					</th>
+						<!-- check whether there exists credit for this business or sub business   -->
+					<td>                    
+                        <input id="id_credit" disabled name ="credit" type="text" value ="" />
+					</td>
+				</tr>
+				<tr>
+					{{ form }}
+				</tr>
+				<tr>
+					<td colspan="2" style="line-height:50px;">
+                        <input type="submit" class="pay_tax_btn" name="finalize" value="Finalize" />
+                    </td>
+				</tr>
+			</table>
+            <br/>
+		</form>
+	</div>
+</div>
+{% endblock %}

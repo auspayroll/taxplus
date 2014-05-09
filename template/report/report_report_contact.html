@@ -1,0 +1,107 @@
+{% extends "common/base_report.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block right_panel_search_form %}
+<style type="text/css">
+	form input[type="submit"], form input[type="button"] {
+		background: #00B5D0;
+		padding: 5px 20px 5px 20px;
+		font-size: 15px;
+		font-weight: bold;
+		color: white;
+		cursor: pointer;
+	}
+	.my_button:hover {
+		background-color: rgb(47, 150, 180);
+	}
+</style>
+	<form style="padding:0px; margin:0px;" action="" method="post">
+	{% csrf_token %}
+		<div>
+			<table id="search_table">
+				<tr>
+					<td>District:</td>
+					<td>{{form.district}}</td>
+					<td style="padding-left:20px;">Sector:</td>
+					<td>{{form.sector}}</td>
+					<td style="padding-left:20px;">Cell:</td>
+					<td>{{form.cell}}</td>
+					<td style="padding-left:20px;"><button type="submit" class="my_button">Get report</button></td>
+				</tr>
+			</table>
+		</div>
+		<div>
+			
+		</div>
+	</form>
+{% endblock %}
+
+
+{% block right_panel_box_title %}
+	Report on property contact
+{% endblock %}
+
+
+
+{% block printer %}
+	{% if graph_title %}
+		<form id="my_form" name="my_form" style="padding:0px; margin:0px;" action="" target="_blank" method="post">
+		{% csrf_token %}
+			<div style="display:none;">
+				<table>
+					<tr>
+						<td>{{form.district}}</td>
+						<td>{{form.sector}}</td>
+						<td>{{form.cell}}</td>
+						<td><input type="text" name="toPrint" value="true" /></td>
+					</tr>
+				</table>
+			</div>
+			<a href="#" onclick="document.my_form.submit();"><img src="/static/images/printer.png" style="width:27px;" border="0" /></a>
+		</form>	
+	{% endif %}
+{% endblock %}
+
+
+
+
+
+{% block right_panel_content %}
+
+{% if simple_pie_data %}
+<table cellpadding="0" cellspacing="0" width="100%">
+	<tr>
+		<td style="width:50%; padding-right:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Graph</span>
+				</h4>
+			</div>
+			<div class="content">
+				<div class="simple-pie" style="height: 230px; width:100%;"></div>
+				<div style="display:none;" class="chart_data">{{simple_pie_data}}</div>
+			</div>
+		</td>
+		<td style="width:50%; padding-left:8px; text-align:left;" valign="top">
+			<div class="title">
+				<h4>
+					<span class="icon16 icomoon-icon-bars"></span>
+					<span>Summary</span>
+				</h4>
+			</div>
+			<div class="content" style="line-height:25px; font-size:13px;">
+				<div>Properties with contact: {{result.with_contact|currency}} <span style="color: #3399cc;">({{result.with_contact_percentage}})</span></div>
+				<div>Properties without contact: {{result.without_contact|currency}} <span style="color: #3399cc;">({{result.without_contact_percentage}})</span></div>
+				<div>All: {{result.both|currency}}</div>
+			</div>
+		</td>
+	</tr>
+</table>
+
+{% endif %}
+
+{% endblock %}
+
+

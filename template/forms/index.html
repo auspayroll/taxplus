@@ -1,0 +1,126 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/media.js"></script>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Forms" "/admin/forms/forms/" %}
+{% endblock %}
+
+{% block mainbody %}
+
+<script type="text/javascript" >
+$(function(){
+    $('<div id="dialog"></div>').appendTo('body')
+      .html('<div><h6>Are you sure you want to delete this form?</h6></div>')
+      .dialog({
+       autoOpen: false,
+       title: "Delete Form",
+       modal: true,
+       buttons : {
+            "Yes" : function() {
+                window.location="/admin/forms/forms/delete/" + $("#target_form").val() + "/";
+            },
+            "No" : function() {
+              $(this).dialog("close");
+            }
+          }
+        });
+});
+function deleteForm(id)
+{
+    $("#target_form").val(id);
+    $("#dialog").dialog("open");
+    return false;
+}
+
+</script>
+
+{% if have_permission %}
+
+<div style="width:95%; min-width:600px; margin-left:20px; text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Form Upload
+		</div>
+		<div class="content">
+			<div id="error" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin-right: 10px; margin-bottom:20px;"></div>
+			{% if messages %}
+				<ul class="messages">
+					{% for message in messages %}
+					<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+
+			<form id="media_upload_form" method="post" enctype="multipart/form-data" class="label_float_left">
+				{% csrf_token %}
+				<label>Url <span class="required">*</span>:</label><input type="file" name="url" id="url"/>
+				<span class="helptext">Select the file to upload</span>
+				{{ form }} 
+				{% if redirect %}
+				<input type="hidden" name="redirect" value={{ redirect }} />
+				{% endif %}
+				<input style="margin-top:20px;" type="submit" class="my_button" value="Upload"/>
+			</form>
+		</div>
+	</div>
+</div>
+
+{% endif %}
+
+
+<div style="width:95%; min-width:600px; margin-left:20px; text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Forms
+		</div>
+		<div class="content">
+			{% if list %}
+                {% for k, v in list.items  %}
+                    <h4>{{ k }}</h4>
+				    <div style="margin:10px;margin-left:0px;">
+					    <table cellpadding="0" cellspacing="0" class="tablesorter uploaded_forms">
+						    <thead>
+							    <tr>
+								    <th>Title</th>
+								    <th>Description</th>
+								    <th>File Name</th>
+								    <th>Date Upload</th>
+								    <th>Actions</th>
+							    </tr>
+						    </thead>
+						    <tbody>
+						    {% for i in v %}
+							    <tr>
+								    <td width="200">{{ i.title }}</td>
+								    <td>{{ i.description }}</td>
+                                    <td width="350">{{ i.getFileName }}</td>
+								    <td width="100">{{ i.date_created|date:"d/m/Y" }}</td>
+								    <td width="100">    
+                                        <a href="/media/{{ i.path }}" target="_blank">Download</a>         
+                                        {% if have_permission %}
+                                        <br/><a href="javascript:deleteForm({{ i.id }});">Delete</a>         
+                                        {% endif %}       
+                                    </td>
+							    </tr>
+						    {% endfor %}
+						    </tbody>
+					    </table>
+				    </div>
+                    <br/>
+                {% endfor %}
+                <input type="hidden" id="target_form" value="" />
+			{% else %}
+				<div class="note" >There are no form available.</div>
+			{% endif %}
+		</div>	
+	</div>
+    <br/>
+
+</div>
+{% endblock %}

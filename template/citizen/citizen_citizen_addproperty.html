@@ -1,0 +1,65 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+
+{% block rightpanel %}
+<div id="show_new_property">
+	<table cellpadding="0" cellspacing="0" width="100%" height="100%">
+		<tr>
+			<td>
+				<div style="font-size:13px; font-weight:normal;margin-top:5px; margin-left:20px;">
+					<table cellpadding="0" cellspacing="0" style="text-align: left; line-height:28px;">
+						<tr>
+							<td width="120">UPI: </td><td>{{form.upi}}</td>
+						</tr>
+						<tr>	
+							<td>Plot/Parcel ID: </td><td>{{form.parcel_id}}</td>
+						</tr>
+						<!--
+						<tr>	
+							<td>Village: </td><td>{{form.village}}</td>
+						</tr>
+						-->
+						<tr>	
+							<td>Cell: </td><td>{{form.cell}}</td>
+						</tr>
+						<tr>	
+							<td>Sector: </td><td>{{form.sector}}</td>
+						</tr>
+					</table>
+				</div>
+				<div style="margin-top:10px; margin-left:10px;">
+					<table cellpadding="0" cellspacing="0">
+						<tr>
+							<td>
+								<button id="search_property">Search Property</button>		
+							</td>
+							<td>
+								<div style="color:red; margin-left:10px; text-align:left; margin-top:5px; font-size:14px;" id="search_error">
+								</div>
+							</td>
+						</tr>						
+					</table>						
+				</div>
+				<div style="margin-top:20px;margin-bottom:30px;margin-left:10px;">
+					<table cellpadding="0" cellspacing="0">
+						<tr>
+							<td>Share: </td>
+							<td><input type="text" name="share" style="width:80px;" id="share"/>%</td>
+							<td>&nbsp;&nbsp;<button id="add_property">Add Property</button></td>
+							<td>
+								<div style="color:red; margin-left:10px; text-align:left; margin-top:5px; font-size:14px;" id="add_property_error">
+								</div>
+							</td>
+						</tr>
+					</table>			
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td align="center">
+				<div style="width:98%; height:500px; border:1px solid #cccccc; padding-bottom: 0px; margin-bottom: 0px;" id="map"></div>
+			</td>
+		</tr>
+	</table>
+</div>	
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "common/base_paytax_"|add:template_type|add:".html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block ccss %}
+	#id_category, #id_district
+	{
+		width:200px;
+	}
+
+	#fees_panel
+	{
+		display:none;
+		float:left;
+	}
+
+	#fee_cart
+	{
+		float:right;
+		display:block;
+		overflow:hidden;
+	}
+
+	#cart_fee_items tr td:first-child
+	{
+		text-align:left;
+		width:auto;
+	}
+
+	#cart_fee_items tr td
+	{
+		text-align:right;
+	}
+
+	#cart_fee_items tr:last-child th:last-child
+	{
+		text-align:right;
+	}
+
+	.add_fee
+	{
+		width:70px;
+		padding-right: 4px;
+	}
+
+	#inner_panel
+	{
+		background-color:white;
+	}
+{% endblock %}
+
+{% block jquery %}
+	// load the district drop down
+
+	function loadDistricts(){
+		$.ajax({
+				url : "{% url 'get_districts' %}",
+				type: "GET",
+				success: function(district_data, textStatus, jqXHR)
+				{
+					var district_option = '<option value="">--select a district--</option>';
+					$("#id_district").append(district_option);
+					for(var district in district_data){
+						var district_option = '<option value="' + district_data[district][0] + '">'+ district_data[district][1] + '</option>';
+						$("#id_district").append(district_option);
+					}			
+				},
+				error: function (jqXHR, textStatus, errorThrown)
+				{
+					//alert('there was a submission error');
+				}
+			});
+
+	}
+
+	function loadCategories(){
+		var category_option = '<option>Finding fee rates..</option>';
+		$("#id_category").append(category_option);
+		district_id = $("#id_district").val();
+		if(district_id != '' && district_id != null){
+			$.ajax({
+				url : "{% url 'get_misc_fee_categories' %}",
+				type: "GET",
+				data : { 'district':district_id },
+				success: function(category_data, textStatus, jqXHR)
+				{
+					$('#id_category option').each(function() {
+						$(this).remove();
+					});
+					if(category_data == null){
+						var category_option = '<option value="">--No fee rates Found--</option>';
+						$("#id_category").append(category_option);
+						$("#fees_panel").slideUp(1000);
+					}
+					else{
+						var category_option = '<option value="">--select a fee category--</option>';
+						$("#id_category").append(category_option);
+						for(i in category_data){
+							var category_option = '<option>'+ category_data[i] + '</option>';
+							$("#id_category").append(category_option);
+						}
+					}
+					
+				},
+				error: function (jqXHR, textStatus, errorThrown)
+				{
+					$('#id_category option').each(function() {
+						$(this).remove();
+					});
+					var category_option = '<option>Error! retrieving rates</option>';
+					$("#id_category").append(category_option);
+					$("#fees_panel").slideUp(1000);
+				}
+			});
+		}
+		else{
+					$('#id_category option').each(function() {
+						$(this).remove();
+					});
+					var category_option = '<option value="">----</option>';
+					$("#id_category").append(category_option);
+		}
+	}
+
+	function loadFees(){
+		$("#fees_panel").slideUp(1000);
+		loadFees2();
+	}
+
+	function loadFees2(){
+		district_id = $("#id_district").val();
+		category_name = $("#id_category").val();
+		
+		$('#id_fees tr').each(function() {
+			$(this).remove();
+		});
+		if(district_id != ''  && district_id != null && category_name != '' && category_name != null){
+			$.ajax({
+				url : "{% url 'get_misc_fees' %}",
+				type: "GET",
+				data : { 'district':district_id, 'category':category_name },
+				success: function(fee_data, textStatus, jqXHR){
+					var fee_row = '<tr><th>Fee</th><th colspan="2">Amount</th></tr>';
+					$("#id_fees").append(fee_row);
+						for(var fee in fee_data){
+							var select_widget = '<select class="add_fee" ">';
+							for(var i=0; i<=12; i++){
+								if(parseInt(fee_data[fee]['qty']) == i){
+									select_widget += '<option selected>' + i + '</option>';
+								}
+								else{
+									select_widget += '<option>' + i + '</option>';
+								}
+							}
+							select_widget += '</select>';
+							var fee_row = '<tr><td>' + select_widget + ' ' + fee + '</td><td>' + currency(fee_data[fee]['value']) + '</td><td>' + fee_data[fee]['description']+ '</td></tr>';
+							$("#id_fees").append(fee_row)
+							$("#fees_panel .add_fee").last().data('pk', fee_data[fee]['pk']);
+						}
+					$("#fees_panel").slideDown(1000);
+				},
+				error: function (jqXHR, textStatus, errorThrown){
+					//alert('there was a submission error');
+				}
+			});
+		}
+	}
+
+	function refresh_cart_data(cart_data){
+		$('#fee_cart').slideUp();
+		$('#cart_fee_items tr').each(function(){$(this).remove();});
+		var fee_row = '<tr><th></th><th>Quantity</th><th>Amount</th></tr>';
+		$('#cart_fee_items').append(fee_row);
+		for(var fee in cart_data['payments']){
+			var select_list = '<select class="add_fee" value="' + fee + '">';
+			for(var i=0; i<=12; i++){
+				if(parseInt(cart_data['payments'][fee]['qty']) == i){
+					select_list += '<option selected>' + i + '</option>';
+				}
+				else{
+					select_list += '<option>' + i + '</option>';
+				}
+			}
+			select_list += '</select>';
+			var fee_row = '<tr><td>' + cart_data['payments'][fee]['name'] + '</td><td>' + select_list + '</td><td>' + currency(cart_data['payments'][fee]['subtotal']) + '</td></tr>';
+			$('#cart_fee_items').append(fee_row);
+			$("#fee_cart .add_fee").last().data('pk', fee);
+		}
+		var fee_row = '<tr><th><a href="">Submit these Fees</a></th><th colspan="2">' + currency(cart_data['total']) + '</th></tr>';
+		$('#cart_fee_items').append(fee_row);
+		$('#fee_cart').slideDown();
+	}
+
+
+	function loadCart(){
+
+		$.ajax({
+			url : "{% url 'get_fee_cart' %}",
+			type: "GET",
+			success: function(cart_data, textStatus, jqXHR){
+				refresh_cart_data(cart_data);
+			},
+			error: function (jqXHR, textStatus, errorThrown){
+				// alert('there was a submission error');
+			}
+		});
+	}
+
+	function addFee(dateText){
+		pk = $(this).data('pk');
+		qty = $(this).val();
+		$.ajax({
+			url : "{% url 'add_fee' %}",
+			type: "POST",
+			data : { 'pk':pk, 'qty':qty },
+			success: function(cart_data, textStatus, jqXHR){
+				refresh_cart_data(cart_data);
+			},
+			error: function (jqXHR, textStatus, errorThrown){
+				// alert('there was a submission error');
+			}
+		});
+	}
+
+	$("#id_district").change(loadCategories);
+	$("#id_category").change(loadFees);
+	$(".add_fee").live("change", addFee);
+	loadDistricts();
+	loadCategories();
+	loadCart();
+	
+{% endblock %}
+
+{% block rightpanel %}
+<div style="text-align:left; margin:15px;">
+District: <select name="district" id="id_district"></select>
+Category: <select name="category" id="id_category"></select>
+<p></p>
+
+	<div id="inner_panel">
+		<div id="fees_panel">
+			<table id="id_fees">
+			</table>
+		</div>
+
+		<div id="fee_cart" class="right_panel">
+			<h4>Fees</h4>
+			<table id="cart_fee_items">
+			</table>
+		</div>
+	</div>
+</div>
+{% endblock %}

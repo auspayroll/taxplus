@@ -1,0 +1,257 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/media.js"></script>
+{% endblock %}
+{% block css  %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Media" "/admin/media/media/" %}
+{% endblock %}
+
+{% block mainbody %}
+
+<div style="width:60%; min-width:600px; margin-left:20px; text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Media upload
+		</div>
+		<div class="content">
+			<div id="error" style="display: none; color:red; font-size:14px; border: 1px solid #c4c4c4; background: #eaeaea; padding: 10px; margin-right: 10px; margin-bottom:20px;"></div>
+			{% if messages %}
+				<ul class="messages">
+					{% for message in messages %}
+					<li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+					{% endfor %}
+				</ul>
+			{% endif %}
+            
+            {% if redirect %}
+                <a href="{{ redirect }}" style="float:right;" > >> Back to previous page</a>
+            {% endif %}
+			<fieldset id="media_association">
+				<legend><b>Associations</b></legend>
+				<div class="note">Please select citizen/business/property from our suggestion list if applicable. </div>
+				<br/>
+				<table>
+					<tr>
+						<td class="left_div">
+							<label>Citizen:</label>
+							<div id="citizen">
+								{% if citizen %} {{ citizen.getDisplayName }} (CID: {{ citizen.citizen_id }}) {% endif %}                                
+							</div>
+						</td>
+						<td><input type="text" id="citizen_search" placeholder="Enter citizen name or ID" style="width:350px" /></td>
+					</tr>
+					<tr>
+						<td class="left_div"> 
+							<label>Business:</label>
+							<div id="business">
+								{% if business %} {{ business.name }} (TIN: {{ business.tin }}) {% endif %}                                
+							</div>
+						</td>
+						<td><input type="text" id="business_search" placeholder="Enter business name or TIN" style="width:350px" /></td>
+					</tr>
+					<tr>
+						<td class="left_div">
+							<label>Property:</label>
+							<div id="property">
+								{% if property %} {{ property.getDisplayName }} {% endif %}                                
+							</div>
+						</td>
+						<td><input type="text" id="property_search" placeholder="Enter Property UPI" style="width:350px" /></td>
+					</tr>
+				</table>
+				<div class="clear"></div>
+			</fieldset>
+            <br/><br/>
+        
+            <form enctype="multipart/form-data" class="file_upload" id="media_form" action="/admin/media/media/upload_ajax/" method="post">
+                {% csrf_token %}
+                <input type="hidden" value="" name="file">
+                <input multiple="multiple" name="file" id="path_original" type="file">
+                <input type="hidden" name="business_id" id="id_business_id" value="{% if business %}{{business.id}}{%endif%}" />
+                <input type="hidden" name="citizen_id" id="id_citizen_id" value="{% if citizen %}{{citizen.id}}{%endif%}" />
+                <input type="hidden" name="property_id" id="id_property_id" value="{% if property %}{{property.id}}{%endif%}" />
+                <input type="hidden" name="billboard_id" id="id_billboard_id" value="{% if billboard %}{{billboard.id}}{%endif%}" />
+                <button class="my_button">Upload</button><div>Choose file to upload</div>
+             </form>
+            <table id="files">
+            </table>
+            <br/>
+            <input type="button" class="my_button" id="start_uploads" value="Upload Selected Files" name="Save" style="display: none;">
+
+            {% if media %}
+		        {% include "media/_media_box_invoice.html" with media=media %}						
+            {% endif %}
+
+
+            <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload.js"></script>
+            <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload-ui.js"></script>
+            <script type="text/javascript">
+            /*<![CDATA[*/
+
+		    var fileCount = 0;
+		    var fileCheck = 0;            var currentIndex = 0;
+            jQuery(function($) {
+                jQuery('#media_form').fileUploadUI({
+                sequentialUploads: true,
+                'beforeSend':function (event, files, index, xhr, handler, callBack) {
+				    handler.uploadRow.find(".file_upload_start button").click(function(){
+                    if (index === 0) {
+                        // The files array is a shared object between the instances of an upload selection.
+                        // We extend it with a custom array to coordinate the upload sequence:
+                        files.uploadSequence = [];
+                        files.uploadSequence.start = function (index) {
+                            var next = this[index];
+                            if (next && next != '') {
+                                // Call the callback with any given additional arguments:
+                                next.apply(null, Array.prototype.slice.call(arguments, 1));
+                                this[index] = null;
+                            }
+                            else if(next == '' && index < files.length)
+                            {
+                                files.uploadSequence.start(index + 1);
+                            }
+                        };
+                    }
+
+					/*var regexp = /\.(png)|(jpg)|(gif)|(jpeg)$/i;
+					if (!regexp.test(files[index].name)) {
+						handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>ONLY IMAGES ALLOWED!</strong></div></div>");
+						setTimeout(
+							function () {handler.removeNode(handler.uploadRow); }, 
+							10000
+						);
+                        $("#start_uploads").hide();
+                        files.uploadSequence.push('');
+					} else  */ 
+                    if (files[index].size > 2097152) {
+						handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>FILE TOO BIG!</strong></div></div>");
+						setTimeout(
+							function () { handler.removeNode(handler.uploadRow); }, 
+							10000
+						);
+                        $("#start_uploads").hide();
+                        files.uploadSequence.push('');
+					} else {
+						fileCheck++;
+                        currentIndex = index;
+
+                        files.uploadSequence.push(callBack);						
+						//callBack();
+					}
+
+                    if (index + 1 === files.length) {                            
+                        files.uploadSequence.start(0);
+                        
+                    }
+				    } );
+				},
+                'onComplete':function (event, files, index, xhr, handler, callBack) {
+			        fileCount++;
+			        if(fileCheck == fileCount) {
+				        //window.location = window.location;
+                        $("#start_uploads").hide();
+                        $("#new_upload_link").show();
+			        }
+                    files.uploadSequence.start(index + 1);
+			    },
+
+                'formData':function (form) {
+                    data = form.serializeArray();
+
+                    data.push({name:'title',value:$("#files #title_" + currentIndex).val() });
+                    data.push({name:'description',value:$("#files #description_" + currentIndex).val() });
+                    data.push({name:'tags',value:$("#files #tags_" + currentIndex).val() });
+                    return data;
+                },
+
+
+                'onChange':function (event, files, index, xhr, handler, callBack)
+                {
+                    $("#start_uploads").show();
+                    $("#new_upload_link").hide();
+                },
+                'buttonLabel':'Choose file to upload','uploadTable':'#files','downloadTable':'#files',
+                'buildUploadRow':function (files, index) {
+                var file = files[index];
+	            return $('<tr class="media_row" id="media_row_' + index + '" style="border-bottom: 1px solid #c4c4c4;">' +
+                    '<td style="border-right: 1px solid #c4c4c4;">' + 
+                        '<table >' +
+                        '<tr>' + 
+                            '<td><b>' + file.name + '</b></td>' +
+                        '</tr>' + 
+                        '<tr valign="top">' + 
+                            '<td>' + 
+				                '<div id="add_tag_box"><div id="tags_label"><div class="note">No tag</div></div>' + 
+					                '<select id="default_tag">{% for i in default_tags %}<option value="{{ i.0 }}" >{{ i.1 }}</option>{% endfor %}</select>' + 
+					                '<input type="hidden" name="tags" class="tags" id="tags_' + index + '" />' + 
+                                    '<input type="text" value="" id="custom_tag" style="display: none;">' + 
+					                '<input type="button" style="margin-left:10px;" class="my_button add_tag_btn" onclick="add_tag(' + index + ')" value="Add" id="add_tag_btn' + index + '" /><br/><a class="toggle_tag_type_link" id="toggle_tag_link_' + index + '" onclick="toggle_tag(' + index + ')"  >toggle custom tag</a>' + 
+				                '</div>' + 
+                            '</td>' + 
+                        '</tr></table>' + 
+                    '</td>' + 
+                            
+                    '<td  style="margin-left: 5px;" ><input type="text" name="title" value="" class="title" placeholder="Title" id="title_' + index + '" /><br/><br/>' + 
+                        '<textarea name="description" class="description"  placeholder="Description" id="description_' + index + '" ></textarea>' +
+                    '</td>' +
+                    '<td>' +
+                        '<table ><tr>' +
+                        '<td class="file_upload_progress" >' + 
+                        '<div class="ui-progressbar ui-widget ui-widget-content ui-corner-all" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">' + 
+                        '<div class="ui-progressbar-value ui-widget-header ui-corner-left" style="display: none; width: 0%;"></div>' + 
+                        '</div></td>' + 
+                        '<td class="file_upload_start" style="display:none"><button class="ui-state-default ui-corner-all" title="Start Upload"><span class="ui-icon ui-icon-circle-arrow-e">Start Upload</span></button></td>' + 
+                        '<td class="file_upload_cancel"><button class="ui-state-default ui-corner-all"><span class="ui-icon ui-icon-cancel">Cancel</span></button></td>' +   
+                        '</tr></table>' + 
+                    '</tr>');
+                }         
+                ,'buildDownloadRow':function (file, index) {
+	                return $('<tr class="media_row" id="media_row_' + index + '" style="border-bottom: 1px solid #c4c4c4;">' +
+                        '<td style="border-right: 1px solid #c4c4c4;">' + 
+                            '<table >' +
+                            '<tr>' + 
+                                '<td><b>' + file.name + '</b></td>' +
+                            '</tr>' + 
+                            '<tr valign="top">' + 
+                                '<td>' + 
+				                    '<div id="add_tag_box"><div id="tags_label"><div class="note">' + file.tags.replace('|',' | ') + '</div></div>' + 
+					                    '<div>' +  file.associations + '</div>' + 
+				                    '</div>' + 
+                                '</td>' + 
+                            '</tr></table>' + 
+                        '</td>' + 
+                            
+                        '<td  style="margin-left: 5px;" ><input type="text" placeholder="Title" value="' + file.title + '" disabled="disabled"  /><br/><br/>' + 
+                            '<textarea disabled="disabled" placeholder="Description"  >' + file.description + '</textarea>' +
+                        '</td>' +
+                        '<td class="file_upload_check" style="color: #3399cc;"><b>File uploaded successfully!</b></td>' +   
+                        '</tr>');
+                }});
+
+                $("#start_uploads").click(function(){
+			        $('.file_upload_start button').click();
+                });
+
+                $('button.cancel').click(function (e) {
+                    jqXHR.abort();
+                });
+
+            });
+            /*]]>*/
+            </script>
+            <br/>
+            <h4 id="new_upload_link" style="display:none;">To continue upload media for the current associations please continue using the green Upload Button above. For a completely new upload please <a href="/admin/media/media/" >Click Here</a></h4>
+            <br/>
+		</div>
+	</div>
+</div>
+{% endblock %}

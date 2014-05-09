@@ -1,0 +1,31 @@
+@media screen,print
+{
+
+	.property_table
+	{
+		text-align: left;
+		margin-top: 20px;
+	}
+
+	.firstrow
+	{
+		border-top: 1px solid #CCCCCC;
+	}
+
+	.firstcolumn
+	{
+		border-left: 1px solid #CCCCCC;
+	}
+
+	.firstrowfirstcolumn
+	{
+		border: 1px solid #CCCCCC;
+	}
+
+	.property_table table tr td
+	{
+		text-indent: 4px;
+		border-bottom: 1px solid #CCCCCC;
+		border-right: 1px solid #CCCCCC;
+	}
+}

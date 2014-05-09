@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" >
+	<head>
+		<title>{% block title %}Council Tax Evalution System{% endblock %}</title>
+        <style type="text/css">            
+            body{
+	            margin:0px;
+	            background-color:white;
+	            padding:0px;
+	            font-size:13px;
+                font-family:Arial;
+            }
+            .note
+            {
+                color: gray;
+                font-style: italic;
+            }
+            .note ul
+            {
+                margin: 0px;
+            }
+            /* Receipt CSS */
+            #receipt
+            {
+                position:relative;
+                line-height: 16px;
+                width: 1000px;
+                text-align: left; 
+                margin: 0 auto;
+                background: white;
+            }
+            #receipt h2
+            {
+                font-size: 16px;
+                text-align: left; 
+            }
+            #receipt h3
+            {
+                font-size: 13px;
+                color: red;
+                text-decoration: underline;
+                text-align: left; 
+            }
+
+            #receipt #payments th, #receipt #payments td
+            {
+                border-bottom: 1px solid black;
+                padding: 5px;
+                text-align: left; 
+                width: 200px;
+            }
+            #receipt #payments .reference_col
+            {
+                width: 400px
+            }
+            #receipt #payments .center
+            {
+                text-align:center;
+            }
+            #receipt #payments .no_border td
+            {
+                border: 0px;
+            }
+            #receipt #payments .total_amount
+            {
+                border: 1px solid black;
+                padding: 9px 5px 3px 5px;
+                
+            }
+            #receipt .note
+            {
+                width: 300px;
+                position: absolute;
+                bottom: 10px;
+                right: 20px;
+            }
+            .warning
+            {
+                color: red;
+                font-style: italic;
+            }
+            #receipt #future_payments td
+            {
+                padding: 0px 0px 10px 0px;
+            }
+        </style>
+
+	</head>
+	<body>
+        <div id="receipt" >
+            <table>
+                <tr>
+                    <td style="width:550px" valign="top"><h2>PAYMENT RECEIPT FOR CITY OF KIGALI</h2>
+                    </td>
+                    <td>
+                        <div class="pay_details">
+                            {% if receipt.paid_at %}<label>Paid At:</label> {{ receipt.paid_at}} <br/>{% endif %}
+                            <label>Paid At:</label> {{ receipt.paid_at}} <br/>
+                            <label>Date Paid:</label> {{ receipt.paid_date|date:"d/m/Y"}} <br/>
+                            <label>ePay No:</label> {{ receipt.epay_no}} <br/>
+                            <!--label>Time:</label> {{ receipt.paid_date|date:"H:ia"}} <br/-->
+                        </div>		
+                    </td>
+                </tr>
+            </table>           
+            {{ receipt.payer.name }}<br/>
+            {% if receipt.payer.address %}
+                {{ receipt.payer.address }}<br/>
+            {% endif %}
+            {{ receipt.payer.idString }}
+            <h2>SUMMARY OF GOVERNMENT CHARGES</h2>
+            {% if receipt.note %}
+                <div style="font-style:italic; ">{{ receipt.note }}</div><br />
+            {% endif %}
+            <table id="payments" cellpadding="0" cellspacing="0" border="0">
+		        <tr>
+			        <th>Tax / Fee</th>
+			        <th class="reference_col">Reference</th>
+                    {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
+                    <th class="center">Manual Receipt No.</th>
+                    {% endif %}
+			        <th class="center">Receipt No.</th>
+			        <th class="center">Bank Receipt No.</th>
+			        <th style="text-align:right; padding: 0px 11px 0px 0px;">Amount Paying</th>
+		        </tr>	
+                {% if receipt.taxes %}
+                    {% for i in receipt.taxes %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td class="reference_col">{{ i.reference }}</td>
+                        {% if i.manual_receipt %}
+                        <td class="center">{{i.manual_receipt}}</td>
+                        {% endif %}
+                        <td class="center">{{ i.invoice_no }}</td>
+                        <td class="center">{{ i.bank_receipt }}</td>
+                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|floatformat:2 }} {{i.currency|title}}</td>
+                    </tr>			
+                    {% endfor %}
+                {% endif %}
+                {% if receipt.late_fees %}
+                    {% for i in receipt.late_fees %}
+                    <tr>
+                        <td>{{ i.name }}</td>
+                        <td class="reference_col">{{ i.reference }}</td>
+                        <td class="center">{{ i.invoice_no }}</td>
+                        <td class="center">{{ i.bank_receipt }}</td>
+                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|floatformat:2 }} {{i.currency|title}}</td>
+                    </tr>			
+                    {% endfor %}
+                {% endif %}
+                {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
+                <tr class="no_border"><td colspan="6"><br/></td></tr>
+                <tr class="no_border">
+                    <td colspan="5" style="text-align:right;" ><b>TOTAL<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|floatformat:2 }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>		
+                {% else %}
+                <tr class="no_border"><td colspan="5"><br/></td></tr>
+                <tr class="no_border">
+                    <td colspan="4" style="text-align:right;" ><b>TOTAL<b/></td>
+                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|floatformat:2 }} {{receipt.taxes.0.currency|title}}</div></td>
+                </tr>			
+                {% endif %}
+            </table>
+            <br/>
+            {% if receipt.future_payments %}
+                <h3>Future Payments Due On:</h3>
+                <table cellpadding="0" cellspacing="0" id="future_payments">
+                    {% for i in receipt.future_payments %}
+                        <tr>
+                            <td width="50">{{ i.due_date|date:"d/m/y" }}</td>
+                            <td width="320">{{ i.name }}</td>
+                            <td>{{ i.amount|floatformat:2 }} {{i.currency|title}}</td>
+                    </tr>			
+                    {% endfor %}
+                </table>
+                <div class="warning">* All payments after the due date will incure a fee</div>
+            {% else %}
+                <br/><br/><br/><br/><br/><br/>
+
+            {% endif %}
+            <div class="note">Please check all entries and report any apparent error or possible unauthorised transactions immediately.
+                We may subsequently adjust debits and credits. For information on resolving problems or enquiries contact Kigali Council on 000 000 000</div>
+        </div>
+	</body>
+</html>

@@ -1,0 +1,64 @@
+{% extends "common/base_paytax_business.html" %}
+{% load staticfiles %}
+{% block css  %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+{% endblock %}
+
+
+{% block rightpanel %}
+	<div style="margin-left:10px;" align="center">
+		<div style="margin-top:20px; margin-left:auto; margin-right:auto;">
+			<form method="post">
+				{% csrf_token %}
+				<table>
+					<tr>
+						<td><label>Username:</label></td>
+						<td>{{form.username}}</td>
+						<td style="padding-left:30px;"><label>Date from:</label></td>
+						<td><input class="date_picker"  value="{{form.period_from.value}}" type="text" id="id_period_from" name="period_from" /></td>
+						<td style="padding-left:30px;"><label>Date to:</label></td>
+						<td><input class="date_picker"  value="{{form.period_to.value}}" type="text" id="id_period_to" name="period_to" /></td>
+						<td style="padding-left:30px;"><input class="my_button" type="submit" name="submit" value="Refine"/></td>
+					</tr>
+				</table>
+				<div style="display:none;">
+					{{form.business_id}}
+				</div>
+			</form>
+            
+		</div>
+	{% if not logs|length %}
+		<div style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+			No logs found.	
+		</div>
+	{% else %}
+		<div id="log_error" style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+		</div>
+		<div>
+			<table cellpadding="0" cellspacing="0" id="tablesorter" class="tablesorter" style="width:96%">
+				<thead>
+					<tr>
+						<th width="80">Date</th>
+						<th width="110">Username</th>
+						<!--<th class="firstrow" width="60">Citizen</th>->
+						<!--<th class="firstrow" width="60">Tran ID</th>-->
+						<th>Message</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for log in logs %}
+					<tr>
+						<td>{{log.date_time|date:'d/m/y@H:i'}}</td>
+						<td>{{log.username}}</td>
+						<td class="message">{{log.message|safe}}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+	<br>
+	<br>
+{% endblock %}
+
+

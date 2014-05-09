@@ -1,0 +1,144 @@
+{% extends "common/base_design.html" %}
+
+{% load humanize %}{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Receipt" %}	
+{% endblock %}
+{% block mainbody %}
+
+
+{% load humanize %}{% load simple_tags %}
+
+<div style="text-align:left; line-height:30px; margin:10px;margin-top:20px;">
+    <h3>{{ tax_label }}</h3>
+
+    <p class='note'>Payment has been set as pending,wait for approval. Please upload any supporting document below.</p>
+
+    <br/>
+    <fieldset>
+	    <legend><h4><b>Support Documents</b></h4></legend>
+
+        <form enctype="multipart/form-data" class="xupload-form file_upload" id="media_form" action="/admin/media/media/upload_ajax/" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="tax_type" value="{{ tax_type }}" />
+            <input type="hidden" name="tax_id" value="{{ tax.id }}" />
+            <input type="hidden" name="payment_id" value="{{ payment.id }}" />
+            <input type="hidden" name="business_id" value="{{ business_id }}" />
+            <input type="hidden" name="citizen_id" value="{{ citizen_id }}" />
+            <input type="hidden" name="property_id" value="{{ property_id }}" />
+
+            <input type="hidden" value="" name="file">
+            <input multiple="multiple" name="file" id="path_original" type="file">
+            <button class="my_button">Upload</button><div>Choose file to upload</div>
+        </form>
+        <table id="files">
+        </table>
+
+        <input type="button" class="my_button" id="start_uploads" value="Upload Selected Files" name="Save" style="display: none;">
+
+        {% if media %}
+		    {% include "media/_media_box_invoice.html" with media=media %}						
+        {% endif %}
+
+
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload.js"></script>
+        <script type="text/javascript" src="/static/js/fileupload-ui/jquery.fileupload-ui.js"></script>
+        <script type="text/javascript">
+        /*<![CDATA[*/
+
+		var fileCount = 0;
+		var fileCheck = 0;
+
+        jQuery(function($) {
+            jQuery('#media_form').fileUploadUI({'beforeSend':function (event, files, index, xhr, handler, callBack) {
+				                handler.uploadRow.find(".file_upload_start button").click(function(){
+					            /*var regexp = /\.(png)|(jpg)|(gif)|(jpeg)$/i;
+					            if (!regexp.test(files[index].name)) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>ONLY IMAGES ALLOWED!</strong></div></div>");
+						            setTimeout(
+							            function () {handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else  */ 
+                                if (files[index].size > 2097152) {
+						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>FILE TOO BIG!</strong></div></div>");
+						            setTimeout(
+							            function () { handler.removeNode(handler.uploadRow); }, 
+							            10000
+						            );
+						            return;
+					            } else {
+						            fileCheck++;
+						            callBack();
+					            }
+				                } );
+				            },'onComplete':function (event, files, index, xhr, handler, callBack) {
+			            fileCount++;
+			            if(fileCheck == fileCount) {
+				            window.location = window.location;
+			            }
+			            },'onChange':function (event, files, index, xhr, handler, callBack)
+                                    {
+                                        $("#start_uploads").show();
+                                    },'buttonLabel':'Choose file to upload','uploadTable':'#files','downloadTable':'#files','buildUploadRow':function (file, index) {
+	            return $('<tr>'+
+		            '<td class="filename">'+file[index].name+'</td>'+
+		            //'<td class="filesize">'+file[index].size+'</td>'+
+		            '<td class="file_upload_progress" colspan="3"><div></div></td>'+
+		            '<td class="file_upload_start" style="display:none">'+
+			            '<button class="ui-state-default ui-corner-all" title="Start Upload">'+
+				            '<span class="ui-icon ui-icon-circle-arrow-e">Start Upload</span>'+
+			            '</button>'+
+		            '</td>'+
+		            '<td class="file_upload_cancel">'+
+			            '<button class="ui-state-default ui-corner-all">'+
+				            '<span class="ui-icon ui-icon-cancel">Cancel</span>'+
+			            '</button>'+
+		            '</td>'+
+	            '</tr>');
+            },'buildDownloadRow':function (files, index) {
+	            return $('<tr style="border-bottom: 1px solid #c4c4c4;" class="media_row"><td id="file_name"><input type="hidden" id="id" value="" /><b>' + files.name + '</b><\/td>' +
+    	            '<td class="file_upload_progress"><\/td>' +
+
+                    '<td class="file_upload_cancel">' +
+                    '<button class="ui-state-default ui-corner-all" title="Cancel">' +
+                    '<span class="ui-icon ui-icon-cancel" onclick="removeMediaRow(this)">Cancel<\/span>' +
+                    '<\/button><hr/><\/td><\/tr>');
+            }});
+
+            $("#start_uploads").click(function(){
+			    $('.file_upload_start button').click();
+            });
+        });
+        /*]]>*/
+        </script>
+    </fieldset>
+    <br/>
+
+
+    <fieldset>
+        <form method="post" id="send_receipt_form">
+			{% csrf_token %}
+            <table>
+                <tr>
+                    <td colspan="2">
+                        {% if tax_url %}
+                        <button  class="button_styled" onclick="window.location='{{ tax_url }}';return false;" >pay another tax</button>
+                        {% endif %}
+                        <button  class="button_styled" onclick="window.location='/admin/tax/tax/';return false;">back to tax menu</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </fieldset>
+
+    <br/>    
+    <br/>
+
+</div>
+{% endblock %}

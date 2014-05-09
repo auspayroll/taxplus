@@ -1,0 +1,484 @@
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+<script type="text/javascript">
+    $(function(){
+
+        //calculate land lease fee
+
+		$("#tax_calculation.land_lease #id_land_lease_type").change(function(){
+            calculateLandLease();
+        });
+		$("#tax_calculation.land_lease #size").keyup(function(){
+            calculateLandLease();
+        });
+
+		$("#tax_calculation.land_lease #fee_amount").keyup(function(){
+            calculateLandLease();
+        });
+		$("#tax_calculation.land_lease #fines").keyup(function(){
+            calculateLandLease();
+        });
+
+        function calculateLandLease()
+        {
+            {% if not submit and formula.amount and formula.amount > 0 %}
+            var fee = {{formula.amount}};
+            {% else %}
+            var rates = { {%for k,v in formula.rates.items %}
+                    '{{k}}':'{{v}}',
+                    {% endfor %}}
+
+            if($("#tax_calculation.land_lease #id_land_lease_type").val() == 'Agriculture')
+            {
+	            $("#size_type").html("hectares");
+            }
+            else
+            {
+	            $("#size_type").html("M&sup2;");
+	        }
+
+            var land_lease_type = $("#tax_calculation.land_lease #id_land_lease_type").find(":selected").html();
+
+            rate = 0;
+            fee = 0;
+            if(land_lease_type in rates)
+            {
+                var rate = rates[land_lease_type];
+            }
+            $("#land_lease_rate").html(rate);
+
+            var size = $("#tax_calculation.land_lease #size").val();                        
+            if( size != '' && !isNaN(size) && parseInt(size) > 0)
+            {
+                fee = rate * parseInt(size);
+            }
+
+            {% endif %}
+
+            $("#fee_amount").html(fee);
+            $("#fee_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+            if($("#partial_tax").length > 0)
+            {
+                var percent = $("#partial_percent").html();
+                fee = Math.round(fee * parseInt(percent) / 100);
+                $("#partial_tax").html(fee);
+                $("#partial_tax").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            }
+
+            //plus late fee if applicable
+            if($("#late_fee_surcharge").length > 0)
+            {
+                fee = Math.round(parseFloat(fee) + parseFloat($("#late_fee_surcharge").val()) + parseFloat($("#late_fee_interest").val()))
+            }
+
+            var fines = $("#tax_calculation.land_lease #fines").val();
+            if( fines != '' && !isNaN(fines) && fines > 0)
+            {
+                fee = fee + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+            }
+            else
+            {
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#tax_calculation.land_lease #fines").val(0);
+            }
+
+            $("#final_tax_due").html(fee);
+            $("#id_amount").val(fee);
+            $("#id_final_tax_due").val(fee);
+
+            $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+        }
+
+        //calculate cleaning fee
+		$("#tax_calculation.cleaning #id_area_type").change(function(){
+            calculateCleaning();
+        });
+		$("#tax_calculation.cleaning #id_business_type").change(function(){
+            calculateCleaning();
+        });
+
+		$("#tax_calculation.cleaning #fines").keyup(function(){
+            calculateCleaning();
+        });
+
+        function calculateCleaning()
+        {
+            if($("#id_area_type").length > 0)
+            {
+                var area_type = $("#tax_calculation.cleaning #id_area_type").val();
+            }
+            else
+            {
+                var area_type = $("#tax_calculation.cleaning #id_area_type_label").html();
+            }
+
+            if($("#id_business_type").length > 0)
+            {
+                var business_type = $("#tax_calculation.cleaning #id_business_type").val();
+            }
+            else
+            {
+                var business_type = $("#tax_calculation.cleaning #id_business_type_label").html();
+            }
+            
+            var fee = 0;
+            if(area_type != '' && business_type != '')
+            {
+                {% if formula.fee_matches %}
+                var fee_matches = {
+                    {%for k,v in formula.fee_matches.items %}
+                    '{{k}}':'{{v}}',
+                    {% endfor %}
+                };
+    
+                fee = fee_matches[area_type + '-' + business_type]
+                {% endif %}
+                    
+            }      
+
+            $("#id_fee").html(fee);
+            $("#id_fee").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+            {% if formula.late_fee_month and formula.late_fee_surcharge_rate and formula.late_fee_interest_rate %}
+            late_fee_interest = parseFloat(fee) * {{ formula.late_fee_interest_rate}} * {{formula.late_fee_month}}
+            late_fee_surcharge = parseFloat(fee) * {{ formula.late_fee_surcharge_rate}}
+            if(late_fee_surcharge > {{formula.late_fee_surcharge_max}})
+            {
+                late_fee_surcharge = formula.late_fee_surcharge_max
+            }
+            $("#late_fee_surcharge").val(late_fee_surcharge);
+            $("#late_fee_interest").val(late_fee_interest);
+            $("#late_fee_surcharge_label").html(late_fee_surcharge);
+            $("#late_fee_interest_label").html(late_fee_interest);
+
+            $("#late_fee_surcharge_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#late_fee_interest_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+            fee = Math.round(parseFloat(fee) + late_fee_surcharge + late_fee_interest)
+            {% endif %}
+
+            var fines = $("#tax_calculation.cleaning #fines").val();
+            if( fines != '' && !isNaN(fines) && fines > 0)
+            {
+                fee = parseInt(fee) + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+            }
+            else
+            {
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#tax_calculation.cleaning #fines").val(0);
+            }
+
+			// considering credit
+
+			credit = parseInt($("#id_credit").val());
+			if(credit > 0)
+			{
+				payment_amount_needed = 0;
+				if(credit < fee){payment_amount_needed = fee - credit;}
+				$("#message").html("Based on your credit, you only need to pay "+ payment_amount_needed + 'Rwf.');
+                $("#message").show();
+			}	
+            $("#final_tax_due").html(fee);
+            $("#id_amount").val(fee);
+            $("#id_final_tax_due").val(fee);
+
+        
+            $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+        }
+
+        //calculate market feee
+		$("#tax_calculation.market #id_fee").keyup(function(){
+            calculateMarket();
+        });
+
+        function calculateMarket()
+        {
+            var fee = $("#id_fee").asNumber();
+
+            {% if formula.late_fee_month and formula.late_fee_surcharge_rate and formula.late_fee_interest_rate %}
+            late_fee_interest = parseFloat(fee) * {{ formula.late_fee_interest_rate}} * {{formula.late_fee_month}}
+            late_fee_surcharge = parseFloat(fee) * {{ formula.late_fee_surcharge_rate}}
+            if(late_fee_surcharge > {{formula.late_fee_surcharge_max}})
+            {
+                late_fee_surcharge = formula.late_fee_surcharge_max
+            }
+            $("#late_fee_surcharge").val(late_fee_surcharge);
+            $("#late_fee_interest").val(late_fee_interest);
+            $("#late_fee_surcharge_label").html(late_fee_surcharge);
+            $("#late_fee_interest_label").html(late_fee_interest);
+
+            $("#late_fee_surcharge_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#late_fee_interest_label").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+
+            fee = Math.round(parseFloat(fee) + late_fee_surcharge + late_fee_interest)
+            {% endif %}
+
+            var fines = $("#tax_calculation.cleaning #fines").val();
+            if( fines != '' && !isNaN(fines) && fines > 0)
+            {
+                fee = parseInt(fee) + parseInt(fines);
+                //enable fine description
+                $("#fines_description").removeAttr("disabled");
+            }
+            else
+            {
+                //disable fine description
+                $("#fines_description").attr("disabled","disabled");
+                $("#tax_calculation.cleaning #fines").val(0);
+            }
+
+			// considering credit
+
+			credit = parseInt($("#id_credit").val());
+			if(credit > 0)
+			{
+				payment_amount_needed = 0;
+				if(credit < fee){payment_amount_needed = fee - credit;}
+				$("#message").html("Based on your credit, you only need to pay "+ payment_amount_needed + 'Rwf.');
+                $("#message").show();
+			}	
+            $("#final_tax_due").html(fee);
+            $("#id_amount").val(fee);
+            $("#id_final_tax_due").val(fee);
+
+        
+            $("#final_tax_due").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+            $("#id_amount").formatCurrency({symbol:'',roundToDecimalPlace:-2});
+        }
+	});
+</script>
+
+{% if fee.fee_type == 'market'  %}
+<tr>
+    <td colspan="2">
+        <table id="tax_calculation" class="market" border="1"  cellpadding="0" cellspacing="0" >
+
+            <tr>
+                <th>Fee Amount</th>
+                <td>
+                    {% if formula.amount != None and formula.amount != 0 %}
+                    <span id="id_fee">{{ formula.amount }}</span>
+                    {% else %}
+                    <input type="text" id="id_fee" name="fee_input" value="" class="right_align"  />
+                    {% endif %}
+                </td>
+            </tr>          
+            {% if formula.late_fee_month and formula.late_fee_month > 0 %}
+            <tr>
+                <th>Due Date</th>
+                <td id="id_due_date" class="right_align" >{{ formula.due_date|date:"d/m/Y" }}</td>
+            </tr>  
+            <tr>
+                <th>Number of Months Overdue</th>
+                <td id="overdue_months" class="right_align" >{{ formula.late_fee_month}}</td>
+            </tr>  
+            <tr>
+                <th>Late Penalty = {{formula.late_fee_surcharge_formula}}</th>
+                <td class="right_align" ><span id="late_fee_surcharge_label" >{{ formula.late_fee_surcharge|currency}}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_surcharge" name="late_fee_surcharge" value="{{ formula.late_fee_surcharge}}" />
+                </td>
+            </tr>  
+            <tr>
+                <th>Late Fee Interest = {{ formula.late_fee_interest_formula }}</th>
+                <td class="right_align" ><span id="late_fee_interest_label" >{{ formula.late_fee_interest|currency}}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_interest" name="late_fee_interest" value="{{ formula.late_fee_interest}}" />
+                </td>
+            </tr>        
+            {% endif %}
+            <!--tr>
+                <th>Fines (if applicable)</th>
+                <td colspan="3"><input type="text" id="fines" name="fine_amount" value="0" /> {{fee.currency|title}}</td>
+            </tr>      
+            <tr>
+                <th>Fine Description (if applicable)</th>
+                <td colspan="3"><input type="text" id="fines_description" value="" name="fine_description" disabled="disabled" /></td>
+            </tr-->    
+            <tr>
+                <th><label>Final Amount</label></th>
+                <td class="right_align" ><b><span id="final_tax_due">{{ formula.final_amount|currency }}</span> {{fee.currency|title}}</b></td>
+            </tr>  
+        </table>
+    </td>
+</tr>
+
+{% elif fee.fee_type == 'land_lease' %}
+<tr>
+    <td colspan="2">
+        <table id="tax_calculation" class="land_lease" border="1"  cellpadding="0" cellspacing="0" >
+            <tr>
+                <th>Land Lease Type</th>
+                <td>
+                    {% if not submit and formula.sub_type_select and formula.sub_type_select != 'N/A' %}
+                    {{ formula.sub_type_select }}
+                    {% else %}
+                    <select  id="id_land_lease_type" name="land_lease_type">
+                        <option value="0">-- Select Land Lease Purpose --</option>
+                        {% for i in formula.sub_types %}
+                        <option value="{{ i.0 }}" {% if formula.sub_type_select == i.0 %} selected="selected" {% endif %} >{{ i.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </td>
+            </tr>        
+            <tr>
+                <th>Land Lease Rate</th>
+                <td><span id="land_lease_rate">{{formula.rate}}</span> {{tax.currency|title}} per {{formula.size_type}}
+                </td>
+            </tr>          
+            <tr>
+                <th>Size in Square Metre or Hectare</th>
+                <td>
+                    {% if not submit and formula.size %}
+                    {{ formula.size }}
+                    <input type="hidden" id="size" value="{{formula.size}}" />           
+                    {% else %}
+                    <input type="text" id="size" name="land_lease_size" value="{{formula.size }}" style="width: 95px;"/>           
+                    {% endif %}                     
+                    <span id="size_type">{{formula.size_type}}</span>
+                </td>
+            </tr>      
+            <tr>               
+                <th>Fee = Land Lease Rate * Size{% if formula.installment %} / 4 {% endif %} </th>
+                <td class="right_align" >
+                    <span id="fee_amount">{{ formula.amount|currency  }}</span> {{tax.currency|title}}
+                </td>
+            </tr>  
+            {% if formula.partial_percent %}
+            <tr>
+                <th>Days Covered</th>
+                <td>{{ formula.tax_days }} days</td>
+            </tr>  
+            <tr>
+                <th>Percentage out of full year</th>
+                <td class="right_align" ><span id="partial_percent">{{ formula.partial_percent }}%</span></td>
+            </tr>  
+            <tr>
+                <th>Tax Due for this period</th>
+                <td class="right_align" ><span id="partial_tax">{{ formula.partial_tax|currency  }}</span> {{tax.currency|title}}</td>
+            </tr>  
+            {% endif %}
+            {% if formula.late_fee_surcharge and formula.late_fee_surcharge > 0 %}
+            <tr>
+                <th><label>Due Date</label></th>
+                <td id="id_due_date" class="right_align" >{{ formula.due_date|date:"d/m/Y" }}</td>
+            </tr>  
+            <tr>
+                <th>Number of Months Overdue</th>
+                <td id="overdue_months" class="right_align" >{{ formula.late_fee_month}}</td>
+            </tr>  
+            <tr>
+                <th>Late Penalty = {{formula.late_fee_surcharge_formula}}</th>
+                <td class="right_align" ><span id="late_fee_surcharge_label" >{{ formula.late_fee_surcharge|currency }}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_surcharge" name="late_fee_surcharge" value="{{ formula.late_fee_surcharge}}" />
+                </td>
+            </tr>  
+            <tr>
+                <th>Late Fee Interest = {{ formula.late_fee_interest_formula }}</th>
+                <td class="right_align" ><span id="late_fee_interest_label" >{{ formula.late_fee_interest|currency }}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_interest" name="late_fee_interest" value="{{ formula.late_fee_interest}}" />
+                </td>
+            </tr>        
+            {% endif %}
+            <tr>
+                <th><label>Fines (if applicable)</label></th>
+                <td colspan="3"><input type="text" id="fines" value="{% if formula.fine_amount %}{{formula.fine_amount|currency }}{%else%}0{%endif%}" /> {{tax.currency|title}}</td>
+            </tr>      
+            <tr>
+                <th><label>Fine Description (if applicable)</label></th>
+                <td colspan="3"><input type="text" id="fines_description" {% if not formula.fine_description %} disabled="disabled" {% endif %} value="{{ formula.fine_description }}" /></td>
+            </tr>    
+            <tr>
+                <th><label>Final Amount = Fee{% if formula.late_fee_surcharge and formula.late_fee_surcharge > 0 %} + Late Fee Surcharge + Late Fee Interest{% endif %} + Fines</label></th>
+                <td class="right_align" ><b><span id="final_tax_due">{{ formula.final_amount|currency }}</span> {{fee.currency|title}}</b></td>
+            </tr>  
+        </table>
+    </td>
+</tr>
+{% elif fee.fee_type == 'cleaning'  %}
+<tr>
+    <td colspan="2">
+        <table id="tax_calculation" class="cleaning" border="1"  cellpadding="0" cellspacing="0" >
+
+            <tr>
+                <th>Area Type</th>
+                <td>
+                    {% if formula.area_type %}
+                    <span id="id_area_type_label">{{ formula.area_type }}</span>
+                    {% else %}
+                    <select name="area_type"  id="id_area_type">
+                        <option value="">-- Select Area Type --</option>
+                        {% for i in formula.area_type_list %}
+                        <option value="{{ i.0 }}" >{{ i.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </td>
+            </tr>  
+            <tr>
+                <th>Business Type</th>
+                <td>
+                    {% if formula.business_type %}
+                    <span id="id_business_type_label">{{ formula.business_type }}</span>
+                    {% else %}
+                    <select name="business_type"  id="id_business_type">
+                        <option value="">-- Select Business Type --</option>
+                        {% for i in formula.business_type_list %}
+                        <option value="{{ i.0 }}"  >{{ i.1 }}</option>
+                        {% endfor %}
+                    </select>
+                    {% endif %}
+                </td>
+            </tr>          
+            <tr>
+                <th>Fee</th>
+                <td class="right_align" ><span  id="id_fee">{{ formula.amount|currency }}</span> {{tax.currency|title}}</td>
+            </tr>     
+        
+            {% if formula.late_fee_month and formula.late_fee_month > 0 %}
+            <tr>
+                <th>Due Date</th>
+                <td id="id_due_date" class="right_align" >{{ formula.due_date|date:"d/m/Y" }}</td>
+            </tr>  
+            <tr>
+                <th>Number of Months Overdue</th>
+                <td id="overdue_months" class="right_align" >{{ formula.late_fee_month}}</td>
+            </tr>  
+            <tr>
+                <th>Late Penalty = {{formula.late_fee_surcharge_formula}}</th>
+                <td class="right_align" ><span id="late_fee_surcharge_label" >{{ formula.late_fee_surcharge|currency}}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_surcharge" name="late_fee_surcharge" value="{{ formula.late_fee_surcharge}}" />
+                </td>
+            </tr>  
+            <tr>
+                <th>Late Fee Interest = {{ formula.late_fee_interest_formula }}</th>
+                <td class="right_align" ><span id="late_fee_interest_label" >{{ formula.late_fee_interest|currency}}</span> {{tax.currency|title}}
+                    <input type="hidden" id="late_fee_interest" name="late_fee_interest" value="{{ formula.late_fee_interest}}" />
+                </td>
+            </tr>        
+            {% endif %}
+            <!--tr>
+                <th>Fines (if applicable)</th>
+                <td colspan="3"><input type="text" id="fines" name="fine_amount" value="0" /> {{fee.currency|title}}</td>
+            </tr>      
+            <tr>
+                <th>Fine Description (if applicable)</th>
+                <td colspan="3"><input type="text" id="fines_description" value="" name="fine_description" disabled="disabled" /></td>
+            </tr-->    
+            <tr>
+                <th><label>Final Amount</label></th>
+                <td class="right_align" ><b><span id="final_tax_due">{{ formula.final_amount|currency }}</span> {{fee.currency|title}}</b></td>
+            </tr>  
+        </table>
+    </td>
+</tr>
+{% endif %}

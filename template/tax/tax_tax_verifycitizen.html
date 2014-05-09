@@ -1,0 +1,424 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% block css %}
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" MEDIA="print,screen" href="{% static "css/custom.css" %}" />
+{% endblock %}
+
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.tooltip_0.4.4.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.grow.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.pie.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/plugins/charts/flot/jquery.flot.orderBars.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+    <!-- Init plugins -->
+    <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+    <script type="text/javascript" src="{% static "js/charts.js" %}"></script><!-- Init plugins only for page -->
+    <script type="text/javascript"  src="/static/js/admin/populate_geo.js"></script>
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Verify Target" %}	
+{% endblock %}
+{% block mainbody %}
+<script type="text/javascript">
+	function check_citizen_form()
+	{
+		error_message = 'Please enter citizen ID or citizen names.';
+		if(($("#id_pay_citizen_id").val()!=null)&&($.trim($("#id_pay_citizen_id").val())!=""))
+		{
+			return true;
+		}
+		if($("#id_pay_citizen_name").val()==null||$.trim($("#id_pay_citizen_name").val())=="")
+		{
+			$("#citizen_message").html(error_message);
+			return false;
+		}
+		return true;
+	}	
+
+	function check_business_form()
+	{
+		error_message = 'Please enter business TIN, name, or owner details.';
+		if(($("#id_pay_tin").val()!=null)&&($.trim($("#id_pay_tin").val())!=""))
+		{
+			return true;
+		}
+		else
+		{
+			if($.trim($("#id_pay_business_name").val())==""&&$("#id_pay_business_owner_ID").val()==''&&$("#id_pay_business_owner_name").val()=='')
+			{
+				$("#business_message").html(error_message);
+				return false;
+			}
+			else
+			{
+				return true;
+			}
+		}
+	}	
+
+	function check_property_form()
+	{
+		upi = $.trim($("#id_pay_upi").val());
+		parcel_id = $.trim($("#id_pay_parcel_id").val());
+		//village = $.trim($("#id_pay_village").val());
+		
+		district = $.trim($("#id_pay_district").val());
+		cell = $.trim($("#id_pay_cell").val());
+		sector = $.trim($("#id_pay_sector").val());
+		
+		//if((upi==''||upi==null)&&(parcel_id==''||parcel_id==null)&&(village==''||village==null)&&(cell==''||cell==null)&&(sector==''||sector==null))
+		if((upi==''||upi==null)&&(parcel_id==''||parcel_id==null)&&(cell==''||cell==null)&&(sector==''||sector==null)&&(district==''||district==null))
+		{
+			$("#property_message").html('Please enter property details or UPI.');
+			return false;
+		}		
+		if(upi!=''&&upi!=null)
+		{
+			return true;
+		}
+		else
+		{
+			if(district==''||district==null)
+			{
+				$("#property_message").html('Please select a district.');
+				return false;
+			}
+			else if(sector==''||sector==null)
+			{
+				$("#property_message").html('Please select a sector.');
+				return false;
+			}
+			else if(cell==''||cell==null)
+			{
+				$("#property_message").html('Please select a cell.');
+				return false;
+			}
+			else if(parcel_id==''||parcel_id==null)
+			{
+				$("#property_message").html('Please enter Plot/Parcel ID.');
+				return false;
+			}
+			else
+			{
+				if(isNaN(parcel_id))
+				{
+					$("#property_message").html('Please enter a valid Plot/Parcel ID.');
+					return false;	
+				}
+			}
+		}
+		return true;
+	}
+
+$(document).ready(function() {
+    $("#id_pay_citizen_id").autocomplete({
+        source: "/admin/ajax/search_citizen_clean/?stype=nid",
+        minLength: 3,
+        select: function (event, ui) {
+            event.preventDefault();
+            $("#id_pay_citizen_id").val(ui.item['nid']);
+			var fullname = ui.item['first_name'];
+			if(ui.item['last_name']!='')
+			{
+				fullname += ' '+ui.item['last_name'];
+			}
+            $("#id_pay_citizen_name").val(fullname);
+        }
+    });
+    $("#id_pay_citizen_name").autocomplete({
+        source: "/admin/ajax/search_citizen_clean/?stype=name",
+        minLength: 3,
+        select: function (event, ui) {
+            event.preventDefault();
+            $("#id_pay_citizen_id").val(ui.item['nid']);
+			var fullname = ui.item['first_name'];
+			if(ui.item['last_name']!='')
+			{
+				fullname += ' '+ui.item['last_name'];
+			}
+            $("#id_pay_citizen_name").val(fullname);
+        }
+    });
+    $("#id_pay_tin").autocomplete({
+        source: "/admin/ajax/search_business/?stype=tin",
+        minLength: 3,
+        select: function (event, ui) {
+            event.preventDefault();
+            $("#id_pay_tin").val(ui.item['tin']);
+            $("#id_pay_business_name").val(ui.item['name']);
+        }
+    });
+    $("#id_pay_business_name").autocomplete({
+        source: "/admin/ajax/search_business/?stype=name",
+        minLength: 3,
+        select: function (event, ui) {
+            event.preventDefault();
+            $("#id_pay_tin").val(ui.item['tin']);
+            $("#id_pay_business_name").val(ui.item['name']);
+        }
+    });
+	$("#id_pay_business_owner_name").autocomplete({
+        source: "/admin/ajax/search_citizen_clean/",
+        minLength: 3,
+        select: function (event, ui) {
+            event.preventDefault();
+            $("#id_pay_business_owner_ID").val(ui.item['nid']);
+            $("#id_pay_business_owner_name").val(ui.item['fullname']);
+        }
+    });
+
+
+
+
+
+});
+</script>
+
+
+<style type="text/css">
+	input[type=text]
+	{
+		margin-top:5px;
+		margin-bottom:5px;
+	}
+</style>
+
+
+<h3 style="text-align:left; margin-left:30px;margin-bottom:20px;">Show tax / fee in related to:</h3>
+
+
+
+<div style="width:360px; margin-left:30px; text-align:left; display:block; float:left;">
+	<div class="box">
+		<div class="box_title">
+			Citizen
+		</div>
+		<div class="content">
+			<form onsubmit="return check_citizen_form();" method="post" >
+				{% csrf_token %}
+				<div style="height:200px;">
+					<table cellpadding="0" cellspacing="0">
+						<tr>
+							<td width='100' valign="middle" align='left'><label>Citizen (ID):</label></td>
+							<td width = '160'>{{form.pay_citizen_id}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Name:</label></td>
+							<td width = '160'>{{form.pay_citizen_name}}</td>
+						</tr>
+						<!--
+						<tr>
+							<td width='100' align='left'><label>First name:</label></td>
+							<td width = '160'>{{form.pay_first_name}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Middle name:</label></td>
+							<td width = '160'>{{form.pay_middle_name}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Last name:</label></td>
+							<td width = '160'>{{form.pay_last_name}}</td>
+						</tr>
+						-->
+					</table>     
+				</div>
+				<div id="citizen_message" style="color:red; height:20px; line-height:20px;">	{% if citizen_message %}{{citizen_message|safe}}{% endif %} </div>       
+				<div style="margin-top:20px">
+					<div style="display:none"><input type="submit" name="by_citizen" value='Show Taxes' class="my_button"></div>
+					<button type="submit" class="my_button">Show Taxes</button>
+				</div>	
+			</form>
+		</div>	
+	</div>
+</div>
+
+
+<div style="width:360px; margin-left:40px; text-align:left;display:block; float:left;">
+	<div class="box">
+		<div class="box_title">
+			Business
+		</div>
+		<div class="content">
+			<form onsubmit="return check_business_form();" method="post" >
+				{% csrf_token %}
+				<div style="height:200px;">
+					<table cellpadding="0" cellspacing="0">
+						<tr>
+							<td width='100' align='left'><label>TIN/RRA:</label></td>
+							<td width = '160'>{{form.pay_tin}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Name:</label></td>
+							<td width = '160'>{{form.pay_business_name}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Owner ID:</label></td>
+							<td width = '160'>{{form.pay_business_owner_ID}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Owner Name:</label></td>
+							<td width = '160'>{{form.pay_business_owner_name}}</td>
+						</tr>
+					</table>
+				</div>
+				
+				<div id="business_message" style="color:red; height:20px; line-height:20px;">{% if business_message %}{{business_message|safe}}{% endif %} </div>
+				<div style="margin-top:20px">
+					<div style="display:none"><input type="submit" name="by_business" value='Show Taxes' class="my_button"></div>
+					<button type="submit" class="my_button">Show Taxes</button>
+				</div>
+			</form>
+		</div>	
+	</div>
+</div>
+
+
+<div style="width:360px; margin-left:40px; text-align:left;display:block; float:left;">
+	<div class="box">
+		<div class="box_title">
+			Property
+		</div>
+		<div class="content">
+			<form onsubmit="return check_property_form();" method="post" >
+				{% csrf_token %}
+				<div style="height:200px;">
+					<table cellpadding="0" cellspacing="0" id="search_table">
+						<tr>
+							<td width='100' align='left'><label>UPI:</label></td>
+							<td width = '160'>{{form.pay_upi}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>District:</label></td>
+							<td width = '160'>{{form.pay_district}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Sector:</label></td>
+							<td width = '160'>{{form.pay_sector}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Cell:</label></td>
+							<td width = '160'>{{form.pay_cell}}</td>
+						</tr>
+						<tr>
+							<td width='100' align='left'><label>Plot/Parcel ID:</label></td>
+							<td width = '160'>{{form.pay_parcel_id}}</td>
+						</tr>
+					</table>
+				</div>
+				<div id="property_message" style="color:red; height:20px; line-height:20px;">	{% if property_message %}{{property_message|safe}}{% endif %} </div>
+				<div style="margin-top:20px">
+					<button type="submit" class="my_button">Show Taxes</button>
+				</div>
+				
+					
+			</form>
+		</div>	
+	</div>
+</div>
+
+<div style="clear:both">
+&nbsp;
+</div>
+
+
+
+	
+	
+<br/>
+<div style="text-align:left; margin-left:30px;">
+    {% if results %}
+        <h4>Your search returned {{ results|length }} results. Please select from the matches below:</h4>
+        {% if type == 'citizen' %}
+            <table class="style_table">
+                <tr>
+                    <th>Citizen ID</th>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Date of Birth</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th></th>
+                </tr>
+            {% for i in results %}
+                <tr>
+                    <td>{{ i.citizen_id }}</td>
+                    <td>{{ i.getDisplayName }}</td>
+                    <td>{{ i.gender }}</td>
+                    <td>{% if i.date_of_birth %} {{ i.date_of_birth|date:"d/m/Y" }} {% else %} {{ i.year_of_birth }} {% endif %}</td>
+                    <td>{{ i.phone_1 }}</td>
+                    <td>{{ i.email }}</td>
+                    <td><a href="/admin/tax/tax/citizen/{{i.id}}/">Show taxes</a></td>        
+                </tr>
+            {% endfor %}
+            </table>
+        {% elif type == 'business' %}
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>TIN</th>
+                    <th></th>
+                </tr>
+            {% for i in results %}
+                <tr>
+                    <td>{{ i.name }}</td>
+                    <td>{{ i.tin }}</td>
+                    <td><a href="{{ i.link }}" >Show taxes</a></td>        
+                </tr>
+            {% endfor %}
+            </table>
+        {% endif %}
+    {% endif %}
+</div>
+
+
+
+<script>
+    $(document).ready(function(){
+        if($("#id_pay_district").val()=='')
+        {
+            $("#id_pay_sector").prop('disabled','disabled');
+            $("#id_pay_cell").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#id_pay_sector").prop('disabled',false);
+            if($("#id_pay_sector").val()=='')
+            {
+                $("#id_pay_cell").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#id_pay_cell").prop('disabled',false);
+            }
+        }
+        $("#uniform-id_pay_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +
+                'src="/static/images/refresh.png"/>');
+        $("#uniform-id_pay_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' +
+                'src="/static/images/refresh' +
+                '.png"/>');
+    });
+</script>
+
+
+{% endblock %}

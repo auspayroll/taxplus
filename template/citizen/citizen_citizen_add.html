@@ -1,0 +1,309 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+
+{% block css  %}
+	<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% if not action %}
+		{% breadcrumb "Citizen" "" %}
+	{% else %}
+		{% breadcrumb "Citizen" "/admin/citizen/citizen/" %}
+		{% ifequal action "add" %}	
+			{% breadcrumb "Add citizen" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit citizen" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+
+
+
+    <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/forms/watermark/jquery.watermark.min.js" %}"></script>  
+	<script type="text/javascript" src="{% static "js/plugins/misc/search/tipuesearch.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/totop/jquery.ui.totop.min.js" %}"></script>
+	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
+
+    <!-- Init plugins -->
+    <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
+	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
+
+<style type="text/css">
+	#uniform-id_month_of_birth, #uniform-id_year_of_birth, #uniform-id_day_of_birth
+	{
+		display:inline-block; width:120px;
+	}
+
+	#gender_cell label
+	{
+		display:inline-block;
+		font-weight:normal;
+		font-size:12px;
+	}
+	#gender_cell label div.radio:first-child
+	{
+		padding-left:0px;
+	}
+	.error_message
+	{
+		color:red;
+		font-style:italic;
+	}
+	
+
+</style>	
+
+<div style="text-align:center;">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box" style="border-bottom:1px solid #ccc;">
+			<div class="box_title" >
+				<table style="width:100%" cellpadding="0" cellspacing="0">
+					<tr>
+						<td style="vertical-align:middle;">Search citizen</td>
+						<td style="padding-right:20px; text-align:right; line-height:36px;">
+
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="content" style="border-bottom:0px; padding-left:0px; ">
+				<form  style="margin-left:0px;"  onsubmit="return check_citizen_select_or_not();" id="citizen_form" action="/admin/citizen/citizen/view_citizen/" method="post" >
+					<div style="text-align:left; margin-left: 20px; margin-top:10px;">
+						{% csrf_token %}
+			
+						<table cellpadding="0" cellspacing="0">
+							<tr>
+								<td width="360">
+									<div class="user_dropdown">
+										<div class="keyword_div">
+											Name: &nbsp;&nbsp;<input autocomplete="off" type="text" style="height:30px; width:300px;" name ="keyword" id="id_keyword"/>
+										</div>
+										<div id="matched_citizens_list" class="matched_users_div">
+										</div>
+									</div>
+								</td>
+								<td>
+									<button style="margin-left:20px;" type="submit" class="my_button">View citizen</button>	
+									<div style="display:inline-block; margin-left:40px;">
+										<span style="color:red; font-weight:bold;" id="name_error">&nbsp;</span>
+										<span style ="display:none" id="fullname"></span>
+									</div>	
+								</td>
+							</tr>
+						</table>
+					</div>
+					<div style="display:none;">
+						{{form.citizen_id}}
+					</div>
+				</form>
+			</div>
+			
+			<div class="box_title">
+				Add citizen
+			</div>
+			<div class="content">
+				{% if message %}
+					<div style="color:red; font-size:14px; line-height:60px;">
+						{{message}}
+					</div>
+				{% endif %}
+
+
+				<form onsubmit="return check_citizen_registration_form(this);" action="/admin/citizen/citizen/add_citizen/" method="post" enctype="multipart/form-data">
+					{% csrf_token %}
+					<table>
+						<tr>
+							<td> Citizen ID:</td>
+							<td> {{form.citizen_id}}&nbsp;&nbsp;
+								<span class="error_message" id="citizen_id_error">
+									{% if form.citizen_id.errors %}
+										{{form.citizen_id.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td width="180"> First name:</td>
+							<td> {{form.first_name}}&nbsp;&nbsp;
+								<span class="error_message" id="first_name_error">
+									{% if form.first_name.errors %}
+										{{form.first_name.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td> Middle name:</td>
+							<td> {{form.middle_name}}&nbsp;&nbsp;
+								<span class="error_message" id="middle_name_error">
+									{% if form.middle_name.errors %}
+										{{form.middle_name.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td> Last name:</td>
+							<td> {{form.last_name}}&nbsp;&nbsp;
+								<span class="error_message" id="last_name_error">
+									{% if form.last_name.errors %}
+										{{form.last_name.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td> Gender:</td>
+							<td id="gender_cell"> {{form.gender}}&nbsp;&nbsp;
+								<span class="error_message" id="gender_error">
+									{% if form.gender.errors %}
+										{{form.gender.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+		
+						<tr>
+							<td>Date of birth (31/05/1980):</td>
+							<td> 
+								{{ form.day_of_birth }} &nbsp;/&nbsp; {{ form.month_of_birth }} &nbsp;/&nbsp; {{ form.year_of_birth }} 
+								<span class="error_message" id="date_of_birth_error">
+									{% if form.date_of_birth.errors %}
+										{{form.date_of_birth.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> Primary phone number:</td>
+							<td> {{form.phone_1}}&nbsp;&nbsp;
+								<span class="error_message" id="phone_1_error">
+									{% if form.phone_1.errors %}
+										{{form.phone_1.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> Secondary phone number:</td>
+							<td> {{form.phone_2}}&nbsp;&nbsp;
+								<span class="error_message" id="phone_2_error">
+									{% if form.phone_2.errors %}
+										{{form.phone_2.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> Email:</td>
+							<td> {{form.email}}&nbsp;&nbsp;
+								<span class="error_message" id="email_error">
+									{% if form.email.errors %}
+										{{form.email.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> Address:</td>
+							<td> {{form.address}}&nbsp;&nbsp;
+								<span class="error_message" id="po_box_error">
+									{% if form.address.errors %}
+										{{form.address.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> PO Box:</td>
+							<td> {{form.po_box}}&nbsp;&nbsp;
+								<span class="error_message" id="po_box_error">
+									{% if form.po_box.errors %}
+										{{form.po_box.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td>Foreign identity type:</td>
+							<td> {{form.foreign_identity_type}}&nbsp;&nbsp;
+								<span class="error_message" id="po_box_error">
+									{% if form.foreign_identity_type.errors %}
+										{{form.foreign_identity_type.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td>Foreign identity number:</td>
+							<td> {{form.foreign_identity_number}}&nbsp;&nbsp;
+								<span class="error_message" id="po_box_error">
+									{% if form.foreign_identity_number.errors %}
+										{{form.foreign_identity_number.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td> PO Box:</td>
+							<td> {{form.po_box}}&nbsp;&nbsp;
+								<span class="error_message" id="po_box_error">
+									{% if form.po_box.errors %}
+										{{form.po_box.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+
+						<tr>
+							<td>Citizen Photo</td>
+							<td>{{form.photo}}&nbsp;&nbsp;
+								<span class="error_message" id="photo_error">
+									{% if form.pohoto.errors %}
+										{{form.pohoto.errors|striptags }}
+									{% endif %}
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td colspan='2'>&nbsp;</td>
+						</tr>
+					</table>
+					<div>
+						<button type="submit" class="my_button">Add citizen</button>
+					</div>	
+				</form>
+			</div>	
+
+
+
+
+
+		</div>
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Contact form" %}
+{% endblock %}
+
+
+{% block javascript %}
+	<script type="text/javascript"  src="/static/js/admin/citizen.js"></script>
+{% endblock %}
+{% block mainbody %}
+
+<div style="width:50%; margin-left:20px; text-align:left;">
+	<div class="box">
+		<div class="box_title">
+			Contact Form
+		</div>
+		<div class="content">
+			<form action="/admin/contact/contact/" method="post" enctype="multipart/form-data">
+				{% csrf_token %}
+				{{ form }}
+				<div>
+					<input type="submit" value='Submit' class="my_button">
+				</div>	
+			</form>
+		</div>	
+	</div>
+</div>
+
+
+<!--
+{% for field, errors in form.errors.items %}
+{{field}}
+{{errors}}
+{% endfor %}
+-->
+{% endblock %}

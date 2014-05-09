@@ -1,0 +1,82 @@
+{% extends "common/base_property.html" %}
+{% load staticfiles %}
+{% block css  %}
+	<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+{% endblock %}
+
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">
+			Filter logs
+		</div>
+		<div class="content" style="border-bottom:0px; padding:20px;">
+			<form method="post" style="margin:0px; padding:0px;">
+				{% csrf_token %}
+				<table cellpadding="0" cellspacing="0">
+					<tr>
+						<td><label>Username:</label></td>
+						<td>{{form.username}}</td>
+						<td style="padding-left:30px;"><label>Citizen ID:</label></td>
+						<td>{{form.citizen_id}}</td>
+						<td style="padding-left:30px;"><label>Date from:</label></td>
+						<td><input class="date_picker"  value="{{form.period_from.value}}" type="text" id="id_period_from" name="period_from" /></td>
+						<td style="padding-left:30px;"><label>Date to:</label></td>
+						<td><input class="date_picker"  value="{{form.period_to.value}}" type="text" id="id_period_to" name="period_to" /></td>
+						<td style="padding-left:30px;"><button type="submit" class="my_button">Filter</button></td>
+					</tr>
+				</table>
+				<div style="display:none;">
+					{{form.upi}}
+				</div>
+			</form>
+		</div>
+
+
+		<div class="box_title">Logs found</div>
+		<div class="content" style="padding:20px;">
+			{% if not logs|length %}
+			No logs found.	
+			{% else %}
+			<table cellpadding="0" cellspacing="0" id="tablesorter" class="tablesorter">
+				<thead>
+					<tr>
+						<th width="95">Date</th>
+						<th width="100">Username</th>
+						<!--<th class="firstrow" width="50">Plot</th>-->
+						<th width="115">Citizen</th>
+						<!--<th class="firstrow" width="60">Tran ID</th>-->
+						<th>Message</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for log in logs %}
+					<tr>
+						<td>{{log.date_time|date:'d/m/y@H:i'}}</td>
+						<td>{{log.username}}</td>
+						<td>
+							{% if not log.citizen %}
+								<font style="color:#999;">None</font>
+							{% else %}
+								{{log.citizen.citizen_id}}
+							{% endif %}
+						</td>
+						<td class="message">{{log.message|safe}}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			{% endif %}
+			
+		</div>
+	</div>
+</div>
+
+
+	<br>
+	<br>
+{% endblock %}
+
+

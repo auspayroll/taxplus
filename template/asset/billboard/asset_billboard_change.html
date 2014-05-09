@@ -1,0 +1,46 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% block css %}
+{% endblock %}
+
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Billboard" "/admin/asset/billboard/"  %}
+	{% breadcrumb "Update billboard" %}
+{% endblock %}
+
+{% block mainbody %}
+
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if form %}
+<div class="user_action_title">
+	Update billboard
+</div>
+
+<div class="padded_div">
+    <form  action="/admin/asset/billboard/change_billboard/{{ obj_id }}/" method="post" enctype="multipart/form-data" >
+	{% csrf_token %}
+    {{ form }}
+	{% include "asset/ownership/_ownership_block.html" with asset_type="billboard" %}	
+	<div style="margin-top:20px;padding-right:22px; display:block;">
+		{% include "media/_media_box.html" with media=media type="billboard" id=obj_id %}
+	</div>
+    <br/>
+    <input type="submit" value="Save" name="submit_update"/>
+    </form>
+</div>
+{% else %}
+
+{% include "asset/billboard/_billboard_search.html" with action="change" %}
+
+{% endif %}
+{% endblock %}

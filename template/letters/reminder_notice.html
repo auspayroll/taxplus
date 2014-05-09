@@ -1,0 +1,55 @@
+<html>
+	<head>
+		<title></title>
+	</head>
+	<body>
+		<div style="font-size:16px; font-weight:bold;">REPUBLIC OF RWANDA</div>
+		<div style="margin-top:10px; margin-left:30px;">
+			<img width='101' height='109' src="{{domain_name}}static/images/rwanda_logo.jpeg"/>
+		</div>
+		<div style="margin-top:30px;">
+			<table style="line-height:20px; font-size:16px; font-weight:bold; ">
+				<tr>
+					<td valign='top' style="width:300px;">
+						Province: {{location_and_tin.province}}<br>
+						District: {{location_and_tin.district}}
+					</td>
+					<td valign='top'>
+						<span>Date: {{today}}</span><br>
+						&nbsp;&nbsp;&nbsp;
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div style="margin-top:40px; font-weight:bold;">
+			{{citizen.salutation}} {{citizen.fullname}}<br>
+			TIN: {% if location_and_tin.tin %}{{location_and_tin.tin}}{% else %} N/A {% endif %}<br>
+			P.O.BOX: {% if citizen.po_box %}{{citizen.po_box}}{% else %} N/A {% endif %}
+		</div>
+		
+		<div style="margin-top:30px; text-align:justify">
+			Dear Madam/Sir,<br/><br/>
+			<strong>Subject:</strong> Reminder notice ({{tax_description}})<br/><br/>
+			Reference is made to the information available to us, we remind you that you didn't declare and pay the 
+			{% if tax_type == 'fixed_asset' %}
+			Fixed Asset Tax of the year {{year_of_tax_due}} as provided by the articles 11 and 22 of the law n<sup style='font-size:8px;'>0</sup> 59/2011 of 31/12/2011 establishing the sources of revenue and property of decentralised entities 
+			revenue and property of decentralised entities and governing their management. Therefore, we invite you to regularize your tax situation in order to avoid the enforcement actions that may be 
+			taken as per the aforesaid tax law.
+			
+			{% elif tax_type == 'rental_income' %}
+			Rental Income Tax of the year {{year_of_tax_due}} as provided by the articles 54 and 55 of the law n<sup style='font-size:8px;'>0</sup> 59/2011 of 31/12/2011 establishing the sources of revenue and property of decentralised entities 
+			of revenue and property of decentralised entities and governing their management. Therefore, we invite you to regularize your tax situation in order to avoid the enforcement actions that may be 
+			taken as per the aforesaid tax law.
+			
+			{% elif tax_type == 'trading_license' %}
+			Trading License Tax of the year {{year_of_tax_due}} as provided by the articles 42 and 44 of the law n<sup style='font-size:8px;'>0</sup> 59/2011 of 31/12/2011 establishing the sources of revenue and property of decentralised entities 
+			of revenue and property of decentralised entities and governing their management. Therefore, we inform you that your profit - oriented activities are illegal. Thus we invite you to regularizw your tax situation otherwise your 
+			activities will be immediately shut down according to the article 44 of the law mentioned above.
+			{% endif %}
+			<br/><br/><br/>
+			Regards<br/br/>
+			<span>Executive Secretary the district</span>
+		</div>
+	</body>
+</html>

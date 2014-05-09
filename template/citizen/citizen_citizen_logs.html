@@ -1,0 +1,91 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+
+{% block rightpanel %}
+<div style="text-align:left; margin-left:20px; margin-right:20px;">
+	<div class="box">
+		<div class="box_title">Logs</div>
+		<div class="content" style="padding:20px;">
+			{% if not logs|length %}
+				<div style="margin-bottom:20px; height:20px; line-height: 20px; color:red">
+					No logs found.	
+				</div>
+			{% else %}
+				<div style="text-align:center;">
+					<table style="margin:0 auto;" cellpadding="0" cellspacing="0"  class="tablesorter">
+						<thead>
+							<tr>
+								<th>Date</th>
+								<th>Username</th>
+								<th>UPI</th>
+								<th>Message</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for log in logs %}
+							<tr>
+								<td>{{log.date_time|date:'d/m/y@H:i'}}</td>
+								<td>{{log.username}}</td>
+								<!--
+								<td>						
+									{% if not log.transaction_id %}
+									<font style="color:#999;">{{log.transaction_id}}</font>
+									{% else %}
+									{{log.transaction_id}}						
+									{% endif %}
+								</td>-->
+								<td>
+									{% if not log.upi %}
+										<font style="color:#999;">{{log.upi}}</font>
+									{% else %}
+										{{log.upi}}
+									{% endif %}
+								</td>
+								<td class="message">{{log.message|safe}}</td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			
+				<div style="margin-top:20px; text-align:center; font-size:14px;" id="page_navigator">
+					<span>
+						Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
+						&nbsp;&nbsp;&nbsp;&nbsp;
+				    	
+						{% if logs.has_previous %}
+							<a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/logs/?page=1">first</a>
+						{% else %}
+							first
+						{% endif %}
+				        
+						&nbsp;&nbsp;
+						{% if logs.has_previous %}
+							<a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/logs/?page={{ logs.previous_page_number }}">previous</a>
+						{% else %}
+							previous
+						{% endif %}
+				        
+						&nbsp;&nbsp;
+						{% if logs.has_next %}
+							<a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/logs/?page={{ logs.next_page_number }}">next</a>
+						{% else %}
+							next
+						{% endif %}
+						&nbsp;&nbsp;
+						{% if logs.has_next %}
+							<a href="/admin/citizen/citizen/view_citizen/{{citizen.id}}/logs/?page={{ logs.paginator.num_pages }}">last</a>
+						{% else %}
+							last
+						{% endif %}
+					</span>
+				</div>
+			
+			{% endif %}
+			<div id="search_plot_id" style="display:none"></div>
+			<div id="citizen_id" style="display:none">{{citizen.citizen_id}}</div>
+		</div>
+	</div>
+</div>
+
+{% endblock %}

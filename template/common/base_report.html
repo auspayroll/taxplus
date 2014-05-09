@@ -1,0 +1,174 @@
+{% extends "common/base_chart.html" %}
+{% load staticfiles %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Report" %}
+{% endblock %}
+
+
+{% block mainbody %}
+<script type="text/javascript"  src="/static/js/jquery.printElement.min.js"></script>
+<script type="text/javascript"  src="/static/js/admin/populate_geo.js"></script>
+
+<style type="text/css">
+	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
+	.edit{color:#0060AC; font-size:14px;}
+	.info{line-height:20px; font-size:13px; color:black; color:#5a5a5a;}
+	.info table{text-align:left; margin-top:10px;}
+	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
+	th{vertical-align:top;}
+	table#change_citizen_table tbody tr td { height:45px;}
+</style>
+<div id="template_wrapper">
+	<table id="template_table" width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td width="360" valign="top" style="min-width:360px; border-right:1px solid #cccccc; background:#f2f2f2; padding:10px 10px;">
+				<div style="height:100%;" >
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left" style="color:#3399cc; font-size:20px;">Generate report</td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Property with and without contacts</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/property_contact/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Paid and unpaid tax</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/tax_paid_and_unpaid/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Log activities</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/log_activities/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Revenue received (by bank)</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/revenue_received/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Revenue received (general)</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/revenue_received_breakdown/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Tax payers</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/tax_payers/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Business without TIN</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/business_no_tin/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Properties with unpaid tax</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/properties_with_unpaid_tax/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+					<div class="custom_title">
+						<table cellpadding="0" cellspacing="0" width="100%">
+							<tr>
+								<td align="left">Properties with no owners</td>
+								<td align="right"><span class="edit"><a href="/admin/report/report/properties_with_no_owners/">View</a></span></td>
+							</tr>					
+						</table>
+					</div>
+				</div>
+			</td>
+			<td valign="top" style="padding:20px;">
+				{% block rightpanel %}
+				<div class="box">
+					<div class="box_title" style="margin:0px;">
+						{% block right_panel_title %}
+							Enter criteria to generate report
+						{% endblock %}
+					</div>
+					<div class="content">
+						{% block right_panel_search_form %}{% endblock %}
+					</div>	
+					<div class="box_title" style="border-top:0px; border-radius:0px;">
+						<div style="display:inline-block;float:left;">
+							{% block right_panel_box_title %}{% endblock %}
+						</div>
+						<div style="display:inline-block;float:right; margin-right:30px; vertical-align:middle;">
+							{% block printer %}
+							{% endblock %}
+						</div>
+					</div>
+					<div class="content" style="padding:20px;">
+						{% block right_panel_content %}{% endblock %}
+					</div>
+					{% block morebox %}
+					{% endblock %}					
+				</div>
+
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+
+
+
+
+
+<script>
+    $(document).ready(function(){
+    	/*if($("#id_district").val()=='')
+        {
+            $("#id_sector").prop('disabled','disabled');
+            $("#id_cell").prop('disabled','disabled');
+        }
+        else
+        {
+            $("#id_sector").prop('disabled',false);
+            if($("#id_sector").val()=='')
+            {
+                $("#id_cell").prop('disabled','disabled');
+            }
+            else
+            {
+                $("#id_cell").prop('disabled',false);
+            }
+        }*/
+        $("#uniform-id_district").after('<img style="margin-left:10px; display:none;" id="district_refresh" ' +
+                'src="/static/images/refresh.png"/>');
+        $("#uniform-id_sector").after('<img style="margin-left:10px; display:none;" id="sector_refresh" ' +
+                'src="/static/images/refresh' +
+                '.png"/>');
+    });
+</script>
+
+{% endblock %}
