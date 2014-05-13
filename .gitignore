@@ -1,3 +1,4 @@
 uploads
 dev1/settings.py
 dev1/wsgi.py
+*.pyc
