@@ -411,7 +411,7 @@ class PayTaxModelForm(ModelForm):
 
 	class Meta:
 		abstract = True
-		exclude = ('staff')
+		exclude = ('staff',)
 
 
 class PayFixedAssetTaxForm(PayTaxModelForm):

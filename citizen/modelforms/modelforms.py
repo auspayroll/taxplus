@@ -51,7 +51,7 @@ class CitizenChangeForm(ModelForm):
 	"""
 	class Meta:
 		model = Citizen
-		exclude = ('cp_password')
+		exclude = ('cp_password',)
 
 	obj_id = forms.IntegerField()
 	#date_of_birth = forms.DateField(widget=forms.DateInput(format = settings.DATE_INPUT_FORMAT), input_formats=settings.DATE_INPUT_FORMATS, required=False)	
