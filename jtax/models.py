@@ -1067,6 +1067,17 @@ class FormulaData(models.Model):
 	formula_data = property_decorator(get_pickle, set_pickle, del_pickle)
 
 
+class CleaningSchedule(models.Model):
+	valid_from = models.DateField(help_text='Date this setting to be valid from.')
+	council = models.ForeignKey(Council, null=True, blank=True, help_text="The council that setting applied to.")
+	district = models.ForeignKey(District, null=True, blank=True, help_text="")
+	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="")
+	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
+	amount =  models.Decimal()
+	business_category = models.ForeignKey(BusinessCategory)
+	modified = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
+
+
 class Setting(models.Model):
 	tax_fee_name = models.CharField(max_length = 50, help_text="Tax / Fee Name")
 	setting_name = models.CharField(max_length = 50, help_text="Tax / Fee Setting Name")
@@ -1563,6 +1574,9 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 			message = "No change made"
 		message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
 		return message
+
+
+
 
 
 
