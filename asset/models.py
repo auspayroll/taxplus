@@ -8,6 +8,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 
+class BusinessCategory(models.Model):
+	name = models.CharField(max_length=25)
+
+
+class BusinessSubCategory(models.Model):
+	name =  models.CharField(max_length=50)
+	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True)
+
+
 class Business(models.Model):
 	pm_tin = models.CharField(max_length=50,help_text='Propertymode TIN', blank = True)
 	name = models.CharField(max_length=100,help_text='Business Name')
@@ -33,6 +42,9 @@ class Business(models.Model):
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True, verbose_name='Status')
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 	closed_date = models.DateField(blank=True, null=True)
+	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True)
+	business_subcategory = models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+
 
 	def close(self, close_date):
 		from jtax.models import TradingLicenseTax, Fee
