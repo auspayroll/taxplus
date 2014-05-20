@@ -1073,7 +1073,7 @@ class CleaningSchedule(models.Model):
 	district = models.ForeignKey(District, null=True, blank=True, help_text="")
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="")
 	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
-	amount =  models.Decimal()
+	amount =  models.DecimalField(decimal_places=0, max_digits=9)
 	business_category = models.ForeignKey(BusinessCategory)
 	modified = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
 
