@@ -2985,6 +2985,9 @@ def payFee(request, fee_type=None, id=None):
 
 
 def payFees(request, id=None):
+	if not request.POST:
+		raise Http404
+		
 	fees = Fee.objects.filter(pk__in=request.POST.getlist('tax_id'))
 	template_type = request.POST.get('template_type')
 	# raise error message if no fees
