@@ -6401,16 +6401,16 @@ def generateEPayInvoice(tax_type, tax, type, model):
 			late_fees.append(late_fee_record)
 
 	if tax_type == 'fee':
-		tax_record = { 'name': tax.name or tax.fee_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': tax.amount, 'currency': tax.currency}
+		tax_record = { 'name': tax.name or tax.fee_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.amount or 0), 'currency': tax.currency}
 	elif tax_type == 'misc_fee':
-		tax_record = { 'name': tax.fee_type.replace("_"," ").title(), 'reference': tax.fee_sub_type.title(),'amount': tax.amount, 'currency': tax.currency}
+		tax_record = { 'name': tax.fee_type.replace("_"," ").title(), 'reference': tax.fee_sub_type.title(),'amount': (tax.amount or 0), 'currency': tax.currency}
 	else:
-		tax_record = { 'name': tax_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': tax.amount, 'currency': tax.currency}
+		tax_record = { 'name': tax_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.amount or 0), 'currency': tax.currency}
 	taxes.append(tax_record)
 
 	receipt['late_fees'] = late_fees
-	receipt['total'] = tax.amount + payment['late_fees']
-	remaining_amount = tax.amount - payment['amount_paid']
+	receipt['total'] = ( tax.amount or 0 ) + payment['late_fees']
+	remaining_amount = (tax.amount or 0 ) - payment['amount_paid']
 	receipt['total_outstanding'] = remaining_amount + payment['late_fees']
 
 	#append fines - if exists
