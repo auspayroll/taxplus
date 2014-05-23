@@ -78,16 +78,35 @@
 	<script type="text/javascript" src="{% static "js/plugins/misc/qtip/jquery.qtip.min.js" %}"></script>
     <script type="text/javascript" src="{% static "js/main.js" %}"></script><!-- Core js functions -->
 
-
-
-
-
-
 <script type="text/javascript" >
     $(function() {
         $("input#id_date_started").datepicker({ dateFormat: "dd/mm/yy" });
         $(".column").parents('p').css("float",'left');
         $(".column").parents('p').css("margin-right",'30px');
+        $("#id_area_type").parents('p').css("clear",'both');
+
+        // adjust business subcategories list to business categories list drop down
+        var business_subcategories = {{ bus_subcategories_list|safe }};
+        
+        $("#id_business_category").change(
+            function(){
+                var currentVal = $(this).val();
+                $("#id_business_subcategory").empty();
+                var newOption = $('<option value="">--------</option>');
+                $('#id_business_subcategory').append(newOption);
+                business_subcategories.map(
+                    function(item){
+                        if(item[2] == currentVal){
+                            var newOption = $('<option value="' + item[0] + '">' + item[1] + '</option>');
+                            $('#id_business_subcategory').append(newOption);
+                        }
+                    }
+                );
+                $('#id_business_subcategory').val("");
+                // $('#id_business_subcategory').trigger("chosen:updated");
+            }
+        );
+
     })
 </script>
 

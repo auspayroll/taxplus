@@ -24,7 +24,7 @@
 			{% for i in fees %}
 				<tr>
                     <td>
-						{% if not i.is_paid  %}
+						{% if not i.is_paid and i.submit_date  %}
                         <input type="checkbox" name="tax_id" value="{{i.id}}" class="multi_pay_checkbox" />
 						{% endif %}
                         <!--<input type="hidden" value="{{i.name}}_{{i.obj_id}}_{{i.branch}}" id="mark_{{i.id}}" />-->

@@ -9,12 +9,18 @@ from django.dispatch import receiver
 
 
 class BusinessCategory(models.Model):
-	name = models.CharField(max_length=25)
+	name = models.CharField(max_length=100)
+
+	def __unicode__(self):
+		return self.name
 
 
 class BusinessSubCategory(models.Model):
 	name =  models.CharField(max_length=100)
 	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True)
+
+	def __unicode__(self):
+		return self.name
 
 
 class Business(models.Model):

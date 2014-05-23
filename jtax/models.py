@@ -877,6 +877,42 @@ class Fee(Tax):
 			business = self.subbusiness.business
 		else:
 			business = self.business
+		if business.business_category.pk == 0 or self.exempt:
+			self.amount = 0
+			self.remaining_amount = 0
+			return 0, None
+
+		if business.business_category:
+			schedule = CleaningSchedule.objects.filter(business_category=business.business_category)
+
+			if business.cell:
+				schedule = schedule.filter(Q(cell__isnull=True) | Q(cell=business.cell))
+			else:
+				schedule = schedule.filter(cell__isnull=True)
+
+			if business.sector:
+				schedule = schedule.filter(Q(sector__isnull=True) | Q(sector=business.sector)).filter(Q(district__isnull=True) | Q(district=business.sector.district))
+			else:
+				schedule = schedule.filter(sector__isnull=True).filter(district__isnull=True)
+
+			schedule = schedule.order_by('-valid_from', '-cell', '-sector', '-district')[0]
+
+			self.amount = self.remaining_amount = schedule.amount
+			self.submit_date = datetime.now()
+			due_date = self.date_from + relativedelta(months=1)
+			self.due_date = date(due_date.year, due_date.month, 5)
+			self.save()
+			return self.amount, self.due_date
+		else:
+			self.reset_tax()
+
+
+
+	def calc_cleaningFee_deprecated(self):
+		if self.subbusiness:
+			business = self.subbusiness.business
+		else:
+			business = self.business
 		if business.business_type == 'No premises':
 			self.amount = 0
 			self.remaining_amount = 0
@@ -1074,6 +1110,7 @@ class CleaningSchedule(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="")
 	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
 	amount =  models.DecimalField(decimal_places=0, max_digits=9)
+	due_date = models.DateField(null=True, blank=True)
 	business_category = models.ForeignKey(BusinessCategory)
 	modified = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
 

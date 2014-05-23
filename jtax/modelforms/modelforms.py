@@ -500,7 +500,7 @@ def paymentForm(tax_object, *args, **kwargs):
 	class PaymentForm(forms.ModelForm):
 		citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 		business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
-		amount = CurrencyField(label="Payment Amount")
+		amount = CurrencyField(label="Payment Amount", widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'}))
 		final_tax_due = forms.CharField(widget=forms.HiddenInput(), initial=None,required=False)
 		paid_date = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), input_formats=('%d/%m/%Y',),initial=datetime.now,)
 		manual_receipt = forms.CharField(widget=forms.TextInput(), label="Manual Receipt Number", required=False)

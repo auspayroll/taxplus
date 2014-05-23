@@ -1676,23 +1676,33 @@ def tax_business(request, obj_id, part):
 			context_instance=RequestContext(request))
 	elif part == 'edit_business':
 		request.session['business_url']  = request.get_full_path()
+		bus_subcategories_list = json.dumps(list(BusinessSubCategory.objects.values_list('pk','name','business_category')))
 		if request.method == 'GET':
 			form = BusinessForm(instance=business)
 			media = MediaMapper.getMedia('business',business)
-			return render_to_response('tax/tax_tax_business_editbusiness.html', {'business':business,'form':form, 'obj_id': business.id,'media':media},
+			return render_to_response('tax/tax_tax_business_editbusiness.html', {'business':business,'form':form, 'obj_id': business.id,'media':media, 'bus_subcategories_list':bus_subcategories_list},
 							context_instance=RequestContext(request))
 		else:
 			old_data = model_to_dict(business)
 			form = BusinessForm(request.POST, instance = business)
 			if form.is_valid():
 				business = form.save(request)
+				if business.business_category:
+					fees = business.fee_set.filter(fee_type='cleaning', submit_date__isnull=True)
+					for fee in fees:
+						fee.calc_tax()
+
 				new_data = model_to_dict(business)
 				LogMapper.createLog(request,object=business, old_data=old_data, new_data=new_data,business=business, action="change")
 				success_message = 'Business updated successfully.'
 				messages.success(request, success_message) 
+				if request.GET.get('fee_redirect'):
+					return HttpResponseRedirect(reverse("business_fees", args=[business.pk]))	
+
+				return HttpResponseRedirect('/admin/tax/tax/business/%s/edit_business/' % business.pk)
 
 		media = MediaMapper.getMedia('business',business)
-		return render_to_response('tax/tax_tax_business_editbusiness.html', {'business':business,'form':form, 'obj_id': business.id,'media':media},
+		return render_to_response('tax/tax_tax_business_editbusiness.html', {'business':business,'form':form, 'obj_id': business.id,'media':media, 'bus_subcategories_list':bus_subcategories_list},
 					context_instance=RequestContext(request))
 
 	elif part == 'media':
@@ -2223,7 +2233,7 @@ def getFeeSummary(request, obj):
 		properties = obj.get_properties().values_list('pk',flat=True)
 		fees = Fee.objects.filter(Q(business__pk=obj.pk) | Q(subbusiness__business__pk=obj.pk) | Q(property__pk__in=properties))
 
-	fees = fees.order_by('-due_date')
+	fees = fees.order_by('-pk')
 	fee_summary = fee_summary + formatTaxesForDisplay(request,'fee',fees)
 	return fee_summary
 
@@ -2924,11 +2934,9 @@ def payFee(request, fee_type=None, id=None):
 
 	if fee.amount is None or fee.submit_date is None:
 		if fee_type == 'fee' and fee.fee_type in ('cleaning_fee','cleaning') and business:
-			fee.submit_date = timezone.now()
-			fee.calc_tax()
 			if not fee.submit_date:
-				messages.add_message(request, messages.INFO, "Missing business information: make sure 'area type' and 'business type' are set for this business")
-				return HttpResponseRedirect("/admin/tax/tax/business/%s/edit_business/" % business.pk)
+				messages.add_message(request, messages.SUCCESS, "Confirm the 'business category' is set for this business and re-save to calculate cleaning fees.")
+				return HttpResponseRedirect("/admin/tax/tax/business/%s/edit_business/?fee_redirect=1" % business.pk)
 		else:
 			messages.add_message(request, messages.INFO, "This tax/fee needs to be submitted.")
 			return HttpResponseRedirect(reverse("submit_%s" % fee_type, args=[id]))	
