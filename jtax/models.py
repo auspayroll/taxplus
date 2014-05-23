@@ -436,7 +436,7 @@ class Tax(models.Model):
 		if hasattr(self, 'business') and self.business:
 			owners = self.business.owners.filter(i_status='active').order_by('date_started')
 			date_started = self.business.date_started
-			if self.business.closed_date < date_to:
+			if self.business.closed_date and self.business.closed_date < date_to:
 				date_to = self.business.closed_date
 		elif hasattr(self, 'property') and self.property:
 			owners = self.property.owners.filter(i_status='active').order_by('date_started')
