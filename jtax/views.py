@@ -2825,6 +2825,8 @@ def submitTaxPatch(request):
 
 
 def processPayment(request):
+	if not request.POST:
+		raise Http404
 	form = confirmPaymentForm(request.POST)
 	if form.is_valid():
 		fee_id = id = form.cleaned_data.get('fee_id')
