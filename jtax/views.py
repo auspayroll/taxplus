@@ -1688,7 +1688,7 @@ def tax_business(request, obj_id, part):
 			if form.is_valid():
 				business = form.save(request)
 				if business.business_category:
-					fees = business.fee_set.filter(fee_type='cleaning', submit_date__isnull=True)
+					fees = business.fee_set.filter(fee_type='cleaning', is_paid=False)
 					for fee in fees:
 						fee.calc_tax()
 
