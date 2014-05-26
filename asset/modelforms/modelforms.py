@@ -136,7 +136,7 @@ class AssetModelForm(ModelForm):
 class BusinessForm(AssetModelForm):
 	phone1 = forms.CharField(label='Phone')
 	phone2 = forms.CharField(label='Phone Alt',required=False)
-	business_category = forms.ModelChoiceField(label='Cleaning Fee Category', queryset=BusinessCategory.objects.all())
+	business_category = forms.ModelChoiceField(label='Cleaning Fee Category', queryset=BusinessCategory.objects.all(), required=False)
 	business_subcategory = forms.ModelChoiceField(label="Business Category", queryset=BusinessSubCategory.objects.all(), required=False)
 	date_started = forms.DateField(widget=forms.DateInput(format = settings.DATE_INPUT_FORMAT), input_formats=settings.DATE_INPUT_FORMATS, help_text="e.g. '28/05/1975'")
 
