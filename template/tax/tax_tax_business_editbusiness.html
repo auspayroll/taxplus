@@ -87,9 +87,8 @@
 
         // adjust business subcategories list to business categories list drop down
         var business_subcategories = {{ bus_subcategories_list|safe }};
-        
-        $("#id_business_category").change(
-            function(){
+
+        function updateSubCategories(){
                 var currentVal = $(this).val();
                 $("#id_business_subcategory").empty();
                 var newOption = $('<option value="">--------</option>');
@@ -105,7 +104,15 @@
                 $('#id_business_subcategory').val("");
                 // $('#id_business_subcategory').trigger("chosen:updated");
             }
+
+        
+        $("#id_business_category").change(
+            updateSubCategories
+
         );
+
+        $("#id_business_category").change();
+
 
     })
 </script>

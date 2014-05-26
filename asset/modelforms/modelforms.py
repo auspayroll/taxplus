@@ -137,7 +137,7 @@ class BusinessForm(AssetModelForm):
 	phone1 = forms.CharField(label='Phone')
 	phone2 = forms.CharField(label='Phone Alt',required=False)
 	business_category = forms.ModelChoiceField(label='Cleaning Fee Category', queryset=BusinessCategory.objects.all())
-	business_subcategory = forms.ChoiceField(label="Business Category", choices=[])
+	business_subcategory = forms.ModelChoiceField(label="Business Category", queryset=BusinessSubCategory.objects.all())
 	date_started = forms.DateField(widget=forms.DateInput(format = settings.DATE_INPUT_FORMAT), input_formats=settings.DATE_INPUT_FORMATS, help_text="e.g. '28/05/1975'")
 
 	district_choices = [('','----------')]
@@ -159,13 +159,9 @@ class BusinessForm(AssetModelForm):
 		self.fields['district'].choices = district_choices
 		self.fields['sector'].choices = [('','----------')]
 		self.fields['cell'].choices = [('','----------')]
-		self.fields['business_subcategory'].choices = [('','----------')]
+		#self.fields['business_subcategory'].choices = [('','----------')]
 
 		if self.instance:
-			if self.instance.business_category:
-				subcategory_choices = list(BusinessSubCategory.objects.filter(business_category=self.instance.business_category).values_list('pk', 'name'))
-				self.fields['business_subcategory'].choices += subcategory_choices
-
 			if self.instance.cell:
 				sector = self.instance.cell.sector
 				district = sector.district
