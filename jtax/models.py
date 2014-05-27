@@ -335,13 +335,13 @@ class Tax(models.Model):
 		"""given a new amount, calculate the amount remaining"""
 		if amount is None:
 			return None
-		paid_amount = self.payments.filter(amount__gt=0, status='active').aggregate(sum=Sum('amount'))['sum'] or 0
+		paid_amount = self.payments.filter(amount__gt=0, i_status='active').aggregate(sum=Sum('amount'))['sum'] or 0
 		remaining_amount = amount - paid_amount
 		return remaining_amount
 
 	def get_paid_amount(self):
 		from django.db.models import Sum
-		paid = self.payments.filter(amount__gt=0, status='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
+		paid = self.payments.filter(amount__gt=0, i_status='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
 		total = paid['amount'] or 0
 		fines = paid['fines'] or 0
 		capital_amount = total - fines
