@@ -2827,10 +2827,15 @@ def submitTaxPatch(request):
 def processPayment(request):
 	if not request.POST:
 		raise Http404
+
 	form = confirmPaymentForm(request.POST)
 	if form.is_valid():
-		fee_id = id = form.cleaned_data.get('fee_id')
 		fee_type = form.cleaned_data.get('fee_type')
+		fee_id = id = form.cleaned_data.get('fee_id')
+		fee = get_object_or_404(Fee, pk=fee_id)
+		if fee.is_paid:
+			messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
+			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 		if fee_type in ('fee', 'land_lease'):
 			fee = get_object_or_404(Fee, pk=id)
