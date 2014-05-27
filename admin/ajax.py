@@ -972,7 +972,19 @@ def search_business(request):
 					for i in subbusinesses:
 						branches[i.id] = i.branch
 
-				record = { 'id': b.id, 'value': b.name + ' (TIN: ' + b.tin +')','tin':b.tin,'name':b.name,'branches':branches}
+				display_name = [b.name]
+				if b.tin:
+					display_name.append('TIN: ' + b.tin)
+				if b.phone1:
+					display_name.append('phone: ' + b.phone1)
+				if not b.phone1 and b.phone2:
+					display_name.append('phone: ' + b.phone2)
+				if b.sector:
+					display_name.append(b.sector.name + ' sector')
+
+				display_name = ' , '.join(display_name)
+
+				record = { 'id': b.id, 'value': display_name, 'tin':b.tin,'name':b.name,'branches':branches}
 				result.append(record)
 	return HttpResponse(json.dumps(result), mimetype="application/json")
 
