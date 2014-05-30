@@ -1692,6 +1692,13 @@ def tax_business(request, obj_id, part):
 					for fee in fees:
 						fee.calc_tax()
 
+					#calculate sub business fees
+					subbusinesses = SubBusiness.objects.filter(business=business)
+					for subbusiness in subbusinesses:
+						fees = subbusiness.fee_set.filter(fee_type='cleaning', is_paid=False)
+						for fee in fees:
+							fee.calc_tax()
+
 				new_data = model_to_dict(business)
 				LogMapper.createLog(request,object=business, old_data=old_data, new_data=new_data,business=business, action="change")
 				success_message = 'Business updated successfully.'
@@ -2923,9 +2930,9 @@ def payFee(request, fee_type=None, id=None):
 	elif fee_type == 'fee' and fee.citizen:
 		template_type = 'citizen'
 		citizen = fee.citizen
-	elif fee_type == 'fee' and fee.business or fee_type == 'trading_license':
+	elif fee_type == 'fee' and (fee.business or fee.subbusiness):
 		template_type = 'business'
-		business = fee.business
+		business = fee.business or fee.subbusiness.business
 
 	if fee.is_paid and not fee.exempt:
 		messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
@@ -2941,8 +2948,8 @@ def payFee(request, fee_type=None, id=None):
 
 	if fee.amount is None or fee.submit_date is None:
 		if fee_type == 'fee' and fee.fee_type in ('cleaning_fee','cleaning') and business:
-			if not fee.submit_date:
-				messages.add_message(request, messages.SUCCESS, "Confirm the 'business category' is set for this business and re-save to calculate cleaning fees.")
+			if not business.business_category:
+				messages.add_message(request, messages.SUCCESS, "Confirm the 'cleaning fee category' is set for this business and re-save to calculate cleaning fees.")
 				return HttpResponseRedirect("/admin/tax/tax/business/%s/edit_business/?fee_redirect=1" % business.pk)
 		else:
 			messages.add_message(request, messages.INFO, "This tax/fee needs to be submitted.")
