@@ -379,7 +379,8 @@ class Property(models.Model):
 			return None
 		from jtax.models import PropertyTaxItem, Fee, RentalIncomeTax
 		if not now:
-			current_year = timezone.make_aware(datetime.now(), timezone.get_default_timezone()).year
+			now = timezone.make_aware(datetime.now(), timezone.get_default_timezone())
+			current_year = now.year
 		elif type(now) is int:
 			current_year = now
 		elif type(now) is datetime and not now.tzinfo:
