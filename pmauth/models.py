@@ -74,7 +74,7 @@ class PMContentType(models.Model):
 
 	def get_access_link(self):
 		if self.name=='report':
-			return 'http://reports.taxplus.co.rw'
+			return settings.REPORTS_LINK
 		else:
 			return '/admin/' + self.module.name + '/' + self.name + '/'
  
@@ -115,7 +115,7 @@ class Action(models.Model):
 		return self.name
 	def get_access_link(self):
 		if self.name=='report':
-			return 'http://reports.taxplus.co.rw'
+			return settings.REPORTS_LINK
 		else:
 			return '/admin/' + self.contenttype.module.name + '/' + self.contenttype.name + '/' + self.codename + '/'
 	def getDisplayName(self):
