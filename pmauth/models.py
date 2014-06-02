@@ -46,7 +46,7 @@ class PMModule(models.Model):
 		
 	def get_access_link(self):
 		if self.name=='report':
-			return 'http://reports.taxplus.co.rw'
+			return settings.REPORTS_LINK
 		else:
 			return '/admin/' + self.name + '/'
 	
