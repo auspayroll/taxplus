@@ -354,7 +354,7 @@ class Tax(models.Model):
 
 	def reset_tax(self):
 		self.submit_date = None
-		self.amount = 0
+		self.amount = self.remaining_amount = 0
 		self.is_paid = False
 		self.save()
 		try:
@@ -854,7 +854,7 @@ class Fee(Tax):
 					self.amount = 0
 				else:
 					self.amount = tax_summary['amount']
-				self.remaining_amount = self.calculateRemainingAmount(self.amount)
+				self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
 				if self.remaining_amount <= 0:
 					self.is_paid = True
 				else:
@@ -877,7 +877,7 @@ class Fee(Tax):
 			business = self.subbusiness.business
 		else:
 			business = self.business
-		if business.business_category.pk == 0 or self.exempt:
+		if business.business_category and business.business_category.pk == 0 or self.exempt:
 			self.amount = 0
 			self.remaining_amount = 0
 			return 0, None
@@ -897,7 +897,12 @@ class Fee(Tax):
 
 			schedule = schedule.order_by('-valid_from', '-cell', '-sector', '-district')[0]
 
-			self.amount = self.remaining_amount = schedule.amount
+			self.amount  = schedule.amount
+			self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
+			if self.remaining_amount <= 0:
+				self.is_paid = True
+			else:
+				self.is_paid = False
 			self.submit_date = datetime.now()
 			due_date = self.date_from + relativedelta(months=1)
 			self.due_date = date(due_date.year, due_date.month, 5)
