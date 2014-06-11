@@ -1,6 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.conf.urls.static import static
+from taxplus import views as taxplus_views
 
 
 urlpatterns = patterns('',
@@ -15,6 +16,7 @@ urlpatterns = patterns('',
 	#url(r'^admin/import/', include('import.urls')),
 	url(r'^admin/report/', include('report.urls')),
 	url(r'^admin/forms/', include('forms.urls')),
+	url(r'^admin/audit/', taxplus_views.cleaning_audit, name='cleaning_audit'),
 	url(r'^admin/bulk_messaging/', include('bulk_messaging.urls')),
 	url(r'^admin/', include('admin.urls')),
 	#url(r'^api/', include('api.urls')),

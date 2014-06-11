@@ -1,0 +1,163 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Cleaning Fee Audit" %}	
+{% endblock %}
+
+
+{% block mainbody %}
+	<script type="text/javascript"  src="{% static "js/admin/populate_geo.js" %}"></script>
+	<script>
+	$(function(){
+
+	});
+	</script>
+	<style>
+		#search_table{
+			overflow:hidden;
+			border:1pt #cccccc solid;
+			float:left;
+			padding:10px;
+		}
+
+		.include_fields{
+			margin-top:20px;
+			height:100px;
+			width:400px;
+		}
+
+		.include_fields li{
+			float:left;
+			margin-right:20px;
+		}
+
+		input[type="submit"]{
+			float:right;
+		}
+
+		TABLE TH{
+			background-color:#C8D6C3;
+			text-align:center;
+			padding-left:5px;
+			padding-right:5px;
+		}
+	</style>
+
+	<div class="section_container">
+		<div class="content_type_container">
+				<h2>Cleaning Fee Audit</h2>
+				<div id="search_table">
+					<form action="{% url 'cleaning_audit' %}" method="post">
+					{% csrf_token %}
+					<div>
+					District*: {{ form.district }}{{ form.district.errors }} Sector*: {{ form.sector }}{{ form.sector.errors }} Cell: {{ form.cell }}{{ form.cell.errors }} 
+					<!--Village: {{ form.village }}{{ form.village.errors }}-->
+					</div>
+					<div>
+					Date from*: {{ form.date_from }}{{ form.date_from.errors }} Date to*: {{ form.date_to }}{{ form.date_to.errors }}
+					</div>
+					<div class="include_fields">
+					Include Fields: {{ form.include_fields }}
+					</div>
+					<div>
+					<input type="submit" value="Generate Report">
+					</div>
+					</form>
+				</div>
+
+				<div class="separator">&nbsp;</div>
+				<div class="workflow_container"></div>
+
+
+				{% if request.method == 'POST' and not payments %}
+				<div>No entries found</div>
+				{% endif %}
+
+				{% if payments %}
+				<table border="1">
+				<tr>
+					<th>Payment Amount<br/>{{ totals.payment|currency }}</th>
+					<th>Month/Year</th>
+					<th>Business</th>
+					{% if 'Cell' in include_fields %}
+						<th>Cell</th>
+					{% endif %}
+					{% if 'Village' in include_fields %}
+						<th>Village</th>
+					{% endif %}
+					{% if 'Fines' in include_fields %}
+					<th style="width:100px">Fines<br/>{{ totals.fines|currency }}</th>
+					{% endif %}
+					{% if 'Receipt' in include_fields %}
+						<th>Receipt</th>
+					{% endif %}
+					{% if 'Bank' in include_fields %}
+						<th>Bank</th>
+					{% endif %}
+					{% if 'Bank Receipt' in include_fields %}
+						<th>Bank Receipt</th>
+					{% endif %}
+					{% if 'User' in include_fields %}
+						<th>User</th>
+					{% endif %}
+					{% if 'Timestamp' in include_fields %}
+						<th>Timestamp</th>
+					{% endif %}
+					{% if 'Total Fee Amount' in include_fields %}
+						<th>Total Fee Amount<br>{{ totals.fee|currency }}</th>
+					{% endif %}
+					{% if 'Remaining Fee Amount' in include_fields %}
+						<th>Remaining Amount<br>{{ totals.remaining|currency }}<th>
+					{% endif %}
+				</tr>
+
+
+				{% for p in payments %}
+				<tr><td>{{ p.amount|currency }}</td>
+					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
+					<td>{{ p.fee.business.name }}</td>
+					{% if 'Cell' in include_fields %}
+						<td>{{ p.fee.business.cell.name }}</td>
+					{% endif %}
+					{% if 'Village' in include_fields %}
+						<td>{{ p.fee.business.village.name }}</td>
+					{% endif %}
+					{% if 'Fines' in include_fields %}
+						<td>{% if p.fine_amount %}{{ p.fine_amount }} {{ p.fine_description }} {% endif %}</td>
+					{% endif %}
+					{% if 'Receipt' in include_fields %}
+						<td>{{ p.manual_receipt }}</td>
+					{% endif %}
+					{% if 'Bank' in include_fields %}
+						<td>{{ p.bank }}</td>
+					{% endif %}
+					{% if 'Bank Receipt' in include_fields %}
+						<td>{{ p.receipt_no }}</td>
+					{% endif %}
+					{% if 'User' in include_fields %}
+						<td>{{ p.staff.username }}</td>
+					{% endif %}
+					{% if 'Timestamp' in include_fields %}
+						<td>{{ p.date_time }}</td>
+					{% endif %}
+					{% if 'Total Fee Amount' in include_fields %}
+						<td>{{ p.fee.amount|currency }}</td>
+					{% endif %}
+					{% if 'Remaining Fee Amount' in include_fields %}
+						<td>{{ p.fee.remaining_amount|currency }}</td>
+					{% endif %}
+				</tr>
+				{% endfor %}
+				</table>
+				{% endif %}
+		</div>
+
+
+	</div>
+
+{% endblock %}
