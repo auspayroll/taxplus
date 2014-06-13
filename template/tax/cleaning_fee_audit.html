@@ -79,11 +79,14 @@
 				{% endif %}
 
 				{% if payments %}
+
 				<table border="1">
 				<tr>
 					<th>Payment Amount<br/>{{ totals.payment|currency }}</th>
 					<th>Month/Year</th>
-					<th>Business</th>
+					{% if 'Business Name' in include_fields %}
+						<th>Business</th>
+					{% endif %}
 					{% if 'Cell' in include_fields %}
 						<th>Cell</th>
 					{% endif %}

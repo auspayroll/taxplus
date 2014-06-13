@@ -5,7 +5,10 @@ from datetime import date
 from django.forms.widgets import RadioSelect, CheckboxSelectMultiple
 
 
-include_fields = ('Fines','Receipt','Bank','Bank Receipt','User','Timestamp','Total Fee Amount','Remaining Fee Amount', 'Cell', 'Village')
+include_field_choices = [('Business Name','Business Name'), ('Fines', 'Fines'),('Receipt','Sector Receipt'),
+		('Bank','Bank'),('Bank Receipt','Bank Receipt'),('User','User'),('Timestamp','Timestamp'),('Total Fee Amount','Total Fee Amount'),
+		('Remaining Fee Amount','Remaining Fee Amount'), ('Cell','Cell'), ('Village','Village')]
+
 
 class SearchForm(forms.Form):
 	district = forms.ModelChoiceField(queryset = District.objects.all(), error_messages={'required':'District is required'})
@@ -14,7 +17,7 @@ class SearchForm(forms.Form):
 	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())
 	date_from = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':'date from is invalid', 'required':'date from is required'}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.TextInput(attrs={'class':'date_picker'}))
 	date_to = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, initial=date.today().strftime('%d/%m/%Y'), error_messages={'invalid':'date to is invalid', 'required':'date to is required' }, widget=forms.TextInput(attrs={'class':'date_picker'}))
-	include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=[(i, i) for i in include_fields])
+	include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=include_field_choices)
 
 	def __init__(self, *args, **kw):
 		super(SearchForm, self).__init__(*args, **kw)
@@ -22,7 +25,7 @@ class SearchForm(forms.Form):
 		self.fields['sector'].queryset = Sector.objects.all()
 		self.fields['cell'].queryset = Cell.objects.all()
 		self.fields['village'].queryset = Village.objects.all()
-		self.initial = {'include_fields':include_fields}
+		self.initial = {'include_fields':[ i for (i,j) in include_field_choices ]}
 
 	def clean(self):
 		cleaned_data = super(SearchForm, self).clean()
