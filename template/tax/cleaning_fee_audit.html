@@ -17,19 +17,25 @@
 
 	});
 	</script>
+	
 	<style>
+
 		#search_table{
 			overflow:hidden;
 			border:1pt #cccccc solid;
 			float:left;
 			padding:10px;
 		}
+	
+
 
 		.include_fields{
 			margin-top:20px;
 			height:100px;
-			width:400px;
+			width:100%;
+			overflow:hidden;
 		}
+		
 
 		.include_fields li{
 			float:left;
@@ -38,6 +44,7 @@
 
 		input[type="submit"]{
 			float:right;
+			margin-left:5px;
 		}
 
 		TABLE TH{
@@ -45,6 +52,10 @@
 			text-align:center;
 			padding-left:5px;
 			padding-right:5px;
+		}
+
+		.include_fields UL LI:nth-child(6){
+			clear:left;
 		}
 	</style>
 
@@ -55,17 +66,17 @@
 					<form action="{% url 'cleaning_audit' %}" method="post">
 					{% csrf_token %}
 					<div>
-					District*: {{ form.district }}{{ form.district.errors }} Sector*: {{ form.sector }}{{ form.sector.errors }} Cell: {{ form.cell }}{{ form.cell.errors }} 
-					<!--Village: {{ form.village }}{{ form.village.errors }}-->
+						District*: {{ form.district }}{{ form.district.errors }} Sector*: {{ form.sector }}{{ form.sector.errors }} Cell: {{ form.cell }}{{ form.cell.errors }} 
+						<!--Village: {{ form.village }}{{ form.village.errors }}-->
 					</div>
 					<div>
-					Date from*: {{ form.date_from }}{{ form.date_from.errors }} Date to*: {{ form.date_to }}{{ form.date_to.errors }}
+						Date from*: {{ form.date_from }}{{ form.date_from.errors }} Date to*: {{ form.date_to }}{{ form.date_to.errors }}
 					</div>
 					<div class="include_fields">
-					Include Fields: {{ form.include_fields }}
+						Include Fields: {{ form.include_fields }}
 					</div>
 					<div>
-					<input type="submit" value="Generate Report">
+						<input type="submit" name="web_button" value="Generate Web Report"><input type="submit" name="csv_button" value="Download CSV Report"> 
 					</div>
 					</form>
 				</div>
@@ -115,7 +126,7 @@
 						<th>Total Fee Amount<br>{{ totals.fee|currency }}</th>
 					{% endif %}
 					{% if 'Remaining Fee Amount' in include_fields %}
-						<th>Remaining Amount<br>{{ totals.remaining|currency }}<th>
+						<th>Remaining Amount<br>{{ totals.remaining|currency }}</th>
 					{% endif %}
 				</tr>
 
@@ -123,7 +134,9 @@
 				{% for p in payments %}
 				<tr><td>{{ p.amount|currency }}</td>
 					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
-					<td>{{ p.fee.business.name }}</td>
+					{% if 'Business Name' in include_fields %}
+						<td>{{ p.fee.business.name }}</td>
+					{% endif %}
 					{% if 'Cell' in include_fields %}
 						<td>{{ p.fee.business.cell.name }}</td>
 					{% endif %}
