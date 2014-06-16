@@ -52,6 +52,7 @@ def cleaning_audit_csv(payments, includes):
 	writer.writerow(header)
 
 	for p in payments:
+		row = []
 		row.append(p.amount)
 		row.append(p.fee.date_from.strftime('%b/%Y'))
 
