@@ -15,7 +15,6 @@ def cleaning_audit_csv(payments, includes):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_audit.csv"'
 	writer = csv.writer(response)
-	row = []
 	header = []
 	header.append('Payment Amount')
 	header.append('Month/Year')
@@ -61,6 +60,7 @@ def cleaning_audit_csv(payments, includes):
 				row.append(p.fee.subbusiness.name)
 			else:
 				row.append(p.fee.business.name)	
+		
 		if 'Cell' in includes:
 			if p.fee.subbusiness and p.fee.subbusiness.business.cell:
 				row.append(p.fee.subbusiness.business.cell.name)
