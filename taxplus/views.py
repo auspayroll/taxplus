@@ -67,30 +67,32 @@ def cleaning_audit_csv(payments, includes):
 				row.append(p.fee.subbusiness.business.cell.name)
 			elif p.fee.business and p.fee.business.cell:
 				row.append(p.fee.business.cell.name)
+			else:
+				row.append('')
 
 		if 'Fines' in includes:
-			row.append(p.fine_amount)
+			row.append(p.fine_amount or '0.00')
 
 		if 'Receipt' in includes:
-			row.append(p.manual_receipt)
+			row.append(p.manual_receipt or '')
 
 		if 'Bank' in includes:
-			row.append(p.bank)
+			row.append(p.bank or '')
 
 		if 'Bank Receipt' in includes:
-			row.append(p.receipt_no)
+			row.append(p.receipt_no or '')
 
 		if 'User' in includes:
-			row.append(p.staff.username)
+			row.append(p.staff.username or '')
 
 		if 'Timestamp' in includes:
-			row.append(p.date_time)
+			row.append(p.date_time or '')
 
 		if 'Total Fee Amount' in includes:
-			row.append(p.fee.amount)
+			row.append(p.fee.amount or '')
 
 		if 'Remaining Fee Amount' in includes:
-			row.append(p.fee.remaining_amount)
+			row.append(p.fee.remaining_amount or '')
 
 		writer.writerow(row)
 
