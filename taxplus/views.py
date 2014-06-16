@@ -107,7 +107,7 @@ def cleaning_audit(request):
 		form = SearchForm(request.POST)
 		if form.is_valid():
 			include_fields = form.cleaned_data['include_fields']
-			payments = PayFee.objects.filter(fee__fee_type='cleaning', fee__date_from__gte=form.cleaned_data['date_from'], fee__date_to__lte=form.cleaned_data['date_to']).select_related('fee', 'fee__business', 'staff').order_by('date_time')
+			payments = PayFee.objects.filter(fee__fee_type='cleaning', date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to']).select_related('fee', 'fee__business', 'staff').order_by('date_time')
 			if form.cleaned_data['sector']:
 				payments = payments.filter(Q(fee__business__sector=form.cleaned_data['sector'])| Q(fee__subbusiness__sector=form.cleaned_data['sector']))
 			if form.cleaned_data['cell']:
