@@ -115,7 +115,7 @@ def cleaning_audit(request):
 				payments = payments.filter(Q(fee__business__cell=form.cleaned_data['cell']) | Q(fee__subbusiness__cell=form.cleaned_data['cell']))
 			totals['payment'] = payments.aggregate(Sum('amount'))['amount__sum']
 			totals['fee'] = payments.aggregate(Sum('fee__amount'))['fee__amount__sum']
-			totals['remaining'] = payments.aggregate(Sum('fee__remaining_amount'))['fee__remaining_amount__sum']
+			totals['remaining'] = payments.filter(fee__remaining_amount__gte=0).aggregate(Sum('fee__remaining_amount'))['fee__remaining_amount__sum']
 			totals['fines'] = payments.aggregate(Sum('fine_amount'))['fine_amount__sum']
 
 			if request.POST.get('web_button') or not payments:
