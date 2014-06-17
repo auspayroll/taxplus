@@ -135,14 +135,21 @@ $(document).ready(function(){
 				for(i=0; i<villages.length; i++)
 				{
 					village = villages[i];
+					
 					if(parseInt(init_village_val) == parseInt(village['key'])){
 						$("#search_table #id_village").append('<option selected="selected" value="'+ village['key'] +'">'+ village['value'] +'</option>');
 					}
 					else{
 						$("#search_table #id_village").append('<option value="'+ village['key'] +'">'+ village['value'] +'</option>');
 					}
+
 				}
 
+				$("#search_table #id_village").trigger("chosen:updated");
+				var village_val = $("#search_table #id_village").val();
+				if(village_val != ''){
+					$("#search_table #id_village").change();
+				}
                 if(district_sector_disabled)
                 {
                     $("#search_table #id_sector").prop('disabled','disabled');
@@ -156,9 +163,11 @@ $(document).ready(function(){
                 $('#district_refresh').hide();
                 $('#sector_refresh').hide();
                 $('#cell_refresh').hide();
+                
 			},
 			error: function(request)
 			{
+
                 if(district_sector_disabled)
                 {
                     $("#search_table #id_sector").prop('disabled','disabled');
@@ -199,8 +208,7 @@ $(document).ready(function(){
 					}
 					else{
 						$("#search_table #id_cell").append('<option value="'+ cell['key'] +'">'+ cell['value'] +'</option>');	
-					}
-					
+					}	
 				}
 				$("#search_table #id_cell").trigger("chosen:updated");
 				var cell_val = $("#search_table #id_cell").val();

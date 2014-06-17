@@ -90,6 +90,10 @@
             width:200px!important;
         }
 
+        ul.errorlist{
+            clear:both;
+        }
+
 		
 	</style>
     <script type="text/javascript" src="{% static "js/plugins/forms/uniform/jquery.uniform.min.js" %}"></script>
@@ -234,9 +238,14 @@
                     }
                 });
 
-                //reformat the form to be better look
                 $(".column").parents('p').css("float",'left');
                 $(".column").parents('p').css("margin-right",'30px');
+
+                $(".column_clear").parents('p').css("float",'left');
+                $(".column_clear").parents('p').css("margin-right",'30px'); 
+                $(".column_clear").parents('p').css("clear",'left'); 
+
+                $(".clear").parents('p').css("clear",'both');                 
 
             })
         </script>

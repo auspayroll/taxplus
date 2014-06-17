@@ -85,6 +85,12 @@
         $(".column").parents('p').css("margin-right",'30px');
         $("#id_area_type").parents('p').css("clear",'both');
 
+        $(".column_clear").parents('p').css("float",'left');
+        $(".column_clear").parents('p').css("margin-right",'30px'); 
+        $(".column_clear").parents('p').css("clear",'left'); 
+
+        $(".clear").parents('p').css("clear",'both');   
+
         // adjust business subcategories list to business categories list drop down
         var business_subcategories = {{ bus_subcategories_list|safe }};
 
