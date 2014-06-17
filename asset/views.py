@@ -296,6 +296,8 @@ def business_default(request, action, content_type_name1, obj_id = None):
 						if request.session.has_key(redirect + '_url'):
 							
 							return HttpResponseRedirect(request.session[redirect + '_url'])
+			else:
+				form = BusinessForm(instance=obj)
 
 			#get media
 			media = MediaMapper.getMedia('business',obj)
@@ -320,7 +322,7 @@ def business_default(request, action, content_type_name1, obj_id = None):
 					if	sub_business.parcel_id:
 						sub_business_dict['parcel_id'] = sub_business.parcel_id
 					sub_businesses_arr.append(sub_business_dict)
-			form = BusinessForm(instance=obj)
+
 			search_business_form = BusinessFilterForm(request.POST)
 			LogMapper.createLog(request,object=obj,action="view", business = obj)
 			return render_to_response('asset/business/business_list.html', {'form':form, 'obj_id': obj_id,'media':media, 'branches':sub_businesses_arr,'search_business_form':search_business_form,'action':'edit'},
