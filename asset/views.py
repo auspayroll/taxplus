@@ -224,10 +224,10 @@ def business_default(request, action, content_type_name1, obj_id = None):
 	elif action == 'change':
 		if not request.session['user'].has_action_by_name('asset','business','change_business'):
 			return render_to_response('forbidden.html', {},context_instance=RequestContext(request))
-		
+
 		if obj_id != None:
 			obj = get_object_or_404(Business, pk=obj_id)
-			if request.method == 'POST' and request.POST.get('submit_update',None) != None:
+			if request.method == 'POST' and request.POST.get('submit_update'):
 				old_data = model_to_dict(obj)
 				POST = request.POST
 				form = BusinessForm(request.POST, instance = obj)
