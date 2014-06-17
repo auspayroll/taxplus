@@ -288,11 +288,6 @@ def business_default(request, action, content_type_name1, obj_id = None):
 					LogMapper.createLog(request,object=obj,action="change", business = obj)	  
 					
 					success_message = 'Business updated successfully.'
-					#check if fields that determine cleaning fees has been changed
-					if old_data['area_type'] != new_data['area_type'] or old_data['business_type'] != new_data['business_type'] or old_data['sector'] != new_data['sector']:
-						success_message = success_message + ' Some business details changes may affect the Cleaning Fee amount for this business, you can choose:<br/>- To apply this change to <b>ALL</b> Unpaid Cleaning Fees in the current year please <a href="/admin/tax/tax/update_taxes/?all=1&type=business&id=' + str(obj.id) + '"><b>click here</b></a>.<br/>- To apply this change to Unpaid Cleaning Fees from today onward please <a href="/admin/tax/tax/update_taxes/?type=business&id=' + str(obj.id) + '"><b>click here</b></a>.'
-					#return_url = "/admin/tax/tax/business/"+str(business.id)+"/"
-					#return redirect(return_url)
 					messages.success(request, success_message) 
 					#redirect back to whatever url set in session at the moment
 					if request.GET.has_key('redirect'):
