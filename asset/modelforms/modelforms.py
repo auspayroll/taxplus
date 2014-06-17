@@ -139,6 +139,7 @@ class BusinessForm(AssetModelForm):
 	business_category = forms.ModelChoiceField(label='Cleaning Fee Category', queryset=BusinessCategory.objects.all(), required=False)
 	business_subcategory = forms.ModelChoiceField(label="Business Category", queryset=BusinessSubCategory.objects.all(), required=False)
 	date_started = forms.DateField(widget=forms.DateInput(format = settings.DATE_INPUT_FORMAT), input_formats=settings.DATE_INPUT_FORMATS, help_text="e.g. '28/05/1975'")
+	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=True, error_messages={'required':'Sector is required'})
 
 	district_choices = [('','----------')]
 	district = forms.ChoiceField(required = False, choices = district_choices)
@@ -146,7 +147,7 @@ class BusinessForm(AssetModelForm):
 	class Meta(AssetModelForm.Meta):
 		model = Business
 		fields = ['name', 'tin', 'date_started', 'address', 'phone1', 'phone2', 'email', 'po_box', 'vat_register',
-				  'business_category', 'business_subcategory', 'area_type', 'district', 'sector', 'cell', 'accountant_name', 'accountant_phone',
+				  'business_category', 'business_subcategory', 'district', 'sector', 'cell', 'village', 'accountant_name', 'accountant_phone',
 				  'accountant_email', 'market_fee_applicable', 'i_status']
 		#exclude = ('pm_tin', 'foreign_record_id', 'credit','cp_password')
 
@@ -159,9 +160,19 @@ class BusinessForm(AssetModelForm):
 		self.fields['district'].choices = district_choices
 		self.fields['sector'].choices = [('','----------')]
 		self.fields['cell'].choices = [('','----------')]
+		self.fields['village'].choices = [('','----------')]
 		#self.fields['business_subcategory'].choices = [('','----------')]
 
 		if self.instance:
+			if self.instance.village:
+				village_list = Village.objects.filter(cell=self.instance.village.cell)
+				village_choices = [('','----------')]
+				if village_list:
+					for village in village_list:
+						village_choices.append([village.pk, village.name])
+				self.fields['village'].choices = village_choices
+				self.fields['village'].initial = self.instance.village.pk
+
 			if self.instance.cell:
 				sector = self.instance.cell.sector
 				district = sector.district
@@ -196,7 +207,7 @@ class BusinessForm(AssetModelForm):
 				sector_choices = [('','----------')]
 				if sector_list:
 					for tt in sector_list:
-						cell_choices.append((tt.id, tt.name))
+						sector_choices.append((tt.id, tt.name))
 				self.fields['sector'].choices = sector_choices
 				self.fields['sector'].initial = sector.id
 				self.fields['district'].initial = district.id
@@ -246,13 +257,18 @@ class BusinessForm(AssetModelForm):
 				district = District.objects.get(pk=int(args[0]['district']))
 				self.fields['district'].value = district.id
 
-		self.fields['district'].widget.attrs['class'] = 'column'
+		self.fields['district'].widget.attrs['class'] = 'column_clear'
 		self.fields['sector'].widget.attrs['class'] = 'column'
+		self.fields['cell'].widget.attrs['class'] = 'column_clear'
+		self.fields['village'].widget.attrs['class'] = 'column'
 		self.fields['phone1'].widget.attrs['class'] = 'column'
+		self.fields['village'].widget.attrs['class'] = 'column'
 		self.fields['business_category'].widget.attrs['class'] = 'column'
 		self.fields['business_subcategory'].widget.attrs['class'] = 'column'
-		self.fields['accountant_name'].widget.attrs['class'] = 'column'
+		self.fields['accountant_name'].widget.attrs['class'] = 'column_clear'
 		self.fields['accountant_phone'].widget.attrs['class'] = 'column'
+		self.fields['accountant_email'].widget.attrs['class'] = 'column'
+		self.fields['market_fee_applicable'].widget.attrs['class'] = 'clear'
 
 	def clean(self):
 		super(BusinessForm,self).clean()
