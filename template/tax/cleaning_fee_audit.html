@@ -135,10 +135,10 @@
 				<tr><td>{{ p.amount|currency }}</td>
 					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
 					{% if 'Business Name' in include_fields %}
-						<td>{% if p.fee.subbusiness %}{{ p.fee.subbusiness }}<br/>({{ p.fee.subbusiness.name }}){% else %}{{ p.fee.business.name }}{{ p.fee.business.pk }}{% endif %}</td>
+						<td>{% if p.fee.subbusiness %}{{ p.fee.subbusiness }}<br/>({{ p.fee.subbusiness.name }}){% else %}{{ p.fee.business.name }}{% endif %}</td>
 					{% endif %}
 					{% if 'Cell' in include_fields %}
-						<td>{{ p.fee.business.cell.name }}</td>
+						<td>{% if p.fee.subbusiness %}{{ p.fee.subbusiness.cell.name }}{% else %}{{ p.fee.business.cell.name }}{% endif %}</td>
 					{% endif %}
 					{% if 'Village' in include_fields %}
 						<td>{{ p.fee.business.village.name }}</td>
