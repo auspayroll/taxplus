@@ -67,7 +67,7 @@
 					{% csrf_token %}
 					<div>
 						District*: {{ form.district }}{{ form.district.errors }} Sector*: {{ form.sector }}{{ form.sector.errors }} Cell: {{ form.cell }}{{ form.cell.errors }} 
-						<!--Village: {{ form.village }}{{ form.village.errors }}-->
+						Village: {{ form.village }}{{ form.village.errors }}
 					</div>
 					<div>
 						Date from*: {{ form.date_from }}{{ form.date_from.errors }} Date to*: {{ form.date_to }}{{ form.date_to.errors }}
