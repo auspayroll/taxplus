@@ -467,7 +467,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	margin-left: 0px;
 }
 .controls label.checkbox {margin-left:-18px;}
-select {width: 150px;}
+	
 .form-actions {
 	border-bottom: 1px solid #E5E5E5;
 	-moz-box-shadow:0 1px 0px rgba(229, 229, 229, 0.1);
@@ -2841,4 +2841,8 @@ form input.valid {border: 1px solid #9FC569 !important;}
 .yearly_chart .tickLabel
 {
     -webkit-transform:none!important;
+}
+
+select{
+	width:auto;
 }
