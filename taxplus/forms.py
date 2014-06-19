@@ -42,7 +42,7 @@ class SearchForm(forms.Form):
 		return cleaned_data
 
 
-overdue_choices = [('1','less than 1 month'), ('30', 'greater than 1 month'),('90','greater than 3 months'),('180','greater than 6 months'),('365','greater than 1 year')]
+# overdue_choices = [('1','less than 1 month'), ('30', 'greater than 1 month'),('90','greater than 3 months'),('180','greater than 6 months'),('365','greater than 1 year')]
 
 class DebtorsForm(forms.Form):
 	district = forms.ModelChoiceField(queryset = District.objects.all(), error_messages={'required':'District is required'})
@@ -50,7 +50,7 @@ class DebtorsForm(forms.Form):
 	cell = forms.ModelChoiceField(required = False, queryset = Cell.objects.none())
 	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())
 	as_at = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':"'as at' date is invalid", 'required':"'as at' date is required"}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.TextInput(attrs={'class':'date_picker'}))
-	include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=overdue_choices)
+	#include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=overdue_choices)
 
 	def __init__(self, *args, **kw):
 		super(DebtorsForm, self).__init__(*args, **kw)
@@ -58,7 +58,7 @@ class DebtorsForm(forms.Form):
 		self.fields['sector'].queryset = Sector.objects.all()
 		self.fields['cell'].queryset = Cell.objects.all()
 		self.fields['village'].queryset = Village.objects.all()
-		self.initial = {'include_fields':[ i for (i,j) in overdue_choices ]}
+		# self.initial = {'include_fields':[ i for (i,j) in overdue_choices ]}
 
 	def clean(self):
 		cleaned_data = super(DebtorsForm, self).clean()

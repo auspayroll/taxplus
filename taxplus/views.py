@@ -58,15 +58,15 @@ def cleaning_audit_csv(payments, includes):
 
 		if 'Business Name' in includes:
 			if p.fee.subbusiness:
-				row.append(p.fee.subbusiness.name)
+				row.append(p.fee.subbusiness.name.encode('utf-8'))
 			else:
-				row.append(p.fee.business.name)	
+				row.append(p.fee.business.name.encode('utf-8'))	
 		
 		if 'Cell' in includes:
 			if p.fee.subbusiness and p.fee.subbusiness.business.cell:
-				row.append(p.fee.subbusiness.business.cell.name)
+				row.append(p.fee.subbusiness.business.cell.name.encode('utf-8'))
 			elif p.fee.business and p.fee.business.cell:
-				row.append(p.fee.business.cell.name)
+				row.append(p.fee.business.cell.name.encode('utf-8'))
 			else:
 				row.append('')
 
@@ -132,89 +132,38 @@ def cleaning_audit(request):
 
 
 
-def cleaning_debtors_csv(fees, includes):
+def cleaning_debtors_csv(businesses):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_debtors.csv"'
 	writer = csv.writer(response)
 	header = []
-	header.append('Month/Year')
-	header.append('Due Date')
 	header.append('Business')
 	header.append('Phone')
 	header.append('Address')
-
-	if '1' in includes:
-		header.append('< 1 month')
-
-	if '30' in includes:
-		header.append('> 1 month')
-
-	if '90' in includes:
-		header.append('> 3 months')
-
-	if '180' in includes:
-		header.append('> 6 months')
-
-	if '365' in includes:
-		header.append('> 1 year')
+	header.append('< 1 month')
+	header.append('> 1 month')
+	header.append('> 3 months')
+	header.append('> 6 months')
+	header.append('> 1 year')
 
 	writer.writerow(header)
 
-	for f in fees:
+	for pk, b in businesses.iteritems():
 		row = []
-		row.append(f.date_from.strftime('%b/%Y'))
-		row.append(f.due_date.strftime('%d %b %Y'))
 
-		# business name, phone and address
-		if f.subbusiness:
-			row.append(f.subbusiness.name)
-			if f.subbusiness.business.phone1:
-				row.append(f.subbusiness.business.phone1)
-			else:
-				row.append(f.subbusiness.business.phone2 or '')
-			row.append(f.subbusiness.business.address or '')
+		row.append(b.name.encode('utf-8'))	
 
-		elif f.business:
-			row.append(f.business.name)	
-			if f.business.phone1:
-				row.append(f.business.phone1)
-			else:
-				row.append(f.business.phone2 or '')
-			row.append(f.business.address or '')
+		if b.phone1:
+			row.append(b.phone1.encode('utf-8'))
 		else:
-			row.append('')
-			row.append('')
-			row.append('')
-
-		if '1' in includes:
-			if hasattr(f,'late'):
-				row.append(f.late)
-			else:
-				row.append('')
-
-		if '30' in includes:
-			if hasattr(f,'late_month'):
-				row.append(f.late_month)
-			else:
-				row.append('')
-
-		if '90' in includes:
-			if hasattr(f,'late_quarter_year'):
-				row.append(f.late_quarter_year)
-			else:
-				row.append('')
-
-		if '180' in includes:
-			if hasattr(f,'late_half_year'):
-				row.append(f.late_half_year)
-			else:
-				row.append('')
-
-		if '365' in includes:
-			if hasattr(f,'late_year'):
-				row.append(f.late_year)
-			else:
-				row.append('')
+			row.append(b.phone2.encode('utf-8') or '')
+		
+		row.append(b.address or '')
+		row.append(b.lates['late'])
+		row.append(b.lates['late_month'])
+		row.append(b.lates['late_quarter_year'])
+		row.append(b.lates['late_half_year'])
+		row.append(b.lates['late_year'])
 
 		writer.writerow(row)
 
@@ -228,11 +177,11 @@ def cleaning_debtors(request):
 		return HttpResponseRedirect('/')
 	fees = Fee.objects.none()
 	totals = {}
-	include_fields = []
+	#include_fields = []
 	if request.method == 'POST':
 		form = DebtorsForm(request.POST)
 		if form.is_valid():
-			include_fields = form.cleaned_data['include_fields']
+			#include_fields = form.cleaned_data['include_fields']
 
 			as_at = form.cleaned_data['as_at']
 			fees = Fee.objects.filter(fee_type='cleaning', remaining_amount__gt=0, i_status='active', due_date__lt=form.cleaned_data['as_at']).select_related('business').order_by('date_time')
@@ -248,28 +197,40 @@ def cleaning_debtors(request):
 			totals['late_half_year'] = 0
 			totals['late_year'] = 0
 
+			businesses = {}
+
 			for fee in fees:
+				if fee.subbusiness:
+					business = businesses.setdefault("%s-%s" % (fee.subbusiness.business.pk, fee.subbusiness.pk), fee.subbusiness)
+					business.phone1 = business.business.phone1
+					business.phone2 = business.business.phone2
+					business.address = business.business.address
+				else:
+					business = businesses.setdefault(fee.business.pk, fee.business)
+				if not hasattr(business,'lates'):
+					business.lates = {'late_year':0, 'late_half_year':0, 'late_quarter_year':0, 'late_month':0, 'late':0 }
+
 				if (as_at - fee.due_date).days >= 365:
-					fee.late_year = fee.remaining_amount
+					business.lates['late_year'] += fee.remaining_amount
 					totals['late_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 120:
-					fee.late_half_year = fee.remaining_amount
+					business.lates['late_half_year'] += fee.remaining_amount
 					totals['late_half_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 90:
-					fee.late_quarter_year = fee.remaining_amount
+					business.lates['late_quarter_year'] += fee.remaining_amount
 					totals['late_quarter_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 30:
-					fee.late_month = fee.remaining_amount
+					business.lates['late_month'] += fee.remaining_amount
 					totals['late_month'] += fee.remaining_amount
 				else:
-					fee.late = fee.remaining_amount
+					business.lates['late'] += fee.remaining_amount
 					totals['late'] += fee.remaining_amount
 
 
 			if request.POST.get('web_button') or not fees:
-				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'fees':fees, 'form':form, 'totals':totals, 'include_fields':include_fields })
+				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals })
 			else: # csv
-				return cleaning_debtors_csv(fees, form.cleaned_data.get('include_fields'))
+				return cleaning_debtors_csv(businesses)
 
 	else:
 		form = DebtorsForm()

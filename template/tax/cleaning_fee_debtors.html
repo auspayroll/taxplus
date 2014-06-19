@@ -68,9 +68,6 @@
 					<div>
 						As at*: {{ form.as_at }}{{ form.as_at.errors }}
 					</div>
-					<div class="include_fields">
-					Include fees for which due date is {{ form.include_fields }}
-					</div>
 					<div>
 						<input type="submit" name="web_button" value="Generate Web Report"><input type="submit" name="csv_button" value="Download CSV Report">
 					</div>
@@ -80,17 +77,14 @@
 				<div class="separator">&nbsp;</div>
 				<div class="workflow_container"></div>
 
-
-				{% if request.method == 'POST' and not fees %}
+				{% if request.method == 'POST' and not businesses %}
 					<div>No entries found</div>
 				{% endif %}
 
-				{% if fees %}
+				{% if businesses %}
 
 					<table border="1">
 					<tr>
-						<th>Month/Year</th>
-						<th>Due Date</th>
 						<th>Business</th>
 						<th>Phone</th>
 						<th>Address</th>
@@ -111,38 +105,25 @@
 						{% endif %}
 					</tr>
 
-					{% for f in fees %}
-					{% if '1' in include_fields and f.late or '30' in include_fields and f.late_month or '90' in include_fields and f.late_quarter_year or '180' in include_fields and f.late_half_year or '365' in include_fields and f.late_year %}
+					{% for pk, b in businesses.items %}
 						<tr>
-							<td>{{ f.date_from|date:"b Y"|upper }}</td>
-							<td>{{ f.due_date }}</td>
-							<td>{% if f.subbusiness %}{{ f.subbusiness.name }}{% else %}{{ f.business.name }}{% endif %}</td>
+							<td>{{ b.name }}</td>
 
-							<td>{% if f.subbusiness %}{{ f.subbusiness.business.phone1|default:f.subbusiness.business.phone2|default:'' }}{% else %}{{ f.business.phone1|default:f.business.phone2|default:'' }}{% endif %}</td>
+							<td>{{ b.phone1|default:b.phone2|default:'' }}</td>
 						
-							<td>{{ f.business.address|default:'' }}</td>
+							<td>{{ b.address|default:'' }}</td>
+					
+							<td>{{ b.lates.late|currency }}</td>
 
-							{% if '1' in include_fields %}							
-								<td>{{ f.late|currency }}</td>
-							{% endif %}
+							<td>{{ b.lates.late_month|currency }}</td>
+						
+							<td>{{ b.lates.late_quarter_year|currency }}</td>
 
-							{% if '30' in include_fields %}
-								<td>{{ f.late_month|currency }}</td>
-							{% endif %}
+							<td>{{ b.lates.late_half_year|currency }}</td>
 
-							{% if '90' in include_fields %}							
-								<td>{{ f.late_quarter_year|currency }}</td>
-							{% endif %}
+							<td>{{ b.lates.late_year|currency }}</td>
 
-							{% if '180' in include_fields %}
-								<td>{{ f.late_half_year|currency }}</td>
-							{% endif %}
-
-							{% if '365' in include_fields %}
-								<td>{{ f.late_year|currency }}</td>
-							{% endif %}
 						</tr>
-					{% endif %}
 					{% endfor %}
 					</table>
 				{% endif %}
