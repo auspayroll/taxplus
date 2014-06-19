@@ -110,7 +110,7 @@ def cleaning_audit(request):
 		form = SearchForm(request.POST)
 		if form.is_valid():
 			include_fields = form.cleaned_data['include_fields']
-			payments = PayFee.objects.filter(fee__fee_type='cleaning', date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to']).select_related('fee', 'fee__business', 'staff').order_by('date_time')
+			payments = PayFee.objects.filter(i_status='active', fee__fee_type='cleaning', date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to']).select_related('fee', 'fee__business', 'staff').order_by('date_time')
 			if form.cleaned_data['sector']:
 				payments = payments.filter(Q(fee__business__sector=form.cleaned_data['sector'])| Q(fee__subbusiness__sector=form.cleaned_data['sector']))
 			if form.cleaned_data['cell']:
@@ -242,18 +242,28 @@ def cleaning_debtors(request):
 				fees = fees.filter(Q(business__cell=form.cleaned_data['cell']) | Q(subbusiness__cell=form.cleaned_data['cell']))
 			totals['amount'] = fees.aggregate(Sum('amount'))['amount__sum']
 			totals['remaining'] = fees.filter(remaining_amount__gte=0).aggregate(Sum('remaining_amount'))['remaining_amount__sum']
+			totals['late'] = 0
+			totals['late_month'] = 0
+			totals['late_quarter_year'] = 0
+			totals['late_half_year'] = 0
+			totals['late_year'] = 0
 
 			for fee in fees:
 				if (as_at - fee.due_date).days >= 365:
 					fee.late_year = fee.remaining_amount
+					totals['late_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 120:
 					fee.late_half_year = fee.remaining_amount
+					totals['late_half_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 90:
 					fee.late_quarter_year = fee.remaining_amount
+					totals['late_quarter_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 30:
 					fee.late_month = fee.remaining_amount
+					totals['late_month'] += fee.remaining_amount
 				else:
 					fee.late = fee.remaining_amount
+					totals['late'] += fee.remaining_amount
 
 
 			if request.POST.get('web_button') or not fees:

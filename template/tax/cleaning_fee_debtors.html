@@ -95,19 +95,19 @@
 						<th>Phone</th>
 						<th>Address</th>
 						{% if '1' in include_fields %}
-							<th>&lt; 1 month</th>
+							<th>&lt; 1 month<br/>{{ totals.late|currency }} Rwf</th>
 						{% endif %}
 						{% if '30' in include_fields %}
-							<th>&gt; 1 month</th>
+							<th>&gt; 1 month<br/>{{ totals.late_month|currency }} Rwf</th>
 						{% endif %}
 						{% if '90' in include_fields %}
-							<th>&gt; 3 months</th>
+							<th>&gt; 3 months<br/>{{ totals.late_quarter_year|currency }} Rwf</th>
 						{% endif %}
 						{% if '180' in include_fields %}
-							<th>&gt; 6 months</th>
+							<th>&gt; 6 months<br/>{{ totals.late_half_year|currency }} Rwf</th>
 						{% endif %}
 						{% if '365' in include_fields %}
-							<th>&gt; 1 year</th>
+							<th>&gt; 1 year<br/>{{ totals.late_year|currency }} Rwf</th>
 						{% endif %}
 					</tr>
 
