@@ -132,6 +132,96 @@ def cleaning_audit(request):
 
 
 
+def cleaning_debtors_csv(fees, includes):
+	response = HttpResponse(content_type='text/csv')
+	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_debtors.csv"'
+	writer = csv.writer(response)
+	header = []
+	header.append('Month/Year')
+	header.append('Due Date')
+	header.append('Business')
+	header.append('Phone')
+	header.append('Address')
+
+	if '1' in includes:
+		header.append('< 1 month')
+
+	if '30' in includes:
+		header.append('> 1 month')
+
+	if '90' in includes:
+		header.append('> 3 months')
+
+	if '180' in includes:
+		header.append('> 6 months')
+
+	if '365' in includes:
+		header.append('> 1 year')
+
+	writer.writerow(header)
+
+	for f in fees:
+		row = []
+		row.append(f.date_from.strftime('%b/%Y'))
+		row.append(f.due_date.strftime('%d %b %Y'))
+
+		# business name, phone and address
+		if f.subbusiness:
+			row.append(f.subbusiness.name)
+			if f.subbusiness.business.phone1:
+				row.append(f.subbusiness.business.phone1)
+			else:
+				row.append(f.subbusiness.business.phone2 or '')
+			row.append(f.subbusiness.business.address or '')
+
+		elif f.business:
+			row.append(f.business.name)	
+			if f.business.phone1:
+				row.append(f.business.phone1)
+			else:
+				row.append(f.business.phone2 or '')
+			row.append(f.business.address or '')
+		else:
+			row.append('')
+			row.append('')
+			row.append('')
+
+		if '1' in includes:
+			if hasattr(f,'late'):
+				row.append(f.late)
+			else:
+				row.append('')
+
+		if '30' in includes:
+			if hasattr(f,'late_month'):
+				row.append(f.late_month)
+			else:
+				row.append('')
+
+		if '90' in includes:
+			if hasattr(f,'late_quarter_year'):
+				row.append(f.late_quarter_year)
+			else:
+				row.append('')
+
+		if '180' in includes:
+			if hasattr(f,'late_half_year'):
+				row.append(f.late_half_year)
+			else:
+				row.append('')
+
+		if '365' in includes:
+			if hasattr(f,'late_year'):
+				row.append(f.late_year)
+			else:
+				row.append('')
+
+		writer.writerow(row)
+
+	return response
+
+
+
 def cleaning_debtors(request):
 	user = request.session.get('user')
 	if not user or not user.superuser:
@@ -169,7 +259,7 @@ def cleaning_debtors(request):
 			if request.POST.get('web_button') or not fees:
 				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'fees':fees, 'form':form, 'totals':totals, 'include_fields':include_fields })
 			else: # csv
-				return cleaning_audit_csv(fees, form.cleaned_data.get('include_fields'))
+				return cleaning_debtors_csv(fees, form.cleaned_data.get('include_fields'))
 
 	else:
 		form = DebtorsForm()
