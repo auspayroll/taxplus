@@ -1,0 +1,159 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Tax" "/admin/tax/tax/" %}
+	{% breadcrumb "Cleaning Fee Debtors" %}	
+{% endblock %}
+
+
+{% block mainbody %}
+	<script type="text/javascript"  src="{% static "js/admin/populate_geo.js" %}"></script>
+	<script>
+	$(function(){
+
+	});
+	</script>
+	
+	<style>
+
+		#search_table{
+			overflow:hidden;
+			border:1pt #cccccc solid;
+			float:left;
+			padding:10px;
+		}
+	
+
+
+		.include_fields{
+			margin-top:20px;
+			height:100px;
+			width:100%;
+			overflow:hidden;
+		}
+		
+
+		.include_fields li{
+			float:left;
+			margin-right:20px;
+		}
+
+		input[type="submit"]{
+			float:right;
+			margin-left:5px;
+		}
+
+		TABLE TH{
+			background-color:#C8D6C3;
+			text-align:center;
+			padding-left:5px;
+			padding-right:5px;
+		}
+
+		.include_fields UL LI:nth-child(6){
+			clear:left;
+		}
+	</style>
+
+	<div class="section_container">
+		<div class="content_type_container">
+				<h2>Cleaning Fee Debtors</h2>
+				<div id="search_table">
+					<form action="{% url 'cleaning_debtors' %}" method="post">
+					{% csrf_token %}
+					<div>
+						District*: {{ form.district }}{{ form.district.errors }} Sector*: {{ form.sector }}{{ form.sector.errors }} Cell: {{ form.cell }}{{ form.cell.errors }} 
+						Village: {{ form.village }}{{ form.village.errors }}
+					</div>
+					<div>
+						As at*: {{ form.as_at }}{{ form.as_at.errors }}
+					</div>
+					<div class="include_fields">
+					Include fees for which due date is {{ form.include_fields }}
+					</div>
+					<div>
+						<input type="submit" name="web_button" value="Generate Web Report"><!--<input type="submit" name="csv_button" value="Download CSV Report">-->
+					</div>
+					</form>
+				</div>
+
+				<div class="separator">&nbsp;</div>
+				<div class="workflow_container"></div>
+
+
+				{% if request.method == 'POST' and not fees %}
+					<div>No entries found</div>
+				{% endif %}
+
+				{% if fees %}
+
+					<table border="1">
+					<tr>
+						<th>Month/Year</th>
+						<th>Due Date</th>
+						<th>Business</th>
+						<th>Phone</th>
+						<th>Address</th>
+						{% if '1' in include_fields %}
+							<th>&lt; 1 month</th>
+						{% endif %}
+						{% if '30' in include_fields %}
+							<th>&gt; 1 month</th>
+						{% endif %}
+						{% if '90' in include_fields %}
+							<th>&gt; 3 months</th>
+						{% endif %}
+						{% if '180' in include_fields %}
+							<th>&gt; 6 months</th>
+						{% endif %}
+						{% if '365' in include_fields %}
+						<th>&gt; 1 year</th>
+						{% endif %}
+					</tr>
+
+					{% for f in fees %}
+					{% if '1' in include_fields and f.late or '30' in include_fields and f.late_month or '90' in include_fields and f.late_quarter_year or '180' in include_fields and f.late_half_year or '365' in include_fields and f.late_year %}
+						<tr>
+							<td>{{ f.date_from|date:"b Y"|upper }}</td>
+							<td>{{ f.due_date }}</td>
+							<td>{{ f.business.name }}</td>
+
+
+							<td>{{ f.business.phone1|default:f.business.phone2|default:'' }}</td>
+						
+							<td>{{ f.business.address|default:'' }}</td>
+
+							{% if '1' in include_fields %}							
+								<td>{{ f.late|currency }}</td>
+							{% endif %}
+
+							{% if '30' in include_fields %}
+								<td>{{ f.late_month|currency }}</td>
+							{% endif %}
+
+							{% if '90' in include_fields %}							
+								<td>{{ f.late_quarter_year|currency }}</td>
+							{% endif %}
+
+							{% if '180' in include_fields %}
+								<td>{{ f.late_half_year|currency }}</td>
+							{% endif %}
+
+							{% if '365' in include_fields %}
+								<td>{{ f.late_year|currency }}</td>
+							{% endif %}
+						</tr>
+					{% endif %}
+					{% endfor %}
+					</table>
+				{% endif %}
+		</div>
+
+
+	</div>
+
+{% endblock %}

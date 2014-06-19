@@ -77,6 +77,14 @@
 					</div>
 					<div class="desc"><a href="/admin/tax/incomplete_payment/">Pending payment</a></div>
 				</div>
+		</div>
+	</div>		
+	<div class="separator">&nbsp;</div>
+	<div class="workflow_container"></div>
+
+
+	<div class="section_container">
+		<div class="content_type_container">
 				{% if request.session.user.superuser %}
 				<div class="content_type">
 					<div class="img">
@@ -87,8 +95,17 @@
 					<div class="desc"><a href="/admin/tax/incomplete_payment/">Cleaning Fee Audit</a></div>
 				</div>
 				{% endif %}
+				{% if request.session.user.superuser %}
+				<div class="content_type">
+					<div class="img">
+						<a href="{% url 'cleaning_debtors' %}">
+							<image width='128' height='128' border="0" src='/static/images/icons/Tax Management.png'></image>
+						</a>
+					</div>
+					<div class="desc"><a href="/admin/tax/incomplete_payment/">Cleaning Fee Debtors</a></div>
+				</div>
+				{% endif %}
 		</div>
-	</div>		
-	<div class="separator">&nbsp;</div>
-	<div class="workflow_container"></div>
+	</div>
+
 {% endblock %}
