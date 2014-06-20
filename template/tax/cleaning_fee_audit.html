@@ -58,8 +58,13 @@
 			clear:left;
 		}
 
-		.currency{
+		table.tablesorter tbody td.currency{
 			text-align: right;
+		}
+
+		.tablesorter TH{
+			border-right:1pt grey solid;
+			border-left:1pt white solid;
 		}
 	</style>
 
@@ -95,7 +100,7 @@
 
 				{% if payments %}
 
-				<table border="1">
+				<table class="tablesorter">
 				<tr>
 					<th>Payment Amount<br/>{{ totals.payment|currency }}</th>
 					<th>Month/Year</th>

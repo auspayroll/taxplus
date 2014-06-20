@@ -60,12 +60,17 @@
 		}
 
 
-		.currency{
+		.note{
+			clear:both;
+		}
+
+		table.tablesorter tbody td.currency{
 			text-align: right;
 		}
 
-		.note{
-			clear:both;
+		.tablesorter TH{
+			border-right:1pt grey solid;
+			border-left:1pt white solid;
 		}
 	</style>
 
@@ -99,7 +104,7 @@
 
 				{% if businesses %}
 
-					<table border="1">
+					<table class="tablesorter">
 					<tr>
 						<th>Business</th>
 						<th>Phone</th>
