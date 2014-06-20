@@ -213,7 +213,7 @@ def cleaning_debtors(request):
 				if (as_at - fee.due_date).days >= 365:
 					business.lates['late_year'] += fee.remaining_amount
 					totals['late_year'] += fee.remaining_amount
-				elif (as_at - fee.due_date).days >= 120:
+				elif (as_at - fee.due_date).days >= 180:
 					business.lates['late_half_year'] += fee.remaining_amount
 					totals['late_half_year'] += fee.remaining_amount
 				elif (as_at - fee.due_date).days >= 90:
