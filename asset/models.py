@@ -200,6 +200,14 @@ class Business(models.Model):
 	def get_properties(self):
 		return Property.objectsIgnorePermission.filter(owners__owner_business=self)
 
+	@property
+	def current_owners(self):
+		ownerships = self.owners.filter(i_status='active')
+		owners = []
+		for ownership in ownerships:
+			owners.append(ownership.owner_citizen)
+		return owners
+
 @receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	if created:
@@ -222,6 +230,15 @@ class SubBusiness(models.Model):
 
 	def get_properties(self):
 		return Property.objectsIgnorePermission.filter(owners__owner_subbusiness=self)
+
+	@property
+	def current_owners(self):
+		ownerships = self.owners.filter(i_status='active')
+		owners = []
+		for ownership in ownerships:
+			owners.append(ownership.owner_citizen)
+		return owners
+		
 
 @receiver(post_save, sender=SubBusiness)
 def after_sub_business_save(sender, instance, **kwargs):
