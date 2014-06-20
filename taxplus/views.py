@@ -11,10 +11,22 @@ from django.http import HttpResponse
 
 
 
-def cleaning_audit_csv(payments, includes):
+def cleaning_audit_csv(payments, includes, criteria={}):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_audit.csv"'
 	writer = csv.writer(response)
+	writer.writerow(['CLEANING FEE AUDIT REPORT'])
+	if criteria.get('district'):
+		writer.writerow(['District:', criteria.get('district').name] )
+	if criteria.get('sector'):
+		writer.writerow(['Sector:', criteria.get('sector').name] )
+	if criteria.get('cell'):
+		writer.writerow(['Cell:', criteria.get('cell').name] )
+	if criteria.get('village'):
+		writer.writerow(['Village:', criteria.get('village').name] )
+	writer.writerow(['Date from:', criteria.get('date_from').strftime('%d %B %Y')] )
+	writer.writerow(['Date to:', criteria.get('date_to').strftime('%d %B %Y')] )
+	writer.writerow([])
 	header = []
 	header.append('Payment Amount')
 	header.append('Month/Year')
@@ -123,7 +135,7 @@ def cleaning_audit(request):
 			if request.POST.get('web_button') or not payments:
 				return TemplateResponse(request, 'tax/cleaning_fee_audit.html', { 'payments':payments, 'form':form, 'include_fields':include_fields, 'totals':totals })
 			else: # csv
-				return cleaning_audit_csv(payments, form.cleaned_data.get('include_fields'))
+				return cleaning_audit_csv(payments, form.cleaned_data.get('include_fields'), form.cleaned_data)
 
 	else:
 		form = SearchForm()
@@ -132,10 +144,23 @@ def cleaning_audit(request):
 
 
 
-def cleaning_debtors_csv(businesses):
+def cleaning_debtors_csv(businesses, criteria={}):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_debtors.csv"'
 	writer = csv.writer(response)
+	writer.writerow(['CLEANING FEE DEBTORS REPORT'])
+	if criteria.get('district'):
+		writer.writerow(['District:', criteria.get('district').name] )
+	if criteria.get('sector'):
+		writer.writerow(['Sector:', criteria.get('sector').name] )
+	if criteria.get('cell'):
+		writer.writerow(['Cell:', criteria.get('cell').name] )
+	if criteria.get('village'):
+		writer.writerow(['Village:', criteria.get('village').name] )
+	writer.writerow(['Report as at:', criteria.get('as_at').strftime('%d %B %Y')] )
+
+
+	writer.writerow([])
 	header = []
 	header.append('Business')
 	header.append('Phone')
@@ -202,6 +227,7 @@ def cleaning_debtors(request):
 			for fee in fees:
 				if fee.subbusiness:
 					business = businesses.setdefault("%s-%s" % (fee.subbusiness.business.pk, fee.subbusiness.pk), fee.subbusiness)
+					business.name = "%s (%s)" % (fee.subbusiness.business, fee.subbusiness.branch)
 					business.phone1 = business.business.phone1
 					business.phone2 = business.business.phone2
 					business.address = business.business.address
@@ -225,13 +251,14 @@ def cleaning_debtors(request):
 				else:
 					business.lates['late'] += fee.remaining_amount
 					totals['late'] += fee.remaining_amount
-					
-			if request.POST.get('web_button') or not businesses:
+
+			if businesses:
 				businesses = businesses.values()
 				businesses.sort(key=lambda b: b.name)
+			if request.POST.get('web_button') or not businesses:
 				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals })
 			else: # csv
-				return cleaning_debtors_csv(businesses)
+				return cleaning_debtors_csv(businesses, form.cleaned_data)
 
 	else:
 		form = DebtorsForm()
