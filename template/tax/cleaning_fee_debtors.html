@@ -53,11 +53,26 @@
 			padding-bottom: 20px;
 			overflow:hidden;
 		}
+
+		.fee_link{
+			text-decoration:none;
+			font-weight:bold;
+		}
+
+
+		.currency{
+			text-align: right;
+		}
+
+		.note{
+			clear:both;
+		}
 	</style>
 
 	<div class="section_container">
 		<div class="content_type_container">
 				<h2>Cleaning Fee Debtors</h2>
+
 				<div id="search_table">
 					<form action="{% url 'cleaning_debtors' %}" method="post">
 					{% csrf_token %}
@@ -73,6 +88,7 @@
 					</div>
 					</form>
 				</div>
+				<div class="note">Note: Amounts shown do not include late fees</div>
 
 				<div class="separator">&nbsp;</div>
 				<div class="workflow_container"></div>
@@ -102,21 +118,21 @@
 
 					{% for b in businesses %}
 						<tr>
-							<td>{{ b.name }}</td>
+							<td><a href="{% url 'business_fees' b.pk %}" class="fee_link" target="NEW">{{ b.name }}</a></td>
 
 							<td>{{ b.phone1|default:b.phone2|default:'' }}</td>
 						
 							<td>{{ b.address|default:'' }}</td>
 					
-							<td>{{ b.lates.late|currency }}</td>
+							<td class="currency">{{ b.lates.late|currency }}</td>
 
-							<td>{{ b.lates.late_month|currency }}</td>
+							<td class="currency">{{ b.lates.late_month|currency }}</td>
 						
-							<td>{{ b.lates.late_quarter_year|currency }}</td>
+							<td class="currency">{{ b.lates.late_quarter_year|currency }}</td>
 
-							<td>{{ b.lates.late_half_year|currency }}</td>
+							<td class="currency">{{ b.lates.late_half_year|currency }}</td>
 
-							<td>{{ b.lates.late_year|currency }}</td>
+							<td class="currency">{{ b.lates.late_year|currency }}</td>
 
 						</tr>
 					{% endfor %}

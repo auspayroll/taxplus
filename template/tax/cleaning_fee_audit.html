@@ -57,6 +57,10 @@
 		.include_fields UL LI:nth-child(6){
 			clear:left;
 		}
+
+		.currency{
+			text-align: right;
+		}
 	</style>
 
 	<div class="section_container">
@@ -132,7 +136,7 @@
 
 
 				{% for p in payments %}
-				<tr><td>{{ p.amount|currency }}</td>
+				<tr><td class="currency">{{ p.amount|currency }}</td>
 					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
 					{% if 'Business Name' in include_fields %}
 						<td>{% if p.fee.subbusiness %}{{ p.fee.subbusiness }}<br/>({{ p.fee.subbusiness.name }}){% else %}{{ p.fee.business.name }}{% endif %}</td>
@@ -144,7 +148,7 @@
 						<td>{{ p.fee.business.village.name }}</td>
 					{% endif %}
 					{% if 'Fines' in include_fields %}
-						<td>{% if p.fine_amount %}{{ p.fine_amount|currency }} {{ p.fine_description }} {% endif %}</td>
+						<td class="currency">{% if p.fine_amount %}{{ p.fine_amount|currency }} {{ p.fine_description }} {% endif %}</td>
 					{% endif %}
 					{% if 'Receipt' in include_fields %}
 						<td>{{ p.manual_receipt }}</td>
@@ -162,10 +166,10 @@
 						<td>{{ p.date_time }}</td>
 					{% endif %}
 					{% if 'Total Fee Amount' in include_fields %}
-						<td>{{ p.fee.amount|currency }}</td>
+						<td class="currency">{{ p.fee.amount|currency }}</td>
 					{% endif %}
 					{% if 'Remaining Fee Amount' in include_fields %}
-						<td>{{ p.fee.remaining_amount|currency }}</td>
+						<td class="currency">{{ p.fee.remaining_amount|currency }}</td>
 					{% endif %}
 				</tr>
 				{% endfor %}
