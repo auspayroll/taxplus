@@ -148,7 +148,7 @@ def cleaning_debtors_csv(businesses):
 
 	writer.writerow(header)
 
-	for pk, b in businesses.iteritems():
+	for b in businesses:
 		row = []
 
 		row.append(b.name.encode('utf-8'))	
@@ -225,9 +225,10 @@ def cleaning_debtors(request):
 				else:
 					business.lates['late'] += fee.remaining_amount
 					totals['late'] += fee.remaining_amount
-
-
-			if request.POST.get('web_button') or not fees:
+					
+			if request.POST.get('web_button') or not businesses:
+				businesses = businesses.values()
+				businesses.sort(key=lambda b: b.name)
 				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals })
 			else: # csv
 				return cleaning_debtors_csv(businesses)
@@ -235,4 +236,4 @@ def cleaning_debtors(request):
 	else:
 		form = DebtorsForm()
 
-	return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'fees':None, 'form':form, })
+	return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':None, 'form':form, })
