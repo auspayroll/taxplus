@@ -3,7 +3,6 @@
 @media screen,print
 {
 
-
 	body
 	{
 		margin: 0px;
@@ -12,8 +11,6 @@
 		font-size: 13px;
 		font-family: Arial;
 	}
-
-
 
 	.header1
 	{
@@ -29,22 +26,22 @@
 		display: block;
 	}
 
-		.section_container .content_type_container
-		{
-			display: inline;
-			margin-top: 20px;
-			float: left;
-			padding-left: 10px;
-		}
+	.section_container .content_type_container
+	{
+		display: inline;
+		margin-top: 20px;
+		float: left;
+		padding-left: 10px;
+	}
 
-		.section_container .permission
-		{
-			display: inline;
-			float: right;
-			margin-top: 20px;
-			margin-left: 20px;
-			margin-right: 20px;
-		}
+	.section_container .permission
+	{
+		display: inline;
+		float: right;
+		margin-top: 20px;
+		margin-left: 20px;
+		margin-right: 20px;
+	}
 
 
 	.content_type_container .content_type
@@ -139,13 +136,13 @@
 		text-align: center;
 	}
 
-		.content_type_action a:link, .content_type_action a:visited
-		{
-			text-decoration: none;
-			color: #555555;
-			margin-left: 10px;
-			margin-right: 10px;
-		}
+	.content_type_action a:link, .content_type_action a:visited
+	{
+		text-decoration: none;
+		color: #555555;
+		margin-left: 10px;
+		margin-right: 10px;
+	}
 
 
 
@@ -330,66 +327,66 @@
 		font-style: italic;
 	}
 
-		.note ul
-		{
-			margin: 0px;
-		}
-	/* form css*/
+	.note ul
+	{
+		margin: 0px;
+	}
+/* form css*/
 	form
 	{
 		position: relative;
 	}
 
-		form label
+	form label
+	{
+		font-weight: bold;
+		display: block;
+	}
+
+	form span.helptext
+	{
+		font-size: 10px;
+		color: gray;
+		clear: both;
+		display: block;
+		font-style: italic;
+		margin: 0px 10px 15px 5px;
+	}
+
+	form input[type=submit], form input[type=button]
+	{
+		background: #00B5D0;
+		padding: 5px 20px 5px 20px;
+		font-size: 15px;
+		font-weight: bold;
+		color: white;
+		cursor: pointer;
+	}
+
+	form input[readonly="readonly"]
+	{
+		background-color: #c4c4c4;
+	}
+
+	form .errorlist
+	{
+		color: red;
+		margin: 0px;
+		font-size: 10px;
+		padding: 0px;
+	}
+
+		form .errorlist li
 		{
-			font-weight: bold;
-			display: block;
+			list-style: none;
 		}
 
-		form span.helptext
-		{
-			font-size: 10px;
-			color: gray;
-			clear: both;
-			display: block;
-			font-style: italic;
-			margin: 0px 10px 15px 5px;
-		}
-
-		form input[type=submit], form input[type=button]
-		{
-			background: #00B5D0;
-			padding: 5px 20px 5px 20px;
-			font-size: 15px;
-			font-weight: bold;
-			color: white;
-			cursor: pointer;
-		}
-
-		form input[readonly="readonly"]
-		{
-			background-color: #c4c4c4;
-		}
-
-		form .errorlist
-		{
-			color: red;
-			margin: 0px;
-			font-size: 10px;
-			padding: 0px;
-		}
-
-			form .errorlist li
-			{
-				list-style: none;
-			}
-
-		form.label_float_left label
-		{
-			float: left;
-			margin-right: 10px;
-			width: 90px;
-		}
+	form.label_float_left label
+	{
+		float: left;
+		margin-right: 10px;
+		width: 90px;
+	}
 
 	.read_only_overlay
 	{
@@ -419,25 +416,25 @@
 		line-height: 40px;
 	}
 
-		.messages li.success
-		{
-			color: #00B5D0;
-            padding: 10px;
-		}
+	.messages li.success
+	{
+		color: #00B5D0;
+        padding: 10px;
+	}
 
-		.messages li.error
-		{
-			color: red;
-            padding: 10px;
-		}
+	.messages li.error
+	{
+		color: red;
+        padding: 10px;
+	}
 
 	/* Ownership CSS 
-#ownership_block
-{
-    width: 743px;
-    border: px;
-    border-top: 1px dashed #c4c4c4;
-}
+	#ownership_block
+	{
+	width: 743px;
+	border: px;
+	border-top: 1px dashed #c4c4c4;
+	}
 	*/
 	#ownership_block legend
 	{
@@ -462,16 +459,16 @@
 		padding: 0px 10px;
 	}
 
-		#ownership_block #command_block input
-		{
-			text-align: right;
-		}
+	#ownership_block #command_block input
+	{
+		text-align: right;
+	}
 
-		#ownership_block #command_block button
-		{
-			width: 120px;
-			margin: 0 auto;
-		}
+	#ownership_block #command_block button
+	{
+		width: 120px;
+		margin: 0 auto;
+	}
 
 	/* Receipt CSS */
 	#receipt
@@ -486,107 +483,107 @@
 		background: white;
 	}
 
-		#receipt h2
-		{
-			font-size: 16px;
-			text-align: left;
-		}
+	#receipt h2
+	{
+		font-size: 16px;
+		text-align: left;
+	}
 
-		#receipt h3
-		{
-			font-size: 13px;
-			color: red;
-			text-decoration: underline;
-			text-align: left;
-		}
+	#receipt h3
+	{
+		font-size: 13px;
+		color: red;
+		text-decoration: underline;
+		text-align: left;
+	}
 
-		#receipt .pay_details
-		{
-			position: absolute;
-			top: 25px;
-			right: 20px;
-		}
+	#receipt .pay_details
+	{
+		position: absolute;
+		top: 25px;
+		right: 20px;
+	}
 
-			#receipt .pay_details label
-			{
-				float: left;
-				display: block;
-				width: 80px;
-				line-height: 16px;
-				margin: 0px;
-			}
-            #receipt.epay .pay_details label
-			{
-				width: 100px;
-			}
-            #receipt.multipay .pay_details label
-			{
-				width: 120px;
-			}
+	#receipt .pay_details label
+	{
+		float: left;
+		display: block;
+		width: 80px;
+		line-height: 16px;
+		margin: 0px;
+	}
+    #receipt.epay .pay_details label
+	{
+		width: 100px;
+	}
+    #receipt.multipay .pay_details label
+	{
+		width: 120px;
+	}
 
-		#receipt #payments th, #receipt #payments td
-		{
-			border-bottom: 1px solid black;
-			padding: 5px;
-			width: 200px;
-			text-align: left;
-		}
+	#receipt #payments th, #receipt #payments td
+	{
+		border-bottom: 1px solid black;
+		padding: 5px;
+		width: 200px;
+		text-align: left;
+	}
 
-		#receipt #payments .reference_col
-		{
-			width: 400px;
-		}
-		#receipt.epay #payments .reference_col
-		{
-			width: 600px;
-		}
-		#receipt.multipay #payments .reference_col
-		{
-			width: 600px;
-		}
+	#receipt #payments .reference_col
+	{
+		width: 400px;
+	}
+	#receipt.epay #payments .reference_col
+	{
+		width: 600px;
+	}
+	#receipt.multipay #payments .reference_col
+	{
+		width: 600px;
+	}
 
-		#receipt #payments .center
-		{
-			text-align: center;
-			display: table-cell;
-		}
+	#receipt #payments .center
+	{
+		text-align: center;
+		display: table-cell;
+	}
 
-		#receipt #payments .no_border td
-		{
-			border: 0px;
-		}
+	#receipt #payments .no_border td
+	{
+		border: 0px;
+	}
 
-		#receipt #payments .total_amount
-		{
-			border: 1px solid black;
-			padding: 3px 5px 3px 5px;
-		}
+	#receipt #payments .total_amount
+	{
+		border: 1px solid black;
+		padding: 3px 5px 3px 5px;
+	}
 
-		#receipt .note
-		{
-			width: 300px;
-			position: absolute;
-			bottom: 10px;
-			right: 20px;
-		}
+	#receipt .note
+	{
+		width: 300px;
+		position: absolute;
+		bottom: 10px;
+		right: 20px;
+	}
 
 	.warning
 	{
 		color: red;
 		font-style: italic;
 	}
-/* Tax Setting Tables */
-.setting_box
-{
-    width:1250px;
-    min-width:600px; 
-    margin-left:20px; 
-    text-align:left;
-}
-.setting_box .rates
-{
-    width: 50px;
-}
+	/* Tax Setting Tables */
+	.setting_box
+	{
+	    width:1250px;
+	    min-width:600px; 
+	    margin-left:20px; 
+	    text-align:left;
+	}
+	.setting_box .rates
+	{
+	    width: 50px;
+	}
 
 	#receipt #future_payments td
 	{
@@ -639,12 +636,12 @@
 		margin: 5px;
 	}
 
-		.media_upload_box label
-		{
-			float: left;
-			font-weight: bold;
-			width: 100px;
-		}
+	.media_upload_box label
+	{
+		float: left;
+		font-weight: bold;
+		width: 100px;
+	}
 
 	#taxes .media_link
 	{
@@ -666,26 +663,26 @@
 		width: 700px;
 	}
 
-		#media_association .left_div
-		{
-			width: 400px;
-			border-right: 1px solid #c4c4c4;
-		}
+	#media_association .left_div
+	{
+		width: 400px;
+		border-right: 1px solid #c4c4c4;
+	}
 
 	#media_box
 	{
 		width: 1200px;
 	}
 
-		#media_box table th, #media_box table td
-		{
-			padding: 5px;
-		}
+	#media_box table th, #media_box table td
+	{
+		padding: 5px;
+	}
 
-		#media_box table a
-		{
-			text-decoration: none;
-		}
+	#media_box table a
+	{
+		text-decoration: none;
+	}
 
 
 	/* Show Taxes */
@@ -702,62 +699,62 @@
 		padding: 5px;
 	}
 
-		.target_details div
-		{
-			line-height: 18px;
-		}
+	.target_details div
+	{
+		line-height: 18px;
+	}
 
-		.target_details label
-		{
-			font-weight: bold;
-			width: 120px;
-			float: left;
-			display: block;
-			text-align: right;
-			margin-right: 10px;
-		}
+	.target_details label
+	{
+		font-weight: bold;
+		width: 120px;
+		float: left;
+		display: block;
+		text-align: right;
+		margin-right: 10px;
+	}
 
 	/* Tax Calculation Table*/
 	#tax_calculation
 	{
 	}
 
-		#tax_calculation th, #tax_calculation td
-		{
-			padding: 10px;
-		}
+	#tax_calculation th, #tax_calculation td
+	{
+		padding: 10px;
+	}
 
-		#tax_calculation th
-		{
-			background: #b3e6ff;
-			color: #1a40ff;
-			padding: 15px;
-		}
+	#tax_calculation th
+	{
+		background: #b3e6ff;
+		color: #1a40ff;
+		padding: 15px;
+	}
 
-		#tax_calculation td
-		{
-			/*text-align: right;*/
-		}
+	#tax_calculation td
+	{
+		/*text-align: right;*/
+	}
 
-		#tax_calculation td a
-		{
-			color: green;
-		}
+	#tax_calculation td a
+	{
+		color: green;
+	}
 
-		#tax_calculation select
-		{
-			width: auto;
-		}
+	#tax_calculation select
+	{
+		width: auto;
+	}
 
-		#tax_calculation .first_col
-		{
-			text-align: left;
-		}
+	#tax_calculation .first_col
+	{
+		text-align: left;
+	}
 
-		#tax_calculation .right_align
-		{
-			text-align: right;
-		}
+	#tax_calculation .right_align
+	{
+		text-align: right;
+	}
 
 	/* Tax Setting Tables */
 	.setting_box
@@ -889,48 +886,48 @@
 		border-collapse:separate;
 	}
 
-		#activity_table TH:first-child
-		{
-			text-align:left;
-		}
+	#activity_table TH:first-child
+	{
+		text-align:left;
+	}
 
-		#activity_table TH
-		{
-			text-align:center;
-			border-bottom:1pt #e4e4e4 solid;
-			padding:6px;
-			font-weight:normal;
-			font-size:14px;
-			padding-left:16px;
-			padding-right:8px;
-			background: #E4ECF2;
-			border-right:1pt white solid;
-			border-bottom:1pt white solid;
-		}
+	#activity_table TH
+	{
+		text-align:center;
+		border-bottom:1pt #e4e4e4 solid;
+		padding:6px;
+		font-weight:normal;
+		font-size:14px;
+		padding-left:16px;
+		padding-right:8px;
+		background: #E4ECF2;
+		border-right:1pt white solid;
+		border-bottom:1pt white solid;
+	}
 
-		#activity_table TD
-		{
-			text-align:center;
-			margin:auto;
-			padding:4px;
-			border-bottom:1pt #e4e4e4 solid;
-			padding-left:15px;
-			padding-right:15px;
-			border-right:1pt #e4e4e4 solid;
-		}
+	#activity_table TD
+	{
+		text-align:center;
+		margin:auto;
+		padding:4px;
+		border-bottom:1pt #e4e4e4 solid;
+		padding-left:15px;
+		padding-right:15px;
+		border-right:1pt #e4e4e4 solid;
+	}
 
-		#activity_table INPUT
-		{
-			display:block;
-			margin:auto;
-		}
+	#activity_table INPUT
+	{
+		display:block;
+		margin:auto;
+	}
 
-		#activity_table INPUT[type=text]
-		{
-			width:70px;
-			text-align:right;
+	#activity_table INPUT[type=text]
+	{
+		width:70px;
+		text-align:right;
 
-		}
+	}
 
 	#id_turnover
 	{
@@ -954,38 +951,38 @@
 		
 	}
 
-		#payment_form TD, #payment_form TH
-		{
-			padding: 8px;
-			padding-left:16px;
-		}
+	#payment_form TD, #payment_form TH
+	{
+		padding: 8px;
+		padding-left:16px;
+	}
 
-		#payment_form TR TD:first-child, #payment_form TR TH:first-child
-		{
-			background: #E4ECF2;
-			border-right:1pt #e4e4e4 solid;
-			border-left:1pt #e4e4e4 solid;
-			font-weight:normal;
-			font-size:14px;
-			width: 170px;
-			border-radius:2px;
-		}
+	#payment_form TR TD:first-child, #payment_form TR TH:first-child
+	{
+		background: #E4ECF2;
+		border-right:1pt #e4e4e4 solid;
+		border-left:1pt #e4e4e4 solid;
+		font-weight:normal;
+		font-size:14px;
+		width: 170px;
+		border-radius:2px;
+	}
 
 
-		.menu_panel
-		{
-			background: rgba(255,255,255,1);
-			background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
-			background: -webkit-gradient(left top, left bottom, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(208,223,235,1)));
-			background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
-			background: -o-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
-			background: -ms-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
-			background: linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
-			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#d0dfeb', GradientType=0 );
-			border-right:1pt #e4e4e4 solid;
-			font-weight:normal;
-			font-size:14px;
-		}
+	.menu_panel
+	{
+		background: rgba(255,255,255,1);
+		background: -moz-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
+		background: -webkit-gradient(left top, left bottom, color-stop(0%, rgba(255,255,255,1)), color-stop(100%, rgba(208,223,235,1)));
+		background: -webkit-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
+		background: -o-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
+		background: -ms-linear-gradient(top, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
+		background: linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(208,223,235,1) 100%);
+		filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#d0dfeb', GradientType=0 );
+		border-right:1pt #e4e4e4 solid;
+		font-weight:normal;
+		font-size:14px;
+	}
 
 	.ajax_message, .messages LI
 	{
@@ -1083,7 +1080,13 @@
 		margin:0
 	}
 
+}
 
+@media print
+{
+	INPUT[type="submit"]{
+		display:none;
+	}
 }
 
 
