@@ -1559,12 +1559,13 @@ def tax_business(request, obj_id, part):
 			del request.session['property']
 
 	request.session['business'] = business
-	TaxMapper.generateTaxes(business,request)
+	#TaxMapper.generateTaxes(business,request)
 	if part == 'fees':
 		request.session['tax_url']  = request.get_full_path()
 		fee_summary = getFeeSummary(request, business)
+		fees = Fee.objects.filter(business=business).order_by('-due_date')
 		form = PayFeesForm()
-		return render_to_response('tax/tax_tax_business_fees.html',{'business':business,'fees':fee_summary, 'form':form},context_instance=RequestContext(request))
+		return render_to_response('tax/tax_tax_business_fees.html',{'business':business,'fees':fees, 'form':form},context_instance=RequestContext(request))
 	if part == 'miscellaneous_fees':
 		return displayPayMiscellaneousFeePage(request, business)
 	elif part == 'history':

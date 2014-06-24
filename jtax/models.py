@@ -825,6 +825,9 @@ class Fee(Tax):
 	#business_owners = models.ManyToManyField(Business)
 
 	def __unicode__(self):
+		if 'cleaning' in self.fee_type:
+			return 'Cleaning fee for %s' % self.date_from.strftime("%B %Y")
+
 		name = self.fee_type.title() + " Fee "
 		if self.date_from and self.date_to:
 			name += "[" + DateFormat(self.date_from).format('d/m/Y') + " - " + DateFormat(self.date_to).format('d/m/Y') + "]"
@@ -935,6 +938,12 @@ class Fee(Tax):
 			self.reset_tax()
 
 
+	
+	def medias(self):
+		from media.models import Media
+		return Media.objects.filter(tax_type__in=['cleaning_fee','cleaning','fee'], tax_id=self.pk)
+
+
 class MiscellaneousFee(models.Model):
 	fee_type = models.CharField(max_length=250)
 	fee_sub_type = models.CharField(max_length=250)
@@ -1021,10 +1030,12 @@ class PayFee(models.Model):
 	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
+
 	def __unicode__(self):
 		return "Fee Payment"
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
+
 
 
 class PayFixedAssetTax(models.Model):
