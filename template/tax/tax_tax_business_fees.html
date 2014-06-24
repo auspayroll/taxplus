@@ -86,8 +86,11 @@
                         	<a href="/admin/tax/tax/generate_invoice/?type=fee&id={{ payment.pk }}" class="my_button">view receipt - {{ payment.amount|currency }}</a>
                         {% endfor %}
 
-                        {% if i.remaining_amount > 0 %}
+                        {% if i.remaining_amount > 0  %}
                         	<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}" class="my_button" >view ePay Invoice</a>
+                        {% endif %}
+
+                        {% if i.remaining_amount > 0 or i.fee_type == 'cleaning' and not i.submit_date %}
                         	<a href="{% url 'pay_fee' 'fee' i.id %}" class="my_button" >pay</a>
                         {% endif %}
                     </td>
