@@ -2841,69 +2841,64 @@ def processPayment(request):
 		fee_type = form.cleaned_data.get('fee_type')
 		fee_id = id = form.cleaned_data.get('fee_id')
 		fee = get_object_or_404(Fee, pk=fee_id)
-		if fee.is_paid:
+		if fee.remaining_amount <= 0:
 			messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
 			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 		if fee_type in ('fee', 'land_lease'):
 			fee = get_object_or_404(Fee, pk=id)
+			payment = PayFee(fee=fee)
+
 		elif fee_type == 'fixed_asset':
 			fee = get_object_or_404(PropertyTaxItem, pk=id)
+			payment = PayFixedAssetTax(property_tax_item=fee)
+
 		elif fee_type == 'trading_license':
 			fee = get_object_or_404(TradingLicenseTax, pk=id)
+			payment = PayTradingLicenseTax(trading_license_tax=fee)
+
 		elif fee_type == 'rental_income':
 			fee = get_object_or_404(RentalIncomeTax, pk=id)
-		late_fees = form.cleaned_data.get('late_fees')
+			payment = get_object_or_404(PayRentalIncomeTax, rental_income_tax=fee)
 
-		posted = request.POST.copy()
-		posted['i_status'] = 'active'
-		form = paymentForm(fee)(posted)
-		if form.is_valid():
-			payment_object = form.save(commit=False)
-			if fee_type in ('fee', 'land_lease'):
-				payment_object.fee = fee
-			elif fee_type == 'fixed_asset':
-				payment_object.property_tax_item = fee
-			elif fee_type == 'trading_license':
-				payment_object.trading_license_tax = fee
-			elif fee_type == 'rental_income':
-				payment_object.rental_income_tax = fee
-			
-			if late_fees:
-				if payment_object.fine_amount:
-					payment_object.fine_description += " %s; " % str(Common.formatCurrency(payment_object.fine_amount))
+		payment.i_status='active'
+		payment.staff = request.session.get('user')
+		payment.fine_amount = form.cleaned_data.get('late_fees') + form.cleaned_data.get('fine_amount')
+		if payment.fine_amount and form.cleaned_data.get('fine_description'):
+			payment.fine_description = form.cleaned_data.get('fine_description')
+		if form.cleaned_data.get('late_fees'):
+			if payment.fine_description:
+				payment.fine_description += ";"
+			payment.fine_description += " Late fee %s %s" % (str(Common.formatCurrency(form.cleaned_data.get('late_fees'))), fee.currency.title())
 
-				payment_object.fine_description += "Late fee %s %s" % (str(Common.formatCurrency(late_fees)), fee.currency.title())
-				payment_object.fine_amount += late_fees
+		payment.amount = form.cleaned_data.get('amount')
+		payment.save()
 
-			payment_object.staff = request.session.get('user')
-			payment_object.save()
-
-			fee.remaining_amount = fee.get_remaining_amount()
-			if fee.remaining_amount <= 0:
-				fee.is_paid = True
-			fee.save()
-			citizen = None
-			property = None
-			business = None
-			subbusiness = None
-			if hasattr(fee,'citizen'):
-				citizen = fee.citizen
-			elif form.cleaned_data.get('citizen_id'): # set citizen as payer
-				citizen = get_object_or_404(Citizen, pk=form.cleaned_data.get('citizen_id'))
-			if hasattr(fee, 'property'):
-				property = fee.property
-			if hasattr(fee, 'business'):
-				business = fee.business
-			elif form.cleaned_data.get('business_id'): #set business as payer
-				business = get_object_or_404(Business, pk=form.cleaned_data.get('business_id'))
-			if hasattr(fee, 'subbusiness'):
-				subbusiness = fee.subbusiness
-			tax = fee
-			message = "add a Payment of " + str(payment_object.amount) + tax.currency.title() + " for " + str(tax)
-			LogMapper.createLog(request, object=tax, citizen=citizen, property=property, business=business, subbusiness=subbusiness, message= message, tax_type=tax.tax_type,tax_id=tax.id, payment_type='pay_' + tax.tax_type, payment_id=payment_object.id)
-			redirect_url = "/admin/tax/tax/generate_invoice/?type=%s&id=%s" % ( fee_type, payment_object.pk)
-			return HttpResponseRedirect(redirect_url)
+		fee.remaining_amount = fee.get_remaining_amount()
+		if fee.remaining_amount <= 0:
+			fee.is_paid = True
+		fee.save()
+		citizen = None
+		property = None
+		business = None
+		subbusiness = None
+		if hasattr(fee,'citizen'):
+			citizen = fee.citizen
+		elif form.cleaned_data.get('citizen_id'): # set citizen as payer
+			citizen = get_object_or_404(Citizen, pk=form.cleaned_data.get('citizen_id'))
+		if hasattr(fee, 'property'):
+			property = fee.property
+		if hasattr(fee, 'business'):
+			business = fee.business
+		elif form.cleaned_data.get('business_id'): #set business as payer
+			business = get_object_or_404(Business, pk=form.cleaned_data.get('business_id'))
+		if hasattr(fee, 'subbusiness'):
+			subbusiness = fee.subbusiness
+		tax = fee
+		message = "add a Payment of " + str(payment.amount) + tax.currency.title() + " for " + str(tax)
+		LogMapper.createLog(request, object=tax, citizen=citizen, property=property, business=business, subbusiness=subbusiness, message= message, tax_type=tax.tax_type,tax_id=tax.id, payment_type='pay_' + tax.tax_type, payment_id=payment.id)
+		redirect_url = "/admin/tax/tax/generate_invoice/?type=%s&id=%s" % ( fee_type, payment.pk)
+		return HttpResponseRedirect(redirect_url)
 
 
 def payFee(request, fee_type=None, id=None):
@@ -6419,17 +6414,15 @@ def generateEPayInvoice(tax_type, tax, type, model):
 			late_fees.append(late_fee_record)
 
 	if tax_type == 'fee':
-		tax_record = { 'name': tax.name or tax.fee_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.amount or 0), 'currency': tax.currency}
+		tax_record = { 'name': tax.name or tax.fee_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.remaining_amount or 0), 'currency': tax.currency}
 	elif tax_type == 'misc_fee':
-		tax_record = { 'name': tax.fee_type.replace("_"," ").title(), 'reference': tax.fee_sub_type.title(),'amount': (tax.amount or 0), 'currency': tax.currency}
+		tax_record = { 'name': tax.fee_type.replace("_"," ").title(), 'reference': tax.fee_sub_type.title(),'amount': (tax.remaining_amount or 0), 'currency': tax.currency}
 	else:
-		tax_record = { 'name': tax_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.amount or 0), 'currency': tax.currency}
+		tax_record = { 'name': tax_type.replace("_"," ").title(), 'reference': getTaxReference(tax_type, tax),'amount': (tax.remaining_amount or 0), 'currency': tax.currency}
 	taxes.append(tax_record)
 
 	receipt['late_fees'] = late_fees
-	receipt['total'] = ( tax.amount or 0 ) + payment['late_fees']
-	remaining_amount = (tax.amount or 0 ) - payment['amount_paid']
-	receipt['total_outstanding'] = remaining_amount + payment['late_fees']
+	receipt['total_outstanding'] = receipt['total'] = ( tax.remaining_amount or 0) + payment['late_fees']
 
 	#append fines - if exists
 	"""

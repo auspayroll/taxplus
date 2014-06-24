@@ -500,7 +500,7 @@ def paymentForm(tax_object, *args, **kwargs):
 	class PaymentForm(forms.ModelForm):
 		citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 		business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
-		amount = CurrencyField(label="Payment Amount", widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'}))
+		amount = CurrencyField(label="Payment Amount") #  widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'})
 		final_tax_due = forms.CharField(widget=forms.HiddenInput(), initial=None,required=False)
 		paid_date = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), input_formats=('%d/%m/%Y',),initial=datetime.now,)
 		manual_receipt = forms.CharField(widget=forms.TextInput(), label="Manual Receipt Number", required=False)
@@ -521,6 +521,7 @@ def paymentForm(tax_object, *args, **kwargs):
 		
 		class Meta:
 			model = paymentModel(tax_object)
+			tax = tax_object
 			fields = [ 'payer_type', 'bank', 'receipt_no', 'paid_date', 'manual_receipt', 'note', 'amount', 'fine_amount', 'fine_description', 'business_id', 'citizen_id']
 		
 		def clean(self):
@@ -535,6 +536,8 @@ def paymentForm(tax_object, *args, **kwargs):
 				self._errors["receipt_no"] = self.error_class(["Please enter a receipt number"])
 			if not cleaned_data.get('citizen_id') and not cleaned_data.get('business_id'):
 				self._errors["payer_type"] = self.error_class(["You must specify a payer"])
+			if cleaned_data.get('amount') > self.Meta.tax.remaining_amount:
+				self._errors['amount'] = self.error_class(["Payment amount cannot be greater than %s" % self.Meta.tax.remaining_amount])
 			return cleaned_data
 
 	return PaymentForm
