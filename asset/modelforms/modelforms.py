@@ -273,15 +273,15 @@ class BusinessForm(AssetModelForm):
 	def clean(self):
 		super(BusinessForm,self).clean()
 		if 'cell' in self._errors:
-			if self.data['cell']:
+			if self.data.get('cell'):
 				del self.errors['cell']
 				self.cleaned_data['cell']=Cell.objects.get(pk=self.data['cell'])
 		if 'sector' in self._errors:
-			if self.data['sector']:
+			if self.data.get('sector'):
 				del self.errors['sector']
 				self.cleaned_data['sector']=Sector.objects.get(pk=self.data['sector'])
 		if 'district' in self._errors:
-			if self.data['district']:
+			if self.data.get('district'):
 				del self.errors['district']
 				self.cleaned_data['district']=Sector.objects.get(pk=self.data['district'])
 
