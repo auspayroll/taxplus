@@ -1,0 +1,101 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load simple_tags %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+	{% breadcrumb "Business" "/admin/asset/business/" %}
+	{% breadcrumb "Duplicates" %}	
+{% endblock %}
+
+
+{% block mainbody %}
+	<script type="text/javascript"  src="{% static "js/admin/populate_geo.js" %}"></script>
+	
+	<style>
+		#search_table{
+			overflow:hidden;
+			border:1pt #cccccc solid;
+			float:left;
+			padding:10px;
+		}
+	
+		.include_fields{
+			margin-top:20px;
+			height:100px;
+			width:100%;
+			overflow:hidden;
+		}
+		
+		.include_fields li{
+			float:left;
+			margin-right:20px;
+		}
+
+		input[type="submit"]{
+			float:right;
+			margin-left:5px;
+		}
+
+		TABLE TH{
+			background-color:#C8D6C3;
+			text-align:center;
+			padding-left:5px;
+			padding-right:5px;
+		}
+
+		.include_fields UL LI:nth-child(6){
+			clear:left;
+		}
+
+		.section_container{
+			padding-bottom: 20px;
+			overflow:hidden;
+		}
+
+		.fee_link{
+			text-decoration:none;
+			font-weight:bold;
+		}
+
+
+		.note{
+			clear:both;
+		}
+
+		table.tablesorter tbody td.currency{
+			text-align: right;
+		}
+
+		.tablesorter TH{
+			border-right:1pt grey solid;
+			border-left:1pt white solid;
+		}
+	</style>
+
+	<div class="section_container">
+		<div class="content_type_container">
+				<h2>Business Merge List</h2>
+
+					<table class="tablesorter">
+					<tr>
+						<th>Business 1</th>
+						<th>Business 2</th>
+						<th>Similarity</th>
+					</tr>
+
+					{% for row in rows %}
+						<tr>
+							<td><a href="{% url 'update_business' row.business1.pk %}">{{ row.business1 }}</a></td>
+							<td><a href="{% url 'update_business' row.business2.pk %}">{{ row.business2 }}</a></td>
+							<td>{{ row.similarity }} %</td>
+							<td><a href="{% url 'merge_business' row.business1.pk row.business2.pk %}">Merge Preview</a></td>
+						</tr>
+					{% endfor %}
+					</table>
+		</div>
+
+	</div>
+
+{% endblock %}

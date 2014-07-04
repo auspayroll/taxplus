@@ -26,6 +26,46 @@ from property.models import *
 import hashlib
 from pmauth.models import Action
 
+def merge_business(request, pk1, pk2):
+	if not request.session.get('user'):
+		return login(request)
+	business1 = get_object_or_404(Business, pk=pk1)
+	business2 = get_object_or_404(Business, pk=pk2)
+
+	if request.method == 'POST':
+		post = request.POST.copy()
+		if post.get('date_started'):
+			post['date_started'] = datetime.strptime(post.get('date_started'),'%Y-%m-%d').date()
+
+		if post.get('closed_date'):
+			post['closed_date'] = datetime.strptime(post.get('closed_date'),'%Y-%m-%d').date()
+
+		form = BusinessForm(post)
+		if form.is_valid():
+			business = form.save(request)
+			message_log = ["Business %s created" % business]
+			merge_messages = business.merge(business1, business2)
+			message_log.extend(merge_messages)
+			for merge_message in merge_messages:
+				LogMapper.createLog(request,object=business, action="merge", business = business, user=request.session.get('user'), message=merge_message)	
+			LogMapper.createLog(request,object=business,action="merge", business = business, user=request.session.get('user'), message="merging of %s and %s" % (business1.name, business2.name))	  
+			success_message = 'Business merged successfully. %s + %s -> %s ' % (business1, business2, business)
+			dup = Duplicate.objects.get(business1=business1, business2=business2)
+			dup.status = 0
+			dup.save()
+			messages.success(request, success_message) 
+			return TemplateResponse(request, 'asset/business/merge_business_message.html', { 'message_log':message_log, 'business':business })
+		else:
+			raise Exception(form.errors)
+
+	fields = [(k,k.replace('business_category', 'cleaning fee category').replace('business_subcategory','business category').replace('_',' ')) for k in \
+	('name', 'tin', 'address', 'email', 'po_box', 'phone1', 'phone2', 'vat_register', 'sector', 'cell', 'village', 'accountant_name',
+	'accountant_phone', 'accountant_email', 'date_started', 'closed_date', 'business_category', 'business_subcategory')]
+
+	return TemplateResponse(request, 'asset/business/merge_business.html', { 'business1':business1, 'business2':business2, 'fields':fields })
+
+
+
 
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_id = None):
 	"""

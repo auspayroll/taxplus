@@ -1,0 +1,83 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load simple_tags %}
+
+
+{% block css  %}
+
+    <link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+
+
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% if not action %}
+		{% breadcrumb "Business" "" %}
+	{% else %}
+		{% breadcrumb "Business" "/admin/asset/business/" %}
+		{% ifequal action "add" %}
+			{% breadcrumb "Add business" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit business" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+<h2>Business Merge</h2>
+<form action="{{ request.get_full_path }}" method="post">
+<table class="tablesorter">
+
+{% for field in fields %}
+    {% if business1|lookup:field.0 or business2|lookup:field.0 %}
+    <tr>
+        
+        <td><b>{{ field.1 }}</b></td>
+       
+        <td> {% if business1|lookup:field.0 %}
+            <input type="radio" name="{{ field.0 }}" value="{% lookup business1 field.0 'pk' %}" {% if business1|lookup:field.0 %}checked{% endif %}> {% lookup business1 field.0 %}{% endif %}</td>
+        
+        <td>
+            {% if business2|lookup:field.0 %}
+            <input type="radio" name="{{ field.0 }}" value="{% lookup business2 field.0 'pk' %}" {% if not business1|lookup:field.0 %}checked{% endif %}> {% lookup business2 field.0 %}
+            {% endif %}
+        </td>
+    </tr>
+    {% endif %}
+{% endfor %}
+</table>
+<div style="margin-top:20px;">
+    <div style="border:1pt #cccccc solid; background-color:pink; padding:4px; margin-bottom:10px;">
+        WARNING: A business merge will perform the following steps:
+        <ul>
+        <li>- Business records for {{ business1 }} and {{ business2 }} will be deactivated.</li>
+        <li>- A new business record will be created combining the values of the above fields.</li>
+        <li>- All fees, taxes will be merged into the new business record. </li> 
+        <li>- All media from each business will be added to the new business record. </li>
+        <li>- All tax/fee payments from each business will be added to</li>
+        <li>- All owners for each business will be added to the new business record. </li> 
+        <li>- All branches for each business will be added to the new business record. </li>        
+        </ul>
+
+        Once the new business record is created, please review all the above records to ensure they are correct.
+    </div>
+<button>Perform Business Merge Now</button></div>
+{% csrf_token %}
+</form>
+
+{% endblock %}

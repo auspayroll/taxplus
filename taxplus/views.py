@@ -8,6 +8,7 @@ from taxplus.forms import SearchForm, DebtorsForm
 from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
+from asset.models import Business, Duplicate
 
 
 
@@ -264,3 +265,13 @@ def cleaning_debtors(request):
 		form = DebtorsForm()
 
 	return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':None, 'form':form, })
+
+
+
+def duplicates(request):
+	rows = Duplicate.objects.filter(status=1).order_by('-similarity').select_related('business1','business2')
+	return TemplateResponse(request, 'asset/business/duplicates.html', { 'rows':rows })
+
+
+
+

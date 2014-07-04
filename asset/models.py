@@ -53,6 +53,205 @@ class Business(models.Model):
 	business_subcategory = models.ForeignKey(BusinessSubCategory, null=True, blank=True)
 
 
+
+
+	def merge(self, business1, business2):
+		"""
+		merges taxes/fees, media and ownerships from business1 and business2 into the current business object
+		"""
+		from jtax.models import TradingLicenseTax, Fee
+		from media.models import Media
+
+		images = [ image for image in Media.objects.filter(business__pk__in=[business1.pk, business2.pk])]
+		messages = []
+
+		#merge trading license taxes
+		payments = {}
+		self.tradinglicensetax_set.all().delete()
+		taxes = []
+		tax_list = [ tax for tax in TradingLicenseTax.objects.filter(business__pk__in=[business1.pk, business2.pk])]
+		
+		for tax in tax_list:
+			payment_list = payments.setdefault(tax.pk, [])  
+			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
+			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
+			# get tax in the same period
+			if matches:
+				tax_match = matches[0]
+				if (tax_match.amount or 0) < (tax.amount or 0) or tax.amount and not tax_match.amount:
+					taxes.pop(taxes.index(tax_match))
+					payment_list_match = payments.setdefault(tax_match.pk, [])
+					payment_list = payments.setdefault(tax.pk, [])
+					if payment_list_match:
+						payment_list.extend(payment_list_match)
+						del(payments[tax_match.pk])
+				else:
+					payment_list_match = payments.setdefault(tax_match.pk, [])
+					payment_list = payments.setdefault(tax.pk, [])
+					if payment_list:
+						payment_list_match.extend(payment_list)
+						del(payments[tax.pk])
+					continue
+
+			taxes.append(tax)
+			
+		for tax in taxes:
+			tax.pk_old = tax.pk
+			tax.pk = None
+			tax.business = self
+			tax.save()
+			messages.append("%s added for %s" % (tax, self))
+			paid_amount = 0
+			for payment in payments.setdefault(tax.pk_old, []):
+				payment.pk_old = payment.pk
+				payment.pk = None
+				payment.trading_license_tax = tax
+				payment.save()
+				messages.append("payment %s added for %s" % (payment, tax))
+				image_match = [image for image in images if image.tax_type == 'trading_license' and image.payment_id == payment.pk_old]
+				if image_match:
+					image_match = image_match[0]
+					image_match.payment = payment
+					image_match.business = self
+					image_match.tax = tax
+					image_match.save()
+					messages.append("media %s added for %s" % (image_match, payment))
+				paid_amount += (payment.amount - payment.fine_amount )
+			tax.remaining_amount = (tax.amount or 0) - paid_amount
+			if tax.remaining_amount < 0:
+				tax.remaining_amount = 0
+			tax.save()
+
+
+		#merge fees
+		payments = {}
+		self.fee_set.all().delete()
+		taxes = []
+		tax_list = [ tax for tax in Fee.objects.filter(business__pk__in=[business1.pk, business2.pk])]
+		for tax in tax_list:
+			payment_list = payments.setdefault(tax.pk, [])  
+			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
+			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
+			# get tax in the same period
+			if matches:
+				tax_match = matches[0]
+				if (tax_match.amount or 0) < (tax.amount or 0) or tax.amount and not tax_match.amount:
+					taxes.pop(taxes.index(tax_match))
+					payment_list_match = payments.setdefault(tax_match.pk, [])
+					payment_list = payments.setdefault(tax.pk, [])
+					if payment_list_match:
+						payment_list.extend(payment_list_match)
+						del(payments[tax_match.pk])
+				else:
+					payment_list_match = payments.setdefault(tax_match.pk, [])
+					payment_list = payments.setdefault(tax.pk, [])
+					if payment_list:
+						payment_list_match.extend(payment_list)
+						del(payments[tax.pk])
+					continue
+
+			taxes.append(tax)
+			
+		for tax in taxes:
+			tax.pk_old = tax.pk
+			tax.pk = None
+			tax.business = self
+			tax.save()
+			messages.append("%s added for %s" % (tax, self))
+			paid_amount = 0
+			for payment in payments.setdefault(tax.pk_old, []):
+				payment.pk_old = payment.pk
+				payment.pk = None
+				payment.fee = tax
+				payment.save()
+				messages.append("payment %s added for %s" % (payment, tax))
+				image_match = [image for image in images if image.tax_type in ('cleaning', 'cleaning_fee', 'land_lease', 'land_lease_fee', 'fee') and image.payment_id == payment.pk_old]
+				if image_match:
+					image_match = image_match[0]
+					image_match.payment = payment
+					image_match.business = self
+					image_match.tax = tax
+					image_match.save()
+					messages.append("media %s added for %s" % (image_match, payment))
+				paid_amount += (payment.amount - payment.fine_amount )
+			tax.remaining_amount = (tax.amount or 0) - paid_amount
+			if tax.remaining_amount < 0:
+				tax.remaining_amount = 0
+			tax.save()
+
+		# add owners
+		current_owners = [ owner for owner in self.owners.filter(i_status='active') ]
+
+		b1_owners = [ owner for owner in business1.owners.filter(i_status='active') ]
+		for owner in b1_owners:
+			owner.pk = None
+			owner.owner_business = self
+			owner.save()
+
+		b1_owners.extend(current_owners)
+		for owner in business2.owners.filter(i_status='active'):
+			if owner.owner_citizen.pk not in [ o.pk for o in b1_owners.owners ]:
+				owner.pk = None
+				owner.owner_business = self
+				owner.save()
+
+		#add branches
+		subbusinesses = [b for b in business1.subbusiness_set.filter(i_status='active')]
+		subbusinesses.extend([b for b in business2.subbusiness_set.filter(i_status='active')])
+		for sb in subbusinesses:
+			sb.business = self
+			sb.save()
+			messages.append("branch %s added" % sb)
+
+		#deactive business1 and business2 and all records
+		for tlt in business1.tradinglicensetax_set.all():
+			for payment in tlt.payments.all():
+				payment.i_status = 'inactive'
+				payment.save()
+				messages.append("%s deactivated for %s" % (tlt, business1))
+			tlt.i_status = 'inactive'
+			tlt.save()	
+			messages.append("%s deactivated for %s" % (tlt, business1))	
+
+		for tlt in business2.tradinglicensetax_set.all():
+			for payment in tlt.payments.all():
+				payment.i_status = 'inactive'
+				payment.save()
+				messages.append("%s deactivated for %s" % (tlt, business2))
+			tlt.i_status = 'inactive'
+			tlt.save()
+			messages.append("%s deactivated for %s" % (tlt, business2))
+
+
+		for tlt in business1.fee_set.all():
+			for payment in tlt.payments.all():
+				payment.i_status = 'inactive'
+				payment.save()
+				messages.append("%s deactivated for %s" % (tlt, business1))
+			tlt.i_status = 'inactive'
+			tlt.save()
+			messages.append("%s deactivated for %s" % (tlt, business1))
+
+		for tlt in business2.fee_set.all():
+			for payment in tlt.payments.all():
+				payment.i_status = 'inactive'
+				payment.save()
+				messages.append("%s deactivated for %s" % (tlt, business2))
+			tlt.i_status = 'inactive'
+			tlt.save()
+			messages.append("%s deactivated for %s" % (tlt, business2))
+
+		business1.status = 'inactive'
+		business1.save()
+		messages.append("%s deactivated" % business1)
+
+		business2.status = 'inactive'
+		business2.save()
+		messages.append("%s deactivated" % business2)
+
+		return messages
+
+
 	def close(self, close_date):
 		from jtax.models import TradingLicenseTax, Fee
 		self.closed_date = close_date
@@ -367,3 +566,14 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 			message = "No change made"
 		message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
 		return message
+
+
+
+class Duplicate(models.Model):
+	business1 = models.ForeignKey(Business, related_name='duplicate')
+	business2 = models.ForeignKey(Business, related_name='duplicate2')
+	#merged_business = models.ForeignKey(Business, related_name='merged_business', null=True)
+	status = models.IntegerField(default=1)
+	similarity = models.FloatField(null=True)
+	modified = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True, null=True)
+

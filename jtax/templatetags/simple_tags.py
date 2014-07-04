@@ -12,9 +12,9 @@ def lookup(object, property, property2=None):
 		try:
 			attribute = getattr(object, property)
 		except:
-			return None
+			pass
 
-	# get sub property if specified
+
 	if property2 and attribute:
 		try:
 			attribute = attribute[property2]
@@ -22,9 +22,12 @@ def lookup(object, property, property2=None):
 			try:
 				attribute = getattr(attribute, property2)
 			except:
-				return None
+				pass
 
 	return attribute
+
+def lookup_filter(value, arg):
+	return lookup(value, arg)
 
 def chunks(value):
 	return '-'.join(re.findall('...?', value))
@@ -40,4 +43,5 @@ def currency(value):
 
 register.filter('currency', currency)
 register.filter('chunks', chunks)
+register.filter('lookup', lookup_filter)
 register.simple_tag(lookup)

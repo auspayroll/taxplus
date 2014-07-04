@@ -1,0 +1,55 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load simple_tags %}
+
+
+{% block css  %}
+
+    <link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+
+    <link rel="stylesheet" type="text/css" href="{% static "js/plugins/forms/uniform/uniform.default.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/bootstrap/bootstrap-responsive.min.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/supr-theme/jquery.ui.supr.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/icons.css" %}" />
+
+
+	<link rel="stylesheet" type="text/css" href="{% static "js/plugins/misc/qtip/jquery.qtip.css" %}" />
+	
+	<link rel="stylesheet" type="text/css" href="{% static "css/main.css" %}" />
+	<link rel="stylesheet" type="text/css" href="{% static "css/custom.css" %}" />
+    <link rel="stylesheet" type="text/css" href="{% static "css/design/base.css" %}" />
+
+{% endblock %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %} 
+	{% if not action %}
+		{% breadcrumb "Business" "" %}
+	{% else %}
+		{% breadcrumb "Business" "/admin/asset/business/" %}
+		{% ifequal action "add" %}
+			{% breadcrumb "Add business" "" %}
+		{% endifequal %}
+		{% ifequal action "edit" %}
+			{% breadcrumb "Edit business" "" %}
+		{% endifequal %}
+	{% endif %}
+{% endblock %}
+
+{% block mainbody %}
+
+<div>
+	{% if business %}
+		<a href="{% url 'update_business' business.pk %}">Edit {{ business }}</a>
+	{% endif %}
+	<h4>LOG:</h4>
+<ul>
+{% for message in message_log %}
+    <li>{{ message }}</li>
+{% endfor %}
+</ul>
+</div>
+
+{% endblock %}
