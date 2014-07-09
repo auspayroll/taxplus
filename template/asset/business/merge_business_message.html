@@ -24,18 +24,10 @@
 
 {% load breadcrumb %}
 {% block crumbbody %}
-	{% breadcrumb "Home" "/admin/" %} 
-	{% if not action %}
-		{% breadcrumb "Business" "" %}
-	{% else %}
-		{% breadcrumb "Business" "/admin/asset/business/" %}
-		{% ifequal action "add" %}
-			{% breadcrumb "Add business" "" %}
-		{% endifequal %}
-		{% ifequal action "edit" %}
-			{% breadcrumb "Edit business" "" %}
-		{% endifequal %}
-	{% endif %}
+    {% breadcrumb "Home" "/admin/" %}
+    {% breadcrumb "Business" "/admin/asset/business/" %}
+    {% breadcrumb "Merge Business List" "/admin/duplicates/" %}  
+    {% breadcrumb "Merge Business" %}
 {% endblock %}
 
 {% block mainbody %}
