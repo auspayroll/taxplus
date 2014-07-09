@@ -40,18 +40,18 @@
 
 {% block mainbody %}
 <h2>Business Merge</h2>
+
+{{ errors|default:'' }}
+
 <form action="{{ request.get_full_path }}" method="post">
 <table class="tablesorter">
 
 {% for field in fields %}
     {% if business1|lookup:field.0 or business2|lookup:field.0 %}
-    <tr>
-        
-        <td><b>{{ field.1 }}</b></td>
-       
+    <tr>      
+        <td><b>{{ field.1 }}</b></td>  
         <td> {% if business1|lookup:field.0 %}
-            <input type="radio" name="{{ field.0 }}" value="{% lookup business1 field.0 'pk' %}" {% if business1|lookup:field.0 %}checked{% endif %}> {% lookup business1 field.0 %}{% endif %}</td>
-        
+            <input type="radio" name="{{ field.0 }}" value="{% lookup business1 field.0 'pk' %}" {% if business1|lookup:field.0 %}checked{% endif %}> {% lookup business1 field.0 %}{% endif %}</td>    
         <td>
             {% if business2|lookup:field.0 %}
             <input type="radio" name="{{ field.0 }}" value="{% lookup business2 field.0 'pk' %}" {% if not business1|lookup:field.0 %}checked{% endif %}> {% lookup business2 field.0 %}

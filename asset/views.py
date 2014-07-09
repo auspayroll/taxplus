@@ -31,6 +31,7 @@ def merge_business(request, pk1, pk2):
 		return login(request)
 	business1 = get_object_or_404(Business, pk=pk1)
 	business2 = get_object_or_404(Business, pk=pk2)
+	errors = None
 
 	if request.method == 'POST':
 		post = request.POST.copy()
@@ -56,13 +57,14 @@ def merge_business(request, pk1, pk2):
 			messages.success(request, success_message) 
 			return TemplateResponse(request, 'asset/business/merge_business_message.html', { 'message_log':message_log, 'business':business })
 		else:
-			raise Exception(form.errors)
+			errors = form.errors
+			#raise Exception(form.errors)
 
 	fields = [(k,k.replace('business_category', 'cleaning fee category').replace('business_subcategory','business category').replace('_',' ')) for k in \
 	('name', 'tin', 'address', 'email', 'po_box', 'phone1', 'phone2', 'vat_register', 'sector', 'cell', 'village', 'accountant_name',
 	'accountant_phone', 'accountant_email', 'date_started', 'closed_date', 'business_category', 'business_subcategory')]
 
-	return TemplateResponse(request, 'asset/business/merge_business.html', { 'business1':business1, 'business2':business2, 'fields':fields })
+	return TemplateResponse(request, 'asset/business/merge_business.html', { 'business1':business1, 'business2':business2, 'fields':fields, 'errors':errors })
 
 
 
