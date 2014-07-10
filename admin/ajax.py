@@ -958,12 +958,12 @@ def search_business(request):
 			keyword = GET['term'].lower().strip()
 			if GET.has_key('stype') and GET['stype'] in ['nid','first_name','last_name']:
 				if GET['stype'] == 'tin':
-					businesses = Business.objects.filter(tin__istartswith=keyword).order_by('tin')[:20]
+					businesses = Business.objects.filter(tin__istartswith=keyword, i_status='active').order_by('tin')[:20]
 
 				elif GET['stype'] == 'name':
-					businesses = Business.objects.filter(name__icontains=keyword).order_by('name')[:20]
+					businesses = Business.objects.filter(name__icontains=keyword, i_status='active').order_by('name')[:20]
 			else:
-				businesses = Business.objects.filter(Q(name__icontains=keyword) | Q(tin__istartswith=keyword)).distinct().order_by('name','tin')[:20]
+				businesses = Business.objects.filter(i_status='active').filter(Q(name__icontains=keyword) | Q(tin__istartswith=keyword)).distinct().order_by('name','tin')[:20]
 
 			for b in businesses:
 				branches = {}
