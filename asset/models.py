@@ -241,11 +241,11 @@ class Business(models.Model):
 			tlt.save()
 			messages.append("%s deactivated for %s" % (tlt, business2))
 
-		business1.status = 'inactive'
+		business1.i_status = 'inactive'
 		business1.save()
 		messages.append("%s deactivated" % business1)
 
-		business2.status = 'inactive'
+		business2.i_status = 'inactive'
 		business2.save()
 		messages.append("%s deactivated" % business2)
 
