@@ -237,30 +237,40 @@ def cleaning_debtors(request):
 				if not hasattr(business,'lates'):
 					business.lates = {'late_year':0, 'late_half_year':0, 'late_quarter_year':0, 'late_month':0, 'late':0 }
 
+				principle, interest = fee.amount_owing(as_at)
+				owing = principle + interest
 				if (as_at - fee.due_date).days >= 365:
-					business.lates['late_year'] += fee.remaining_amount
-					totals['late_year'] += fee.remaining_amount
+					business.lates['late_year'] += owing
+					totals['late_year'] += owing
 				elif (as_at - fee.due_date).days >= 180:
-					business.lates['late_half_year'] += fee.remaining_amount
-					totals['late_half_year'] += fee.remaining_amount
+					business.lates['late_half_year'] += owing
+					totals['late_half_year'] += owing
 				elif (as_at - fee.due_date).days >= 90:
-					business.lates['late_quarter_year'] += fee.remaining_amount
-					totals['late_quarter_year'] += fee.remaining_amount
+					business.lates['late_quarter_year'] += owing
+					totals['late_quarter_year'] += owing
 				elif (as_at - fee.due_date).days >= 30:
-					business.lates['late_month'] += fee.remaining_amount
-					totals['late_month'] += fee.remaining_amount
+					business.lates['late_month'] += owing
+					totals['late_month'] += owing
 				else:
-					business.lates['late'] += fee.remaining_amount
-					totals['late'] += fee.remaining_amount
+					business.lates['late'] += owing
+					totals['late'] += owing
 
 			if businesses:
 				businesses = businesses.values()
 				businesses.sort(key=lambda b: b.name)
 			if request.POST.get('web_button') or not businesses:
-				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals })
+				th = {}
+				th[0] = date.today().strftime("5-%b-%Y")
+				th[1] = (date.today() - relativedelta(months=1)).strftime("5-%b-%Y")
+				th[3] = (date.today() - relativedelta(months=3)).strftime("5-%b-%Y")
+				th[6] = (date.today() - relativedelta(months=6)).strftime("5-%b-%Y")
+				th[12] = (date.today() - relativedelta(months=12)).strftime("5-%b-%Y")
+				#th.append()
+				#th.append()
+
+				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals, 'th':th })
 			else: # csv
 				return cleaning_debtors_csv(businesses, form.cleaned_data)
-
 	else:
 		form = DebtorsForm()
 

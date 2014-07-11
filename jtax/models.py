@@ -315,6 +315,28 @@ class Tax(models.Model):
 		  'months_late':months_late, 'principle':principle, 'amount_paid':amount_paid,
 		  'surcharge_rate':float(surcharge_rate * 100), 'surcharge_max':surcharge_max }
 
+
+	def amount_owing(self, as_at=None):
+		if not as_at:
+			as_at = date.today()
+		sector = None
+		if hasattr(self, 'business'):
+			sector = self.business.sector
+		elif hasattr(self, 'property'):
+			sector = self.property.sector
+
+		tax_periods = Setting.getTaxPeriods(self.fee_setting, self.period_from, self.period_to, sector=sector)
+		tax_setting = tax_periods[0][2]
+
+		interest_rate = Decimal(tax_setting['late_fee_interest_rate'])
+		surcharge_rate = Decimal(tax_setting['late_fee_surcharge_rate'])
+		surcharge_max = Decimal(tax_setting['late_fee_surcharge_max'])
+
+		late_fees, months_late, interest, surcharge, principle = calc_interest(self.due_date, self.remaining_amount, surcharge_rate, surcharge_max, interest_rate, self.remaining_amount, as_at)
+
+		return self.remaining_amount, (late_fees or 0)
+
+
 	def get_installments(self):
 		paid = self.get_paid_amount()[0]
 		installments = self.installments.all().order_by('due')
