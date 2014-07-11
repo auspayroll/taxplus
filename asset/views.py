@@ -47,8 +47,6 @@ def merge_business(request, pk1, pk2):
 			message_log = ["Business %s created" % business]
 			merge_messages = business.merge(business1, business2)
 			message_log.extend(merge_messages)
-			for merge_message in merge_messages:
-				LogMapper.createLog(request,object=business, action="merge", business = business, user=request.session.get('user'), message=merge_message)	
 			LogMapper.createLog(request,object=business,action="merge", business = business, user=request.session.get('user'), message="merging of %s and %s" % (business1.name, business2.name))	  
 			success_message = 'Business merged successfully. %s + %s -> %s ' % (business1, business2, business)
 			dup = Duplicate.objects.get(business1=business1, business2=business2)

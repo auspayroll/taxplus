@@ -61,6 +61,7 @@ class Business(models.Model):
 		"""
 		from jtax.models import TradingLicenseTax, Fee
 		from media.models import Media
+		from log.models import *
 
 		images = [ image for image in Media.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 		messages = []
@@ -100,6 +101,7 @@ class Business(models.Model):
 			tax.pk = None
 			tax.business = self
 			tax.save()
+			Log.objects.filter(business__pk__in=[business1.pk, business2.pk], tax_id=tax.pk_old, tax_type='trading_license').update(tax_id=tax.pk, business=self)
 			messages.append("%s added for %s" % (tax, self))
 			paid_amount = 0
 			for payment in payments.setdefault(tax.pk_old, []):
@@ -111,6 +113,7 @@ class Business(models.Model):
 				image_match = [image for image in images if image.tax_type == 'trading_license' and image.payment_id == payment.pk_old]
 				if image_match:
 					image_match = image_match[0]
+				Log.objects.filter(business__pk__in=[business1.pk, business2.pk], payment_id=payment.pk_old, payment_type='pay_trading_license').update(payment_id=payment.pk, business=self)
 					image_match.payment = payment
 					image_match.business = self
 					image_match.tax = tax
@@ -157,6 +160,7 @@ class Business(models.Model):
 			tax.pk = None
 			tax.business = self
 			tax.save()
+			Log.objects.filter(business__pk__in=[business1.pk, business2.pk], tax_id=tax.pk_old, tax_type='fee').update(tax_id=tax.pk, business=self)
 			messages.append("%s added for %s" % (tax, self))
 			paid_amount = 0
 			for payment in payments.setdefault(tax.pk_old, []):
@@ -240,6 +244,8 @@ class Business(models.Model):
 			tlt.i_status = 'inactive'
 			tlt.save()
 			messages.append("%s deactivated for %s" % (tlt, business2))
+
+		Log.objects.filter(business__pk__in=[business1.pk, business2.pk], payment_id__isnull=True, tax_id__isnull=True).update(business=self)
 
 		business1.i_status = 'inactive'
 		business1.save()
