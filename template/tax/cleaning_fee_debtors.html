@@ -110,15 +110,15 @@
 						<th>Phone</th>
 						<th>Address</th>
 						
-						<th>&lt; 1 month<br/>{{ totals.late|currency }} Rwf</th>
+						<th>Due {{ th.0 }}<br/>{{ totals.late|currency }} Rwf</th>
 						
-						<th>&gt; 1 month<br/>{{ totals.late_month|currency }} Rwf</th>
+						<th>Due {{ th.1 }}<br/>{{ totals.late_month|currency }} Rwf</th>
 						
-						<th>&gt; 3 months<br/>{{ totals.late_quarter_year|currency }} Rwf</th>
+						<th>Due {{ th.3 }}<br/>{{ totals.late_quarter_year|currency }} Rwf</th>
 						
-						<th>&gt; 6 months<br/>{{ totals.late_half_year|currency }} Rwf</th>
+						<th>Due {{ th.6 }}<br/>{{ totals.late_half_year|currency }} Rwf</th>
 						
-						<th>&gt; 1 year<br/>{{ totals.late_year|currency }} Rwf</th>
+						<th>Due {{ th.12 }}<br/>{{ totals.late_year|currency }} Rwf</th>
 					</tr>
 
 					{% for b in businesses %}

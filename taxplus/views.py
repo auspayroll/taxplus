@@ -9,6 +9,7 @@ from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
 from asset.models import Business, Duplicate
+from dateutil.relativedelta import relativedelta
 
 
 
@@ -158,8 +159,7 @@ def cleaning_debtors_csv(businesses, criteria={}):
 		writer.writerow(['Cell:', criteria.get('cell').name] )
 	if criteria.get('village'):
 		writer.writerow(['Village:', criteria.get('village').name] )
-	writer.writerow(['Report as at:', criteria.get('as_at').strftime('%d %B %Y')] )
-
+	writer.writerow(['Report as at:', criteria.get('as_at').strftime('%d %B %Y')])
 
 	writer.writerow([])
 	header = []

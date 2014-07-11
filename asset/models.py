@@ -68,17 +68,16 @@ class Business(models.Model):
 
 		#merge trading license taxes
 		payments = {}
-		self.tradinglicensetax_set.all().delete()
+		self.tradinglicensetax_set.all().update(i_status='inactive')
 		taxes = []
 		tax_list = [ tax for tax in TradingLicenseTax.objects.filter(business__pk__in=[business1.pk, business2.pk])]
-		
+
 		for tax in tax_list:
 			payment_list = payments.setdefault(tax.pk, [])  
 			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
 			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
 			# get tax in the same period
-			if matches:
-				tax_match = matches[0]
+			for tax_match in matches:
 				if (tax_match.amount or 0) < (tax.amount or 0) or tax.amount and not tax_match.amount:
 					taxes.pop(taxes.index(tax_match))
 					payment_list_match = payments.setdefault(tax_match.pk, [])
@@ -94,8 +93,8 @@ class Business(models.Model):
 						del(payments[tax.pk])
 					continue
 
-			taxes.append(tax)
-			
+			taxes.append(tax)	
+
 		for tax in taxes:
 			tax.pk_old = tax.pk
 			tax.pk = None
@@ -110,10 +109,9 @@ class Business(models.Model):
 				payment.trading_license_tax = tax
 				payment.save()
 				messages.append("payment %s added for %s" % (payment, tax))
-				image_match = [image for image in images if image.tax_type == 'trading_license' and image.payment_id == payment.pk_old]
-				if image_match:
-					image_match = image_match[0]
 				Log.objects.filter(business__pk__in=[business1.pk, business2.pk], payment_id=payment.pk_old, payment_type='pay_trading_license').update(payment_id=payment.pk, business=self)
+				image_matches = [image for image in images if image.tax_type == 'trading_license' and image.payment_id == payment.pk_old]
+				for image_match in image_matches:
 					image_match.payment = payment
 					image_match.business = self
 					image_match.tax = tax
@@ -128,7 +126,7 @@ class Business(models.Model):
 
 		#merge fees
 		payments = {}
-		self.fee_set.all().delete()
+		self.fee_set.all().update(i_status='inactive')
 		taxes = []
 		tax_list = [ tax for tax in Fee.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 		for tax in tax_list:
@@ -169,9 +167,9 @@ class Business(models.Model):
 				payment.fee = tax
 				payment.save()
 				messages.append("payment %s added for %s" % (payment, tax))
-				image_match = [image for image in images if image.tax_type in ('cleaning', 'cleaning_fee', 'land_lease', 'land_lease_fee', 'fee') and image.payment_id == payment.pk_old]
-				if image_match:
-					image_match = image_match[0]
+				Log.objects.filter(business__pk__in=[business1.pk, business2.pk], payment_id=payment.pk_old, payment_type='pay_fee').update(payment_id=payment.pk, business=self)
+				image_matches = [image for image in images if image.tax_type in ('cleaning', 'cleaning_fee', 'land_lease', 'land_lease_fee', 'fee') and image.payment_id == payment.pk_old]
+				for image_match in image_matches:
 					image_match.payment = payment
 					image_match.business = self
 					image_match.tax = tax
@@ -185,18 +183,17 @@ class Business(models.Model):
 
 		# add owners
 		current_owners = [ owner for owner in self.owners.filter(i_status='active') ]
-
 		b1_owners = [ owner for owner in business1.owners.filter(i_status='active') ]
 		for owner in b1_owners:
 			owner.pk = None
-			owner.owner_business = self
+			owner.asset_business = self
 			owner.save()
 
 		b1_owners.extend(current_owners)
 		for owner in business2.owners.filter(i_status='active'):
 			if owner.owner_citizen.pk not in [ o.pk for o in b1_owners.owners ]:
 				owner.pk = None
-				owner.owner_business = self
+				owner.asset_business = self
 				owner.save()
 
 		#add branches

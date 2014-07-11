@@ -11,7 +11,7 @@
 
 
 {% block mainbody %}
-	<script type="text/javascript"  src="{% static "js/admin/populate_geo.js" %}"></script>
+	<script type="text/javascript"  src="{% static "js/populate_geo_new.js" %}"></script>
 	<script>
 	$(function(){
 
@@ -85,7 +85,7 @@
 						Include Fields: {{ form.include_fields }}
 					</div>
 					<div>
-						<input type="submit" name="web_button" value="Generate Web Report"><input type="submit" name="csv_button" value="Download CSV Report"> 
+						<input type="submit" name="web_button" value="Generate Web Report" class="btn green"><input type="submit" name="csv_button" value="Download CSV Report"  class="btn green"> 
 					</div>
 					</form>
 				</div>
