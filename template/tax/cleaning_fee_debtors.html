@@ -86,29 +86,26 @@
 						Village: {{ form.village }}{{ form.village.errors }}
 					</div>
 					<div>
-						As at*: {{ form.as_at }}{{ form.as_at.errors }}
-					</div>
-					<div>
 						<input type="submit" name="web_button" value="Generate Web Report"><input type="submit" name="csv_button" value="Download CSV Report">
 					</div>
 					</form>
 				</div>
-				<div class="note">Note: Amounts shown do not include late fees</div>
 
 				<div class="separator">&nbsp;</div>
 				<div class="workflow_container"></div>
 
-				{% if request.method == 'POST' and not businesses %}
+				{% if request.method == 'POST' and not line_items %}
 					<div>No entries found</div>
 				{% endif %}
 
-				{% if businesses %}
-
+				{% if line_items %}
+					<div class="note">As at {{ report.as_at }}. Note: Amounts shown include late fees</div>
 					<table class="tablesorter">
 					<tr>
 						<th>Business</th>
 						<th>Phone</th>
 						<th>Address</th>
+						<th>Fee Amount</th>
 						
 						<th>Due {{ th.0 }}<br/>{{ totals.late|currency }} Rwf</th>
 						
@@ -121,23 +118,25 @@
 						<th>Due {{ th.12 }}<br/>{{ totals.late_year|currency }} Rwf</th>
 					</tr>
 
-					{% for b in businesses %}
+					{% for l in line_items %}
 						<tr>
-							<td><a href="{% url 'business_fees' b.pk %}" class="fee_link" target="NEW">{{ b.name }}</a></td>
+							<td><a href="{% url 'business_fees' l.business.pk %}" class="fee_link" target="NEW">{{ l.business.name }}</a></td>
 
-							<td>{{ b.phone1|default:b.phone2|default:'' }}</td>
+							<td>{{ l.business.phone1|default:l.business.phone2|default:'' }}</td>
 						
-							<td>{{ b.address|default:'' }}</td>
+							<td>{{ l.business.address|default:'' }}</td>
+
+							<td class="currency">{{ l.rate|currency }}</td>		
 					
-							<td class="currency">{{ b.lates.late|currency }}</td>
+							<td class="currency">{{ l.month|currency }}</td>
 
-							<td class="currency">{{ b.lates.late_month|currency }}</td>
+							<td class="currency">{{ l.month_1|currency }}</td>
 						
-							<td class="currency">{{ b.lates.late_quarter_year|currency }}</td>
+							<td class="currency">{{ l.month_3|currency }}</td>
 
-							<td class="currency">{{ b.lates.late_half_year|currency }}</td>
+							<td class="currency">{{ l.month_6|currency }}</td>
 
-							<td class="currency">{{ b.lates.late_year|currency }}</td>
+							<td class="currency">{{ l.month_12|currency }}</td>
 
 						</tr>
 					{% endfor %}

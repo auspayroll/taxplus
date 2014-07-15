@@ -49,7 +49,7 @@ class DebtorsForm(forms.Form):
 	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), error_messages={'required':'Sector is required'})
 	cell = forms.ModelChoiceField(required = False, queryset = Cell.objects.none())
 	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())
-	as_at = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':"'as at' date is invalid", 'required':"'as at' date is required"}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.TextInput(attrs={'class':'date_picker'}))
+	# as_at = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':"'as at' date is invalid", 'required':"'as at' date is required"}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.TextInput(attrs={'class':'date_picker'}))
 	#include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=overdue_choices)
 
 	def __init__(self, *args, **kw):

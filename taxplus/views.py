@@ -1,5 +1,5 @@
 from django.template.response import TemplateResponse 
-from django.shortcuts import HttpResponseRedirect
+from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
 from jtax.models import PayFee, Fee
 from property.models import District, Sector, Cell
 from datetime import date
@@ -10,6 +10,7 @@ import csv
 from django.http import HttpResponse
 from asset.models import Business, Duplicate
 from dateutil.relativedelta import relativedelta
+from taxplus.models import *
 
 
 
@@ -146,7 +147,7 @@ def cleaning_audit(request):
 
 
 
-def cleaning_debtors_csv(businesses, criteria={}):
+def cleaning_debtors_csv(report, line_items, criteria={}, th=None):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_debtors.csv"'
 	writer = csv.writer(response)
@@ -159,37 +160,37 @@ def cleaning_debtors_csv(businesses, criteria={}):
 		writer.writerow(['Cell:', criteria.get('cell').name] )
 	if criteria.get('village'):
 		writer.writerow(['Village:', criteria.get('village').name] )
-	writer.writerow(['Report as at:', criteria.get('as_at').strftime('%d %B %Y')])
+	writer.writerow(['Report as at:', report.as_at.strftime('%d %B %Y')])
 
 	writer.writerow([])
 	header = []
 	header.append('Business')
 	header.append('Phone')
 	header.append('Address')
-	header.append('< 1 month')
-	header.append('> 1 month')
-	header.append('> 3 months')
-	header.append('> 6 months')
-	header.append('> 1 year')
+	header.append(th[0])
+	header.append(th[1])
+	header.append(th[3])
+	header.append(th[6])
+	header.append(th[12])
 
 	writer.writerow(header)
 
-	for b in businesses:
+	for l in line_items:
 		row = []
 
-		row.append(b.name.encode('utf-8'))	
+		row.append(l.business.name.encode('utf-8'))	
 
-		if b.phone1:
-			row.append(b.phone1.encode('utf-8'))
+		if l.business.phone1:
+			row.append(l.business.phone1.encode('utf-8'))
 		else:
-			row.append(b.phone2.encode('utf-8') or '')
+			row.append(l.business.phone2.encode('utf-8') or '')
 		
-		row.append(b.address or '')
-		row.append(b.lates['late'])
-		row.append(b.lates['late_month'])
-		row.append(b.lates['late_quarter_year'])
-		row.append(b.lates['late_half_year'])
-		row.append(b.lates['late_year'])
+		row.append(l.business.address or '')
+		row.append(l.month)
+		row.append(l.month_1)
+		row.append(l.month_3)
+		row.append(l.month_6)
+		row.append(l.month_12)
 
 		writer.writerow(row)
 
@@ -209,68 +210,23 @@ def cleaning_debtors(request):
 		if form.is_valid():
 			#include_fields = form.cleaned_data['include_fields']
 
-			as_at = form.cleaned_data['as_at']
-			fees = Fee.objects.filter(fee_type='cleaning', remaining_amount__gt=0, i_status='active', due_date__lt=form.cleaned_data['as_at']).select_related('business').order_by('date_time')
+			debtors_report = get_object_or_404(DebtorsReport, fee_type='cleaning')
+			line_items = DebtorsReportLine.objects.filter(report=debtors_report).select_related('business').order_by('business__name')
 			if form.cleaned_data['sector']:
-				fees = fees.filter(Q(business__sector=form.cleaned_data['sector'])| Q(subbusiness__sector=form.cleaned_data['sector']))
+				line_items = line_items.filter(Q(business__sector=form.cleaned_data['sector'])| Q(subbusiness__sector=form.cleaned_data['sector']))
 			if form.cleaned_data['cell']:
-				fees = fees.filter(Q(business__cell=form.cleaned_data['cell']) | Q(subbusiness__cell=form.cleaned_data['cell']))
-			totals['amount'] = fees.aggregate(Sum('amount'))['amount__sum']
-			totals['remaining'] = fees.filter(remaining_amount__gte=0).aggregate(Sum('remaining_amount'))['remaining_amount__sum']
-			totals['late'] = 0
-			totals['late_month'] = 0
-			totals['late_quarter_year'] = 0
-			totals['late_half_year'] = 0
-			totals['late_year'] = 0
+				line_items = line_items.filter(Q(business__cell=form.cleaned_data['cell']) | Q(subbusiness__cell=form.cleaned_data['cell']))
 
-			businesses = {}
-
-			for fee in fees:
-				if fee.subbusiness:
-					business = businesses.setdefault("%s-%s" % (fee.subbusiness.business.pk, fee.subbusiness.pk), fee.subbusiness)
-					business.name = "%s (%s)" % (fee.subbusiness.business, fee.subbusiness.branch)
-					business.phone1 = business.business.phone1
-					business.phone2 = business.business.phone2
-					business.address = business.business.address
-				else:
-					business = businesses.setdefault(fee.business.pk, fee.business)
-				if not hasattr(business,'lates'):
-					business.lates = {'late_year':0, 'late_half_year':0, 'late_quarter_year':0, 'late_month':0, 'late':0 }
-
-				principle, interest = fee.amount_owing(as_at)
-				owing = principle + interest
-				if (as_at - fee.due_date).days >= 365:
-					business.lates['late_year'] += owing
-					totals['late_year'] += owing
-				elif (as_at - fee.due_date).days >= 180:
-					business.lates['late_half_year'] += owing
-					totals['late_half_year'] += owing
-				elif (as_at - fee.due_date).days >= 90:
-					business.lates['late_quarter_year'] += owing
-					totals['late_quarter_year'] += owing
-				elif (as_at - fee.due_date).days >= 30:
-					business.lates['late_month'] += owing
-					totals['late_month'] += owing
-				else:
-					business.lates['late'] += owing
-					totals['late'] += owing
-
-			if businesses:
-				businesses = businesses.values()
-				businesses.sort(key=lambda b: b.name)
-			if request.POST.get('web_button') or not businesses:
-				th = {}
-				th[0] = date.today().strftime("5-%b-%Y")
-				th[1] = (date.today() - relativedelta(months=1)).strftime("5-%b-%Y")
-				th[3] = (date.today() - relativedelta(months=3)).strftime("5-%b-%Y")
-				th[6] = (date.today() - relativedelta(months=6)).strftime("5-%b-%Y")
-				th[12] = (date.today() - relativedelta(months=12)).strftime("5-%b-%Y")
-				#th.append()
-				#th.append()
-
-				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':businesses, 'form':form, 'totals':totals, 'th':th })
+			th = {}
+			th[0] = date.today().strftime("5-%b-%Y")
+			th[1] = (date.today() - relativedelta(months=1)).strftime("5-%b-%Y")
+			th[3] = (date.today() - relativedelta(months=3)).strftime("5-%b-%Y")
+			th[6] = (date.today() - relativedelta(months=6)).strftime("5-%b-%Y")
+			th[12] = (date.today() - relativedelta(months=12)).strftime("5-%b-%Y")
+			if request.POST.get('web_button') or not line_items:
+				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'report':debtors_report, 'line_items':line_items, 'form':form, 'th':th })
 			else: # csv
-				return cleaning_debtors_csv(businesses, form.cleaned_data)
+				return cleaning_debtors_csv(debtors_report, line_items, form.cleaned_data, th)
 	else:
 		form = DebtorsForm()
 
