@@ -147,7 +147,7 @@ def cleaning_audit(request):
 
 
 
-def cleaning_debtors_csv(report, line_items, criteria={}, th=None):
+def cleaning_debtors_csv(report, line_items, criteria={}, th=None, totals={}):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_debtors.csv"'
 	writer = csv.writer(response)
@@ -212,21 +212,26 @@ def cleaning_debtors(request):
 
 			debtors_report = get_object_or_404(DebtorsReport, fee_type='cleaning')
 			line_items = DebtorsReportLine.objects.filter(report=debtors_report).select_related('business').order_by('business__name')
+			      #['amount__sum']
 			if form.cleaned_data['sector']:
 				line_items = line_items.filter(Q(business__sector=form.cleaned_data['sector'])| Q(subbusiness__sector=form.cleaned_data['sector']))
 			if form.cleaned_data['cell']:
 				line_items = line_items.filter(Q(business__cell=form.cleaned_data['cell']) | Q(subbusiness__cell=form.cleaned_data['cell']))
 
+			totals = line_items.aggregate(month=Sum('month'), month_1=Sum('month_1'), month_3=Sum('month_3'), month_6=Sum('month_6'), month_12=Sum('month_12'))
+			totals['total'] = totals['month'] + totals['month_1'] + totals['month_3'] + totals['month_6'] + totals['month_6'] 
+
 			th = {}
-			th[0] = date.today().strftime("5-%b-%Y")
-			th[1] = (date.today() - relativedelta(months=1)).strftime("5-%b-%Y")
-			th[3] = (date.today() - relativedelta(months=3)).strftime("5-%b-%Y")
-			th[6] = (date.today() - relativedelta(months=6)).strftime("5-%b-%Y")
-			th[12] = (date.today() - relativedelta(months=12)).strftime("5-%b-%Y")
+			th[0] = debtors_report.as_at.strftime("Due 5-%b-%Y")
+			th[1] = (debtors_report.as_at - relativedelta(months=1)).strftime("5-%b-%Y")
+			th[3] = (debtors_report.as_at - relativedelta(months=3)).strftime("5-%b-%Y")
+			th[6] = (debtors_report.as_at - relativedelta(months=6)).strftime("5-%b-%Y")
+			th[12] = (debtors_report.as_at - relativedelta(months=12)).strftime("5-%b-%Y")
+
 			if request.POST.get('web_button') or not line_items:
-				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'report':debtors_report, 'line_items':line_items, 'form':form, 'th':th })
+				return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'report':debtors_report, 'line_items':line_items, 'form':form, 'th':th, 'totals':totals })
 			else: # csv
-				return cleaning_debtors_csv(debtors_report, line_items, form.cleaned_data, th)
+				return cleaning_debtors_csv(debtors_report, line_items, form.cleaned_data, th, totals)
 	else:
 		form = DebtorsForm()
 

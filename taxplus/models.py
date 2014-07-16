@@ -55,6 +55,7 @@ class DebtorsReportLine(models.Model):
 	month_3 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	month_6 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	month_12 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+	total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 
 

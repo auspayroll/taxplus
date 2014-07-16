@@ -43,7 +43,7 @@ class Command(BaseCommand):
 				else:
 					reportline.month += owing
 
+				reportline.total += owing
 				reportline.rate = fee.amount
-
 				reportline.save()
 

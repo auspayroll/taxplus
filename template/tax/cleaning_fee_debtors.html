@@ -107,15 +107,17 @@
 						<th>Address</th>
 						<th>Fee Amount</th>
 						
-						<th>Due {{ th.0 }}<br/>{{ totals.late|currency }} Rwf</th>
+						<th>Due {{ th.0 }}<br/>{{ totals.month|currency }} Rwf</th>
 						
-						<th>Due {{ th.1 }}<br/>{{ totals.late_month|currency }} Rwf</th>
+						<th>Due {{ th.1 }}<br/>{{ totals.month_1|currency }} Rwf</th>
 						
-						<th>Due {{ th.3 }}<br/>{{ totals.late_quarter_year|currency }} Rwf</th>
+						<th>Due {{ th.3 }}<br/>{{ totals.month_3|currency }} Rwf</th>
 						
-						<th>Due {{ th.6 }}<br/>{{ totals.late_half_year|currency }} Rwf</th>
+						<th>Due {{ th.6 }}<br/>{{ totals.month_6|currency }} Rwf</th>
 						
-						<th>Due {{ th.12 }}<br/>{{ totals.late_year|currency }} Rwf</th>
+						<th>Due {{ th.12 }}<br/>{{ totals.month_12|currency }} Rwf</th>
+
+						<th>Total<br/>{{ totals.total|currency }} Rwf </th>
 					</tr>
 
 					{% for l in line_items %}
@@ -137,6 +139,8 @@
 							<td class="currency">{{ l.month_6|currency }}</td>
 
 							<td class="currency">{{ l.month_12|currency }}</td>
+
+							<td class="currency">{{ l.total|currency }}</td>
 
 						</tr>
 					{% endfor %}
