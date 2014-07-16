@@ -219,7 +219,8 @@ def cleaning_debtors(request):
 				line_items = line_items.filter(Q(business__cell=form.cleaned_data['cell']) | Q(subbusiness__cell=form.cleaned_data['cell']))
 
 			totals = line_items.aggregate(month=Sum('month'), month_1=Sum('month_1'), month_3=Sum('month_3'), month_6=Sum('month_6'), month_12=Sum('month_12'))
-			totals['total'] = totals['month'] + totals['month_1'] + totals['month_3'] + totals['month_6'] + totals['month_6'] 
+			totals['total'] = (totals.get('month') or 0) + (totals.get('month_1') or 0) + \
+				(totals.get('month_3') or 0) + (totals.get('month_6') or 0) + (totals.get('month_12') or 0)
 
 			th = {}
 			th[0] = debtors_report.as_at.strftime("Due 5-%b-%Y")
