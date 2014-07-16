@@ -19,7 +19,7 @@ class Command(BaseCommand):
 	
 	def handle(self, *args, **options):
 			as_at = date.today()
-			fees = Fee.objects.filter(fee_type='cleaning', remaining_amount__gt=0, i_status='active', due_date__lt=as_at, business__sector__isnull=False).select_related('business').order_by('date_time')
+			fees = Fee.objects.filter(fee_type='cleaning', remaining_amount__gt=0, i_status='active', due_date__lt=as_at, business__sector__isnull=False, business__sector__district__name__iexact='Kicukiro').select_related('business').order_by('date_time')
 			debtorsreport, created = DebtorsReport.objects.get_or_create(fee_type='cleaning')
 			debtorsreport.as_at = as_at
 			debtorsreport.save()
