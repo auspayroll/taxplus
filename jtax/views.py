@@ -2864,6 +2864,9 @@ def processPayment(request):
 		payment.i_status='active'
 		payment.staff = request.session.get('user')
 		payment.fine_amount = form.cleaned_data.get('late_fees') + form.cleaned_data.get('fine_amount')
+		payment.bank = form.cleaned_data.get('bank')
+		payment.receipt_no = form.cleaned_data.get('receipt_no')
+		payment.manual_receipt = form.cleaned_data.get('manual_receipt')
 		if payment.fine_amount and form.cleaned_data.get('fine_description'):
 			payment.fine_description = form.cleaned_data.get('fine_description')
 		if form.cleaned_data.get('late_fees'):
