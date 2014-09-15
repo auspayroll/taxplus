@@ -23,8 +23,8 @@
 				<tr>
 					<td>{{i.name}}<br/>{{i.target}}</td>
 					<td>							
-						{% if i.is_paid != 1 %}
-							{% if i.amount %}
+						{% if not i.is_paid %}
+							{% if i.amount >= 0 %}
 								<div class="pending">{{i.amount|currency}} {{i.currency|title}}</div>
 							{% else %}
 								<div class="pending">Not specified</div>
@@ -55,27 +55,23 @@
                     <!--td><button class="button_styled" >more info</button></td>
                     <td><button class="button_styled" >past payment</button></td-->
                     <td>
-                        {% if i.has_pending_payment %}
-                            <i>Pending Payment waiting for approval.</i>
-                        {% else %}
-                            {% if i.is_paid != 1 %}
-                                {% if i.submit_link and i.fee_type == 'land_lease' %}
-									<a href="{{ i.submit_link }}"><button  class="my_button" >submit</button></a>
-                                {% endif %}
-                                {% if i.amount %}
-									<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}"><button class="my_button" >view ePay Invoice</button></a>
-                                {% endif %}
-                                {% if i.link %}
-									<a href="{{ i.link }}"><button class="my_button" >pay</button></a>
-                                {% endif %}
-                            {% else %}
-                                {% if i.receipt_links %}
-                                    {% for link in i.receipt_links %}
-                                        <a href="{{ link }}" target="_blank" class="invoice_link"><button  class="my_button" >view receipt</button></a>
-                                    {% endfor %}
-                                {% endif %}
-                            {% endif %}
-                        {% endif %}
+                    {% if not i.submit_date %}<a href="/admin/tax/tax/submit_tax/?type=fee&id={{ i.id }}"><button  class="my_button" >submit</button></a>{% endif %}
+
+
+                    {% if i.submit_date %}<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}"><button class="my_button" >view ePay Invoice</button></a>{% endif %}
+
+                    {% if i.submit_date and not i.is_paid %}
+	                    <a href="/admin/tax/tax/pay_taxes/?type=fee&id={{ i.id }}"><button class="my_button" >pay</button></a>
+                    {% endif %}
+
+
+                    {% if i.receipt_links %}
+                        {% for link in i.receipt_links %}
+                            <a href="{{ link }}" target="_blank" class="invoice_link"><button  class="my_button" >view receipt</button></a>
+                        {% endfor %}
+                    {% endif %}
+
+
 				</tr>		
 			{% endfor %}
 			</tbody>							
