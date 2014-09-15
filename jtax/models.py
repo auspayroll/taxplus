@@ -270,9 +270,9 @@ class Tax(models.Model):
 			sector = None
 		
 		due_date = self.due_date
-		tax_amount = self.amount
-		amount_paid = tax_amount - self.remaining_amount
-		amount_due = (self.amount or 0) - amount_paid
+		tax_amount = self.amount or 0
+		amount_paid = tax_amount - ( self.remaining_amount or 0)
+		amount_due = tax_amount - amount_paid
 		if amount_due < 0:
 			amount_due = 0
 
