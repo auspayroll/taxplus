@@ -2224,10 +2224,11 @@ def tax_property(request, obj_id, part):
 
 def getFeeSummary(request, obj):
 	fee_summary = []
-	fees = Fee.objects.filter(is_paid=False, i_status='active')
+	fees = Fee.objects.filter(i_status='active')
 
 	if type(obj) is Property:
 		fees = fees.filter( property__pk=obj.pk )
+
 
 	if type(obj) is Citizen:
 		properties = obj.get_properties().values_list('pk',flat=True)
