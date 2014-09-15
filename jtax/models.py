@@ -72,6 +72,7 @@ class IncompletePayment(models.Model):
 
 	def __unicode__(self):
 		return "Incomplete Payment " + str(self.id)
+		
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
@@ -270,8 +271,11 @@ class Tax(models.Model):
 		
 		due_date = self.due_date
 		tax_amount = self.amount
-		amount_paid = self.get_paid_amount()[0]
+		amount_paid = tax_amount - self.remaining_amount
 		amount_due = (self.amount or 0) - amount_paid
+		if amount_due < 0:
+			amount_due = 0
+
 		formula_data = []
 		late_fees = Decimal(0)
 		months_late = Decimal(0)
@@ -290,16 +294,15 @@ class Tax(models.Model):
 
 		installments = self.installments.all().order_by('due')
 		late_installments = False
-		remaining = amount_paid
+		paid_amount = amount_paid
 		unpaid_installments = []
 		
 		for i in installments:
-			if remaining < i.amount: 
-				i.remaining = i.amount - remaining
-				remaining = 0
+			if paid_amount < i.amount: 
+				paid_amount = 0
 				unpaid_installments.append(i)
 			else: # already paid
-				remaining = remaining - i.amount
+				paid_amount -= i.amount
 				
 		late_installments = [ i for i in unpaid_installments if pay_date > i.due ]
 
@@ -338,17 +341,16 @@ class Tax(models.Model):
 
 
 	def get_installments(self):
-		paid = self.get_paid_amount()[0]
+		paid = self.amount - self.remaining_amount
 		installments = self.installments.all().order_by('due')
 		for i in installments:
 			if paid < i.amount: 
-				i.owed = i.amount - paid
 				i.paid = paid
 				paid = 0
 			else: # already paid
 				paid = paid - i.amount
-				i.owed = 0
 				i.paid = i.amount
+			i.owed = i.amount - i.paid
 		return installments
 
 	
@@ -869,21 +871,15 @@ class Fee(Tax):
 
 	def calc_landlease(self):
 		self.date_from, self.date_to = self.calc_tax_period()
-		property= self.property
-		if not self.land_lease_type and property.lease_type:
-			self.land_lease_type = property.lease_type
-		if self.land_lease_type and property.boundary:
-			tax_summary = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.land_lease_type.code, property.boundary.size, district=property.sector.district, sector=property.sector, cell=property.cell, village=property.village)
+		land_size = self.property.get_sq_m()
+		if self.property.land_use_type and land_size:
+			tax_summary = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.property.land_use_type, land_size, district=self.property.sector.district, sector=self.property.sector, cell=self.property.cell, village=self.property.village)
 			if tax_summary:
 				if self.exempt:
 					self.amount = 0
 				else:
 					self.amount = tax_summary['amount']
 				self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
-				if self.remaining_amount <= 0:
-					self.is_paid = True
-				else:
-					self.is_paid = False
 				self.due_date = tax_summary['due_date']
 
 				fd, created = FormulaData.objects.get_or_create(fee=self)
@@ -1295,27 +1291,32 @@ class Setting(models.Model):
 		if type(date_to) is datetime:
 			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
 		
-		if 'AGR' in land_use_type: #agriculture
+		size = Decimal(size).quantize(Decimal('.0001'))
+		land_use_types = None
+		if land_use_type == 'Agricultural':
 			units = 'hectares'
-			size = Decimal(size * 0.0001).quantize(Decimal('.0001'))
-			if size > 35:
-				land_use_types = ('Agricultural(>35 ha)',)
-			elif size > 2:
-			   land_use_types = ('Agricultural(>35 ha)', 'Agricultural(2-35 ha)', 'Agricultural(>2 ha)')
-			else:
-				land_use_types = None
-		else:
-			land_use_types = variables.land_use_types_class[land_use_type]
-			units = 'square meters'
-			size = Decimal(size).quantize(Decimal('.0001'))
-
+			hectares = Decimal(size * 0.0001).quantize(Decimal('.0001'))
+			if hectares > 35:
+				land_use_types = 'Agricultural(>35 ha)'
+			elif hectares >= 2 and hectares <= 35:
+			   land_use_types = 'Agricultural(2-35 ha)'
+			elif hectares > 2:
+				land_use_types = 'Agricultural(>2 ha)'
+		elif land_use_type == 'Residential':
+			land_use_types = 'Residential'
+		elif land_use_type == 'Commericial':
+			land_use_types = 'Commercial'
+		elif land_use_type == 'Industrial':
+			land_use_types = 'Industries'
+		elif land_use_type == 'Quarry Purpose':
+			land_use_types = 'Quarries Exploitation'
 		formula_data = {}
 		tax = Decimal(0)
 		current_year = date_from.year
 		total_days_in_period = Decimal((date(current_year, 12, 31) - date(current_year, 1, 1)).days + 1)
 		if land_use_types:
 			tax_periods = cls.getTaxPeriods(['land_lease','land_lease_fee'], date_from, date_to, setting_name='area_and_fee_matches', sub_type=land_use_types, sector=sector, cell=cell, village=village, *args, **kwargs)
-		else: #agricultural property is undersize
+		else:
 			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee applicable' })]
 		if not tax_periods:
 			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee Found' })]
@@ -1330,7 +1331,7 @@ class Setting(models.Model):
 
 		due_date = date_to
 		tax = Decimal(int(tax))
-		return {'amount':tax, 'due':due_date, 'due_date':due_date, 'days':total_days_in_period, 'formula_data':formula_data, 'units':units}
+		return {'amount':tax, 'due':due_date, 'due_date':due_date, 'days':total_days_in_period, 'formula_data':formula_data }
 	
 		
 	@classmethod
@@ -1589,8 +1590,11 @@ class Setting(models.Model):
 
 			period['region'] = region_name
 			if sub_type:
-				period['value'] = value
-			if setting_name:
+				if hasattr(sub_type,'__iter__'):
+					period[setting.sub_type] = value
+				else:
+					period['value'] = value
+			elif setting_name:
 				if setting.sub_type:
 					period[setting.sub_type] = value
 				else: #setting_name provided,  no setting.sub_type
@@ -1652,15 +1656,8 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 
 
 
-
-
-
-
-
 class Installment(models.Model):
 	amount = models.DecimalField(max_digits=20, decimal_places=2)
-	paid = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
-	paid_on = models.DateField(blank=True, null=True)
 	due = models.DateField()
 	propertyTaxItem = models.ForeignKey(PropertyTaxItem, null=True, blank=True, related_name="installments")
 	rentalIncomeTax = models.ForeignKey(RentalIncomeTax, null=True, blank=True, related_name="installments")
@@ -1669,19 +1666,10 @@ class Installment(models.Model):
 	# tax = models.ForeignKey(Tax, null=True, help_text="", related_name="installments")
 
 	def __unicode__(self):
-		if self.amount == self.paid: # paid
-			return "%s paid on %s" % (self.paid, self.paid_on)
-		elif self.paid > 0: # part payment
-			return "%s due on %s; %s paid on %s" % (self.amount, self.due, self.paid, self.paid_on)
-		else: # not paid
+		if hasattr(self, 'paid'):
+			return "%s due on %s: %s paid" % (self.amount, self.due, self.paid)
+		else:
 			return "%s due on %s" % (self.amount, self.due) 
-
-
-	@property
-	def is_late(self):
-		if self.due < date.today() and self.owed > 0:
-			return True
-		return False
 
 	@staticmethod
 	def previewInstallments(amount, date_from):
