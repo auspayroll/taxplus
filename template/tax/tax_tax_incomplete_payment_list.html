@@ -134,7 +134,7 @@
 					<tr>
 						<td style="vertical-align:middle;">Search incomplete payment</td>
 						<td style="padding-right:20px; text-align:right; line-height:36px;">
-							<a href="/admin/tax/incomplete_payment/add_payment/">Add incomplete payment</a>
+							<!--<a href="/admin/tax/incomplete_payment/add_payment/">Add incomplete payment</a>-->
 						</td>
 					</tr>
 				</table>
@@ -373,9 +373,10 @@
 								{% endif %}
 							</td>
                             <td>{{ payment.date_time|date:'d/m/Y'}}</td>
-							<td>
+							<td><!--
 								<a href="/admin/tax/incomplete_payment/change_payment/{{payment.id}}/">Edit</a> | 
 								<a href="/admin/tax/incomplete_payment/finalize_payment/{{payment.id}}/">Finalize</a> 
+							-->
 							</td>
 						</tr>
 						{% endfor %}
