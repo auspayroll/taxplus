@@ -868,26 +868,11 @@ class TaxMapper:
 
 	@staticmethod
 	def next_outstanding_installment(tax):
-		installments = Installment.objects.filter(paid__lt=F('amount'))
-
-		if type(tax) is PropertyTaxItem:
-			installments = installments.filter(propertyTaxItem=tax)
-
-		elif type(tax) is RentalIncomeTax:
-			installments = installments.filter(rentalIncomeTax=tax)
-
-		elif type(tax) is TradingLicenseTax:
-			installments = installments.filter(tradingLicenseTax=tax)
-
-		elif type(tax) is Fee:
-			installments = installments.filter(fee=tax)
-
-		installments = installments.order_by('due')
-
-		if installments:
-			return installments[0]
-		else:
-			return None
+		installments = tax.get_installments()
+		for installment in installments:
+			if installment.paid < installment.amount:
+				return installment
+		return None
 
 	@staticmethod
 	def getSettingList(conditions = None,regex='',limit=None):
