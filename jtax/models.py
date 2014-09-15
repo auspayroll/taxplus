@@ -341,7 +341,7 @@ class Tax(models.Model):
 
 
 	def get_installments(self):
-		paid = self.amount - self.remaining_amount
+		paid = (self.amount or 0) - (self.remaining_amount or 0)
 		installments = self.installments.all().order_by('due')
 		for i in installments:
 			if paid < i.amount: 
