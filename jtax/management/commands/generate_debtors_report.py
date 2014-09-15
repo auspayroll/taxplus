@@ -28,7 +28,7 @@ class Command(BaseCommand):
 				if fee.subbusiness:
 					reportline, created = DebtorsReportLine.objects.get_or_create(subbusiness=fee.subbusiness, business=fee.business, report=debtorsreport)
 				else:
-					reportline, created = DebtorsReportLine.objects.get_or_create(business=fee.business, report=debtorsreport)
+					reportline, created = DebtorsReportLine.objects.get_or_create(business=fee.business, subbusiness__isnull=True, report=debtorsreport)
 
 				principle, interest = fee.amount_owing(debtorsreport.as_at)
 				owing = principle + interest
