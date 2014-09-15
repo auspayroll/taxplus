@@ -2027,6 +2027,7 @@ def tax_citizen(request, obj_id, part):
 
 def tax_property(request, obj_id, part):
 	property = get_object_or_404(Property, id=obj_id)
+
 	#set current citizen into session, clear out all other business/property session data
 	if 'citizen' in request.session:
 			del request.session['citizen']
@@ -2242,7 +2243,8 @@ def getFeeSummary(request, obj):
 		properties = obj.get_properties().values_list('pk',flat=True)
 		fees = Fee.objects.filter(Q(business__pk=obj.pk) | Q(subbusiness__business__pk=obj.pk) | Q(property__pk__in=properties))
 
-	fees = fees.order_by('-pk')
+	fees = fees.order_by('-date_to')
+
 	fee_summary = fee_summary + formatTaxesForDisplay(request,'fee',fees)
 	return fee_summary
 
