@@ -85,24 +85,17 @@ class PayFeeMapper:
 				if conditions.has_key("cell"):
 					fees = fees.filter(property__cell = conditions['cell'])
 				citizens = []
-				if fees and len(fees)>0:
-					for fee in fees:
-						ownerships = fee.property.owners.filter(i_status='active')
-						if len(ownerships) > 0:
-							for ownership in ownerships:
-								citizen = ownership.owner_citizen
-								if citizen:
-									citizen.tax_type = 'Land lease fee'
-									citizen.upi = fee.property.getUPI()
-									citizen.property_id = fee.property.id
-									citizens.append(citizen)
-				
-				if len(citizens) == 0:
-					return None 
-				else:
-					return citizens
-					
-					
+				for fee in fees:
+					ownerships = fee.property.owners.filter(i_status='active')
+					for ownership in ownerships:
+						citizen = ownership.owner_citizen or ownership.owner_subbusiness or ownership.business
+						if citizen:
+							citizen.tax_type = 'Land lease fee'
+							citizen.upi = fee.property.getUPI()
+							citizen.property_id = fee.property.id
+							citizens.append(citizen)
+
+				return citizens or None
 		return None
 
 	@staticmethod
