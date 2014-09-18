@@ -22,7 +22,7 @@ class Command(BaseCommand):
 		cursor = db.connection.cursor()
 		query = """
 		begin;
-		update property_property set landlease_type_id = (select id from pmeval_categorychoice 
+		update property_property set landlease_type_id = (select id from taxplus_categorychoice 
 		where category_id = 'land_lease_type' and code = property_property.land_lease_type)
 		where landlease_type_id is null;
 		commit;

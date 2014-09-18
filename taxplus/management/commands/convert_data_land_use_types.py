@@ -24,7 +24,7 @@ class Command(BaseCommand):
 		begin;
 		insert into property_property_landuse_types(property_id, categorychoice_id)
 		select property_property.id, choice.id 
-		from property_property join ( select * from pmeval_categorychoice 
+		from property_property join ( select * from taxplus_categorychoice 
 		where category_id = 'land_use') choice on choice.name = property_property.land_use_type;
 		commit;
 		"""
