@@ -1562,10 +1562,8 @@ def tax_business(request, obj_id, part):
 	#TaxMapper.generateTaxes(business,request)
 	if part == 'fees':
 		request.session['tax_url']  = request.get_full_path()
-		#fee_summary = getFeeSummary(request, business)
-		#fees = Fee.objects.filter(business=business)
 		business_properties = business.get_properties().values_list('pk',flat=True)
-		fees = Fee.objects.filter(date_from__lte=date.today()).filter(Q(business__pk=business.pk) | Q(subbusiness__business__pk=business.pk) | Q(property__pk__in=business_properties)).order_by('-due_date')
+		fees = Fee.objects.filter(Q(business__pk=business.pk) | Q(subbusiness__business__pk=business.pk) | Q(property__pk__in=business_properties)).order_by('-due_date')
 		form = PayFeesForm()
 		return render_to_response('tax/tax_tax_business_fees.html',{'business':business,'fees':fees, 'form':form},context_instance=RequestContext(request))
 	if part == 'miscellaneous_fees':
@@ -2227,7 +2225,7 @@ def tax_property(request, obj_id, part):
 
 def getFeeSummary(request, obj):
 	fee_summary = []
-	fees = Fee.objects.filter(i_status='active', date_from__lte=date.today())
+	fees = Fee.objects.filter(i_status='active')
 
 	if type(obj) is Property:
 		fees = fees.filter( property__pk=obj.pk )
@@ -2243,7 +2241,9 @@ def getFeeSummary(request, obj):
 
 	elif type(obj) is Business:
 		properties = obj.get_properties().values_list('pk',flat=True)
-		fees = Fee.objects.filter(date_from__lte=date.today()).filter(Q(business__pk=obj.pk) | Q(subbusiness__business__pk=obj.pk) | Q(property__pk__in=properties))
+		fees = Fee.objects.filter(Q(business__pk=obj.pk) | Q(subbusiness__business__pk=obj.pk) | Q(property__pk__in=properties))
+		return fees.order_by('-date_to')
+
 
 	fees = fees.order_by('-date_to')
 
@@ -2850,21 +2850,9 @@ def processPayment(request):
 			messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
 			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-		if fee_type in ('fee', 'land_lease'):
-			fee = get_object_or_404(Fee, pk=id)
-			payment = PayFee(fee=fee)
 
-		elif fee_type == 'fixed_asset':
-			fee = get_object_or_404(PropertyTaxItem, pk=id)
-			payment = PayFixedAssetTax(property_tax_item=fee)
-
-		elif fee_type == 'trading_license':
-			fee = get_object_or_404(TradingLicenseTax, pk=id)
-			payment = PayTradingLicenseTax(trading_license_tax=fee)
-
-		elif fee_type == 'rental_income':
-			fee = get_object_or_404(RentalIncomeTax, pk=id)
-			payment = get_object_or_404(PayRentalIncomeTax, rental_income_tax=fee)
+		fee = get_object_or_404(Fee, pk=id)
+		payment = PayFee(fee=fee)
 
 		payment.i_status='active'
 		payment.staff = request.session.get('user')
