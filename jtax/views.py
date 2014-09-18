@@ -74,6 +74,7 @@ from django.views.decorators.cache import cache_control
 from jtax.shared_functions import *
 from django.views.decorators.csrf import csrf_exempt
 from django.core.context_processors import csrf
+from taxplus.models import Entity, CategoryChoice, PayFee as TP_PayFee, PaymentReceipt as TP_Receipt
 
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_name = None, obj_id = None, part = None):
 	"""
@@ -2850,7 +2851,6 @@ def processPayment(request):
 			messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
 			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-
 		fee = get_object_or_404(Fee, pk=id)
 		payment = PayFee(fee=fee)
 
@@ -2871,6 +2871,47 @@ def processPayment(request):
 
 		payment.amount = form.cleaned_data.get('amount')
 		payment.save()
+
+		tp_mpr = TP_Receipt()
+		tp_mpr.amount = payment.amount
+		tp_mpr.citizen_id = payment.citizen_id
+		tp_mpr.business_id = payment.business_id
+		tp_mpr.paid_date = payment.paid_date
+		tp_mpr.bank_receipt = payment.receipt_no
+		tp_mpr.sector_receipt = payment.manual_receipt
+		tp_mpr.bank = payment.bank
+		tp_mpr.note = payment.note
+		tp_mpr.status = CategoryChoice.objects.get(category__code='status', code='active')
+		tp_mpr.save()
+
+		tp_payfee = TP_PayFee.objects.get(pk=payment.pk)
+		tp_payfee.receipt = tp_mpr
+		tp_payfee.status = CategoryChoice.objects.get(category__code='status', code='active')
+		tp_payfee.save()
+
+
+
+		if tp_payfee.business_id:
+			try:
+				tp_mpr.payer = Entity.objects.get(business_id = tp_payfee.business_id)
+			except Entity.DoesNotExist:
+				pass
+			else:
+				tp_mpr.payer_name = tp_mpr.payer.name
+
+		elif tp_payfee.citizen_id:		
+			try:
+				tp_mpr.payer = Entity.objects.get(citizen_id = tp_payfee.citizen_id)
+			except Entity.DoesNotExist:
+				pass
+			else:
+				tp_mpr.payer_name = tp_mpr.payer.name
+		else:
+			pass
+			# print 'no payer found'
+
+		tp_mpr.save()
+
 
 		fee.remaining_amount = fee.get_remaining_amount()
 		if fee.remaining_amount <= 0:
@@ -3015,7 +3056,6 @@ def payFees(request, id=None):
 		form = PayFeesForm(request.POST)
 		if form.is_valid():
 			total_payment = late_fees = total_amount = 0
-
 			for fee in fees:
 				if not fee.amount:
 					fee.calc_tax()
@@ -3028,6 +3068,7 @@ def payFees(request, id=None):
 			if request.POST.get('confirm'): #confirmed, create payment
 				mpr = MultipayReceipt(amount=total_payment, user=request.session.get('user'))
 				mpr.save()
+				tp_mpr = TP_Receipt.objects.get(pk=mpr.pk)
 				for fee in fees:
 					payfee = PayFee()
 					if citizen:
@@ -3045,12 +3086,50 @@ def payFees(request, id=None):
 					if payfee.fine_amount:
 						payfee.fine_description = 'late fees'
 					payfee.note=form.cleaned_data.get('note')
+					
 					payfee.save()
+
+					tp_payfee = TP_PayFee.objects.get(pk=payfee.pk)
+					tp_payfee.receipt = tp_mpr
+					tp_payfee.status = CategoryChoice.objects.get(category__code='status', code='active')
+					tp_payfee.save()
+
 					fee.remaining_amount = 0
 					fee.is_paid = True
 					fee.save()
 					mrpr = MultipayReceiptPaymentRelation(receipt=mpr, payfee=payfee)
 					mrpr.save()
+
+				tp_mpr.citizen_id = payfee.citizen_id
+				tp_mpr.business_id = payfee.business_id
+				tp_mpr.paid_date = payfee.paid_date
+				tp_mpr.bank_receipt = payfee.receipt_no
+				tp_mpr.sector_receipt = payfee.manual_receipt
+				tp_mpr.bank = payfee.bank
+				tp_mpr.note = payfee.note
+				tp_mpr.status = CategoryChoice.objects.get(category__code='status', code='active')
+
+				if tp_payfee.business_id:
+					try:
+						tp_mpr.payer = Entity.objects.get(business_id = tp_payfee.business_id)
+					except Entity.DoesNotExist:
+						pass
+					else:
+						tp_mpr.payer_name = tp_mpr.payer.name
+
+				elif tp_payfee.citizen_id:		
+					try:
+						tp_mpr.payer = Entity.objects.get(citizen_id = tp_payfee.citizen_id)
+					except Entity.DoesNotExist:
+						pass
+					else:
+						tp_mpr.payer_name = tp_mpr.payer.name
+				else:
+					pass
+					# print 'no payer found'
+
+				tp_mpr.save()
+
 				return HttpResponseRedirect(reverse("multi_invoice", args=(mpr.pk, )))	
 
 			# create payment objects and redirect to receipt
