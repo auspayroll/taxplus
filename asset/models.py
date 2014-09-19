@@ -6,6 +6,7 @@ from property.models import *
 from dateutil.relativedelta import relativedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from taxplus.models import Entity, CategoryChoice
 
 
 class BusinessCategory(models.Model):
@@ -413,7 +414,16 @@ class Business(models.Model):
 @receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	if created:
+		business = instance
 		instance.calc_taxes()
+		entity = Entity()
+		entity.entity_type_id = CategoryChoice.objects.get(category__code='entity_type', code='business').pk
+		entity.business_id = business.pk
+		entity.sector_id = business.sector_id
+		entity.cell_id = business.cell_id
+		entity.village_id = business.village_id
+		entity.status_id = CategoryChoice.objects.get(category__code='status', code=(business.i_status or 'active')).pk
+		entity.save()
 
 
 class SubBusiness(models.Model):
@@ -443,8 +453,19 @@ class SubBusiness(models.Model):
 		
 
 @receiver(post_save, sender=SubBusiness)
-def after_sub_business_save(sender, instance, **kwargs):
-	instance.business.calc_taxes()
+def after_sub_business_save(sender, instance, created, **kwargs):
+	if created:
+		instance.business.calc_taxes()
+		sub = instance
+		entity = Entity()
+		entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='subsiduary')
+		entity.subbusiness_id = sub.pk
+		entity.parent = Entity.objects.get(business_id=sub.business.pk)
+		entity.status = CategoryChoice.objects.get(category__code='status', code=(sub.business.i_status or 'active'))
+		entity.sector_id = sub.sector_id
+		entity.cell_id = sub.cell_id
+		entity.village_id = sub.village_id
+		entity.save()
 
 
 class Billboard(models.Model):

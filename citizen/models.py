@@ -2,6 +2,9 @@ from django.db import models
 from datetime import datetime
 from dev1.variables import *
 from common.models import Status
+from taxplus.models import Entity, CategoryChoice
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 ##############################################################################################    
 # Module
@@ -94,3 +97,23 @@ class Citizen(models.Model):
 	def get_properties(self):
 		from property.models import Property
 		return Property.objectsIgnorePermission.filter(owners__owner_citizen=self)
+
+
+
+@receiver(post_save, sender=Citizen)
+def after_citizen_save(sender, instance, created, **kwargs):
+	if created:
+		citizen = instance
+		entity = Entity()
+		entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='individual')
+		entity.citizen_id = citizen.pk
+		if citizen.status_id ==1:
+			entity.status = CategoryChoice.objects.get(category__code='status', code='active')
+		else:
+			entity.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+		entity.contact_details_confirmed = citizen.contact_details_confirmed
+		entity.credit = 0
+		entity.save()
+
+
+
