@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.utils import timezone
 from admin.ListCompare import ListCompare
 from datetime import datetime
+from django.contrib.auth.models import User
 from dev1 import variables
 from property.models import Province, District, Sector, Council
 from admin.Common import Common
@@ -16,6 +17,8 @@ from django.core.exceptions import ValidationError
 FLB_MAX_FAILURES = int( getattr( settings, 'FLB_MAX_FAILURES', 3 ) )
 FLB_BLOCK_INTERVAL = int( getattr( settings, 'FLB_BLOCK_INTERVAL', 30 ) )
 USER_STATUS='active'
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 ##############################################################################################	
 # Module
 ############################################################################################## 
@@ -658,6 +661,25 @@ class PMUser(models.Model):
 				message = "No change made"
 			message = message + " on User [" + self.__unicode__() + "]" 
 			return message
+
+
+@receiver(post_save, sender=PMUser)
+def after_pmuser_save(sender, instance, created, **kwargs):
+	try:
+		user = User.objects.get(username=instance.email)
+	except User.DoesNotExist:
+		user = User(username = instance.email)
+
+	user.is_staff = True
+	user.is_superuser = instance.superuser
+	user.first_name  = instance.firstname
+	user.last_name = instance.lastname
+	user.is_active = True if instance.i_status == 'active' else False
+	user.last_login = instance.lastlogin
+	user.email = instance.email
+	user.password = instance.password
+	user.save()
+
 		
 		
 class AccessAttempt( models.Model ):
