@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib import auth
 from pmauth.models import *
 
+"""
 class AutoLogout:
     def process_request(self, request):
         user=None
@@ -25,7 +26,7 @@ class AutoLogout:
                 request.session['last_touch'] = datetime.now()
         else:
             pass
-    
+"""  
     
 #     def login(self,request, user):
 # 

@@ -44,7 +44,7 @@ A:hover {font-family: arial; font-size: 12px; color: #000000; text-decoration: u
 
 </head>
 <body>
-	<form action="/admin/" method="post">
+	<form action="/admin/login/" method="post">
 	{% csrf_token %}
 <!-- ImageReady Slices (login_01.psd) --> 
 		<table width="100%" border="0" cellspacing="0" cellpadding="0" height="70%">
@@ -93,7 +93,7 @@ A:hover {font-family: arial; font-size: 12px; color: #000000; text-decoration: u
 																</tr>			 
 																<tr>
 																	<td height="22">Username</td>
-																	<td><input type="text" name="username" id="id_username" value="" maxlength="30"></td>
+																	<td><input type="text" name="username" id="id_username" value="" maxlength="100" style="width:195px;"></td>
 																</tr>
 																<tr>
 																	<td><img src="/static/images/PropertyMode    Login   _files/password.gif" width="67" height="11" align="right"></td>
@@ -105,6 +105,7 @@ A:hover {font-family: arial; font-size: 12px; color: #000000; text-decoration: u
 																		<input type="image" name="Submit" src="/static/images/PropertyMode    Login   _files/enter2.gif" width="94" height="23">
 																		<input type="hidden" name="agent_id" value="">
 																		<input type="hidden" name="count" value="1">
+																		<input type="hidden" name="next" value="{{ request.GET.next }}">
 																	</td>
 																</tr>
 																<tr>

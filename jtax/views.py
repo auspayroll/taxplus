@@ -75,7 +75,9 @@ from jtax.shared_functions import *
 from django.views.decorators.csrf import csrf_exempt
 from django.core.context_processors import csrf
 from taxplus.models import Entity, CategoryChoice, PayFee as TP_PayFee, PaymentReceipt as TP_Receipt
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_name = None, obj_id = None, part = None):
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page
@@ -95,13 +97,13 @@ def access_content_type(request, content_type_name, action = None, content_type_
 	raise Http404
 	
 	
-
+@login_required
 def construction(request):
 	#return HttpResponse('Unauthorized', status=401)
 	raise Http404
 	#return render_to_response('admin/construction.html', {}, context_instance=RequestContext(request))
 
-
+@login_required
 def incomplete_payment_default(request, action=None, content_type_name1=None, obj_id=None):
 	"""
 	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete 
@@ -928,7 +930,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 	else:
 		raise Http404
 
-
+@login_required
 def pending_payment_default(request, action=None, content_type_name1=None, obj_id=None):
 	"""
 	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete 
@@ -1170,7 +1172,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 	else:
 		raise Http404
 
-
+@login_required
 def manage_tax(request):
 	if request.method != 'POST' and not request.GET.has_key("plot_id"):
 		form = tax_search_property_declarevalue_form()
@@ -1184,7 +1186,7 @@ def manage_tax(request):
 		return render_to_response('tax/tax_tax_managetax.html',{'form':form,'plot_id':plot_id,},
 							context_instance=RequestContext(request))
 
-
+@login_required
 def search(request):
 	if request.method != 'POST':
 		GET = request.GET
@@ -1437,7 +1439,7 @@ def search(request):
 			return render_to_response('tax/tax_tax_search.html', {'sector':sector,'upi_prefix':upi_prefix, 'form':form,'properties':properties,'geodata':geodata,'query_string':query_string,},context_instance=RequestContext(request))
 		return render_to_response('tax/tax_tax_search.html', {'form':form,},context_instance=RequestContext(request))
 
-
+@login_required
 def verify_target(request, obj_name, obj_id, part):
 	form = verify_target_for_pay_form()
 	
@@ -1548,7 +1550,7 @@ def verify_target(request, obj_name, obj_id, part):
 						return HttpResponseRedirect('/admin/tax/tax/property/' + str(property.id) + '/')
 	return render_to_response('tax/tax_tax_verifycitizen.html',{'form':form,},context_instance=RequestContext(request))
 
-
+@login_required
 def tax_business(request, obj_id, part):
 	business = get_object_or_404(Business,id=obj_id)
 	#set current citizen into session, clear out all other business/property session data
@@ -1724,7 +1726,7 @@ def tax_business(request, obj_id, part):
 
 		return render_to_response('tax/tax_tax_business_taxes.html',{'business':business,'taxes':tax_summary,},context_instance=RequestContext(request))
 
-
+@login_required
 def tax_citizen(request, obj_id, part):
 	citizen = get_object_or_404(Citizen,id=obj_id)
 	#set current citizen into session, clear out all other business/property session data
@@ -2025,7 +2027,7 @@ def tax_citizen(request, obj_id, part):
 
 		return render_to_response('tax/tax_tax_citizen_taxes.html',{'citizen':citizen,'taxes':tax_summary,},context_instance=RequestContext(request))
 
-
+@login_required
 def tax_property(request, obj_id, part):
 	property = get_object_or_404(Property, id=obj_id)
 
@@ -2251,7 +2253,7 @@ def getFeeSummary(request, obj):
 	fee_summary = fee_summary + formatTaxesForDisplay(request,'fee',fees)
 	return fee_summary
 
-
+@login_required
 def getTaxSummary(request):
 	tax_summary = []
 	
@@ -2274,7 +2276,7 @@ def getTaxSummary(request):
 
 	return tax_summary
 
-
+@login_required
 def formatTaxesForDisplay(request, type, taxes):
 	list = []
 	today = timezone.make_aware(datetime.combine(datetime.today(), time(0,0)), timezone.get_default_timezone())
@@ -2400,8 +2402,8 @@ def formatTaxesForDisplay(request, type, taxes):
 			list.append(tax)
 	return list
 
-
-def formatPaymentsForDisplay(request,payments):
+@login_required
+def formatPaymentsForDisplay(request, payments):
 	payments_found = []
 	fee_payments = []
 	payment_ids = {'misc_fee':[],'fixed_asset':[],'trading_license':[],'rental_income':[],'fee':[]}
@@ -2561,6 +2563,8 @@ def formatPaymentsForDisplay(request,payments):
 
 	return payments_found
 
+
+@login_required
 def getFeeCart(request):
 	misc_payments = request.session.setdefault('misc_payment', {'total':0, 'payments':{}})
 	total = 0
@@ -2693,6 +2697,7 @@ def submitMiscFee(request):
 	return HttpResponse(json_data, mimetype='application/json')
 
 
+@login_required
 def miscFee(request, citizen_pk=None, business_pk=None):
 	business = None
 	citizen = None
@@ -2706,6 +2711,7 @@ def miscFee(request, citizen_pk=None, business_pk=None):
 	return render_to_response('tax/misc_fees.html',{ 'template_type':template_type, 'business':business, 'citizen':citizen }, context_instance=RequestContext(request))
 
 
+@login_required
 def displayPayMiscellaneousFeePage(request, obj):
 	business = None
 	citizen = None
@@ -2781,7 +2787,7 @@ def displayPayMiscellaneousFeePage(request, obj):
 	return render_to_response('tax/tax_tax_paymiscellaneousfees.html',{'template_type':template_type,'business':business,'citizen':citizen,'property':property,'fees':fees,'fee_types':fee_types,'form':form},context_instance=RequestContext(request))
 
 
-
+@login_required
 def payFixedAsset(request, id):
 
 	tax = get_object_or_404(PropertyTaxItem, pk=id)
@@ -2819,6 +2825,7 @@ def payFixedAsset(request, id):
 		'pending_payment_reasons':variables.pending_payment_reasons},
 		context_instance=RequestContext(request))
 
+@login_required
 def submitTaxPatch(request):
 	id = request.GET.get('id')
 	tax_type = request.GET.get('type')
@@ -2838,6 +2845,7 @@ def submitTaxPatch(request):
 		return access_content_type(request,  'tax', action = 'pay', content_type_name1 = 'taxes')
 
 
+@login_required
 def processPayment(request):
 	if not request.POST:
 		raise Http404
@@ -2940,6 +2948,7 @@ def processPayment(request):
 		return HttpResponseRedirect(redirect_url)
 
 
+@login_required
 def payFee(request, fee_type=None, id=None):
 	if not id:
 		id = request.GET.get('id')
@@ -3031,6 +3040,7 @@ def payFee(request, fee_type=None, id=None):
 		context_instance=RequestContext(request))
 
 
+@login_required
 def payFees(request, id=None):
 	if not request.POST:
 		raise Http404
@@ -3142,6 +3152,7 @@ def payFees(request, id=None):
 		context_instance=RequestContext(request))
 
 
+@login_required
 def submitRentalIncome(request, id):
 	tax = get_object_or_404(RentalIncomeTax, pk=id)
 	installments = tax.installments.all().order_by('due')
@@ -3184,6 +3195,7 @@ def submitRentalIncome(request, id):
 	return render_to_response('tax/submit_rental_income.html', { 'formula_data':formula_data, 'template_type':'property', 'property':property, 'form': form, 'tax':tax, 'payments': payments, 'installments':installments, 'tax_type':'rental_income' }, context_instance=RequestContext(request))
 
 
+@login_required
 def submitTradingLicense(request, id):
 	tax = get_object_or_404(TradingLicenseTax, pk=id)
 	business = tax.business
@@ -3263,6 +3275,7 @@ def submitTradingLicense(request, id):
 	return render_to_response('tax/submit_trading_license.html', { 'formula_data':formula_data, 'form': form, 'business':business, 'template_type':'business', 'tax':tax, 'tax_type':'trading_license', 'payments': payments, 'installments':installments, 'activity_rates':activity_rates, 'activity_desc':activity_descriptions }, context_instance=RequestContext(request))
 
 
+@login_required
 def submitFixedAssetTax(request, id):
 	tax = get_object_or_404(PropertyTaxItem, pk=id)
 	if tax.remaining_amount is None:
@@ -3358,6 +3371,7 @@ def submitFixedAssetTax(request, id):
 	return render_to_response('tax/submit_fixed_asset.html', { 'formula_data':formula_data, 'template_type':'property', 'property':property, 'form': form, 'tax':tax, 'payments': payments, 'tax_type':'fixed_asset', 'installments':installments, 'date_from':tax.date_from, 'date_to':tax.date_to }, context_instance=RequestContext(request))
 
 
+@login_required
 def submitLandLease(request, id, template_type='property'):
 	fee = get_object_or_404(Fee, pk=id)
 	installments = fee.get_installments()
@@ -3401,7 +3415,7 @@ def submitLandLease(request, id, template_type='property'):
 	return render_to_response('tax/submit_land_lease.html', { 'formula_data':formula_data, 'form': form, 'tax':fee, 'tax_type':'land_lease', 'payments': payments, 'property':fee.property, 'installments':installments, 'date_from':fee.date_from, 'date_to':fee.date_to, 'template_type':template_type }, context_instance=RequestContext(request))
 
 
-
+@login_required
 def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, part):
 	GET = request.GET
 	tax_type = GET['type']
@@ -3724,6 +3738,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 							context_instance=RequestContext(request))
 
 
+@login_required
 def displayPayMultipleTaxesPage(request, action, content_type_name1, obj_name, obj_id, part):
 	GET = request.GET
 	tax_type = GET['type']
@@ -3865,6 +3880,7 @@ def displayPayMultipleTaxesPage(request, action, content_type_name1, obj_name, o
 							context_instance=RequestContext(request))
 
 
+@login_required
 def displaySubmitPendingPage(request):
 	GET = request.GET
 	tax_type = GET['type']
@@ -3942,6 +3958,7 @@ def displaySubmitPendingPage(request):
 							context_instance=RequestContext(request))
 
 
+@login_required
 def displayGenerateInvoicePage(request):
 		GET = request.GET
 		tax_type = GET['type']
@@ -4218,7 +4235,8 @@ def displayGenerateInvoicePage(request):
 														'business_id':business_id,'citizen_id':citizen_id,'property_id':property_id,'owners_string':owners_string,},
 								context_instance=RequestContext(request))
 
-	
+
+@login_required
 def displayGenerateEpayInvoicePage(request):
 		GET = request.GET
 		tax_type = GET['type']
@@ -4485,6 +4503,7 @@ def displayGenerateEpayInvoicePage(request):
 								context_instance=RequestContext(request))
 
 # multi payments
+@login_required
 def displayGenerateMultipayInvoicePage(request, id=None):
 		tax_type = 'fee'
 		GET = request.GET
@@ -4707,6 +4726,7 @@ def displayGenerateMultipayInvoicePage(request, id=None):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def displayGenerateMultipayEpayInvoicePage(request):
 		GET = request.GET
 		tax_type = GET['type']
@@ -4938,6 +4958,7 @@ def displayGenerateMultipayEpayInvoicePage(request):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def displayPaymentSearchPage(request):
 
 	if request.GET.get('search',None) == None and request.GET.get('export_pdf',None) == None:
@@ -5078,7 +5099,7 @@ def displayPaymentSearchPage(request):
 				return render_to_response('tax/tax_tax_paymentsearch.html',{'form':form,'payments':payments_found,'exceed_limit':exceed_limit,'limit':limit,'pagination_url':request.get_full_path().rsplit('&page')[0] },
 									context_instance=RequestContext(request))
 
-
+@login_required
 def displayPaymentReversePage(request):
 	GET = request.GET
 	type = GET['type'].replace("_tax","")
@@ -5256,7 +5277,7 @@ def displayPaymentReversePage(request):
 	return render_to_response('tax/tax_tax_paymentreverse.html',{'form':form,'tax':tax,'staff':payment_staff,'reference':reference,'type':type_label,'payment':payment,'amount':amount,'file_list': file_list,'multi_payments':multi_payments},
 								context_instance=RequestContext(request))
 
-
+@login_required
 def displayTaxSettingPage(request):
 	settings_label = 'Default Tax Settings'
 	district = None
@@ -5400,7 +5421,7 @@ def displayTaxSettingPage(request):
 	return render_to_response('tax/tax_tax_settings.html',{'settings_label':settings_label,'list':list,'invalid_setting_ids':invalid_setting_ids,'form':form},
 								context_instance=RequestContext(request))
 
-
+@login_required
 def setupInstallments(request):
 	GET = request.GET
 	type = GET['type']
@@ -5468,6 +5489,7 @@ def setupInstallments(request):
 
 
 @cache_control(no_cache=True, must_revalidate=True, no_store=True)
+@login_required
 def tax_default(request, action, content_type_name1, obj_name, obj_id, part):
 	"""
 	"""
@@ -6622,6 +6644,8 @@ def update_installment_date(request):
 	json_data = json.dumps({'due_date':request.POST.get('due_date') });
 	return HttpResponse(json_data, mimetype='application/json')
 
+
+@login_required
 def viewFeeSettingPage(request):
 	settings_label = 'Default Fee Settings'
 	district = None
@@ -6685,6 +6709,7 @@ def viewFeeSettingPage(request):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def viewTaxSettingPage(request):
 	settings_label = 'Default Fee Settings'
 	district = None

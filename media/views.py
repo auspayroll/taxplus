@@ -19,7 +19,9 @@ from citizen.models import Citizen
 from admin.views import login
 from django.utils import simplejson
 from media.mappers.MediaMapper import MediaMapper
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def index(request, content_type_name, action = None):
 	"""
 	Search logs by 1)username, 2)plot id or 3)transaction id

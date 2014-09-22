@@ -9,6 +9,9 @@ from django.contrib import auth
 from django.utils.translation import ugettext
 from django.core.exceptions import ValidationError
 from pmauth.login import *
+from django.contrib.auth import authenticate as auth_authenticate, login as auth_login, logout as auth_logout
+from django.core.urlresolvers import reverse
+from django.contrib.auth.decorators import login_required
 
 def set_temp_password(request):
 	stringok='Generate your password, please check it from your email!\n'\
@@ -23,52 +26,61 @@ def set_temp_password(request):
 	else:
 # 		return HttpResponse(stringerror)
 		return render_to_response('admin/temp_password.html', {'errorMessage':'generate password error. please contact the web administrator'}, context_instance=RequestContext(request))
+
+
 def login(request):
 	"""
 	Show login form if user hasn't yet logged in. Otherwise, go to home page
 	"""
 	if request.method == 'POST':
 		form = LoginForm(request.POST)
-		errorMessageType = 0
 		errorMessage=None
 		if form.is_valid():
 			username = form.cleaned_data['username']
 			password = form.cleaned_data['password']
 			try:
-				user = login_attempt(username, password)
-				if (user is not None):
-					request.session['user'] = user
-					content_types = user.getContentTypesWithWeight()
+				pm_user = login_attempt(username, password)
+				user = auth_authenticate(username=username, password=password)
+
+				if user is not None and not user.is_active:
+					errorMessage="Your account has been disabled"
+
+				elif (pm_user is not None and user is not None):
+					#import pdb
+					#pdb.set_trace()
+					request.session['user'] = pm_user
+					auth_login(request, user)
+					content_types = pm_user.getContentTypesWithWeight()
 					LogMapper.createLog(request,action="login")
-					return render_to_response('admin/admin.html', {\
-							 'content_types':content_types,},
-							  context_instance=RequestContext(request))
+					next = request.POST.get('next')
+					if next:
+						return HttpResponseRedirect(next)
+					else:
+						return HttpResponseRedirect(reverse('admin_home'))
 				else:
-					errorMessage="Your username and password were incorrect or your username "
+					errorMessage="Incorrect username and password"
 			except ValidationError, e:
-# 					import pdb
-# 					pdb.set_trace()
 					errorMessage= e.messages[0]
 		else:
-			errorMessageType = 0#"Your username and password were incorrect."
 			errorMessage=form.errors 
 		return render_to_response('admin/login.html', {'form':form,'errorMessage':errorMessage, 'username':username}, context_instance=RequestContext(request))
-	elif request.session.get('user') is not None:
-		# since user has logged in, go to home page
-		user = request.session.get('user')
-		if not user or not type(user) is PMUser:
-			form = LoginForm()
-			return render_to_response('admin/login.html', {'form': form}, context_instance=RequestContext(request))
-		content_types = user.getContentTypesWithWeight()
-		return render_to_response('admin/admin.html', {\
-						 'content_types':content_types,},
-						  context_instance=RequestContext(request))
-	else:
-		form = LoginForm()
+		
+	form = LoginForm()
 	return render_to_response('admin/login.html', {'form': form}, context_instance=RequestContext(request))
+
+
+@login_required
+def admin(request):
+	user = request.session.get('user')
+	content_types = user.getContentTypesWithWeight()
+	return render_to_response('admin/admin.html', {\
+					 'content_types':content_types,},
+					  context_instance=RequestContext(request))
+
 
 def logout(request):
 	# logout and clear session
+	auth_logout(request)
 	if request.session.has_key("user"):
 		user = request.session['user']
 		LogMapper.createLog(request,action="logout", user=user)
@@ -76,7 +88,7 @@ def logout(request):
 		del request.session[key]
 	auth.logout(request)
 
-	return login(request)
+	return HttpResponseRedirect(reverse('login'))
 
 def construction(request):
     #return HttpResponse('Unauthorized', status=401)

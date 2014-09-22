@@ -25,8 +25,9 @@ from asset.mappers.BusinessMapper import BusinessMapper
 import pprint
 from urllib import urlencode
 pp = pprint.PrettyPrinter()
+from django.contrib.auth.decorators import login_required
 
-
+@login_required
 def access_content_type(request, content_type_name, action = None):
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page
@@ -39,6 +40,7 @@ def access_content_type(request, content_type_name, action = None):
 
 	raise Http404
 
+@login_required
 def report_properties_with_unpaid_tax(request):
 	if request.method !='POST' and not request.GET.has_key('page'):
 		form = UnpaidTaxSearchForm(request)
@@ -258,7 +260,7 @@ def report_properties_with_unpaid_tax(request):
 			return render_to_response("report/properties_with_unpaid_tax.html", {"form":form,},
 				context_instance=RequestContext(request))
 		
-
+@login_required
 def report_properties_with_no_owners(request):
 	records_per_page = 50
 
@@ -334,6 +336,7 @@ def report_properties_with_no_owners(request):
 			context_instance=RequestContext(request))
 
 
+@login_required
 def report_tax_payers(request):
 	if request.method !='POST' and not request.GET.has_key('page'):
 		form = ReportSearchForm(request)
@@ -504,6 +507,7 @@ def report_tax_payers(request):
 				context_instance=RequestContext(request))
 
 
+@login_required
 def report_revenue_received_breakdown(request):
 	if request.method !='POST':
 		form = ReportSearchForm(request)
@@ -618,6 +622,7 @@ def report_revenue_received_breakdown(request):
 									context_instance=RequestContext(request))
 
 
+@login_required
 def report_revenue_received(request):
 	if request.method !='POST':
 		form = ReportSearchForm(request)
@@ -638,7 +643,8 @@ def report_revenue_received(request):
 
 		#period_from = request.POST['period_from']
 		#period_to = request.POST['period_to']
-		conditions = {}
+		conditions = {}
+
 		graph_title = "Report on received revenue "
 		if (not district or district =='') and (not sector and sector =='') and len(tax_types) == 0:
 			graph_title = None
@@ -666,8 +672,10 @@ def report_revenue_received(request):
 				#if period_from and period_from!='':
 				#	conditions['period_from'] = period_from
 				#if period_to and period_to!='':
-				#	conditions['period_to'] = period_to
-			graph_title = graph_title + ' on ['				
+				#	conditions['period_to'] = period_to
+
+			graph_title = graph_title + ' on ['	
+			
 			form = ReportSearchForm(request, initial={"district":district,"sector":sector,"cell":cell,"tax_types":tax_types})			
 			arr = []
 			result_objects = []
@@ -687,7 +695,8 @@ def report_revenue_received(request):
 				conditions['fee_type'] = 'land_lease'
 				result_obj = PayFeeMapper.getPayFeeByBankPortfolio(conditions)
 				result_objects.append(result_obj)
-				arr.append("land lease fee")
+				arr.append("land lease fee")
+
 			if 'market_fee' in tax_types:
 				conditions['fee_type'] = 'market'
 				result_obj = PayFeeMapper.getPayFeeByBankPortfolio(conditions)
@@ -754,6 +763,7 @@ def report_revenue_received(request):
 									context_instance=RequestContext(request))
 		
 				
+@login_required
 def report_tax_paid_and_unpaid(request):
 	if request.method !='POST' and not request.GET.has_key('page'):
 		form = ReportSearchForm(request)
@@ -1317,6 +1327,7 @@ def report_property_log(request):
 			context_instance=RequestContext(request))
 
 
+@login_required
 def report_property_contact(request):
 	if request.method !='POST':
 		form = ReportSearchForm(request)
@@ -1386,6 +1397,7 @@ def report_property_contact(request):
 							  context_instance=RequestContext(request))
 
 
+@login_required
 def report_business_no_tin(request):
 	if request.method !='POST' and not request.GET.has_key('page'):
 		form = ReportSearchForm(request)
@@ -1476,7 +1488,8 @@ def report_business_no_tin(request):
 	return render_to_response("report/report_tax_business_no_tin.html", {"form":form,},
 			context_instance=RequestContext(request))
 	
-		
+
+@login_required		
 def report_default(request, action):
 	if not action or action == 'property_contact':
 		return report_property_contact(request)
@@ -1499,6 +1512,7 @@ def report_default(request, action):
 	raise Http404
 
 
+@login_required
 def report_staff(request):
 	if request.method !='POST' and not request.GET.has_key('page'):
 		form = ReportSearchForm(request)

@@ -4,6 +4,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import Http404, HttpResponseRedirect
 from django.forms import model_to_dict
 from pmauth.models import PMContentType
+from django.contrib.auth.decorators import login_required
 
 from citizen.modelforms.modelforms import CitizenCreationForm, CitizenChangeForm
 from property.forms.forms import *
@@ -29,6 +30,7 @@ from django.contrib import messages
 from admin.Common import Common
 
 
+@login_required
 def view_citizen(request, obj_id, part):
 	if not obj_id:
 		return redirect('/admin/citizen/citizen/add_citizen/')
@@ -152,7 +154,7 @@ def delete_citizen(request, permissions, obj_id):
 			return render_to_response('citizen/citizen_citizen_delete.html', {'form':form,},
 							context_instance=RequestContext(request))
 '''
-
+@login_required
 def citizen_default(request, action, content_type_name1, obj_id, part):
 	"""
 	This function adds or updates citizen entity accouding to the passed parameter "action"
@@ -199,7 +201,8 @@ def citizen_default(request, action, content_type_name1, obj_id, part):
 	else:
 		raise Http404
 
-					
+
+@login_required			
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_id = None, part= None):
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page

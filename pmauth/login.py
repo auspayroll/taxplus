@@ -12,7 +12,7 @@ def login_attempt(email, passwd):
     try:
         fa = AccessAttempt.objects.get( loginname=email )
         if fa.recent_failure():
-            if fa.too_many_failures( ):
+            if False: #fa.too_many_failures( ):
                 # block the authentication attempt because
                 # of too many recent failures
                 fa.failures += 1

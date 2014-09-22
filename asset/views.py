@@ -25,7 +25,10 @@ import os
 from property.models import *
 import hashlib
 from pmauth.models import Action
+from django.contrib.auth.decorators import login_required
 
+
+@login_required
 def merge_business(request, pk1, pk2):
 	if not request.session.get('user'):
 		return login(request)
@@ -66,7 +69,7 @@ def merge_business(request, pk1, pk2):
 
 
 
-
+@login_required
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_id = None):
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page
@@ -105,6 +108,8 @@ def access_content_type(request, content_type_name, action = None, content_type_
 
 	raise Http404
 
+
+@login_required
 def business_default(request, action, content_type_name1, obj_id = None):
 	content_type = PMContentType.getContentTypeByName('asset','business')
 	actions = Action.objects.filter(contenttype = content_type)
@@ -383,6 +388,7 @@ def business_default(request, action, content_type_name1, obj_id = None):
 		return HttpResponseRedirect('/admin/asset/business/')
 
 
+@login_required
 def close_business(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	if request.POST:
@@ -409,6 +415,7 @@ def close_business(request, pk):
 	return TemplateResponse(request, 'asset/business/business_close.html', {'form':form, 'business':business  })
 
 
+@login_required
 def shop_default(request, action, content_type_name1, obj_id = None):
 	if not action:
 		user = request.session.get('user')
@@ -475,6 +482,7 @@ def shop_default(request, action, content_type_name1, obj_id = None):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def office_default(request, action, content_type_name1, obj_id = None):
 	if not action:
 		user = request.session.get('user')
@@ -542,6 +550,7 @@ def office_default(request, action, content_type_name1, obj_id = None):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def stall_default(request, action, content_type_name1, obj_id = None):
 	if not action:
 		user = request.session.get('user')
@@ -607,6 +616,7 @@ def stall_default(request, action, content_type_name1, obj_id = None):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def vehicle_default(request, action, content_type_name1, obj_id = None):
 	if not action:
 		user = request.session.get('user')
@@ -671,6 +681,7 @@ def vehicle_default(request, action, content_type_name1, obj_id = None):
 								context_instance=RequestContext(request))
 
 
+@login_required
 def billboard_default(request, action, content_type_name1, obj_id = None):
 	if not action:
 		user = request.session.get('user')

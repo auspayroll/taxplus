@@ -6,6 +6,7 @@ from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.forms import model_to_dict
 from django.conf import settings
 from dev1 import variables
+from django.contrib.auth.decorators import login_required
 
 import os
 import json
@@ -42,7 +43,7 @@ from media.mappers.MediaMapper import MediaMapper
 from annoying.functions import get_object_or_None
 
 
-
+@login_required
 def access_content_type(request, content_type_name, action = None, content_type_name1 = None, obj_id=None, part=None):
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page
@@ -70,6 +71,7 @@ def access_content_type(request, content_type_name, action = None, content_type_
 	raise Http404
 
 
+@login_required
 def council_default(request, action, content_type_name1, obj_id, part):
 	if not action:
 		user = request.session.get('user')
@@ -142,6 +144,8 @@ def council_default(request, action, content_type_name1, obj_id, part):
 	else:
 		raise Http404
 
+
+@login_required
 def sector_default(request, action, content_type_name1, obj_id, part):
 	if not action:
 		user = request.session.get('user')
@@ -217,6 +221,7 @@ def sector_default(request, action, content_type_name1, obj_id, part):
 		raise Http404
 
 
+@login_required
 def district_default(request,  action, content_type_name1, obj_id, part):
 	if not action:
 		user = request.session.get('user')
@@ -289,6 +294,7 @@ def district_default(request,  action, content_type_name1, obj_id, part):
 		raise Http404
 
 
+@login_required
 def add_property(request):
 	if request.method != 'POST':
 		form = PropertyCreationForm(initial={'i_status':'active',})
@@ -307,15 +313,15 @@ def add_property(request):
 			return render_to_response('property/property_property_add.html', {'form':form,},
 								context_instance=RequestContext(request))
 
-
+@login_required
 def delete_property(request):
 	return construction(request)
 
-
+@login_required
 def change_property(request):
 	return construction(request)
 
-
+@login_required
 def view_property(request, action, content_type_name1, obj_id, part):
 	plot_id = None
 	parcel_id = None
@@ -716,7 +722,7 @@ def view_property(request, action, content_type_name1, obj_id, part):
 			return render_to_response('property/property_property_logs.html', {'land_lease_types':variables.land_lease_types, 'land_use_types':variables.land_use_types,'property': property,'logs':logs, 'form':form,'hasOwnershipData':hasOwnershipData},
 								context_instance=RequestContext(request))
 
-
+@login_required
 def property_default(request,  action, content_type_name1, obj_id, part):
 	"""
 	This function adds property entity

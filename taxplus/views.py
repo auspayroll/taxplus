@@ -11,6 +11,7 @@ from django.http import HttpResponse
 from asset.models import Business, Duplicate
 from dateutil.relativedelta import relativedelta
 from taxplus.models import *
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -114,6 +115,7 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 	return response
 
 
+@login_required
 def cleaning_audit(request):
 	user = request.session.get('user')
 	if not user or not user.superuser:
@@ -197,7 +199,7 @@ def cleaning_debtors_csv(report, line_items, criteria={}, th=None, totals={}):
 	return response
 
 
-
+@login_required
 def cleaning_debtors(request):
 	user = request.session.get('user')
 	if not user or not user.superuser:
@@ -239,7 +241,7 @@ def cleaning_debtors(request):
 	return TemplateResponse(request, 'tax/cleaning_fee_debtors.html', { 'businesses':None, 'form':form, })
 
 
-
+@login_required
 def duplicates(request):
 	rows = Duplicate.objects.filter(status=1).order_by('-similarity').select_related('business1','business2')
 	return TemplateResponse(request, 'asset/business/duplicates.html', { 'rows':rows })
