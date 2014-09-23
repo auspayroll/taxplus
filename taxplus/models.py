@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from django.db.models import Q
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class Boundary(models.Model):
@@ -385,25 +387,6 @@ class Property(models.Model):
 			return None
 
 
-class PropertyOwnership(models.Model):
-	owner = models.ForeignKey(Entity)
-	prop = models.ForeignKey(Property)
-	date_from = models.DateField(null=True, blank=True)
-	date_to = models.DateField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
-	stake = models.FloatField(null=True, blank=True)
-	primary = models.NullBooleanField(blank=True)
-
-
-class BusinessOwnership(models.Model):
-	owner = models.ForeignKey(Entity, related_name='entity_businessownership')
-	business = models.ForeignKey(Entity, related_name='business_businessownership')
-	date_from = models.DateField(null=True, blank=True)
-	date_to = models.DateField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, related_name='business_ownership_status', )
-	stake = models.FloatField(null=True, blank=True)
-	primary = models.NullBooleanField(blank=True)
-
 
 class Fee(models.Model):
 	# new  field
@@ -511,12 +494,31 @@ class Ownership(models.Model):
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 
-	legacy_pk = models.IntegerField(null=True)
 
 	class Meta:
 		db_table = 'asset_ownership'
 
 
+class PropertyOwnership(models.Model):
+	owner = models.ForeignKey(Entity)
+	prop = models.ForeignKey(Property)
+	date_from = models.DateField(null=True, blank=True)
+	date_to = models.DateField(null=True, blank=True)
+	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
+	stake = models.FloatField(null=True, blank=True)
+	primary = models.NullBooleanField(blank=True)
+	legacy = models.ForeignKey(Ownership, null=True)
+
+
+class BusinessOwnership(models.Model):
+	owner = models.ForeignKey(Entity, related_name='entity_businessownership')
+	business = models.ForeignKey(Entity, related_name='business_businessownership')
+	date_from = models.DateField(null=True, blank=True)
+	date_to = models.DateField(null=True, blank=True)
+	status = models.ForeignKey(CategoryChoice, related_name='business_ownership_status', )
+	stake = models.FloatField(null=True, blank=True)
+	primary = models.NullBooleanField(blank=True)
+	legacy = models.ForeignKey(Ownership, null=True)
 
 
 

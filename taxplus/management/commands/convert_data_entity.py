@@ -63,7 +63,8 @@ class Command(BaseCommand):
 			entity.save()
 
 
-		for ownership in Ownership.objects.filter(asset_property__isnull=False):  #.all():	
+		for ownership in Ownership.objects.all():	
+
 			if ownership.owner_citizen_id:
 				owner = Entity.objects.get(citizen_id=ownership.owner_citizen_id)
 
@@ -94,7 +95,7 @@ class Command(BaseCommand):
 				new_ownership.status = CategoryChoice.objects.get(category__code='status', code=(ownership.i_status or 'active'))
 				new_ownership.stake = ownership.share
 
-				new_ownership.legacy_pk = ownership.pk
+				new_ownership.legacy = ownership
 				new_ownership.save()
 
 
