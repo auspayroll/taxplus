@@ -59,6 +59,7 @@ class District(models.Model):
 	code = models.CharField(max_length=4, null=True, blank=True, help_text="District code.")
 	boundary = models.OneToOneField(Boundary, related_name='district_boundary', null=True, blank=True, help_text="The boundary of district.")
 	province = models.ForeignKey(Province, null=True, blank=True, help_text="The province this district belongs to.")
+	alias = models.TextField(null=True)
 
 	class Meta:
 		db_table = 'property_district'
@@ -85,6 +86,8 @@ class Sector(models.Model):
 	district = models.ForeignKey(District, help_text="District the sector belongs to.")
 	council = models.ForeignKey(Council, null=True, blank=True, help_text="Council the sector belongs to.")
 	boundary = models.OneToOneField(Boundary, related_name='sector_boundary', null=True, blank=True, help_text="The boundary of sector.")
+	alias = models.TextField(null=True)
+
 
 	class Meta:
 		ordering = ['name', 'district__name']
@@ -129,6 +132,7 @@ class Cell(models.Model):
 	code = models.CharField(max_length=8,help_text="Cell code.", null=True)
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="Sector the cell belongs to.")
 	boundary = models.OneToOneField(Boundary, null=True, blank=True, help_text="The boundary of Cell.", related_name='+')
+	alias = models.TextField(null=True)
 	#zone = models.ForeignKey(Zone, null=True, blank=True)
 
 	class Meta:
@@ -144,6 +148,7 @@ class Village(models.Model):
 	code = models.CharField(max_length=10,help_text="Village code.", null=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="Cell the village belongs to.")
 	boundary = models.OneToOneField(Boundary, null=True, blank=True, help_text="The boundary of Village.", related_name='+')
+	alias = models.TextField(null=True)
 
 	class Meta:
 		ordering = ['name']
@@ -329,6 +334,7 @@ class Property(models.Model):
 	taxexempt_reason = models.ForeignKey(CategoryChoice, blank = True, null = True, limit_choices_to={'category__code':'tax_exempt_reason'})
 	tax_exempt_note = models.CharField(max_length = 100, blank = True, null = True)
 	landlease_type = models.ForeignKey(CategoryChoice, related_name='landlease_types', limit_choices_to={'category__code':'land_lease'}, null=True, blank=True, default=None)
+	land_zone = models.ForeignKey(CategoryChoice, related_name='landzone_types', limit_choices_to={'category__code':'land_use'}, null=True, blank=True, default=None)
 
 	#features = models.ManyToManyField(CategoryChoice, related_name='property_features',  limit_choices_to={'category__code':'property_feature'})
 	#ideal_for = models.ManyToManyField(CategoryChoice, related_name='property_ideal_for', limit_choices_to={'category__code':'property_ideal'})
@@ -366,6 +372,7 @@ class Property(models.Model):
 
 		elif self.sector:
 			name += ", %s sector, %s district" % (self.sector, self.sector.district)
+
 		return name
 
 
@@ -373,16 +380,19 @@ class Property(models.Model):
 		if self.cell and self.parcel_id:
 			cell_code = self.cell.code
 			return cell_code[1:2]+cell_code[2:4]+cell_code[4:6]+cell_code[6:8]+str(self.parcel_id)
+
 		else:
 			return None
 
 
 	@property
 	def area(self):
-		if self.area_sqm:
-			return self.area_sqm
+		if self.size_sqm:
+			return self.size_sqm
+
 		elif self.boundary:
 			return self.boundary.area
+
 		else:
 			return None
 
@@ -413,6 +423,51 @@ class Fee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_fee'
+
+	def calc_amount(self):
+		"""
+		calculate the full amount of the fee owing based on fields
+		"""
+		if self.category.code == 'land_lease':
+			if self.prop.land_zone.code == 'Agricultural':
+				if self.prop.area >= 20000
+					return 4000
+				else: 
+					return 0
+
+			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
+				if self.prop.land_zone.code == 'residential':
+					return 80
+				elif self.prop.land_zone.code == 'commercial':
+					return 100
+
+			elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31) and self.prop.land_zone.code == 'Residential':
+				if self.prop.land_zone.code == 'residential':
+					return 150
+				elif self.prop.land_zone.code == 'commercial':
+					return 200
+
+			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31) and self.prop.land_zone.code == 'Residential':
+				if self.prop.land_zone.code == 'residential':
+					return 80
+				elif self.prop.land_zone.code == 'commercial':
+					return 150
+
+			else:
+				rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone)
+				return rate.amount
+
+		raise NotImplentedError('rate for %s not found' % self)
+
+
+		@property
+		def amount_owed(self):
+			"""
+			-check period of ownership and adjust the amount if less than full period.
+			-then subtract the remaining amount
+			"""
+			raise NotImplentedError
+
 
 
 # Model for Receipt of Multiple Tax/Fee payment
@@ -538,6 +593,57 @@ class DebtorsReportLine(models.Model):
 	month_6 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	month_12 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+
+class Log(models.Model):
+	"""
+	keep log for each action taken by user.
+	"""
+	transaction_id = models.IntegerField(null = True, blank = True)
+	#user_id = models.IntegerField(null=True, blank=True)
+	user_id = models.IntegerField(null=True, blank=True)
+	citizen_id = models.IntegerField(null=True, blank=True)
+	property = models.ForeignKey(Property, null=True, blank=True)
+	business_id = models.IntegerField(null = True, blank = True)
+	subbusiness = models.IntegerField(null=True, blank=True)
+	tids = models.CharField(max_length = 200, null=True, blank = True)
+	tax_type = models.CharField(max_length = 50, null=True, blank = True)
+	tax_id = models.CharField(max_length = 50, null=True, blank = True)
+	payment_type = models.CharField(max_length = 50, null=True, blank = True)
+	payment_id = models.CharField(max_length = 50, null=True, blank = True)
+	media_id = models.CharField(max_length = 50, null=True, blank = True)
+	username = models.CharField(max_length=100)
+	table = models.CharField(blank=True, null=True, max_length=100)
+	date_time = models.DateTimeField(auto_now_add=True)
+	old_data = models.CharField(blank=True, null=True, max_length=1000)
+	new_data = models.CharField(blank=True, null=True, max_length=1000)
+	message = models.TextField(blank=True, null=True)
+	fee = models.ForeignKey(Fee, null=True, blank=True)
+	pay_receipt = models.ForeignKey(PaymentReceipt, null=True, blank=True)
+
+	class Meta:
+		db_table = 'log_log'
+
+
+
+class Rate(models.Model):
+	category = models.ForeignKey(CategoryChoice, related_name='rate_category')
+	sub_category = models.ForeignKey(CategoryChoice, related_name='rate_subcategory')
+	amount = models.DecimalField(decimal_places=2, max_digits=8)
+	date_from = models.DateField()
+	date_to = models.DateField(null=True)
+	village = models.ForeignKey(Village, null=True)
+	cell = models.ForeignKey(Cell, null=True)
+	sector = models.ForeignKey(Sector, null=True)
+
+
+
+
+
+
+
+
+
 
 
 
