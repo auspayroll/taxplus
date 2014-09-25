@@ -29,9 +29,7 @@ category_choices = {
 
 	'land_use':(('rural', 'Rural'),('urban', 'Urban'), ('forestry', 'Forestry'), 
 		('quarry', 'Quarry Purpose'), ('industrial', 'Industrial'), ('residential', 'Residential'), ('cultural', 'Cultural (other)'),
-		('cultural_np', 'Cultural (non profit)'), ('commerical', 'Commercial'), ('agricultural', 'Agricultural')),
-
-	'land_lease_type':(('rural', 'Rural'), ('agricultural','Agricultural'), ('urban', 'Urban Area'), ('commerical', 'Trading Centre')),
+		('cultural_np', 'Cultural (non profit)'), ('commercial', 'Commercial'), ('agricultural', 'Agricultural')),
 
 	'entity_type':(('individual', 'Individual'), ('business', 'Business'), ('subsiduary', 'Branch')),
 
