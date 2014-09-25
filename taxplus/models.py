@@ -430,7 +430,7 @@ class Fee(models.Model):
 		"""
 		if self.category.code == 'land_lease':
 			if self.prop.land_zone.code == 'Agricultural':
-				if self.prop.area >= 20000
+				if self.prop.area >= 20000:
 					return 4000
 				else: 
 					return 0
