@@ -29,7 +29,7 @@ class Command(BaseCommand):
 			if fee.citizen_id:
 				fee.entity = Entity.objects.get(citizen_id=fee.citizen_id)
 
-			fee.save()
+			fee.save(update_fields=['entity_id'])
 
 
 
