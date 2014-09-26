@@ -23,11 +23,22 @@ class Command(BaseCommand):
 
 		for fee in Fee.objects.filter(entity_id__isnull=True):
 			if fee.business_id:
-				fee.entity = Entity.objects.get(business_id=fee.business_id)
+				try:
+					fee.entity = Entity.objects.get(business_id=fee.business_id)
+				except Entity.DoesNotExist:
+					print "business %s not found" % fee.business_id
+
 			if fee.subbusiness_id:
-				fee.entity = Entity.objects.get(subbusiness_id=fee.subbusiness_id)
+				try:
+					fee.entity = Entity.objects.get(subbusiness_id=fee.subbusiness_id)
+				except Entity.DoesNotExist:
+					print "subbusiness %s not found" % fee.subbusiness_id
+
 			if fee.citizen_id:
-				fee.entity = Entity.objects.get(citizen_id=fee.citizen_id)
+				try:
+					fee.entity = Entity.objects.get(citizen_id=fee.citizen_id)
+				except Entity.DoesNotExist:
+					print "subbusiness %s not found" % fee.subbusiness_id
 
 			fee.save(update_fields=['entity_id'])
 
