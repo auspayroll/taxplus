@@ -3,6 +3,8 @@ from django.contrib.gis.db import models as gis_models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import date
+from decimal import Decimal
 
 
 class Boundary(models.Model):
@@ -416,6 +418,7 @@ class Fee(models.Model):
 	citizen_id = models.IntegerField(null=True)
 	subbusiness_id = models.IntegerField(null=True)
 	entity = models.ForeignKey(Entity, null=True)
+	addressee_name = models.CharField(null=True)
 	#business = models.ForeignKey(Business, null=True, blank=True)
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
@@ -423,6 +426,14 @@ class Fee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_fee'
+
+	@property
+	def addressee(self):
+		if self.entity_id:
+			return self.entity
+		else:
+			return self.addressee_name or None
+
 
 	def calc_amount(self):
 		"""
@@ -437,24 +448,24 @@ class Fee(models.Model):
 
 			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
 				if self.prop.land_zone.code == 'residential':
-					return 80
+					return Decimal('80')
 				elif self.prop.land_zone.code == 'commercial':
-					return 100
+					return Decimal('100')
 
 			elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31) and self.prop.land_zone.code == 'Residential':
 				if self.prop.land_zone.code == 'residential':
-					return 150
+					return Decimal('150')
 				elif self.prop.land_zone.code == 'commercial':
-					return 200
+					return Decimal('200')
 
 			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31) and self.prop.land_zone.code == 'Residential':
 				if self.prop.land_zone.code == 'residential':
-					return 80
+					return Decimal('80')
 				elif self.prop.land_zone.code == 'commercial':
-					return 150
+					return Decimal('150')
 
 			else:
-				rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone)
+				rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
 				return rate.amount
 
 		raise NotImplentedError('rate for %s not found' % self)
