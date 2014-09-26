@@ -418,7 +418,7 @@ class Fee(models.Model):
 	citizen_id = models.IntegerField(null=True)
 	subbusiness_id = models.IntegerField(null=True)
 	entity = models.ForeignKey(Entity, null=True)
-	addressee_name = models.CharField(null=True)
+	addressee_name = models.CharField(null=True, max_length=100)
 	#business = models.ForeignKey(Business, null=True, blank=True)
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
