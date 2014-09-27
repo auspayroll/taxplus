@@ -60,7 +60,7 @@ class Command(BaseCommand):
 					cell.alias = ''
 				if line['Cell'].lower() not in cell.alias.lower():
 					cell.alias += ', ' + line['Cell'].title()
-				    cell.alias = cell.alias.strip(',')
+					cell.alias = cell.alias.strip(',')
 					cell.save()
 
 			village = Village.objects.get(code=line['Village Code'])
