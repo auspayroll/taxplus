@@ -565,8 +565,6 @@ class Ownership(models.Model):
 
 @receiver(post_save, sender=Ownership)
 def after_ownership_save(sender, instance, created, **kwargs):
-	import pdb
-	pdb.set_trace()
 	ownership = None
 	if instance.asset_property_id:
 		try:
