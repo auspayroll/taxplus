@@ -58,7 +58,6 @@ class Command(BaseCommand):
 				citizen = Citizen(first_name=line['Firstname'], last_name=line['Surname'], citizen_id=line['Citizen Id'], status_new=active, status_id=1)
 				citizen.save()
 			else:
-				print 'found'
 				found += 1
 
 		print "found %s" % found
