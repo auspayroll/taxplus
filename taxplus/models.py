@@ -198,6 +198,8 @@ class Citizen(models.Model):
 	foreign_record_id = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign id from the old DB.')
 	cp_password = models.CharField(max_length=128, help_text='Enter password.', blank = True, null = True)
 	contact_details_confirmed = models.DateField(null=True, blank=True, help_text="dd/mm/yyyy")
+	created = models.DateTimeField(auto_now_add=True, null=True)
+	status_new = models.ForeignKey(CategoryChoice, null=True)
 
 	class Meta:
 		db_table = 'citizen_citizen'
@@ -379,12 +381,11 @@ class Property(models.Model):
 
 
 	def get_upi(self):
-		if self.cell and self.parcel_id:
+		if self.cell:
 			cell_code = self.cell.code
-			return cell_code[1:2]+cell_code[2:4]+cell_code[4:6]+cell_code[6:8]+str(self.parcel_id)
-
+			return cell_code[1:2]+'/'+cell_code[2:4]+'/'+cell_code[4:6]+'/'+cell_code[6:8]+'/'+str(self.parcel_id)
 		else:
-			return None
+			return ''
 
 
 	@property
