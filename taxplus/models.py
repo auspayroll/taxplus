@@ -350,13 +350,16 @@ class Property(models.Model):
 		db_table = 'property_property'
 
 
+	def get_owners_on(self, date):
+		return self.owners.filter(ownership__date_from__lte=date).filter( Q(ownership__date_to__gte=date) | Q(ownership__date_to__isnull=True)).order_by('-ownership__stake')
+
+
+	def get_owners_between(self, date_from, date_to):
+		return self.owners.filter(Q(ownership__date_from__lte=date_to) | Q(ownership__date_from__isnull=True)).filter(Q(ownership__date_to__gte=date_from) | Q(ownership__date_to__isnull=True)).order_by('-ownership__stake')
+
 	@property
-	def primary_owner(self):
-		owners = self.owners.order_by('-stake')
-		if owners:
-			return owners[0]
-		else:
-			return None
+	def current_owners(self):
+		return self.get_owners_on(date.today())
 
 
 	def __unicode__(self):
@@ -424,6 +427,8 @@ class Fee(models.Model):
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
 	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
+	#qty = models.DecimalField(max_digits=10, decimal_places=2)
+	#rate = models.DecimalField(max_digits=6, decimal_places=2)
 
 	class Meta:
 		db_table = 'jtax_fee'
@@ -435,6 +440,12 @@ class Fee(models.Model):
 		else:
 			return self.addressee_name or None
 
+	@property
+	def property_owners(self):
+		if self.prop_id:
+			return self.prop.get_owners_between(self.date_from, self.date_to)
+		else:
+			return None
 
 	def calc_amount(self):
 		"""
@@ -566,9 +577,17 @@ class Ownership(models.Model):
 		db_table = 'asset_ownership'
 
 
-class PropertyOwnership(models.Model):
-	owner = models.ForeignKey(Entity)
+class PropertyTitle(models.Model):
 	prop = models.ForeignKey(Property)
+	date_from = models.DateField(null=True, blank=True)
+	date_to = models.DateField(null=True, blank=True)
+	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
+
+
+class PropertyOwnership(models.Model):
+	owner = models.ForeignKey(Entity, related_name='ownership')
+	prop = models.ForeignKey(Property, related_name='property_ownership')
+	prop_title = models.ForeignKey(PropertyTitle, null=True)
 	date_from = models.DateField(null=True, blank=True)
 	date_to = models.DateField(null=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
@@ -647,6 +666,7 @@ class Rate(models.Model):
 	village = models.ForeignKey(Village, null=True)
 	cell = models.ForeignKey(Cell, null=True)
 	sector = models.ForeignKey(Sector, null=True)
+
 
 
 
