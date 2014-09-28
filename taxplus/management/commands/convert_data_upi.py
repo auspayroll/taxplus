@@ -22,7 +22,7 @@ class Command(BaseCommand):
 
 		for p in Property.objects.filter(upi__isnull=True):
 			p.upi = p.get_upi()
-			p.save
+			p.save()
 
 
 
