@@ -68,7 +68,6 @@ class Command(BaseCommand):
 			except Entity.DoesNotExist:
 				entity = Entity(citizen_id=citizen.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
 				entity.save()
-				print 'entity created'
 
 			found += 1
 
