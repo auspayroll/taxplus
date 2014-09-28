@@ -403,6 +403,12 @@ class Property(models.Model):
 			return None
 
 
+class PropertyTitle(models.Model):
+	prop = models.ForeignKey(Property)
+	date_from = models.DateField(null=True, blank=True)
+	date_to = models.DateField(null=True, blank=True)
+	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
+
 
 class Fee(models.Model):
 	# new  field
@@ -421,7 +427,7 @@ class Fee(models.Model):
 	business_id = models.IntegerField(null=True)
 	citizen_id = models.IntegerField(null=True)
 	subbusiness_id = models.IntegerField(null=True)
-	entity = models.ForeignKey(Entity, null=True)
+	prop_title = models.ForeignKey(PropertyTitle, null=True)
 	addressee_name = models.CharField(null=True, max_length=100)
 	#business = models.ForeignKey(Business, null=True, blank=True)
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
@@ -575,13 +581,6 @@ class Ownership(models.Model):
 
 	class Meta:
 		db_table = 'asset_ownership'
-
-
-class PropertyTitle(models.Model):
-	prop = models.ForeignKey(Property)
-	date_from = models.DateField(null=True, blank=True)
-	date_to = models.DateField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
 
 
 class PropertyOwnership(models.Model):
