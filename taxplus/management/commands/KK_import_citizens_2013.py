@@ -15,7 +15,7 @@ from django.db import IntegrityError, transaction
 import csv
 import codecs
 from django.core.exceptions import *
-from taxplus.models import Citizen
+from taxplus.models import Citizen, Entity
 from django.db.models import Q
 
 from datetime import datetime, timedelta
@@ -56,9 +56,21 @@ class Command(BaseCommand):
 			except:
 				not_found += 1
 				citizen = Citizen(first_name=line['Firstname'], last_name=line['Surname'], citizen_id=line['Citizen Id'], status_new=active, status_id=1)
-				citizen.save()
-			else:
-				found += 1
+
+			citizen.first_name = line['Firstname']
+			citizen.last_name = line['Surname']
+			citizen.middle_name = line['Middlename']
+			citizen.status_id = 1
+			citizen.save()
+
+			try:
+				Entity.objects.get(citizen_id=citizen.pk)
+			except Entity.DoesNotExist:
+				entity = Entity(citizen_id=citizen.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
+				entity.save()
+				print 'entity created'
+
+			found += 1
 
 		print "found %s" % found
 		print "not found %s" % not_found
