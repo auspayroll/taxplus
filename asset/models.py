@@ -52,6 +52,7 @@ class Business(models.Model):
 	closed_date = models.DateField(blank=True, null=True)
 	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True)
 	business_subcategory = models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+	entity_id = models.IntegerField(null=True)
 
 
 
@@ -419,11 +420,9 @@ def after_business_save(sender, instance, created, **kwargs):
 		entity = Entity()
 		entity.entity_type_id = CategoryChoice.objects.get(category__code='entity_type', code='business').pk
 		entity.business_id = business.pk
-		entity.sector_id = business.sector_id
-		entity.cell_id = business.cell_id
-		entity.village_id = business.village_id
 		entity.status_id = CategoryChoice.objects.get(category__code='status', code=(business.i_status or 'active')).pk
 		entity.save()
+		Business.objects.filter(pk=instance.pk).update(entity_id=entity.pk)
 
 
 class SubBusiness(models.Model):
@@ -436,6 +435,7 @@ class SubBusiness(models.Model):
 	credit = models.FloatField(default = 0, help_text = 'Credit accumulated for this business.')
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	business = models.ForeignKey(Business)
+	entity_id = models.IntegerField(null=True)
 
 	def getDisplayName(self):
 		return self.business.getDisplayName() + ', branch: '+ self.branch
@@ -466,6 +466,7 @@ def after_sub_business_save(sender, instance, created, **kwargs):
 		entity.cell_id = sub.cell_id
 		entity.village_id = sub.village_id
 		entity.save()
+		SubBusiness.objects.filter(pk=instance.pk).update(entity_id=entity.pk)
 
 
 class Billboard(models.Model):
