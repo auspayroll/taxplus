@@ -19,7 +19,7 @@ class Command(BaseCommand):
 	
 	def handle(self, *args, **options):
 		errors = []
-		
+
 		for business in Business.objects.all():
 			entity = Entity()
 			entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='business')
@@ -29,26 +29,9 @@ class Command(BaseCommand):
 			entity.village = business.village
 			entity.status = CategoryChoice.objects.get(category__code='status', code=(business.i_status or 'active'))
 			entity.save()
+			business.entity_id = entity.pk
+			business.save()
 
-
-		for citizen in Citizen.objects.all():
-			entity = Entity()
-			entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='individual')
-			entity.citizen_id = citizen.pk
-			if citizen.status_id ==1:
-				entity.status = CategoryChoice.objects.get(category__code='status', code='active')
-			else:
-				entity.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-			entity.contact_details_confirmed = citizen.contact_details_confirmed
-			entity.credit = 0
-			entity.save()
-
-			if citizen.foreign_identity_type or citizen.foreign_identity_number:
-				document = IdentityDocument()
-				document.foreign_identity_type = citizen.foreign_identity_type
-				document.foreign_identity_number = citizen.foreign_identity_number
-				document.entity = entity
-				document.save()
 
 
 		for sub in SubBusiness.objects.all():
@@ -61,12 +44,15 @@ class Command(BaseCommand):
 			entity.cell = sub.cell
 			entity.village = sub.village
 			entity.save()
+			sub.entity_id = entity.pk
+			sub.save()
 
 
 		for ownership in Ownership.objects.all():	
 
 			if ownership.owner_citizen_id:
-				owner = Entity.objects.get(citizen_id=ownership.owner_citizen_id)
+				citizen = Citizen.objects.get(pk=ownership.owner_citizen_id)
+				owner = Entity.objects.get(pk=citizen.entity_id)
 
 			elif ownership.owner_business_id:
 				owner = Entity.objects.get(business_id=ownership.owner_business_id)
