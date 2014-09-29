@@ -200,6 +200,7 @@ class Citizen(models.Model):
 	contact_details_confirmed = models.DateField(null=True, blank=True, help_text="dd/mm/yyyy")
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	status_new = models.ForeignKey(CategoryChoice, null=True)
+	entity_id = models.IntegerField(null=True)
 
 	class Meta:
 		db_table = 'citizen_citizen'
@@ -234,6 +235,7 @@ class Business(models.Model):
 	closed_date = models.DateField(blank=True, null=True)
 	business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
 	business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+	entity_id = models.IntegerField(null=True)
 
 	class Meta:
 		db_table = 'asset_business'
@@ -257,6 +259,7 @@ class SubBusiness(models.Model):
 	credit = models.FloatField(default = 0, help_text = 'Credit accumulated for this business.')
 	i_status = models.CharField(max_length = 10, default='active', blank = True)
 	business = models.ForeignKey(Business)
+	entity_id = models.IntegerField(null=True)
 
 	class Meta:
 		db_table = 'asset_subbusiness'
@@ -408,6 +411,13 @@ class PropertyTitle(models.Model):
 	date_from = models.DateField(null=True, blank=True)
 	date_to = models.DateField(null=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
+
+	def close(self, close_date):
+		for ownership in self.title_ownership.filter(date_to__isnull=False):
+			ownership.date_to = close_date
+			ownership.save()
+		self.date_to = close_date
+		self.save()
 
 
 class Fee(models.Model):
@@ -586,7 +596,7 @@ class Ownership(models.Model):
 class PropertyOwnership(models.Model):
 	owner = models.ForeignKey(Entity, related_name='ownership')
 	prop = models.ForeignKey(Property, related_name='property_ownership')
-	prop_title = models.ForeignKey(PropertyTitle, null=True)
+	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_ownership')
 	date_from = models.DateField(null=True, blank=True)
 	date_to = models.DateField(null=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
