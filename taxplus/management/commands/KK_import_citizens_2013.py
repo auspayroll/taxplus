@@ -66,7 +66,7 @@ class Command(BaseCommand):
 			try:
 				entity = Entity.objects.get(citizen_id=citizen.pk)
 			except Entity.DoesNotExist:
-				entity = Entity(citizen_id=citizen.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
+				entity = Entity(citizen_id=citizen.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'), status=active)
 				entity.save()
 
 			citizen.entity_id = entity.pk
