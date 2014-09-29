@@ -276,6 +276,7 @@ class Entity(models.Model):
 	business = models.OneToOneField(Business, null=True)
 	citizen = models.OneToOneField(Citizen, null=True)
 	subbusiness = models.OneToOneField(SubBusiness, null=True)
+	identifier = models.CharField(max_length=100, null=True)
 
 	@property
 	def primary_owner(self):
