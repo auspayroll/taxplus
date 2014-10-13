@@ -6,4 +6,4 @@ dev1/wsgi.py
 */no_migrations/*
 */migrations_old/*
 *.zip
-
+*.pdf
