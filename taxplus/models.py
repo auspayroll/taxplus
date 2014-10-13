@@ -3,7 +3,7 @@ from django.contrib.gis.db import models as gis_models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 
@@ -176,6 +176,326 @@ class BusinessCategory(models.Model):
 		db_table = 'asset_businesssubcategory'
 
 
+
+class Setting(models.Model):
+	tax_fee_name = models.CharField(max_length = 50, help_text="Tax / Fee Name")
+	setting_name = models.CharField(max_length = 50, help_text="Tax / Fee Setting Name")
+	sub_type = models.CharField(max_length = 250, blank = True, help_text="Tax / Fee Setting Sub Catergories that differentiate the rate / fee")
+	value = models.CharField(max_length = 50, default='',help_text="Setting Value, can be fee/tax rate/date/etc")
+	description = models.TextField(null=True, blank = True, help_text="Description about this payment.")
+	valid_from = models.DateField(help_text='Date this setting to be valid from.')
+	valid_to = models.DateField(help_text='Date this setting get deprecated.', null=True, blank = True)
+	district = models.ForeignKey(District, null=True, blank=True, help_text="")
+	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="")
+	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
+	village = models.ForeignKey(Village, null=True, blank=True, help_text="")
+	i_status = models.CharField(max_length = 10, default='active', blank = True)
+	date_time = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
+
+	class Meta:
+		app_label = 'taxplus'
+		db_table = 'jtax_setting'
+		managed = False
+
+	def __unicode__(self):
+		return "ID:" + str(self.id) + " - " + str(self.tax_fee_name) + " " + str(self.setting_name) + " - " + str(self.sub_type) + "[ " + str(self.value) + " ] (" + self.i_status + ")"
+
+
+
+	@classmethod
+	def calculateLandLeaseFee(cls, date_from, date_to, land_use_type, size, sector=None, cell=None, village=None, *args, **kwargs):
+		if type(date_from) is datetime:
+			date_from = date_from.astimezone(timezone.get_default_timezone()).date()
+
+		if type(date_to) is datetime:
+			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
+
+		size = Decimal(size).quantize(Decimal('.0001'))
+		land_use_types = None
+		if land_use_type in ('Agricultural', 'agricultural', 'agriculture'):
+			land_use_type = 'Agricultural'
+			units = 'hectares'
+			hectares = (size * Decimal('0.0001')).quantize(Decimal('.0001'))
+			if hectares > 35:
+				land_use_types = 'Agricultural(>35 ha)'
+			elif hectares >= 2 and hectares <= 35:
+			   land_use_types = 'Agricultural(2-35 ha)'
+			elif hectares > 2:
+				land_use_types = 'Agricultural(>2 ha)'
+		elif land_use_type in ('Residential', 'residential'):
+			land_use_types = 'Residential'
+		elif land_use_type in ('Commericial','Commercial', 'commercial'):
+			land_use_types = 'Commercial'
+		elif land_use_type in ('Industrial', 'industrial'):
+			land_use_types = 'Industries'
+		elif land_use_type == 'Quarry Purpose':
+			land_use_types = 'Quarries Exploitation'
+		formula_data = {}
+		tax = Decimal(0)
+		current_year = date_from.year
+		total_days_in_period = Decimal((date(current_year, 12, 31) - date(current_year, 1, 1)).days + 1)
+		if land_use_types:
+			tax_periods = cls.getTaxPeriods(['land_lease','land_lease_fee'], date_from, date_to, setting_name='area_and_fee_matches', sub_type=land_use_types, sector=sector, cell=cell, village=village, *args, **kwargs)
+		else:
+			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee applicable' })]
+		if not tax_periods:
+			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee Found' })]
+		formula_data = {}
+		for date_from, date_to, values in tax_periods:
+			period = (date_from, date_to)
+			rate = values['value']
+			days_in_period = (date_to - date_from).days + 1
+			amount = (Decimal(days_in_period) / Decimal(total_days_in_period)  * rate * size).quantize(Decimal('0.1'))
+			formula_data[period] = { 'days':days_in_period, 'tax_rate':rate, 'amount':amount, 'size':size, 'region':values['region'] }
+			tax += amount
+
+		due_date = date_to
+		tax = Decimal(int(tax))
+		return {'amount':tax, 'due':due_date, 'due_date':due_date, 'days':total_days_in_period, 'formula_data':formula_data }
+
+
+	@classmethod
+	def calculateCleaningFee(cls, period_date, business_type, area_type, sector=None, cell=None, village=None):
+		#calculate due date
+		tax_periods = cls.getTaxPeriods('general_fee', period_date, period_date, sector=sector, cell=cell, village=village)
+		if not tax_periods:
+			raise Exception("No tax settings found for %s, %s, %s, %s" % (period_date, sector, cell, village))
+		for date_from, date_to, period_setting in tax_periods:
+			due_date_day = period_setting.get('monthly_due_date')
+		due_date = period_date + relativedelta(months=1)
+		due_date = date(due_date.year, due_date.month, due_date_day)
+
+		#calculate amount
+		sub_type = "%s-%s" % (area_type, business_type)
+		tax_periods = cls.getTaxPeriods('cleaning_fee', period_date, period_date, sector=sector, cell=cell, village=village)
+		if not tax_periods:
+			raise Exception("No tax settings found for %s, %s, %s, %s" % (period_date, sector, cell, village))
+		if not tax_periods:
+			return None, None
+		for date_from, date_to, period_setting in tax_periods:
+			try:
+				rate = period_setting['fee_matches'][sub_type]
+			except KeyError:
+				rate = None
+		return rate, due_date
+
+
+	@classmethod
+	def get_due_date(cls, tax_fee_name, period_date, sector=None, district=None, *args, **kwargs):
+		current_date = date.today()
+		if tax_fee_name in ('trading_license_tax', 'land_lease_fee'):
+			return date(period_date.year, 12, 31)
+		due_date = cls.getTaxSetting(tax_fee_name, 'due_date', current_date, current_date, sector, district, *args, **kwargs)
+		due_month, due_day = due_date.split('-')
+		return date(period_date.year, int(due_month), int(due_day))
+
+
+	@classmethod
+	def getTaxSetting(cls, tax_fee_name, setting_name, date_from, date_to, sector=None, district=None, *args, **kwargs):
+		"""gets the latest setting for a tax"""
+		periods = cls.getTaxPeriods(tax_fee_name, date_from, date_to, sector, district, *args, **kwargs)
+		if not periods:
+			raise Exception("Could not find setting - %s from %s to %s" % (tax_fee_name, date_from, date_to))
+		return periods[0][2][setting_name]
+
+
+	@classmethod
+	def getFees(cls, district=None, sector=None, cell=None, village=None, *args, **kwargs):
+		"""
+		returns the relevant tax period info as a dictionary
+		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
+		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
+		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
+		The order of precedence s Sector tax values, District tax values then
+		tax values with no associated Sector or District
+		"""
+
+		if district and type(district) is int:
+			district = District.objects.get(pk=district)
+
+		if sector and type(sector) is int:
+			sector = Sector.objects.get(pk=sector)
+
+		if cell and type(cell) is int:
+			cell = Cell.objects.get(pk=cell)
+
+		if village and type(village) is int:
+			village = Village.objects.get(pk=village)
+
+		settings = cls.objects.filter(tax_fee_name='misc_fee', i_status='active')
+
+		if village:
+			settings = settings.filter(Q(village__isnull=True) | Q(village=village))
+			cell = village.cell
+		else:
+			settings = settings.filter(village__isnull=True)
+
+		if cell:
+			settings = settings.filter(Q(cell__isnull=True) | Q(cell=cell))
+			sector = cell.sector
+		else:
+			settings = settings.filter(cell__isnull=True)
+
+		if sector:
+			settings = settings.filter(Q(sector__isnull=True) | Q(sector=sector))
+			district = sector.district
+		else:
+			settings = settings.filter(sector__isnull=True)
+
+		if district:
+			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
+		else:
+			settings = settings.filter(district__isnull=True)
+
+		settings = settings.select_related('district','sector', 'cell', 'village').order_by('-valid_from', '-village', '-cell', '-sector', '-district', 'sub_type')
+
+		fees = {}
+		for setting in settings:
+			setting_region = setting.village or setting.cell or setting.sector or setting.district
+			category = fees.setdefault(setting.setting_name, {})
+			sub_type = category.setdefault(setting.sub_type, { 'value': setting.value, 'description':setting.description, 'valid_from':setting.valid_from, 'region': setting_region })
+			if setting_region == sub_type['region'] and setting.valid_from >= sub_type['valid_from'] and date.today() >= setting.valid_from or setting_region != sub_type['region']:
+				sub_type['value'] = Decimal(setting.value)
+				sub_type['description'] = setting.description
+				sub_type['region'] = setting_region
+				sub_type['pk'] = setting.pk
+
+		return fees
+
+
+	@classmethod
+	def getTaxPeriods(cls, tax_fee_name, date_from, date_to, setting_name=None, sub_type=None, district=None, sector=None, cell=None, village=None, *args, **kwargs):
+		"""
+		returns the relevant tax period info as a dictionary
+		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
+		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
+		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
+		The order of precedence s Sector tax values, District tax values then
+		tax values with no associated Sector or District
+		"""
+
+		if district and type(district) is int:
+			district = District.objects.get(pk=district)
+
+		if sector and type(sector) is int:
+			sector = Sector.objects.get(pk=sector)
+
+		if cell and type(cell) is int:
+			cell = Cell.objects.get(pk=cell)
+
+		if village and type(village) is int:
+			village = Village.objects.get(pk=village)
+
+		if type(date_from) is datetime:
+			date_from = date_from.astimezone(timezone.get_default_timezone()).date()
+
+		if type(date_to) is datetime:
+			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
+
+		if type(tax_fee_name) is not list:
+			tax_fee_name = [tax_fee_name]
+
+		settings = cls.objects.filter(tax_fee_name__in=tax_fee_name, valid_from__lte=date_to, i_status='active')
+
+		if setting_name:
+			settings = settings.filter(setting_name=setting_name)
+
+		if sub_type:
+			if not setting_name:
+				raise Exception("You must specify a setting name")
+			if hasattr(sub_type, "__iter__"):
+				settings = settings.filter(sub_type__in=sub_type)
+			else:
+				settings = settings.filter(sub_type=sub_type)
+
+		if village:
+			settings = settings.filter(Q(village__isnull=True) | Q(village=village))
+			cell = village.cell
+		else:
+			settings = settings.filter(village__isnull=True)
+
+		if cell:
+			settings = settings.filter(Q(cell__isnull=True) | Q(cell=cell))
+			sector = cell.sector
+		else:
+			settings = settings.filter(cell__isnull=True)
+
+		if sector:
+			settings = settings.filter(Q(sector__isnull=True) | Q(sector=sector))
+			district = sector.district
+		else:
+			settings = settings.filter(sector__isnull=True)
+
+		if district:
+			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
+		else:
+			settings = settings.filter(district__isnull=True)
+
+		settings = settings.order_by('-valid_from', '-village', '-cell', '-sector', '-district')
+
+		settings = [setting for setting in settings]
+
+		if not settings:
+			return None
+			# raise Exception("No Settings found for tax fee: %s, from %s to %s, setting name:%s, sub type: %s, district: %s, sector: %s, cell: %s, village: %s"  % (tax_fee_name, date_from, date_to, setting_name, sub_type, district, sector, cell, village))
+
+		# set the most recent period
+		#import pdb
+		#pdb.set_trace()
+		valid_from = settings[0].valid_from
+		valid_to = date_to
+
+		periods = {}
+		for setting in settings:
+			region = setting.village or setting.cell or setting.sector or setting.district or None
+			if region:
+				region_name = region.name
+			else:
+				region_name = None
+			# get the next period setting
+			if setting.valid_from < valid_from:
+				valid_to = valid_from - timedelta(days=1)
+				#stop if period is out of range
+				if valid_to < date_from:
+					break;
+
+			# set the setting start range if less than date_from
+			valid_from = setting.valid_from
+			if valid_from < date_from:
+				start_from = date_from
+			else:
+				start_from = valid_from
+
+			period = periods.setdefault((start_from, valid_to), {})
+			try:
+				value = Decimal(setting.value)
+			except:
+				value = setting.value
+
+			period['region'] = region_name
+			if sub_type:
+				if hasattr(sub_type,'__iter__'):
+					period[setting.sub_type] = value
+				else:
+					period['value'] = value
+			elif setting_name:
+				if setting.sub_type:
+					period[setting.sub_type] = value
+				else: #setting_name provided,  no setting.sub_type
+					period['value'] = value
+			else: # no setting name
+				if setting.sub_type:
+					st = period.setdefault(setting.setting_name, {})
+					st[setting.sub_type] = value
+				else:
+					period[setting.setting_name] = value
+
+		periods = [ (dates[0], dates[1], values) for dates, values in periods.iteritems() ]
+		periods.sort(key=lambda x:x[0], reverse=True)
+		return periods
+
+
+
 class Citizen(models.Model):
 	first_name = models.CharField(max_length = 50, help_text = 'First name')
 	last_name = models.CharField(max_length = 50, help_text = 'Last name')
@@ -292,8 +612,10 @@ class Entity(models.Model):
 		if self.entity_type.code == 'business':
 			return self.business.name
 
-		elif self.entity_type.code == 'citizen':
-			return "%s  %s" % (self.citizen.first_name, self.citizen.last_name)
+		elif self.entity_type.code == 'individual':
+			title = self.citizen
+			return "%s %s" % (self.citizen.first_name, self.citizen.last_name)
+
 
 		elif self.entity_type.code == 'subsiduary':
 			return self.subbusiness.branch
@@ -337,7 +659,7 @@ class Property(models.Model):
 	lot_number = models.CharField(max_length=5, null=True, blank=True)
 	street_number = models.IntegerField(null=True, blank=True)
 	street = models.CharField(max_length=50, blank=True, null=True)
-	
+
 	is_tax_exempt = models.BooleanField(default=False, help_text='')
 	taxexempt_reason = models.ForeignKey(CategoryChoice, blank = True, null = True, limit_choices_to={'category__code':'tax_exempt_reason'})
 	tax_exempt_note = models.CharField(max_length = 100, blank = True, null = True)
@@ -349,9 +671,17 @@ class Property(models.Model):
 	#days_on_market = models.IntegerField(null=True)
 	#assets = models.ManyToManyField(Asset, related_name="property_assets")
 	owners = models.ManyToManyField(Entity, through='PropertyOwnership', related_name='properties')
+	date_created = models.DateTimeField(auto_now_add=True, blank=True)
+	date_modified = models.DateTimeField(auto_now=True, blank=True)
 
 	class Meta:
 		db_table = 'property_property'
+
+
+	@property
+	def outstanding_fees(self):
+		return self.property_fees.filter(remaining_amount__gt=0)
+
 
 
 	def get_owners_on(self, date):
@@ -401,17 +731,33 @@ class Property(models.Model):
 			return self.size_sqm
 
 		elif self.boundary:
-			return self.boundary.area
+			return self.boundary.shape_area
 
 		else:
-			return None
+			return 0
 
 
 class PropertyTitle(models.Model):
-	prop = models.ForeignKey(Property)
+	prop = models.ForeignKey(Property, related_name='property_title')
 	date_from = models.DateField(null=True, blank=True)
 	date_to = models.DateField(null=True, blank=True)
+	land_lease_issue_date = models.DateField(null=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
+	first_name = models.CharField(max_length = 50, help_text = 'First name', null=True, blank=True)
+	last_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
+	middle_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
+	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
+	modified = models.DateTimeField(auto_now=True, null=True)
+	imported = models.DateTimeField(null=True)
+
+	def __unicode__(self):
+		name = "%s %s - " % (self.prop, self.date_from.strftime('%d/%m/%Y'))
+		if self.date_to:
+			name += self.date_to.strftime('%d/%m/%Y')
+		if self.land_lease_issue_date:
+			name += " land lease issue date: %s" % self.land_lease_issue_date.strftime('%d/%m/%Y')
+		return name
+
 
 	def close(self, close_date):
 		for ownership in self.title_ownership.filter(date_to__isnull=False):
@@ -419,6 +765,32 @@ class PropertyTitle(models.Model):
 			ownership.save()
 		self.date_to = close_date
 		self.save()
+
+	@property
+	def land_lease_periods(self):
+			date_from = date(2011,1,1)
+			date_to = date(date.today().year,12,31)
+			if self.land_lease_issue_date:
+				date_from = self.land_lease_issue_date
+
+			elif self.date_from:
+				date_from = self.date_from
+
+			if self.date_to and self.date_to < date_to:
+				date_to = self.date_to
+
+			periods = []
+			tax_year = date_from.year
+			while tax_year <= date_to.year:
+				period = [date(tax_year, 1,1),date(tax_year,12,31)]
+				if period[0] < date_from:
+					period[0] = date_from
+				if period[1] > date_to:
+					period[1] = date_to
+				periods.append(period)
+				tax_year = tax_year + 1
+
+			return periods
 
 
 class Fee(models.Model):
@@ -438,17 +810,25 @@ class Fee(models.Model):
 	business_id = models.IntegerField(null=True)
 	citizen_id = models.IntegerField(null=True)
 	subbusiness_id = models.IntegerField(null=True)
-	prop_title = models.ForeignKey(PropertyTitle, null=True)
+	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_fees')
 	addressee_name = models.CharField(null=True, max_length=100)
 	#business = models.ForeignKey(Business, null=True, blank=True)
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
 	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
-	#qty = models.DecimalField(max_digits=10, decimal_places=2)
-	#rate = models.DecimalField(max_digits=6, decimal_places=2)
+	qty = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+	rate = models.DecimalField(max_digits=6, decimal_places=2, default=0)
 
 	class Meta:
 		db_table = 'jtax_fee'
+
+	def __unicode__(self):
+		if self.category.code == 'land_lease':
+			return "Land Lease %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
+
+		if self.category.code == 'cleaning':
+			return "Cleaning Fee %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
+
 
 	@property
 	def addressee(self):
@@ -457,6 +837,17 @@ class Fee(models.Model):
 		else:
 			return self.addressee_name or None
 
+	def calc_penalty(self, pay_date):
+		penalty_limit = 10000
+		due_date = date(self.date_to.year, 12, 31) # end of year due date
+		months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
+		interest = 0.015 * float(self.amount) * months_late
+		penalty = 0.1 * float(self.amount)
+		if penalty > penalty_limit:
+			return (penalty_limit, interest)
+		else:
+			return (penalty, interest)
+
 	@property
 	def property_owners(self):
 		if self.prop_id:
@@ -464,38 +855,70 @@ class Fee(models.Model):
 		else:
 			return None
 
-	def calc_amount(self):
+	def calc_amount(self, save=True):
 		"""
 		calculate the full amount of the fee owing based on fields
 		"""
+		#import pdb
+		#pdb.set_trace()
+		rate = 0
+
+		if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
+			fee = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
+			if save:
+				self.amount = fee['amount']
+				self.save()
+			return fee['amount']
+
 		if self.category.code == 'land_lease':
-			if self.prop.land_zone.code == 'Agricultural':
+			if self.prop.land_zone.code == 'agricultural':
 				if self.prop.area >= 20000:
-					return 4000
-				else: 
-					return 0
+					rate = 4000
 
 			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
 				if self.prop.land_zone.code == 'residential':
-					return Decimal('80')
-				elif self.prop.land_zone.code == 'commercial':
-					return Decimal('100')
+					rate = 80
 
-			elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31) and self.prop.land_zone.code == 'Residential':
-				if self.prop.land_zone.code == 'residential':
-					return Decimal('150')
 				elif self.prop.land_zone.code == 'commercial':
-					return Decimal('200')
+					rate = 100
 
-			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31) and self.prop.land_zone.code == 'Residential':
+			elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31):
 				if self.prop.land_zone.code == 'residential':
-					return Decimal('80')
+					rate = 150
+
 				elif self.prop.land_zone.code == 'commercial':
-					return Decimal('150')
+					rate = 200
+
+			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31):
+				if self.prop.land_zone.code == 'residential':
+					rate = 80
+
+				elif self.prop.land_zone.code == 'commercial':
+					rate = 150
 
 			else:
-				rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
-				return rate.amount
+				try:
+					rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
+				except Rate.MultipleObjectsReturned:
+					rate = Rate.objects.filter(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
+
+				rate = float(rate.amount)
+
+			self.qty = self.prop.area or 0
+			self.rate = rate or 0
+			self.amount = self.qty * self.rate
+
+			#calculate part year payment
+			if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
+				self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
+
+			self.amount = round(self.amount)
+
+			if save:
+				self.save()
+
+			return self.amount
+
 
 		raise NotImplentedError('rate for %s not found' % self)
 
@@ -570,13 +993,13 @@ class MultipayReceiptPaymentRelation(models.Model):
 class Ownership(models.Model):
 	#owner_type = models.CharField(max_length=20,choices = variables.owner_types, help_text='Owner Types')
 	#owner_id = models.IntegerField(help_text='Owner ID')
-	#asset_type = models.CharField(max_length=20,choices = variables.asset_types, help_text='Asset Types') 
+	#asset_type = models.CharField(max_length=20,choices = variables.asset_types, help_text='Asset Types')
 	#asset_id =  models.IntegerField(help_text='Asset ID')
-	
+
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="assets")
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="assets")
 	owner_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="assets")
-	
+
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="related_name1")
 	asset_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="related_name2")
 	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="related_name3")
@@ -585,7 +1008,7 @@ class Ownership(models.Model):
 
 	date_started = models.DateField(help_text='Date this ownership started')
 	date_ended = models.DateField(help_text='Date this ownership ended', null=True, blank = True)
-	
+
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 
@@ -604,6 +1027,8 @@ class PropertyOwnership(models.Model):
 	stake = models.FloatField(null=True, blank=True)
 	primary = models.NullBooleanField(blank=True)
 	legacy = models.ForeignKey(Ownership, null=True)
+	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
+	modified = models.DateTimeField(auto_now=True, null=True)
 
 
 class BusinessOwnership(models.Model):
@@ -615,6 +1040,8 @@ class BusinessOwnership(models.Model):
 	stake = models.FloatField(null=True, blank=True)
 	primary = models.NullBooleanField(blank=True)
 	legacy = models.ForeignKey(Ownership, null=True)
+	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
+	modified = models.DateTimeField(auto_now=True, null=True)
 
 
 
@@ -678,16 +1105,18 @@ class Rate(models.Model):
 	sector = models.ForeignKey(Sector, null=True)
 
 
+	def get_landlease(self, land_use, dait, village):
+		land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
+		return self.objects.get(date_from__lte=date, date_to__gte=dait, village=village, land_use=land_use, category=land_use)
 
 
-
-
-
-
-
-
-
-
-
-
-
+class RateNotFound(models.Model):
+	fee = models.ForeignKey(Fee, null=True)
+	category = models.ForeignKey(CategoryChoice, related_name='category_not_found')
+	sub_category = models.ForeignKey(CategoryChoice, related_name='sub_cat_not_found')
+	date_from = models.DateField()
+	date_to = models.DateField(null=True)
+	village = models.ForeignKey(Village, null=True)
+	cell = models.ForeignKey(Cell, null=True)
+	sector = models.ForeignKey(Sector, null=True)
+	created = models.DateTimeField(auto_now_add=True)
