@@ -6,9 +6,9 @@ from taxplus.models import Entity, CategoryChoice
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-##############################################################################################    
+##############################################################################################
 # Module
-############################################################################################## 
+##############################################################################################
 
 class Citizen(models.Model):
 	first_name = models.CharField(max_length = 50, help_text = 'First name')
@@ -32,19 +32,21 @@ class Citizen(models.Model):
 	foreign_record_id = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign id from the old DB.')
 	cp_password = models.CharField(max_length=128, help_text='Enter password.', blank = True, null = True)
 	contact_details_confirmed = models.DateField(null=True, blank=True, help_text="dd/mm/yyyy")
+	status_new_id = models.IntegerField(null=True)
+	entity_id = models.IntegerField(null=True)
 
 	def __unicode__(self):
 		if self.middle_name and self.middle_name!='' and self.middle_name !='null':
-			return self.first_name +' '+ self.middle_name +' '+ self.last_name 
+			return self.first_name +' '+ self.middle_name +' '+ self.last_name
 		else:
-			return self.first_name + ' ' + self.last_name 
-	
+			return self.first_name + ' ' + self.last_name
+
 	def getDisplayName(self):
 		if self.middle_name and self.middle_name!='' and self.middle_name !='null':
-			return self.first_name +' '+ self.middle_name +' '+ self.last_name 
+			return self.first_name +' '+ self.middle_name +' '+ self.last_name
 		else:
-			return self.first_name + ' ' + self.last_name 
-	
+			return self.first_name + ' ' + self.last_name
+
 	def save(self, *args, **kwargs):
 		"""
 		set status to be "active" by default
@@ -68,7 +70,7 @@ class Citizen(models.Model):
 		self.middle_name = self.middle_name.strip()
 		self.last_name = self.last_name.strip()
 		models.Model.save(self)
-		
+
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		"""
 		return tailored log message for different actions taken on this citizen
@@ -88,7 +90,7 @@ class Citizen(models.Model):
 						message = message + ","
 					count = count + 1
 					if type(value) is not list:
-						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"       
+						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"
 			if message == "":
 				message = "No change made"
 			message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
@@ -103,17 +105,20 @@ class Citizen(models.Model):
 @receiver(post_save, sender=Citizen)
 def after_citizen_save(sender, instance, created, **kwargs):
 	if created:
-		citizen = instance
-		entity = Entity()
-		entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='individual')
-		entity.citizen_id = citizen.pk
-		if citizen.status_id ==1:
-			entity.status = CategoryChoice.objects.get(category__code='status', code='active')
-		else:
-			entity.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-		entity.contact_details_confirmed = citizen.contact_details_confirmed
-		entity.credit = 0
-		entity.save()
+		self = instance
+		try:
+			entity = Entity.objects.get(identifier=self.citizen_id, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
+
+		except Entity.DoesNotExist:
+			entity = Entity(citizen_id=self.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'), status=active, identifier=self.citizen_id)
+			entity.save()
+
+		if entity.citizen_id != self.pk: # if this citizen is not the one used in the entity record, update status to inactive.
+			# note: use update to avoid infinite recursion
+			Citizen.objects.filter(pk=self.pk).update(status_id=2, status_new_id=2)
+
+		Citizen.objects.filter(pk=self.pk).update(entity_id=entity.pk)
+
 
 
 
