@@ -4,6 +4,6 @@ dev1/wsgi.py
 *.pyc
 */migrations/*
 */no_migrations/*
-taxplus/Kicukiro invoices/*
 */migrations_old/*
+*.zip
 
