@@ -37,7 +37,7 @@ class Boundary(models.Model):
 	"""
 	Boundary type is official by default.
 	If the boundary of a property is mannually drawed from google map, then the boundary type is set to be "manual"
-	"""	
+	"""
 	location_type = models.CharField(max_length = 20, choices = variables.location_types, default='property')
 	parcel_id = models.IntegerField(help_text="Unique ID for this property.",blank=True, null=True)
 	province = models.CharField(max_length = 50 ,null = True, blank = True, help_text="The name of province that associate with this boundary.")
@@ -65,7 +65,7 @@ class Boundary(models.Model):
 		if self.shape_area:
 			return round(self.shape_area * 0.0001, 4)
 		else: return None
-		
+
 
 
 class ProvinceManager(models.Manager):
@@ -79,13 +79,13 @@ class ProvinceManager(models.Manager):
 		else:
 			super(ProvinceManager,self).get_query_set().none()
 
-	
+
 class Province(models.Model):
 	name = models.CharField(max_length=100, help_text="Province name.")
 	code = models.CharField(max_length=2,null=True, blank=True, help_text="Province code.")
 	boundary = models.ForeignKey(Boundary, related_name='province_boundary', null=True, blank=True, help_text="The boundary of province.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
-	
+
 	objects = ProvinceManager()
 	objectsIgnorePermission = models.Manager()
 
@@ -128,7 +128,7 @@ class DistrictManager(models.Manager):
 			else:
 				district_ids = []
 				permissions = user.getPermissions()
-				
+
 				for permission in permissions:
 					if permission.district:
 						if permission.district.id not in district_ids:
@@ -141,19 +141,19 @@ class DistrictManager(models.Manager):
 					return super(DistrictManager,self).get_query_set().none()
 				else:
 					return super(DistrictManager,self).get_query_set().filter(id__in = district_ids)
-				
-			
+
+
 class District(models.Model):
 	name = models.CharField(max_length=100, help_text="District name.")
 	code = models.CharField(max_length=4, null=True, blank=True, help_text="District code.")
 	boundary = models.ForeignKey(Boundary, related_name='district_boundary', null=True, blank=True, help_text="The boundary of district.")
 	province = models.ForeignKey(Province, null=True, blank=True, help_text="The province this district belongs to.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
-	
+
 	objects = DistrictManager()
 	objectsIgnorePermission = models.Manager()
 
-	
+
 	def __unicode__(self):
 		return self.name
 	def getLogMessage(self,old_data=None,new_data=None,action=None):
@@ -180,7 +180,7 @@ class District(models.Model):
 				message = "No change made"
 			message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
 			return message
-	
+
 
 class Council(models.Model):
 	name = models.CharField(max_length=100, help_text="Council name.")
@@ -226,7 +226,7 @@ class SectorManager(models.Manager):
 			else:
 				sector_ids = []
 				permissions = user.getPermissions()
-				
+
 				for permission in permissions:
 					if permission.sector:
 						if permission.sector.id not in sector_ids:
@@ -243,7 +243,7 @@ class SectorManager(models.Manager):
 					return super(SectorManager,self).get_query_set().none()
 				else:
 					return super(SectorManager,self).get_query_set().filter(id__in = sector_ids)
-		
+
 
 class Sector(models.Model):
 	name = models.CharField(max_length=100, help_text="Sector name.")
@@ -255,7 +255,7 @@ class Sector(models.Model):
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	objects = SectorManager()
 	objectsIgnorePermission = models.Manager()
-	
+
 	class Meta:
 		ordering = ['name', 'district__name']
 
@@ -312,7 +312,7 @@ class Village(models.Model):
 		ordering = ['name']
 	def __unicode__(self):
 		return self.name
-	
+
 
 class PropertyManager(models.Manager):
 	def get_query_set(self):
@@ -323,7 +323,7 @@ class PropertyManager(models.Manager):
 class PropertyManager1(models.Manager):
 	def get_query_set(self):
 		return super(PropertyManager1,self).get_query_set()
-	
+
 class LandUse(models.Model):
 	code = models.CharField(max_length=10, null=True, blank=True, default=None)
 	name = models.CharField(max_length = 50)
@@ -343,13 +343,13 @@ class Property(models.Model):
 	#street_no = models.IntegerField(null = True, blank = True, help_text="The street number of property. This could be empty.")
 	#street_name = models.CharField(max_length = 30 ,null = True, blank = True, help_text="The street name of property. This could be empty.")
 	parcel_id = models.IntegerField(help_text="Unique ID for this property.")
-	
+
 	#cell = models.CharField(max_length = 50 ,null = True, blank = True, help_text="The name of cell where this property is located. This could be empty.")
 	cell = models.ForeignKey(Cell, null=True, blank = True, help_text="The cell that this property resides in.")
 	#cell_code = models.CharField(max_length = 50 ,null = True, blank = True, help_text="The code of cell where this property is located. This could be empty.")
 	#village = models.CharField(max_length = 50 ,null = True, blank = True, help_text="The village where this property is located. This could be empty.")
 	village = models.ForeignKey(Village, null=True, blank = True,help_text = "The village that this property resides in.")
-	
+
 	shape_leng = models.DecimalField(max_digits=19,decimal_places = 11,blank=True, null=True)
 	shape_area = models.DecimalField(max_digits=19,decimal_places = 11,blank=True, null=True)
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="The sector that this property belongs to.")
@@ -374,54 +374,6 @@ class Property(models.Model):
 	status = models.ForeignKey(Status, blank = True, null = True, help_text = 'Status')
 	land_use_types = models.ManyToManyField(LandUse)
 	lease_type = models.ForeignKey(LandUse, related_name='leased_property', null=True, blank=True, default=None)
-	
-	def calc_taxes(self, now=None):
-		if self.status.name  not in ('active', 'Active'):
-			return None
-		from jtax.models import PropertyTaxItem, Fee, RentalIncomeTax
-		if not now:
-			now = timezone.make_aware(datetime.now(), timezone.get_default_timezone())
-			current_year = now.year
-		elif type(now) is int:
-			current_year = now
-		elif type(now) is datetime and not now.tzinfo:
-			current_year = timezone.make_aware(now, timezone.get_default_timezone()).year
-		elif type(now) is date:
-			current_year = timezone.make_aware(datetime.combine(now, datetime.min.time()), timezone.get_default_timezone()).year
-	
-		year_start = timezone.make_aware(parser.parse("%s-01-01 00:00:00" % current_year), timezone.get_default_timezone())
-		year_start_date = date(current_year, 1,1)
-		year_end = timezone.make_aware(parser.parse("%s-12-31 23:59:59" % current_year), timezone.get_default_timezone())
-		year_end_date = date(current_year, 12, 31)
-		rental_year_start = year_start - relativedelta(years=1)
-		rental_year_end = year_end - relativedelta(years=1)
-		rental_year_start_date = year_start_date - relativedelta(years=1)
-		rental_year_end_date = year_end - relativedelta(years=1)
-
-		#a property can only have either Fixed Asset Tax or Land Lease Fee
-		if self.is_land_lease:
-			#disable unpaid Fixed Asset and Rental Income for the current year
-			fixed_asset_taxes = PropertyTaxItem.objects.filter(property=self, is_paid=False, date_from__gte=year_start_date, date_to__lte=year_end_date, i_status='active').update(i_status='inactive')
-			fee, created = Fee.objects.get_or_create(fee_type='land_lease', i_status='active', property=self, date_to=year_end_date, defaults=dict(currency='RWF', date_from=year_start_date, period_from=year_start, period_to=year_end, is_paid=False, date_time=now, exempt=self.is_tax_exempt))
-			if not fee.is_paid:
-				fee.calc_landlease()
-		else:
-			# check whether it exists unpaid landlease status before, deactive them
-			Fee.objects.filter(is_paid=False, fee_type='land_lease', property=self,  date_from__gte=year_start_date, date_to__lte=year_end_date, i_status='active').update(i_status='inactive')
-
-			#if there is no PropertyTaxItem for this citizen in the current year, add a new PropertyTaxItem
-			tax, created = PropertyTaxItem.objects.get_or_create(i_status='active', property=self, date_to=year_end_date, defaults=dict(currency='RWF', date_from=year_start_date , period_from=year_start, period_to=year_end, is_paid=False, date_time=now, exempt=self.is_tax_exempt))
-			if not tax.is_paid:
-				tax.calc_tax()
-
-		#if this property is leasing and there is no RentalIncomeTax for this citizen in the current year, add new
-		if self.is_leasing:
-			tax, created = RentalIncomeTax.objects.get_or_create(property=self, date_to=rental_year_end_date, i_status='active', defaults=dict( currency='RWF', date_from=rental_year_start_date, period_from=rental_year_start, period_to=rental_year_end, date_time=now, is_paid=False, exempt=self.is_tax_exempt))
-			if not tax.is_paid:
-				tax.calc_tax()
-		#if property is not leasing, deactive all the unpaid rental income tax item for it
-		else:
-			RentalIncomeTax.objects.filter(is_paid=False, property=self, date_from__gte=rental_year_start_date, date_to__lte=rental_year_end_date, i_status='active').update(i_status='inactive')
 
 
 	def get_sq_m(self):
@@ -436,7 +388,7 @@ class Property(models.Model):
 					self.size_sqm = sq_m
 					self.save()
 					return sq_m
-				
+
 	objects = PropertyManager()
 	objects1 = PropertyManager1()
 	objectsIgnorePermission = models.Manager()
@@ -454,24 +406,24 @@ class Property(models.Model):
 					zeros = zeros + '0'
 				self.plot_id = 'PM' + zeros + plot_id_digit_part
 		super(Property,self).save(*args,**kwargs)
-	
+
 	def __unicode__(self):
 		display_str = ""
 		if self.village:
-			display_str = str(self.parcel_id)  + " " + self.village.name + ", " 
+			display_str = str(self.parcel_id)  + " " + self.village.name + ", "
 		else:
 			display_str = str(self.parcel_id)  + ", "
 		if self.cell:
 			display_str = display_str + self.cell.name + ", "
 		if self.sector:
 			display_str = display_str + self.sector.name + ',' + self.sector.district.name
-			
+
 		return display_str
-	
+
 	def getDisplayName(self):
 		display_str = ""
 		if self.village:
-			display_str = str(self.parcel_id)  + " " + self.village.name + ", " 
+			display_str = str(self.parcel_id)  + " " + self.village.name + ", "
 		else:
 			display_str = str(self.parcel_id)  + ", "
 		if self.cell:
@@ -515,12 +467,12 @@ class Property(models.Model):
 	def getTaxExemptProofUrl(self):
 		if self.is_tax_exempt:
 			proof_media = self.media_set.filter(i_status='active',file_name__startswith='Tax_Exempt_Proof').order_by('-id')[0:1]
-			if proof_media:		
+			if proof_media:
 				return '/admin/media/media/preview/' + str(proof_media[0].id) + '/'
 			#settings.MEDIA_URL + 'property/' + self.id + '/Tax_Exempt_Proof.jpg'
 		else:
 			return None
-	
+
 	@property
 	def declaredValues(self):
 		return self.declaredvalue_set.order_by('-date_time').all()
@@ -533,7 +485,7 @@ class Property(models.Model):
 	def declaredValue(self):
 		try: return self.declaredvalue_set.order_by('-date_time').all()[0]
 		except IndexError: return None
-	
+
 	@property
 	def outstanding_taxes(self):
 		taxes = []
@@ -547,11 +499,3 @@ class Property(models.Model):
 			taxes.append(tax)
 
 		return taxes
-
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Property)
-def after_save(sender, instance, **kwargs):
-	instance.calc_taxes()
