@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import date, datetime
 from decimal import Decimal
+from django.db.models import Sum
 
 
 class Boundary(models.Model):
@@ -218,40 +219,37 @@ class Setting(models.Model):
 			hectares = (size * Decimal('0.0001')).quantize(Decimal('.0001'))
 			if hectares > 35:
 				land_use_types = 'Agricultural(>35 ha)'
+
 			elif hectares >= 2 and hectares <= 35:
 			   land_use_types = 'Agricultural(2-35 ha)'
+
 			elif hectares > 2:
-				land_use_types = 'Agricultural(>2 ha)'
+				land_use_types = ('Agricultural(>2 ha)', 'Agriculture (>2 hectares)')
+
 		elif land_use_type in ('Residential', 'residential'):
-			land_use_types = 'Residential'
+			land_use_types = ('Residential', 'Urban Area')
+
 		elif land_use_type in ('Commericial','Commercial', 'commercial'):
-			land_use_types = 'Commercial'
+			land_use_types = ('Commercial', 'Trading Centre', 'Industries')
+
 		elif land_use_type in ('Industrial', 'industrial'):
 			land_use_types = 'Industries'
+
 		elif land_use_type == 'Quarry Purpose':
 			land_use_types = 'Quarries Exploitation'
-		formula_data = {}
-		tax = Decimal(0)
-		current_year = date_from.year
-		total_days_in_period = Decimal((date(current_year, 12, 31) - date(current_year, 1, 1)).days + 1)
-		if land_use_types:
-			tax_periods = cls.getTaxPeriods(['land_lease','land_lease_fee'], date_from, date_to, setting_name='area_and_fee_matches', sub_type=land_use_types, sector=sector, cell=cell, village=village, *args, **kwargs)
-		else:
-			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee applicable' })]
-		if not tax_periods:
-			tax_periods = [(date_from, date_to, { 'value':Decimal(0), 'region':'No Fee Found' })]
-		formula_data = {}
-		for date_from, date_to, values in tax_periods:
-			period = (date_from, date_to)
-			rate = values['value']
-			days_in_period = (date_to - date_from).days + 1
-			amount = (Decimal(days_in_period) / Decimal(total_days_in_period)  * rate * size).quantize(Decimal('0.1'))
-			formula_data[period] = { 'days':days_in_period, 'tax_rate':rate, 'amount':amount, 'size':size, 'region':values['region'] }
-			tax += amount
 
-		due_date = date_to
-		tax = Decimal(int(tax))
-		return {'amount':tax, 'due':due_date, 'due_date':due_date, 'days':total_days_in_period, 'formula_data':formula_data }
+		settings = Setting.objects.filter(valid_from__lte=date_to).filter(Q(valid_to__gte=date_from) | Q(valid_to__isnull=True)).filter(tax_fee_name='land_lease_fee', sub_type__in=land_use_types).\
+			filter(Q(district=sector.district) | Q(sector=sector) | Q(cell=cell) | Q(sector=sector) | Q(village=village)).\
+			order_by('-village').order_by('-cell').order_by('-sector').order_by('-district').order_by('-valid_from')
+
+		if settings:
+			return float(settings[0].value)
+
+		else:
+			print("NOT FOUND: date from: %s, date to: %s, land_use_types: %s, village: %s, cell: %s, sector: %s" % (date_from, date_to, land_use_types, village, cell, sector))
+			import pdb
+			pdb.set_trace()
+
 
 
 	@classmethod
@@ -569,6 +567,7 @@ class Business(models.Model):
 			return None
 
 
+
 class SubBusiness(models.Model):
 	branch = models.CharField(max_length=100,help_text='Branch Name')
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="The sector where this branch is located.")
@@ -807,9 +806,9 @@ class Fee(models.Model):
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
 	submit_details = models.CharField(max_length=500, null=True, blank=True)
 	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
-	business_id = models.IntegerField(null=True)
-	citizen_id = models.IntegerField(null=True)
-	subbusiness_id = models.IntegerField(null=True)
+	business = models.ForeignKey(Business, null=True, related_name='business_fees')
+	citizen = models.ForeignKey(Citizen, null=True, related_name='citizen_fees')
+	subbusiness = models.ForeignKey(SubBusiness, null=True)
 	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_fees')
 	addressee_name = models.CharField(null=True, max_length=100)
 	#business = models.ForeignKey(Business, null=True, blank=True)
@@ -828,6 +827,18 @@ class Fee(models.Model):
 
 		if self.category.code == 'cleaning':
 			return "Cleaning Fee %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
+
+
+	def get_paid_amount(self):
+		paid = self.fee_payments.filter(amount__gt=0, i_status='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
+		total = paid['amount'] or 0
+		fines = paid['fines'] or 0
+		capital_amount = total - fines
+		return capital_amount, fines
+
+
+	def get_remaining_amount(self):
+		return (self.amount - self.get_paid_amount()[0])
 
 
 	@property
@@ -855,27 +866,28 @@ class Fee(models.Model):
 		else:
 			return None
 
+
 	def calc_amount(self, save=True):
 		"""
 		calculate the full amount of the fee owing based on fields
 		"""
-		#import pdb
-		#pdb.set_trace()
-		rate = 0
-
-		if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
-			fee = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
-			if save:
-				self.amount = fee['amount']
-				self.save()
-			return fee['amount']
-
 		if self.category.code == 'land_lease':
+			rate = 0
 			if self.prop.land_zone.code == 'agricultural':
 				if self.prop.area >= 20000:
-					rate = 4000
+					return 4000
+				else:
+					return 0
 
-			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
+			if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
+				amount = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
+				if save:
+					self.amount = amount
+					self.save()
+				return amount
+
+
+			if self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
 				if self.prop.land_zone.code == 'residential':
 					rate = 80
 
@@ -890,8 +902,11 @@ class Fee(models.Model):
 					rate = 200
 
 			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31):
-				if self.prop.land_zone.code == 'residential':
-					rate = 80
+				if self.prop.land_zone.code == 'residential' and self.prop.village:
+					if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
+						rate = 30
+					else:
+						rate = 80
 
 				elif self.prop.land_zone.code == 'commercial':
 					rate = 150
@@ -907,6 +922,9 @@ class Fee(models.Model):
 			self.qty = self.prop.area or 0
 			self.rate = rate or 0
 			self.amount = self.qty * self.rate
+			self.remaining_amount = self.get_remaining_amount()
+			if self.remaining_amount <= 0:
+				self.is_paid = True
 
 			#calculate part year payment
 			if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
@@ -1104,6 +1122,9 @@ class Rate(models.Model):
 	cell = models.ForeignKey(Cell, null=True)
 	sector = models.ForeignKey(Sector, null=True)
 
+	def __unicode__(self):
+		return "category:%s period:%s-%s village:%s cell:%s sector:%s rate:%s" % (self.category, self.date_from, self.date_to, self.village, self.cell, self.sector, self.amount)
+
 
 	def get_landlease(self, land_use, dait, village):
 		land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
@@ -1120,3 +1141,4 @@ class RateNotFound(models.Model):
 	cell = models.ForeignKey(Cell, null=True)
 	sector = models.ForeignKey(Sector, null=True)
 	created = models.DateTimeField(auto_now_add=True)
+
