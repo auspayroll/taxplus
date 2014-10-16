@@ -95,8 +95,8 @@ def access_content_type(request, content_type_name, action = None, content_type_
 		return tax_default(request, action, content_type_name1, obj_name, obj_id, part)
 
 	raise Http404
-	
-	
+
+
 @login_required
 def construction(request):
 	#return HttpResponse('Unauthorized', status=401)
@@ -106,8 +106,8 @@ def construction(request):
 @login_required
 def incomplete_payment_default(request, action=None, content_type_name1=None, obj_id=None):
 	"""
-	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete 
-	"""	
+	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete
+	"""
 
 	if not request.session.get('user') or not type(request.session.get('user')) is PMUser:
 		return login(request);
@@ -125,7 +125,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 			payments = IncompletePayment.objects.filter(i_status='active').order_by('-date_time').select_related('user','district','sector','cell','village','business','subbusiness')
 			if request.GET.get('print'):
 				return PaymentMapper.generateIncompletePaymentPdf(payments)
-			
+
 			paginator = Paginator(payments, records_in_page)
 			try:
 				payment_list = paginator.page(page)
@@ -146,12 +146,12 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 			#search_incomplete_payment_form = None
 			return render_to_response('tax/tax_tax_incomplete_payment_list.html', {\
 								'payments':payment_list, 'search_incomplete_payment_form':search_incomplete_payment_form, 'action':'search','pagination_url':request.get_full_path().rsplit('?&page')[0] + '?'},
-								context_instance=RequestContext(request))	
+								context_instance=RequestContext(request))
 	elif action == 'search':
 		search_incomplete_payment_form = incomplete_payment_search_form(request.GET)
 		kwargs = {'i_status':'active'}
 		payments = None
-		payment_list = []		
+		payment_list = []
 		if search_incomplete_payment_form.is_valid():
 			conditions = search_incomplete_payment_form.cleaned_data
 			for key,value in conditions.iteritems():
@@ -206,7 +206,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 
 		return render_to_response('tax/tax_tax_incomplete_payment_list.html', {'payments':payment_list, 'search_incomplete_payment_form':search_incomplete_payment_form,'pagination_url':request.get_full_path().rsplit('&page')[0]},
 						context_instance=RequestContext(request))
-		
+
 	elif action == 'add':
 		# add incomplete payment +++
 		if request.method == 'POST':
@@ -234,13 +234,13 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 			search_incomplete_payment_form = incomplete_payment_search_form()
 			form = IncompletePaymentModelForm()
 			return render_to_response('tax/tax_tax_incomplete_payment_list.html', {'form':form, 'search_incomplete_payment_form':search_incomplete_payment_form,'action':'add'},
-						context_instance=RequestContext(request))			
+						context_instance=RequestContext(request))
 	elif action == 'change':
 		if obj_id != None:
 			obj = get_object_or_404(IncompletePayment,pk=obj_id)
 			form = IncompletePaymentModelForm(instance = obj)
 			search_incomplete_payment_form = incomplete_payment_search_form()
-			
+
 			if request.method == 'POST':
 				form = IncompletePaymentModelForm(request.POST, instance = obj)
 				old_data = model_to_dict(obj)
@@ -273,7 +273,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 			except Exception:
 				raise Http404
 			medias = Media.objects.filter(incomplete_payment = incomplete_payment)
-			
+
 			if request.method != 'POST':
 				form = None
 				if incomplete_payment.tax_type == 'cleaning_fee':
@@ -288,7 +288,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 					form = finalize_trading_license_tax_form(instance = incomplete_payment)
 				elif incomplete_payment.tax_type == 'land_lease_fee':
 					form = finalize_land_lease_fee_form(instance = incomplete_payment)
-				
+
 				incomplete_payment = add_extra_info_to_incomplete_payment_for_invoince(incomplete_payment)
 				return render_to_response('tax/tax_tax_incomplete_payment_invoice.html', {'form':form,'incomplete_payment':incomplete_payment,'media':medias,},
 						context_instance=RequestContext(request))
@@ -296,7 +296,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 				if incomplete_payment.tax_type == 'land_lease_fee':
 					form = finalize_land_lease_fee_form(request.POST)
 					if form.is_valid():
-						incomplete_payment = IncompletePayment.objects.get(pk = incomplete_payment.id)						
+						incomplete_payment = IncompletePayment.objects.get(pk = incomplete_payment.id)
 						tax_amount = 0
 						property = None
 						if form.cleaned_data['village']:
@@ -340,12 +340,12 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								fee.remaining_amount = 0
 							else:
 								fee.is_paid = False
-								fee.remaining_amount = base_amount + late_fee - incomplete_payment.paid_amount 
+								fee.remaining_amount = base_amount + late_fee - incomplete_payment.paid_amount
 
 						fee.date_time = datetime.now()
 						fee.staff_id = request.session['user'].id
 						fee.save()
-						
+
 						#Create a jtax_payfee record
 						pay_fee = PayFee()
 						pay_fee.fee = fee
@@ -363,7 +363,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						if late_fee:
 							pay_fee.fine_amount = late_fee
 						pay_fee.save()
-						
+
 						#Create media files for fee
 						if medias:
 							for media in medias:
@@ -374,7 +374,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								media.payment_id = pay_fee.id
 								media.i_status = 'active'
 								media.save()
-						
+
 						# set incomplete payment to be inactive
 						incomplete_payment.i_status = 'inactive'
 						incomplete_payment.save()
@@ -431,11 +431,11 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								fee.period_to = period_to_wtz
 								fee.currency = 'RWF'
 								fee.fee_type='cleaning'
-							
+
 								period_from_date_time = datetime(period_from.year,period_from.month,period_from.day,0,0,0)
 								period_from_date_time = period_from_date_time + relativedelta(days = +4)
 								fee.due_date = period_from_date_time.date()
-								
+
 								fee.i_status = 'active'
 
 							late_fee = TaxMapper.get_late_fee_for_incomplete_payment(incomplete_payment, base_amount)
@@ -452,12 +452,12 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									#business.save()
 								else:
 									fee.is_paid = False
-									fee.remaining_amount = fee.amount + late_fee - paid_amount									
+									fee.remaining_amount = fee.amount + late_fee - paid_amount
 
 							fee.date_time = datetime.now()
 							fee.staff_id = request.session['user'].id
 							fee.save()
-							
+
 							#Create a jtax_payfee record
 							pay_fee = PayFee()
 							pay_fee.business_id = business.id
@@ -474,9 +474,9 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							if incomplete_payment.paid_date:
 								pay_fee.paid_date = incomplete_payment.paid_date
 							if late_fee:
-								pay_fee.fine_amount = late_fee 
+								pay_fee.fine_amount = late_fee
 							pay_fee.save()
-							
+
 							#Create media files for fee
 							if medias:
 								for media in medias:
@@ -487,7 +487,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									media.payment_id = pay_fee.id
 									media.i_status = 'active'
 									media.save()
-							
+
 							# set incomplete payment to be inactive
 							incomplete_payment.i_status = 'inactive'
 							incomplete_payment.save()
@@ -546,11 +546,11 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								fee.period_to = period_to_wtz
 								fee.currency = 'RWF'
 								fee.fee_type='market'
-							
+
 								period_from_date_time = datetime(period_from.year,period_from.month,period_from.day,0,0,0)
 								period_from_date_time = period_from_date_time + relativedelta(days = +4)
 								fee.due_date = period_from_date_time.date()
-								
+
 								fee.i_status = 'active'
 
 							late_fee = TaxMapper.get_late_fee_for_incomplete_payment(incomplete_payment, base_amount)
@@ -567,12 +567,12 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									#business.save()
 								else:
 									fee.is_paid = False
-									fee.remaining_amount = fee.amount + late_fee - paid_amount									
+									fee.remaining_amount = fee.amount + late_fee - paid_amount
 
 							fee.date_time = datetime.now()
 							fee.staff_id = request.session['user'].id
 							fee.save()
-							
+
 							#Create a jtax_payfee record
 							pay_fee = PayFee()
 							pay_fee.business_id = business.id
@@ -589,9 +589,9 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							if incomplete_payment.paid_date:
 								pay_fee.paid_date = incomplete_payment.paid_date
 							if late_fee:
-								pay_fee.fine_amount = late_fee 
+								pay_fee.fine_amount = late_fee
 							pay_fee.save()
-							
+
 							#Create media files for fee
 							if medias:
 								for media in medias:
@@ -602,7 +602,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									media.payment_id = pay_fee.id
 									media.i_status = 'active'
 									media.save()
-							
+
 							# set incomplete payment to be inactive
 							incomplete_payment.i_status = 'inactive'
 							incomplete_payment.save()
@@ -627,14 +627,14 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						rental_income = form.cleaned_data['sector']
 						bank_interest_paid = form.cleaned_data['sector']
 						late_fee_amount = 0
-						
+
 						property = None
 						if form.cleaned_data['village']:
 							property = Property.objects.get(sector = incomplete_payment.sector, cell = incomplete_payment.cell, village= incomplete_payment.village, parcel_id  = incomplete_payment.parcel_id)
 						else:
 							property = Property.objects.get(sector = incomplete_payment.sector, cell = incomplete_payment.cell, parcel_id  = incomplete_payment.parcel_id)
-						base_amount = TaxMapper.get_base_amount_for_incomplete_payment(incomplete_payment, {'rental_income':rental_income,'bank_interest_paid':bank_interest_paid,}) 
-						
+						base_amount = TaxMapper.get_base_amount_for_incomplete_payment(incomplete_payment, {'rental_income':rental_income,'bank_interest_paid':bank_interest_paid,})
+
 						#Create a jtax_fee record or update existing fee record
 						period_from_wtz = timezone.make_aware(dateutil.parser.parse(incomplete_payment.period_from.strftime('%Y-%m-%d') + ' 00:00:00'), timezone.get_default_timezone())
 						period_to_wtz = timezone.make_aware(dateutil.parser.parse(incomplete_payment.period_to.strftime('%Y-%m-%d') + ' 23:59:59'), timezone.get_default_timezone())
@@ -659,8 +659,8 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						tax_item.i_status = 'active'
 						tax_item.submit_date = incomplete_payment.paid_date
 						tax_item.amount = base_amount
-						
-						
+
+
 						boundary_date = datetime(2013,4,1,0,0,0).date()
 						if incomplete_payment.period_to < boundary_date or incomplete_payment.period_from < boundary_date:
 							tax_item.is_paid = True
@@ -676,7 +676,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								tax_item.remaining_amount = 0
 
 						tax_item.save()
-						
+
 						# create jtax_payrentalincometax record
 						pay_tax_item = PayRentalIncomeTax()
 						pay_tax_item.rental_income_tax = tax_item
@@ -691,7 +691,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						pay_tax_item.manual_receipt = incomplete_payment.sector_receipt
 						pay_tax_item.fine_amount = late_fee_amount
 						pay_tax_item.save()
-						
+
 						#Create media files for fee
 						if medias:
 							for media in medias:
@@ -702,7 +702,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								media.payment_id = pay_tax_item.id
 								media.i_status = 'active'
 								media.save()
-						
+
 						# set incomplete payment to be inactive
 						incomplete_payment.i_status = 'inactive'
 						incomplete_payment.save()
@@ -719,7 +719,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						incomplete_payment = add_extra_info_to_incomplete_payment_for_invoince(incomplete_payment)
 						return render_to_response('tax/tax_tax_incomplete_payment_invoice.html', {'form':form,'incomplete_payment':incomplete_payment,'media':medias,},
 												context_instance=RequestContext(request))
-				
+
 				elif incomplete_payment.tax_type == 'fixed_asset':
 					form = finalize_fixed_asset_tax_form(request.POST)
 					if form.is_valid():
@@ -731,11 +731,11 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							property = Property.objects.get(sector = incomplete_payment.sector, cell = incomplete_payment.cell, village= incomplete_payment.village, parcel_id  = incomplete_payment.parcel_id)
 						else:
 							property = Property.objects.get(sector = incomplete_payment.sector, cell = incomplete_payment.cell, parcel_id  = incomplete_payment.parcel_id)
-						base_amount = TaxMapper.get_base_amount_for_incomplete_payment(incomplete_payment, {'declared_value':declared_value,}) 
-						
+						base_amount = TaxMapper.get_base_amount_for_incomplete_payment(incomplete_payment, {'declared_value':declared_value,})
+
 						period_from_wtz = timezone.make_aware(dateutil.parser.parse(incomplete_payment.period_from.strftime('%Y-%m-%d') + ' 00:00:00'), timezone.get_default_timezone())
 						period_to_wtz = timezone.make_aware(dateutil.parser.parse(incomplete_payment.period_to.strftime('%Y-%m-%d') + ' 23:59:59'), timezone.get_default_timezone())
-						
+
 						taxes = PropertyTaxItem.objects.filter(property=property,period_from = period_from_wtz,period_to=period_to_wtz,i_status='active')
 						if taxes:
 							tax_item = taxes[0]
@@ -766,12 +766,12 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							late_fee_amount = TaxMapper.get_late_fee_for_incomplete_payment(incomplete_payment, base_amount)
 							if late_fee_amount + base_amount > incomplete_payment.paid_amount:
 								tax_item.is_paid = False
-								tax_item.remaining_amount = late_fee_amount + base_amount - incomplete_payment.paid_amount 
+								tax_item.remaining_amount = late_fee_amount + base_amount - incomplete_payment.paid_amount
 							else:
 								tax_item.is_paid = True
 								tax_item.remaining_amount = 0
 						tax_item.save()
-						
+
 						# create jtax_payrentalincometax record
 						pay_tax_item = PayFixedAssetTax()
 						pay_tax_item.property_tax_item = tax_item
@@ -786,7 +786,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						pay_tax_item.manual_receipt = incomplete_payment.sector_receipt
 						pay_tax_item.fine_amount = late_fee_amount
 						pay_tax_item.save()
-						
+
 						#Create media files for fee
 						if medias:
 							for media in medias:
@@ -797,7 +797,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								media.payment_id = pay_tax_item.id
 								media.i_status = 'active'
 								media.save()
-						
+
 						# set incomplete payment to be inactive
 						incomplete_payment.i_status = 'inactive'
 						incomplete_payment.save()
@@ -828,7 +828,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 						bank_receipt = form.cleaned_data['bank_receipt']
 						turnover = form.cleaned_data['turnover']
 						date_boundary = datetime.strptime('01/04/2013','%d/%m/%Y').date()
-						
+
 						base_amount = TaxMapper.get_base_amount_for_incomplete_payment(incomplete_payment,{'turnover':turnover,})
 						if business:
 
@@ -846,7 +846,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									incomplete_payment = add_extra_info_to_incomplete_payment_for_invoince(incomplete_payment)
 									return render_to_response('tax/tax_tax_incomplete_payment_invoice.html', {'form':form,'incomplete_payment':incomplete_payment,'media':medias,},
 															context_instance=RequestContext(request))
-														
+
 							else:
 								tax_item = TradingLicenseTax()
 								tax_item.period_from = period_from_wtz
@@ -854,7 +854,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 								tax_item.currency = 'RWF'
 								tax_item.due_date = datetime(period_from.year + 1,3,31,23,59,59).date()
 								tax_item.i_status = 'active'
-								#Create a jtax_fee record								
+								#Create a jtax_fee record
 								if subbusiness:
 									tax_item.subbusiness = subbusiness
 								else:
@@ -878,7 +878,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							tax_item.date_time = datetime.now()
 							tax_item.staff_id = request.session['user'].id
 							tax_item.save()
-							
+
 							#Create a jtax_payfee record
 							pay_tax_item = PayTradingLicenseTax()
 							pay_tax_item.business_id = business.id
@@ -895,8 +895,8 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 							if incomplete_payment.paid_date:
 								pay_tax_item.paid_date = incomplete_payment.paid_date
 							pay_tax_item.save()
-							
-							
+
+
 							#Create media files for fee
 							if medias:
 								for media in medias:
@@ -907,7 +907,7 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 									media.payment_id = pay_tax_item.id
 									media.i_status = 'active'
 									media.save()
-							
+
 							# set incomplete payment to be inactive
 							incomplete_payment.i_status = 'inactive'
 							incomplete_payment.save()
@@ -933,8 +933,8 @@ def incomplete_payment_default(request, action=None, content_type_name1=None, ob
 @login_required
 def pending_payment_default(request, action=None, content_type_name1=None, obj_id=None):
 	"""
-	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete 
-	"""	
+	This funcion manages the following actions related to users. 1)add, 2)change, 3)delete
+	"""
 	if not request.session.get('user') or not type(request.session.get('user')) is PMUser:
 		return login(request);
 
@@ -1026,7 +1026,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 					elif tax_type_obj == 'rental_income':
 						payments = PayRentalIncomeTaxMapper.getPayRentalIncomeTaxByConditions(conditions, remaining_limit)
 					elif tax_type_obj == 'trading_license':
-						payments = PayTradingLicenseTaxMapper.getPayTradingLicenseTaxByConditions(conditions, remaining_limit)						
+						payments = PayTradingLicenseTaxMapper.getPayTradingLicenseTaxByConditions(conditions, remaining_limit)
 					else:
 						conditions_new = copy.deepcopy(conditions)
 						conditions_new['fee_type'] = tax_type_obj
@@ -1054,8 +1054,8 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 						pending_payments = paginator.page(paginator.num_pages)
 
 					payments_found = formatPaymentsForDisplay(request,pending_payments.object_list)
-		
-		else:			
+
+		else:
 			pagination_url = request.get_full_path().rsplit('?&page')[0] + '?'
 			search_pending_payment_form = pending_payment_search_form()
 			payments_found = []
@@ -1090,7 +1090,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 			payments_found = formatPaymentsForDisplay(request, payments_found)
 		return render_to_response('tax/tax_tax_pending_payment_list.html', {\
 							'payments':payments_found, 'page':pending_payments, 'search_pending_payment_form':search_pending_payment_form, 'action':'search','pagination_url':pagination_url,'limit':limit },
-							context_instance=RequestContext(request))			
+							context_instance=RequestContext(request))
 
 	elif action == 'approve' or action == 'reject':
 		if request.GET.get('type', None) != None and request.GET.get('id', None) != None:
@@ -1099,7 +1099,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 			property = None
 			subbusiness = None
 
-			#remove pending payment 
+			#remove pending payment
 			pending_payment = get_object_or_404(PendingPayment,tax_type=request.GET.get('type'),payment_id=request.GET.get('id'),i_status='active')
 			if pending_payment.tax_type == 'fixed_asset':
 				payment = get_object_or_404(PayFixedAssetTax,id=pending_payment.payment_id,i_status='pending')
@@ -1131,7 +1131,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 				#if approve payment, set pending record to inactive,set payment status to active and update tax to paid
 				pending_payment.i_status = 'inactive'
 				pending_payment.save()
-				
+
 				payment.i_status = 'active'
 				payment.note = payment.note + "\n Pending payment approved by " + user.username
 				payment.save()
@@ -1167,7 +1167,7 @@ def pending_payment_default(request, action=None, content_type_name1=None, obj_i
 			else:
 				return HttpResponseRedirect('/admin/tax/pending_payment/')
 		else:
-			raise Http404		
+			raise Http404
 
 	else:
 		raise Http404
@@ -1442,13 +1442,13 @@ def search(request):
 @login_required
 def verify_target(request, obj_name, obj_id, part):
 	form = verify_target_for_pay_form()
-	
+
 	results = []
 	if request.method == 'POST':
 		POST = request.POST
-		form = verify_target_for_pay_form(POST)		
+		form = verify_target_for_pay_form(POST)
 		type = None
-		
+
 		if form.is_valid():
 			if POST.has_key('pay_citizen_name'):
 				type = 'citizen'
@@ -1530,7 +1530,7 @@ def verify_target(request, obj_name, obj_id, part):
 						properties.append(property)
 				else:
 					properties = PropertyMapper.getPropertiesByConditions({'sector':sector,'cell':cell,'parcel_id':parcel_id,})
-				
+
 				form = verify_target_for_pay_form(initial={"pay_district":district,"pay_sector":sector,"pay_cell":cell,"pay_parcel_id":parcel_id,"pay_upi":upi,})
 				if len(properties) == 0:
 					message = "No property found! <a href='/admin/property/property/add_property/?redirect=admin/tax/tax/verify_target/'>Add a new property</a> now!"
@@ -1589,7 +1589,7 @@ def tax_business(request, obj_id, part):
 				else:
 					i.staff = staff.getFullName()
 				i.receipt_no = PaymentMapper.generateInvoiceId('trading_license',last_payment)
-				paid_taxes.append(i)		
+				paid_taxes.append(i)
 
 		fees = Fee.objects.filter(business=business,is_paid=True,i_status__exact="active").order_by('date_time')
 		if fees:
@@ -1597,7 +1597,7 @@ def tax_business(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = i.fee_type.title() + ' Fee '
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
@@ -1615,7 +1615,7 @@ def tax_business(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = i.fee_type.replace("_"," ").title() + " - " + i.fee_sub_type.title()
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
@@ -1656,7 +1656,7 @@ def tax_business(request, obj_id, part):
 					conditions['period_to'] = timezone.make_aware(datetime.combine(period_to, time(23,59,59)), timezone.get_default_timezone())
 				LogMapper.createLog(request,action="search", search_object_class_name="log", search_conditions = {"username": username,'business_id':business.id,"period_from":period_from, "period_to":period_to})
 		logs = LogMapper.getLogsByConditions(conditions)
-		if logs:			
+		if logs:
 			logs = list(logs)
 			logs.sort(key=lambda x:x.date_time, reverse=True)
 			for log in logs:
@@ -1706,9 +1706,9 @@ def tax_business(request, obj_id, part):
 				new_data = model_to_dict(business)
 				LogMapper.createLog(request,object=business, old_data=old_data, new_data=new_data,business=business, action="change")
 				success_message = 'Business updated successfully.'
-				messages.success(request, success_message) 
+				messages.success(request, success_message)
 				if request.GET.get('fee_redirect'):
-					return HttpResponseRedirect(reverse("business_fees", args=[business.pk]))	
+					return HttpResponseRedirect(reverse("business_fees", args=[business.pk]))
 
 				return HttpResponseRedirect('/admin/tax/tax/business/%s/edit_business/' % business.pk)
 
@@ -1742,7 +1742,7 @@ def tax_citizen(request, obj_id, part):
 	historical_fees = Historical.objects.filter(citizen = citizen).order_by('-period_to')
 	if part == 'fees':
 		request.session['tax_url']  = request.get_full_path()
-		fee_summary = getFeeSummary(request, citizen)	
+		fee_summary = getFeeSummary(request, citizen)
 		return render_to_response('tax/tax_tax_citizen_fees.html',{'citizen':citizen,'fees':fee_summary,},context_instance=RequestContext(request))
 	if part == 'miscellaneous_fees':
 		return displayPayMiscellaneousFeePage(request, citizen)
@@ -1764,14 +1764,14 @@ def tax_citizen(request, obj_id, part):
 						i.type = 'Fixed Asset Tax '+ str(i.due_date.year)
 						if not i.remaining_amount:
 							i.remaining_amount = 0
-					
+
 						staff = last_payment.staff
 						if not staff:
 							i.staff = None
 						else:
 							i.staff = staff.getFullName()
-					
-					
+
+
 						if i.is_paid:
 							i.is_paid = "Fully paid"
 						else:
@@ -1793,8 +1793,8 @@ def tax_citizen(request, obj_id, part):
 							i.staff = None
 						else:
 							i.staff = staff.getFullName()
-					
-					
+
+
 						if not i.remaining_amount:
 							i.remaining_amount = 0
 						if i.is_paid:
@@ -1835,7 +1835,7 @@ def tax_citizen(request, obj_id, part):
 						last_payment = i.payments.order_by('-pk')[0]
 						i.paid_date = last_payment.date_time
 						i.type = i.fee_type.replace("_"," ").title() + " - " + i.fee_sub_type.title()
-				
+
 						staff = last_payment.staff
 						if not staff:
 							i.staff = None
@@ -1864,7 +1864,7 @@ def tax_citizen(request, obj_id, part):
 						else:
 							i.staff = staff.getFullName()
 						i.receipt_no = PaymentMapper.generateInvoiceId('trading_license',last_payment)
-						paid_taxes.append(i)		
+						paid_taxes.append(i)
 				fees = Fee.objects.filter(business=business_id,is_paid=True,i_status__exact="active").order_by('date_time')
 				if fees:
 					for i in fees:
@@ -1888,7 +1888,7 @@ def tax_citizen(request, obj_id, part):
 						last_payment = i.payments.order_by('-pk')[0]
 						i.paid_date = last_payment.date_time
 						i.type = i.fee_type.replace("_"," ").title() + " - " + i.fee_sub_type.title()
-				
+
 						staff = last_payment.staff
 						if not staff:
 							i.staff = None
@@ -1907,7 +1907,7 @@ def tax_citizen(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = i.fee_type.replace("_"," ").title() + " - " + i.fee_sub_type.title()
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
@@ -1994,7 +1994,7 @@ def tax_citizen(request, obj_id, part):
 					conditions['period_to'] = timezone.make_aware(datetime.combine(period_to, time(23,59,59)), timezone.get_default_timezone())
 				LogMapper.createLog(request,action="search", search_object_class_name="log", search_conditions = {"username": username,"upi":upi,'citizenid':citizen_id,"period_from":period_from, "period_to":period_to})
 		logs = LogMapper.getLogsByConditions(conditions)
-		if logs:			
+		if logs:
 			logs = list(logs)
 			logs.sort(key=lambda x:x.date_time, reverse=True)
 			for log in logs:
@@ -2085,13 +2085,13 @@ def tax_property(request, obj_id, part):
 				i.type = 'Fixed Asset Tax '+ str(i.due_date.year)
 				if not i.remaining_amount:
 					i.remaining_amount = 0
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
 				else:
 					i.staff = staff.getFullName()
-				
+
 				if i.is_paid:
 					i.is_paid = "Fully paid"
 				else:
@@ -2107,13 +2107,13 @@ def tax_property(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = 'Rental Income Tax '+ str(i.due_date.year)
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
 				else:
 					i.staff = staff.getFullName()
-				
+
 				if not i.remaining_amount:
 					i.remaining_amount = 0
 				if i.is_paid:
@@ -2131,13 +2131,13 @@ def tax_property(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = i.fee_type.title() + ' Fee '
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
 				else:
 					i.staff = staff.getFullName()
-				
+
 				if not i.remaining_amount:
 					i.remaining_amount = 0
 				if i.is_paid:
@@ -2156,7 +2156,7 @@ def tax_property(request, obj_id, part):
 				last_payment = i.payments.order_by('-pk')[0]
 				i.paid_date = last_payment.date_time
 				i.type = i.fee_type.replace("_"," ").title() + " - " + i.fee_sub_type.title()
-				
+
 				staff = last_payment.staff
 				if not staff:
 					i.staff = None
@@ -2256,7 +2256,7 @@ def getFeeSummary(request, obj):
 @login_required
 def getTaxSummary(request):
 	tax_summary = []
-	
+
 	#start checking fixed asset taxes & rental income taxes
 	property_ids = request.session.get('property_ids')
 	if property_ids:
@@ -2265,7 +2265,7 @@ def getTaxSummary(request):
 
 		#start checking rental income taxes
 		rental_income_taxes = RentalIncomeTax.objects.filter(property__id__in=property_ids,is_paid=False,i_status='active').order_by('-due_date')
-		tax_summary = tax_summary + formatTaxesForDisplay(request,'rental_income',rental_income_taxes)		
+		tax_summary = tax_summary + formatTaxesForDisplay(request,'rental_income',rental_income_taxes)
 
 
 	#start checking trading license taxes
@@ -2317,7 +2317,7 @@ def formatTaxesForDisplay(request, type, taxes):
 				tax['name'] = 'Trading License Tax '
 				if i.due_date:
 					tax['name'] = tax['name'] + str(Common.localizeDate(i.period_from).year)
-					
+
 				if i.subbusiness:
 					tax['branch'] = i.subbusiness.branch
 				else:
@@ -2418,12 +2418,12 @@ def formatPaymentsForDisplay(request, payments):
 			if type(payment) is PayFixedAssetTax:
 				tax = payment.property_tax_item
 				tax_type = 'fixed_asset'
-				upi = tax.property.getUPI()		
+				upi = tax.property.getUPI()
 
 			elif type(payment) is PayRentalIncomeTax:
 				tax = payment.rental_income_tax
 				tax_type = 'rental_income'
-				upi = tax.property.getUPI()		
+				upi = tax.property.getUPI()
 
 			elif type(payment) is PayTradingLicenseTax:
 				tax = payment.trading_license_tax
@@ -2433,12 +2433,12 @@ def formatPaymentsForDisplay(request, payments):
 				tax = payment.fee
 				tax_type = 'misc_fee'
 				if tax.property:
-					upi = tax.property.getUPI()		
+					upi = tax.property.getUPI()
 			else:
 				tax = payment.fee
 				tax_type = 'fee'
 				if tax.property:
-					upi = tax.property.getUPI()		
+					upi = tax.property.getUPI()
 			payment_obj['type'] = tax_type.replace(" ","_")
 
 			if (tax_type == 'fee' or tax_type == 'misc_fee') and tax.citizen:
@@ -2453,7 +2453,7 @@ def formatPaymentsForDisplay(request, payments):
 					business_label = business.name + ' (TIN: ' + business.tin + ')'
 				elif tax.subbusiness:
 					business = tax.subbusiness.business
-					business_label = business.name + ' (TIN: ' + business.tin + ')'	+ ' - ' + tax.subbusiness.branch 							
+					business_label = business.name + ' (TIN: ' + business.tin + ')'	+ ' - ' + tax.subbusiness.branch
 
 			if (type(tax) is Fee):
 				if tax.fee_type == 'cleaning' or tax.fee_type == 'market':
@@ -2487,7 +2487,7 @@ def formatPaymentsForDisplay(request, payments):
 			#	staff = None
 			payment_obj['staff'] = payment.staff
 
-			#getting receipt info for display 
+			#getting receipt info for display
 			if type(tax) is MiscellaneousFee:
 				payment_obj['receipt_link'] = '/admin/tax/tax/generate_invoice/?type=misc_fee' + '&id=' + str(payment_obj['id'])
 			elif type(tax) is Fee:
@@ -2518,7 +2518,7 @@ def formatPaymentsForDisplay(request, payments):
 		for i in receipts:
 			temp_ids = []
 			payment_relations = i.payment_relations.all().select_related('payfee')
-						
+
 			for relation in payment_relations:
 				multipaid_receipt_links[relation.payfee.id] = '/admin/tax/tax/generate_multipayinvoice/?type=fee' + '&id=' + str(i.id)
 				temp_ids.append(relation.payfee.id)
@@ -2530,7 +2530,7 @@ def formatPaymentsForDisplay(request, payments):
 
 	#get the normal payment medias
 	for tax_type,list in payment_ids.items():
-		if list:			
+		if list:
 			temp_medias = Media.objects.filter(payment_type__exact='pay_' + tax_type,payment_id__in=list)
 			if temp_medias:
 				for i in temp_medias:
@@ -2547,7 +2547,7 @@ def formatPaymentsForDisplay(request, payments):
 		if pending_records:
 			for i in pending_records:
 				pending_info[i.tax_type + '_' + str(i.payment_id)] = {'reason':i.reason,'note':i.note}
-		
+
 	#append the found receipt links and media into the formated payment list
 	if payments_found:
 		for payment in payments_found:
@@ -2602,7 +2602,7 @@ def payMiscFee(request):
 	if request.POST:
 		pass
 		#create payment objects from the session
-		#create multipay record? 
+		#create multipay record?
 		#delete the session
 
 
@@ -2669,7 +2669,7 @@ def submitMiscFee(request):
 		citizen = Citizen.objects.get(pk=citizen_pk)
 	elif business_pk:
 		business = Business.objects.get(pk=business_pk)
-	
+
 	tz_date_from = timezone.now()
 	date_from = tz_date_from.date()
 	no_payments = len(misc_payments['payments'])
@@ -2681,7 +2681,7 @@ def submitMiscFee(request):
 		date_to = tz_date_to.date()
 		amount = payment['subtotal']
 		name = payment['name']
-		fee = Fee.objects.create(fee_type='misc_fee', amount=amount, remaining_amount=amount, currency='RWF', citizen=citizen, business=business, 
+		fee = Fee.objects.create(fee_type='misc_fee', amount=amount, remaining_amount=amount, currency='RWF', citizen=citizen, business=business,
 			name=name[:50], period_from = tz_date_from, period_to=tz_date_to, date_from=date_from, date_to=date_to, submit_date=timezone.now(), quantity=payment['qty'])
 	request.session['misc_payment'] = {'total':0, 'payments':{}}
 	if no_payments == 1:
@@ -2707,7 +2707,7 @@ def miscFee(request, citizen_pk=None, business_pk=None):
 	if business_pk:
 		business = get_object_or_404(Business, pk=business_pk)
 		template_type = 'business'
-		
+
 	return render_to_response('tax/misc_fees.html',{ 'template_type':template_type, 'business':business, 'citizen':citizen }, context_instance=RequestContext(request))
 
 
@@ -2744,7 +2744,7 @@ def displayPayMiscellaneousFeePage(request, obj):
 		fee = MiscellaneousFee(amount=data['amount'],remaining_amount=data['amount'],fee_type=data['fee_type'],fee_sub_type=data['fee_sub_type'], business=business,citizen=citizen,property=property,currency='RWF',is_paid=False,staff_id=staff_id)
 		fee.save()
 		form.fee = fee
-		
+
 		#if only submit Tax information without Paying, calculate Tax Amount only
 		if request.POST.get('submit',None) != None:
 			fee.submit_date = timezone.make_aware(datetime.combine(datetime.today(), time(0,0)), timezone.get_default_timezone())
@@ -2769,7 +2769,7 @@ def displayPayMiscellaneousFeePage(request, obj):
 				fee.remaining_amount = 0
 				fee.is_paid = True
 				fee.save()
-			
+
 				message = "add a Payment of " + str(payment.amount) + fee.currency.title() + " for " + str(fee)
 				LogMapper.createLog(request,object=fee,citizen=citizen,property=property,business=business,message= message,tax_type='misc_fee',tax_id=fee.id,payment_type='pay_misc_fee',payment_id=payment.id)
 				if request.session.has_key('tax_url'):
@@ -2792,8 +2792,8 @@ def payFixedAsset(request, id):
 
 	tax = get_object_or_404(PropertyTaxItem, pk=id)
 	if tax.amount is None:
-		return HttpResponseRedirect(reverse('submit_fixed_asset', args=[id]))	
-	
+		return HttpResponseRedirect(reverse('submit_fixed_asset', args=[id]))
+
 	if request.POST: #make the payment
 		form = PayFixedAssetTaxForm(request.POST)
 		if form.is_valid():
@@ -2818,9 +2818,9 @@ def payFixedAsset(request, id):
 		else:
 			payment = tax.calculatePayment()
 	else:
-		payment = fee.calculatePayment()	
+		payment = fee.calculatePayment()
 		form = PayFixedAssetTaxForm(initial={'amount':payment['total_due']})
-	
+
 	return render_to_response('tax/paylandlease.html',{ 'form':form,'tax':fee,'payment':payment,
 		'pending_payment_reasons':variables.pending_payment_reasons},
 		context_instance=RequestContext(request))
@@ -2907,7 +2907,7 @@ def processPayment(request):
 			else:
 				tp_mpr.payer_name = tp_mpr.payer.name
 
-		elif tp_payfee.citizen_id:		
+		elif tp_payfee.citizen_id:
 			try:
 				tp_mpr.payer = Entity.objects.get(citizen_id = tp_payfee.citizen_id)
 			except Entity.DoesNotExist:
@@ -2982,13 +2982,13 @@ def payFee(request, fee_type=None, id=None):
 		messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
 		if fee_type == 'fee' and 'land_lease' not in fee.fee_type:
 			if template_type == 'property':
-				return HttpResponseRedirect(reverse("property_fees", args=[property.pk]))	
+				return HttpResponseRedirect(reverse("property_fees", args=[property.pk]))
 			elif template_type == 'business':
-				return HttpResponseRedirect(reverse("business_fees", args=[business.pk]))	
+				return HttpResponseRedirect(reverse("business_fees", args=[business.pk]))
 			elif template_type == 'citizen':
-				return HttpResponseRedirect(reverse("citizen_fees", args=[citizen.pk]))	
+				return HttpResponseRedirect(reverse("citizen_fees", args=[citizen.pk]))
 
-		return HttpResponseRedirect(reverse("submit_%s" % fee_type, args=[id]))	
+		return HttpResponseRedirect(reverse("submit_%s" % fee_type, args=[id]))
 
 	if fee.amount is None or fee.submit_date is None:
 		if fee_type == 'fee' and fee.fee_type in ('cleaning_fee','cleaning') and business:
@@ -2997,8 +2997,8 @@ def payFee(request, fee_type=None, id=None):
 				return HttpResponseRedirect("/admin/tax/tax/business/%s/edit_business/?fee_redirect=1" % business.pk)
 		else:
 			messages.add_message(request, messages.INFO, "This tax/fee needs to be submitted.")
-			return HttpResponseRedirect(reverse("submit_%s" % fee_type, args=[id]))	
-	
+			return HttpResponseRedirect(reverse("submit_%s" % fee_type, args=[id]))
+
 	if request.POST:
 		form = paymentForm(fee)(request.POST)
 		if form.data.get('citizen_id'):
@@ -3007,7 +3007,7 @@ def payFee(request, fee_type=None, id=None):
 			business = Business.objects.get(pk=form.data.get('business_id'))
 		if form.is_valid():
 			payment = fee.calculatePayment(form.cleaned_data.get('paid_date', date.today()), form.cleaned_data['amount'])
-			
+
 			# pay off installment
 			#TaxMapper.pay_installment(fee, capital_amount, paid_on=form.cleaned_data.get('paid_date'))
 			#redirect_url = "/admin/tax/tax/generate_invoice/?type=%s&id=%s" % ( fee_type, payment_object.pk)
@@ -3044,7 +3044,7 @@ def payFee(request, fee_type=None, id=None):
 def payFees(request, id=None):
 	if not request.POST:
 		raise Http404
-		
+
 	fees = Fee.objects.filter(pk__in=request.POST.getlist('tax_id'))
 	template_type = request.POST.get('template_type')
 	# raise error message if no fees
@@ -3058,7 +3058,7 @@ def payFees(request, id=None):
 		property = Property.objects.get(pk=request.POST.get('property_pk'))
 	elif template_type == 'citizen':
 		citizen = Citizen.objects.get(pk=request.POST.get('citizen_pk'))
-	
+
 	if request.POST.get('select'):
 		# redirect back if no fees are selected
 		form = PayFeesForm()
@@ -3096,7 +3096,7 @@ def payFees(request, id=None):
 					if payfee.fine_amount:
 						payfee.fine_description = 'late fees'
 					payfee.note=form.cleaned_data.get('note')
-					
+
 					payfee.save()
 
 					tp_payfee = TP_PayFee.objects.get(pk=payfee.pk)
@@ -3127,7 +3127,7 @@ def payFees(request, id=None):
 					else:
 						tp_mpr.payer_name = tp_mpr.payer.name
 
-				elif tp_payfee.citizen_id:		
+				elif tp_payfee.citizen_id:
 					try:
 						tp_mpr.payer = Entity.objects.get(citizen_id = tp_payfee.citizen_id)
 					except Entity.DoesNotExist:
@@ -3140,7 +3140,7 @@ def payFees(request, id=None):
 
 				tp_mpr.save()
 
-				return HttpResponseRedirect(reverse("multi_invoice", args=(mpr.pk, )))	
+				return HttpResponseRedirect(reverse("multi_invoice", args=(mpr.pk, )))
 
 			# create payment objects and redirect to receipt
 			return TemplateResponse(request, 'tax/pay_fees_confirm.html', {'template_type':template_type, 'fees':fees, 'form':form, 'payer':citizen or business, 'property':property, 'citizen':citizen, 'business':business, 'late_fees':late_fees, 'total_payment':total_payment, 'total_amount':total_amount })
@@ -3173,7 +3173,7 @@ def submitRentalIncome(request, id):
 		return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
 	elif request.POST:
-		form = RentalIncomeForm(request.POST)	
+		form = RentalIncomeForm(request.POST)
 		if form.is_valid():
 			tax.exempt = form.cleaned_data.get('exempt', 0)
 			tax.months_deferred = request.POST.get('deferred', False)
@@ -3185,8 +3185,8 @@ def submitRentalIncome(request, id):
 			tax.calc_tax()
 			message = "add a submission for " + str(tax)
 			LogMapper.createLog(request,object=tax,property=property,message= message,tax_type=tax.tax_type,tax_id=tax.id)
-			messages.add_message(request, messages.INFO, "Rental Income Tax has been updated.")	
-			return HttpResponseRedirect(request.META['HTTP_REFERER'])	
+			messages.add_message(request, messages.INFO, "Rental Income Tax has been updated.")
+			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 			#return HttpResponseRedirect('/admin/tax/tax/generate_epayinvoice/?type=land_lease&id=' + str(fee.id))
 	else:
 		initial = { 'exempt':tax.exempt, 'rental_income': tax.declared_rental_income, 'interest_paid':tax.declared_bank_interest, 'deferred':tax.months_deferred }
@@ -3251,10 +3251,10 @@ def submitTradingLicense(request, id):
 			tax.calc_tax()
 			message = "add a submission for " + str(tax)
 			LogMapper.createLog(request,object=tax,business=business,message= message,tax_type=tax.tax_type,tax_id=tax.id)
-			
+
 			redirect_url = '/admin/tax/tax/generate_epayinvoice/?type=fixed_asset&id='+ str(tax.id)
-			messages.add_message(request, messages.INFO, "Trading License Tax has been updated.")	
-			return HttpResponseRedirect(request.META['HTTP_REFERER'])	
+			messages.add_message(request, messages.INFO, "Trading License Tax has been updated.")
+			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 			#return HttpResponseRedirect('/admin/tax/tax/generate_epayinvoice/?type=land_lease&id=' + str(fee.id))
 	else:
 		if not tax.turnover:
@@ -3262,16 +3262,16 @@ def submitTradingLicense(request, id):
 		else:
 			tax.turnover = str(int(tax.turnover))
 		initial = { 'exempt': tax.exempt, 'deferred':tax.months_deferred, 'vat_registered':"Yes" if business.vat_register else "No", 'turnover':tax.turnover, 'tin':business.tin }
-			
+
 		if tax.activity_data:
 			try:
 				activity_data = pickle.loads(tax.activity_data.decode('base64'))
-				initial.update(activity_data)		
+				initial.update(activity_data)
 			except:
 				pass
-	
-		form = TradingLicenseForm(initial=initial)	
-	
+
+		form = TradingLicenseForm(initial=initial)
+
 	return render_to_response('tax/submit_trading_license.html', { 'formula_data':formula_data, 'form': form, 'business':business, 'template_type':'business', 'tax':tax, 'tax_type':'trading_license', 'payments': payments, 'installments':installments, 'activity_rates':activity_rates, 'activity_desc':activity_descriptions }, context_instance=RequestContext(request))
 
 
@@ -3312,15 +3312,15 @@ def submitFixedAssetTax(request, id):
 			property.year_built = form.cleaned_data.get('year_built')
 
 			property.land_use_types = tax.land_use_types = land_use_types
-			
+
 			tax.exempt = form.cleaned_data.get('exempt', 0)
 			tax.staff = request.session.get('user')
 			tax.months_deferred = request.POST.get('deferred', False)
 			tax.submit_date = timezone.now()
-			
+
 			citizen_id=form.cleaned_data.get('declared_by')
 			citizen = Citizen.objects.get(pk=citizen_id)
-			
+
 			residential_amount = form.cleaned_data.get('declared_residential_amount')
 			commercial_amount = form.cleaned_data.get('declared_commercial_amount')
 			agriculture_amount = form.cleaned_data.get('declared_agriculture_amount')
@@ -3328,8 +3328,8 @@ def submitFixedAssetTax(request, id):
 			declared_on = form.cleaned_data.get('declared_on')
 
 			declared_value, created = DeclaredValue.objects.get_or_create(property=property, citizen=citizen, declared_on=declared_on,
-					amount=total_declared_amount, residential_amount=residential_amount, 
-					commercial_amount=commercial_amount, agriculture_amount=agriculture_amount, 
+					amount=total_declared_amount, residential_amount=residential_amount,
+					commercial_amount=commercial_amount, agriculture_amount=agriculture_amount,
 					user=request.session.get('user'), defaults=dict(date_time=datetime.now(), accepted='YE'))
 
 			tax.declared_value = declared_value
@@ -3339,8 +3339,8 @@ def submitFixedAssetTax(request, id):
 			LogMapper.createLog(request,object=tax,property=property,message= message,tax_type=tax.tax_type,tax_id=tax.id)
 
 			redirect_url = '/admin/tax/tax/generate_epayinvoice/?type=fixed_asset&id='+ str(tax.id)
-			messages.add_message(request, messages.INFO, "Fixed Asset Tax has been updated")	
-			return HttpResponseRedirect(request.META['HTTP_REFERER'])	
+			messages.add_message(request, messages.INFO, "Fixed Asset Tax has been updated")
+			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 			#return HttpResponseRedirect('/admin/tax/tax/generate_epayinvoice/?type=land_lease&id=' + str(fee.id))
 	else:
 		initial = {'land_use_type':(tax.land_use_types.all() or property.land_use_types.all()), 'exempt':tax.exempt, 'deferred':tax.months_deferred  }
@@ -3349,7 +3349,7 @@ def submitFixedAssetTax(request, id):
 		initial['floor_total_square_meters'] = property.floor_total_square_meters
 		initial['year_built'] = property.year_built
 		if declared_value:
-			initial['declared_value'] = declared_value.amount 
+			initial['declared_value'] = declared_value.amount
 			initial['declared_residential_amount'] = declared_value.residential_amount
 			initial['declared_commercial_amount'] = declared_value.commercial_amount
 			initial['declared_agriculture_amount'] = declared_value.agriculture_amount
@@ -3406,7 +3406,7 @@ def submitLandLease(request, id, template_type='property'):
 			message = "add a submission for " + str(fee)
 			LogMapper.createLog(request,object=fee,property=property,message= message,tax_type=fee.tax_type,tax_id=fee.id)
 			redirect_url = '/admin/tax/tax/generate_epayinvoice/?type=land_lease&id='+ str(fee.id)
-			messages.add_message(request, messages.INFO, "Land Lease Tax has been updated")	
+			messages.add_message(request, messages.INFO, "Land Lease Tax has been updated")
 			return HttpResponseRedirect(request.META['HTTP_REFERER'])
 	else:
 		initial = {'land_lease_type':fee.land_lease_type, 'exempt':fee.exempt }
@@ -3452,7 +3452,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 		tax_label = 'Fixed Asset Tax for ' + reference
 		property = tax.property
 
-		#get formula data to display to user				
+		#get formula data to display to user
 		formula_data = getFormulaData(tax_type, tax, property)
 
 		if request.method == 'POST':
@@ -3470,7 +3470,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 		tax_label = 'Rental Income Tax for ' + reference
 		property = tax.property
 
-		#get formula data to display to user				
+		#get formula data to display to user
 		formula_data = getFormulaData(tax_type, tax, property)
 
 		if request.method == 'POST':
@@ -3501,7 +3501,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 		elif tax.subbusiness:
 			subbusiness = tax.subbusiness
 			business = tax.subbusiness.business
-					
+
 		business_id = business.id
 		reference = getTaxReference(tax_type, tax)
 		tax_label = 'Trading License Tax ' + reference
@@ -3567,7 +3567,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 		fine_amount = 0
 		late_fee_interest = 0
 		late_fee_surcharge = 0
-		
+
 		#remove ',' out of submitted amount values
 		if request.POST.get('fine_amount',None) != None and request.POST.get('fine_amount') != 0:
 			fine_amount = Decimal(request.POST.get('fine_amount').replace(',',''))
@@ -3587,7 +3587,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 
 				#also save the selected tax/fee settings into the DB for future taxes
 				saveTaxDetails(tax_type,tax,request)
-						
+
 				message = "add a submission for " + str(tax)
 				LogMapper.createLog(request,object=tax,citizen=citizen,property=property,business=business,subbusiness=subbusiness,message= message,tax_type=tax_type,tax_id=tax.id)
 
@@ -3603,8 +3603,8 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 			#add the late fees into fines before save
 			if late_fee_surcharge > 0:
 				payment.fine_amount = fine_amount + late_fee_surcharge + late_fee_interest
-				payment.fine_description = "Late fee surcharge (" + str(Common.formatCurrency(late_fee_surcharge)) + tax.currency.title() + " ) & late fee interest (" + str(Common.formatCurrency(late_fee_interest)) + tax.currency.title() + " ). " + form.cleaned_data['fine_description']	
-			
+				payment.fine_description = "Late fee surcharge (" + str(Common.formatCurrency(late_fee_surcharge)) + tax.currency.title() + " ) & late fee interest (" + str(Common.formatCurrency(late_fee_interest)) + tax.currency.title() + " ). " + form.cleaned_data['fine_description']
+
 			#if is a pending payment submit, set payment status to be pending, waiting for approval
 			if form.cleaned_data['submit_pending'] and form.cleaned_data['submit_pending'] != '':
 				payment.i_status = 'pending'
@@ -3626,10 +3626,10 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 				#also save the selected tax/fee settings into the DB for future taxes
 				saveTaxDetails(tax_type,tax,request)
 				message = "add a Pending Payment of " + str(payment.amount) + tax.currency.title() + " for " + str(tax)
-	
+
 				LogMapper.createLog(request,object=tax,citizen=citizen,property=property,business=business,subbusiness=subbusiness,message= message,tax_type=tax_type,tax_id=tax.id,payment_type='pay_' + tax_type,payment_id=payment.id)
-				
-				#redirect to result page to upload supporting documents		
+
+				#redirect to result page to upload supporting documents
 				return HttpResponseRedirect("/admin/tax/tax/submit_pending/?type=" + tax_type + '&id=' + str(payment.id))
 
 			#if is a normal payment, save payment with status active, also update the tax item details
@@ -3660,7 +3660,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 				"""
 				##################################################################
 				## Specified for cleaning fee credit...	Start
-				##################################################################=			
+				##################################################################=
 				if	tax_type == 'fee' and tax.fee_type == 'cleaning':
 					if tax.business:
 						credit = 0
@@ -3706,13 +3706,13 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 									tax.remaining_amount = due_amount - subbusiness_entity.credit - paid_amount
 									subbusiness_entity.credit = 0
 									subbusiness_entity.save()
-						
-					
+
+
 				##################################################################
 				## Specified for cleaning fee credit ...	end
 				##################################################################
 				"""
-			
+
 				if tax.remaining_amount <= 0:
 					tax.is_paid = True
 				tax.save()
@@ -3720,7 +3720,7 @@ def displayPayTaxPage(request, action, content_type_name1, obj_name, obj_id, par
 				#also save the selected tax/fee settings into the DB for future taxes
 				saveTaxDetails(tax_type,tax,request)
 				message = "add a Payment of " + str(payment.amount) + tax.currency.title() + " for " + str(tax)
-	
+
 				LogMapper.createLog(request,object=tax,citizen=citizen,property=property,business=business,subbusiness=subbusiness,message= message,tax_type=tax_type,tax_id=tax.id,payment_type='pay_' + tax_type,payment_id=payment.id)
 
 				#redirect to the receipt page
@@ -3784,7 +3784,7 @@ def displayPayMultipleTaxesPage(request, action, content_type_name1, obj_name, o
 	formula_list['list'] = []
 	for tax in taxes:
 		months.append(Common.localizeDate(tax.period_from).strftime('%b'))
-	
+
 		#if tax already been paid, redirect back to the invoice page
 		if tax.is_paid:
 			if request.session.has_key('tax_url'):
@@ -3861,7 +3861,7 @@ def displayPayMultipleTaxesPage(request, action, content_type_name1, obj_name, o
 				relation = MultipayReceiptPaymentRelation(payfee=payment,receipt=receipt)
 				relation.save()
 
-						
+
 				message = "add a Payment of " + str(payment.amount) + tax.currency.title() + " for " + str(tax)
 				LogMapper.createLog(request,object=tax,citizen=citizen,property=property,business=business,message= message,tax_type=tax_type,tax_id=tax.id,payment_type='pay_' + tax_type,payment_id=payment.id)
 
@@ -3986,7 +3986,7 @@ def displayGenerateInvoicePage(request):
 
 		send_receipt_message = ''
 		send_receipt_error = ''
-		
+
 		try:
 			if tax_type == 'fixed_asset':
 				payment = get_object_or_404(PayFixedAssetTax,pk=id,i_status='active')
@@ -4074,7 +4074,7 @@ def displayGenerateInvoicePage(request):
 			if business.email != None and business.email != '' and business.email not in emailList:
 				emailList.append(business.email)
 		elif property:
-			receipt = generateReceipt(tax_type, payment, tax, 'property',property)		
+			receipt = generateReceipt(tax_type, payment, tax, 'property',property)
 			#get owners of this property
 			owners = property.owners.filter(i_status='active')
 			if owners:
@@ -4195,7 +4195,7 @@ def displayGenerateInvoicePage(request):
 						log += " by email to " + logSendEmail
 
 					log = 'Send Receipt (ID: ' + str(invoice_id) + ') for ' + tax_type + ' of ' + tax_label + log
-						
+
 					my_citizen = CitizenMapper.getCitizenByCitizenId(national_citizen_id)
 					my_property = PropertyMapper.getPropertyByPlotId(plot_id)
 					my_business = BusinessMapper.getBusinessesById(business_id)
@@ -4227,7 +4227,7 @@ def displayGenerateInvoicePage(request):
 		receipt['epay_no'] = epay_no
 
 
-		return render_to_response('tax/tax_tax_invoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt, 
+		return render_to_response('tax/tax_tax_invoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt,
 														'smsList':smsList, 'emailList':emailList,'sendSmsList':sendSmsList,
 														'sendEmailList':sendEmailList,'send_receipt_message':send_receipt_message,
 														'send_receipt_error':send_receipt_error,'emailInputPairList':emailInputPairList,
@@ -4266,7 +4266,7 @@ def displayGenerateEpayInvoicePage(request):
 		#get current view taxes url in the session if exist
 		if request.session.has_key('tax_url'):
 			tax_url = request.session['tax_url']
-		
+
 		try:
 			if tax_type == 'fixed_asset':
 				tax = get_object_or_404(PropertyTaxItem,pk=id)
@@ -4494,7 +4494,7 @@ def displayGenerateEpayInvoicePage(request):
 			if tax.months_deferred:
 				deferred_until = tax.due_date + relativedelta(months=tax.months_deferred)
 
-		return render_to_response('tax/tax_tax_epayinvoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'resubmit_url':resubmit_url,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt, 
+		return render_to_response('tax/tax_tax_epayinvoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'resubmit_url':resubmit_url,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt,
 														'smsList':smsList, 'emailList':emailList,'sendSmsList':sendSmsList, 'deferred_until': deferred_until,
 														'sendEmailList':sendEmailList,'send_receipt_message':send_receipt_message,
 														'send_receipt_error':send_receipt_error,'emailInputPairList':emailInputPairList,
@@ -4589,7 +4589,7 @@ def displayGenerateMultipayInvoicePage(request, id=None):
 				emailList.append(business.email)
 		elif property:
 			receipt = generateMultipayReceipt(payments, multipay_receipt, 'property',property)
-			
+
 			#get owners of this property
 			owners = property.owners.filter(i_status='active')
 			if owners:
@@ -4710,14 +4710,14 @@ def displayGenerateMultipayInvoicePage(request, id=None):
 						log += " by email to " + logSendEmail
 
 					log = 'Send Receipt (ID: ' + str(invoice_id) + ') for ' + tax_type + ' of ' + tax_label + log
-						
+
 					LogMapper.createLog(request,action="send receipt",citizen=citizen,property=property,business=business,message=log,tax_type=tax_type,tax_id=tax.id,payment_type='pay_' + tax_type,payment_id=payment.id)
 
 		tablet_print_link = '/admin/tax/tax/generate_multipayinvoice/?type=' + tax_type + '&id=' + id + '&tablet_printing=1'
 		tablet_printing = False
 		if GET.get('tablet_printing',None) != None:
 			tablet_printing = True
-		return render_to_response('tax/tax_tax_invoice_multipay.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt, 
+		return render_to_response('tax/tax_tax_invoice_multipay.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt,
 														'smsList':smsList, 'emailList':emailList,'sendSmsList':sendSmsList,
 														'sendEmailList':sendEmailList,'send_receipt_message':send_receipt_message,
 														'send_receipt_error':send_receipt_error,'emailInputPairList':emailInputPairList,
@@ -4949,7 +4949,7 @@ def displayGenerateMultipayEpayInvoicePage(request):
 		if hasattr(tax,'months_deferred'):
 			if tax.months_deferred:
 				deferred_until = tax.due_date + relativedelta(months=tax.months_deferred)
-		return render_to_response('tax/tax_tax_epayinvoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt, 
+		return render_to_response('tax/tax_tax_epayinvoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt,
 														'smsList':smsList, 'emailList':emailList,'sendSmsList':sendSmsList, 'deferred_until':deferred_until,
 														'sendEmailList':sendEmailList,'send_receipt_message':send_receipt_message,
 														'send_receipt_error':send_receipt_error,'emailInputPairList':emailInputPairList,
@@ -4998,7 +4998,7 @@ def displayPaymentSearchPage(request):
 				else:
 				#normal single payment
 					tax_type = variables.getValueByKey(variables.tax_and_fee_invoice_prefixes,tax_type_prefix)
-					if tax_type:					
+					if tax_type:
 						try:
 							conditions['payment_id'] = int(invoice_id[2:])
 						except Exception:
@@ -5059,7 +5059,7 @@ def displayPaymentSearchPage(request):
 				elif tax_type_obj == 'rental_income':
 					payments = PayRentalIncomeTaxMapper.getPayRentalIncomeTaxByConditions(conditions, remaining_limit)
 				elif tax_type_obj == 'trading_license':
-					payments = PayTradingLicenseTaxMapper.getPayTradingLicenseTaxByConditions(conditions, remaining_limit)						
+					payments = PayTradingLicenseTaxMapper.getPayTradingLicenseTaxByConditions(conditions, remaining_limit)
 				else:
 					conditions_new = copy.deepcopy(conditions)
 					conditions_new['fee_type'] = tax_type_obj
@@ -5070,7 +5070,7 @@ def displayPaymentSearchPage(request):
 				if count > limit:
 					exceed_limit = True
 					break
-						
+
 
 			if payments_found and exceed_limit == False and len(payments_found) > 0:
 				#payments_found.sort(key=lambda x:x['paid_date'], reverse = True)
@@ -5089,7 +5089,7 @@ def displayPaymentSearchPage(request):
 					payments_found = paginator.page(paginator.num_pages)
 
 				#format paginated result
-				payments_found.object_list = formatPaymentsForDisplay(request,payments_found.object_list)		
+				payments_found.object_list = formatPaymentsForDisplay(request,payments_found.object_list)
 
 			if exporting == 'pdf':
 				return PaymentMapper.generatePaymentPdf(payments_found)
@@ -5146,7 +5146,7 @@ def displayPaymentReversePage(request):
 			for i in payment_relations:
 				multi_payments.append(i.payfee)
 				months.append(Common.localizeDate(i.payfee.fee.period_from).strftime('%b'))
-			
+
 	if multi_payments:
 		type_label = 'Multiple Payments for ' + type.replace("_"," ").title() + ' for ' + ', '.join(months) + ' ' + Common.localizeDate(multi_payments[0].fee.period_from).strftime('%Y')
 		amount = receipt.amount
@@ -5163,7 +5163,7 @@ def displayPaymentReversePage(request):
 		show_tax_link = show_tax_link + 'citizen/' + str(citizen_id) + "/taxes/"
 	elif payment.business_id != None:
 		show_tax_link = show_tax_link + 'business/' + str(payment.business_id) + "/taxes/"
-	elif property:				
+	elif property:
 		show_tax_link = show_tax_link + 'property/' + str(property.id) + "/taxes/"
 
 	payment_staff = payment.staff
@@ -5206,7 +5206,7 @@ def displayPaymentReversePage(request):
 							tax.remaining_amount = tax.amount
 					tax.save()
 
-				#also deactivate the multipay receipt 
+				#also deactivate the multipay receipt
 				receipt.i_status = 'inactive'
 				receipt.save()
 			else:
@@ -5230,7 +5230,7 @@ def displayPaymentReversePage(request):
 					tax.remaining_amount = tax.amount
 				tax.save()
 
-			
+
 			# reverse any installments
 			installments = tax.installments.filter(paid_on = payment.paid_date)
 			if installments:
@@ -5290,7 +5290,7 @@ def displayTaxSettingPage(request):
 			if request.GET.get('sector_id',None) != None and request.GET.get('sector_id') != '':
 				sector = Sector.objects.get(pk=int(request.GET.get('sector_id')))
 				settings_label = district.name.title() + ' - ' + sector.name.title() + ' Tax Settings'
-		except Exception: 
+		except Exception:
 			raise Http404
 
 	if request.method == 'POST' and request.POST.get('save_settings',None) != None:
@@ -5356,13 +5356,13 @@ def displayTaxSettingPage(request):
 
 									newSetting.save()
 
-									#update old setting								
+									#update old setting
 									if valid_from.date() > setting.valid_from:
 										setting.valid_to = datetime.strftime(valid_from - timedelta(days=1),'%Y-%m-%d')
 									else:
 										setting.valid_to = setting.valid_from
 									#setting.i_status = 'inactive'
-									setting.save()			
+									setting.save()
 
 								logMessage = "- " + setting.tax_fee_name.replace("_"," ").title() + "'s " + setting.setting_name.replace("_"," ").title()
 								if setting.sub_type != "":
@@ -5380,10 +5380,10 @@ def displayTaxSettingPage(request):
 	form = tax_setting_search_form(initial={'district':district,'sector':sector})
 	mySettings = []
 
-	#get list of settings 
+	#get list of settings
 	if district:
 		mySettings = Setting.objects.filter(Q(valid_from__lte=datetime.today(),i_status='active')|Q(valid_to__gte=datetime.today()),district=district,sector=sector).order_by("valid_from","tax_fee_name","setting_name","sub_type")
-		
+
 	#load default settings if no setting found for the selected filters
 	if not mySettings:
 		mySettings = Setting.objects.filter(Q(valid_from__lte=datetime.today(),i_status='active')|Q(valid_to__gte=datetime.today()),district=None,sector=None).order_by("valid_from","tax_fee_name","setting_name","sub_type")
@@ -5457,8 +5457,8 @@ def setupInstallments(request):
 	staff = request.session.get('user')
 
 	#update tax attribute to be the first installments tax item
-	tax.period_from = timezone.make_aware(dateutil.parser.parse(current_year + '-' + periods[0][0] + ' 00:00:00'), timezone.get_default_timezone()) 
-	tax.period_to = timezone.make_aware(dateutil.parser.parse(current_year + '-' + periods[0][1] + ' 23:59:59'), timezone.get_default_timezone()) 
+	tax.period_from = timezone.make_aware(dateutil.parser.parse(current_year + '-' + periods[0][0] + ' 00:00:00'), timezone.get_default_timezone())
+	tax.period_to = timezone.make_aware(dateutil.parser.parse(current_year + '-' + periods[0][1] + ' 23:59:59'), timezone.get_default_timezone())
 	tax.due_date = current_year + '-' + periods[0][1]
 	tax.amount = amount
 	tax.remaining_amount = amount
@@ -5470,8 +5470,8 @@ def setupInstallments(request):
 	del periods[0]
 	count = 2
 	for i in periods:
-		period_from = timezone.make_aware(dateutil.parser.parse(current_year + '-' + i[0] + ' 00:00:00'), timezone.get_default_timezone()) 
-		period_to = timezone.make_aware(dateutil.parser.parse(current_year + '-' + i[1] + ' 23:59:59'), timezone.get_default_timezone()) 
+		period_from = timezone.make_aware(dateutil.parser.parse(current_year + '-' + i[0] + ' 00:00:00'), timezone.get_default_timezone())
+		period_to = timezone.make_aware(dateutil.parser.parse(current_year + '-' + i[1] + ' 23:59:59'), timezone.get_default_timezone())
 		due_date = current_year + '-' + i[1]
 
 		if type == 'fixed_asset':
@@ -5493,7 +5493,7 @@ def setupInstallments(request):
 def tax_default(request, action, content_type_name1, obj_name, obj_id, part):
 	"""
 	"""
-	
+
 	if not action and not obj_name:
 		user = request.session.get('user')
 		module = ModuleMapper.getModuleByName("tax")
@@ -5666,7 +5666,7 @@ def tax_default(request, action, content_type_name1, obj_name, obj_id, part):
 	else:
 		raise Http404
 
-		
+
 """
 get formula data to display the tax amount calculation process to user
 """
@@ -5699,7 +5699,7 @@ def getFormulaData(type, tax, model):
 				if data['purpose'] == 'Residential':
 					if data['declared_value']:
 						data['taxable_amount'] =  float(data['declared_value']) - float(fixedAssetSettings['residential_deduction'])
-						
+
 				else:
 					data['taxable_amount'] = data['declared_value']
 			else:
@@ -5761,7 +5761,7 @@ def getFormulaData(type, tax, model):
 					settings['to'] = tax.period_to
 				else:
 					settings['to'] = i['valid_to']
-	
+
 				settings['rate_with_bank_interest_percentage'] = float(settings['rate_with_bank_interest'])*100
 				settings['rate_percentage'] = float(settings['rate'])*100
 				#reformat tax ranges
@@ -5809,7 +5809,7 @@ def getFormulaData(type, tax, model):
 			data['past_payment_amount'] = 0
 			data['final_amount'] = 0
 
-		
+
 		data.update(paymentDetails)
 		#fetch list of yearly turnover from tax settings if is VAT registered business
 		if model.vat_register:
@@ -5835,11 +5835,11 @@ def getFormulaData(type, tax, model):
 			if model.land_lease_type:
 				sub_type_select = model.land_lease_type
 			if model.land_lease_type != 'Agriculture':
-				size = model.size_sqm			
+				size = model.size_sqm
 				size_type = 'sqm'
 			elif model.size_hectare:
-				size = model.size_hectare		
-				size_type = 'hectare'	
+				size = model.size_hectare
+				size_type = 'hectare'
 
 			if not size:
 				size = 0
@@ -5941,12 +5941,12 @@ def saveTaxDetails(tax_type, tax, request):
 		details = json.loads(tax.submit_details)
 
 	if tax_type == 'fixed_asset':
-		pass	
+		pass
 	elif tax_type == 'rental_income':
 		if request.POST.get('last_year_income',None) != None:
 			details['last_year_income'] = request.POST.get('last_year_income')
 		if request.POST.get('bank_interest_paid',None) != None:
-			details['bank_interest_paid'] = request.POST.get('bank_interest_paid')		
+			details['bank_interest_paid'] = request.POST.get('bank_interest_paid')
 
 	elif tax_type == 'trading_license':
 		if request.POST.get('yearly_turnover',None) != None:
@@ -5959,7 +5959,7 @@ def saveTaxDetails(tax_type, tax, request):
 			property = tax.property
 			property.land_lease_type = request.POST.get('land_lease_type')
 			if property.land_lease_type  == 'Agriculture':
-				property.size_hectare = request.POST.get('land_lease_size')	
+				property.size_hectare = request.POST.get('land_lease_size')
 			else:
 				property.size_sqm = request.POST.get('land_lease_size')
 			property.save()
@@ -5983,7 +5983,7 @@ def saveTaxDetails(tax_type, tax, request):
 
 	if details:
 		tax.submit_details = json.dumps(details)
-		tax.save()					
+		tax.save()
 
 
 def getTaxReference(tax_type,tax):
@@ -6018,12 +6018,12 @@ def getTaxReference(tax_type,tax):
 
 			if tax.submit_details and tax.submit_details.find('"installment"') >= 0:
 				details = json.loads(tax.submit_details)
-				reference = ' ' + Common.localizeDate(tax.period_from).strftime('%Y') + ' - Installment No.' + str(details['installment']) + ' for ' + reference 
+				reference = ' ' + Common.localizeDate(tax.period_from).strftime('%Y') + ' - Installment No.' + str(details['installment']) + ' for ' + reference
 			elif tax.submit_details and tax.submit_details.find('"overdue_installment"') >= 0:
 				details = json.loads(tax.submit_details)
-				reference = ' ' + Common.localizeDate(tax.period_from).strftime('%Y') + ' - Cover the remaining Tax Amount of Cancelled Payment Installments Plan due to overdue for ' + reference 
+				reference = ' ' + Common.localizeDate(tax.period_from).strftime('%Y') + ' - Cover the remaining Tax Amount of Cancelled Payment Installments Plan due to overdue for ' + reference
 			else:
-				reference = 'From ' + Common.localizeDate(tax.period_from).strftime('%d/%m/%Y') + ' - ' + Common.localizeDate(tax.period_to).strftime('%d/%m/%Y') + ' for ' + reference 
+				reference = 'From ' + Common.localizeDate(tax.period_from).strftime('%d/%m/%Y') + ' - ' + Common.localizeDate(tax.period_to).strftime('%d/%m/%Y') + ' for ' + reference
 
 		elif tax.fee_type == 'cleaning' or tax.fee_type == 'market':
 			if tax.business:
@@ -6039,7 +6039,7 @@ def calculateLateFee(type,tax, manual_tax_amount = None):
 	late_fee = 0
 
 	installment = TaxMapper.next_outstanding_installment(tax)
-	if installment: 
+	if installment:
 		if installment.due >= date.today(): # installment is not late
 			return 0
 		else:
@@ -6282,7 +6282,7 @@ def generateMultipayEPayInvoice(tax_type, tax_list, type, model):
 
 			#if there is no remaining amount - raise 404
 			if remaining_amount == None:
-				raise Http404 
+				raise Http404
 
 			record_name = tax.fee_type.replace("_"," ").title()
 			amount = remaining_amount
@@ -6299,7 +6299,7 @@ def generateMultipayEPayInvoice(tax_type, tax_list, type, model):
 			#append actual tax amount
 			tax_record = { 'name': record_name, 'reference': getTaxReference(tax_type, tax),'amount': amount, 'currency': tax.currency}
 			taxes.append(tax_record)
-	
+
 	receipt['total'] = int(total)
 
 
@@ -6330,7 +6330,7 @@ def generateEPayInvoiceOld(tax_type, tax, type, model):
 	receipt['submit_date'] = tax.submit_date
 	if tax_type != 'misc_fee':
 		receipt['due_date'] = tax.due_date
-	
+
 	#get ePay Number for this invoice
 	epay_no = PaymentMapper.generateEpayNo(tax_type, tax)
 	receipt['epay_no'] = epay_no
@@ -6354,7 +6354,7 @@ def generateEPayInvoiceOld(tax_type, tax, type, model):
 
 	#if there is no remaining amount - raise 404
 	if remaining_amount == None:
-		raise Http404 
+		raise Http404
 
 	receipt['total'] = int(remaining_amount)
 	taxes = []
@@ -6401,7 +6401,7 @@ def generateEPayInvoiceOld(tax_type, tax, type, model):
 
 
 def generateReceipt(tax_type, payment, tax, type, model):
-	
+
 	receipt = {}
 	receipt['paid_at'] = str(payment.bank)
 	if receipt['paid_at']:
@@ -6447,7 +6447,7 @@ def generateReceipt(tax_type, payment, tax, type, model):
 
 	if receipt['total'] == 0 and tax_type == 'fixed_asset':
 		latestDeclaredValue = DeclaredValueMapper.getDeclaredValueByProperty(tax.property)
-		receipt['note'] = 'Property declared value ( '+ str(latestDeclaredValue.amount) + ' ' + tax.currency.title()  + ' ) is within the tax-free threshold, so no tax amount due.'  
+		receipt['note'] = 'Property declared value ( '+ str(latestDeclaredValue.amount) + ' ' + tax.currency.title()  + ' ) is within the tax-free threshold, so no tax amount due.'
 
 	#append actual tax amount
 	#get id for this invoice
@@ -6484,7 +6484,7 @@ def generateEPayInvoice(tax_type, tax, type, model):
 	receipt['submit_date'] = tax.submit_date
 	if tax_type != 'misc_fee':
 		receipt['due_date'] = tax.due_date
-	
+
 	#get ePay Number for this invoice
 	epay_no = PaymentMapper.generateEpayNo(tax_type, tax)
 	receipt['epay_no'] = epay_no
@@ -6662,8 +6662,8 @@ def viewFeeSettingPage(request):
 	if request.method=='GET':
 		form = fee_view_search_form(request)
 	elif request.method=='POST':
-		
-		if request.POST.has_key('district') and request.POST['district']<>"":			
+
+		if request.POST.has_key('district') and request.POST['district']<>"":
 			district = request.POST['district']
 			conditions['district'] = district
 			graph_title=graph_title+" "+DistrictMapper.getById(district).name+" "
@@ -6687,20 +6687,20 @@ def viewFeeSettingPage(request):
 					temp = list[tax_fee_name]
 				else:
 					temp = {}
-	
+
 				if i.sub_type != None and i.sub_type != '':
 					if temp.has_key(setting_name):
 						setting_list = temp[setting_name]['value']
 					else:
 						setting_list = []
 					setting_list.append({'sub_type':i.sub_type,'value':i.value,'id':i.id})
-					temp[setting_name] = {'description':i.description,'value':setting_list,'type':'list','valid_from':i.valid_from,'valid_to':i.valid_to}	
+					temp[setting_name] = {'description':i.description,'value':setting_list,'type':'list','valid_from':i.valid_from,'valid_to':i.valid_to}
 				elif '_rate' in i.setting_name:
 					temp[setting_name] = {'id':i.id,'description':i.description,'value':str(Decimal(i.value)*100),'type':'rate','valid_from':i.valid_from,'valid_to':i.valid_to}
 				else:
 					temp[setting_name] = {'id':i.id,'description':i.description,'value':i.value,'type':'','valid_from':i.valid_from,'valid_to':i.valid_to}
-	
-				list[tax_fee_name] = temp	
+
+				list[tax_fee_name] = temp
 		else:
 			list = None
 			invalid_setting_ids = None
@@ -6726,8 +6726,8 @@ def viewTaxSettingPage(request):
 	if request.method=='GET':
 		form = fee_view_search_form(request)
 	elif request.method=='POST':
-		
-		if request.POST.has_key('district') and request.POST['district']<>"":			
+
+		if request.POST.has_key('district') and request.POST['district']<>"":
 			district = request.POST['district']
 			conditions['district'] = district
 			graph_title=graph_title+" "+DistrictMapper.getById(district).name+" "
@@ -6751,20 +6751,20 @@ def viewTaxSettingPage(request):
 					temp = list[tax_fee_name]
 				else:
 					temp = {}
-	
+
 				if i.sub_type != None and i.sub_type != '':
 					if temp.has_key(setting_name):
 						setting_list = temp[setting_name]['value']
 					else:
 						setting_list = []
 					setting_list.append({'sub_type':i.sub_type,'value':i.value,'id':i.id})
-					temp[setting_name] = {'description':i.description,'value':setting_list,'type':'list','valid_from':i.valid_from,'valid_to':i.valid_to}	
+					temp[setting_name] = {'description':i.description,'value':setting_list,'type':'list','valid_from':i.valid_from,'valid_to':i.valid_to}
 				elif '_rate' in i.setting_name:
 					temp[setting_name] = {'id':i.id,'description':i.description,'value':str(Decimal(i.value)*100),'type':'rate','valid_from':i.valid_from,'valid_to':i.valid_to}
 				else:
 					temp[setting_name] = {'id':i.id,'description':i.description,'value':i.value,'type':'','valid_from':i.valid_from,'valid_to':i.valid_to}
-	
-				list[tax_fee_name] = temp	
+
+				list[tax_fee_name] = temp
 		else:
 			list = None
 			invalid_setting_ids = None
