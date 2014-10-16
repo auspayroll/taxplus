@@ -75,7 +75,7 @@ class Business(models.Model):
 		tax_list = [ tax for tax in TradingLicenseTax.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 
 		for tax in tax_list:
-			payment_list = payments.setdefault(tax.pk, [])  
+			payment_list = payments.setdefault(tax.pk, [])
 			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
 			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
 			# get tax in the same period
@@ -95,7 +95,7 @@ class Business(models.Model):
 						del(payments[tax.pk])
 					continue
 
-			taxes.append(tax)	
+			taxes.append(tax)
 
 		for tax in taxes:
 			tax.pk_old = tax.pk
@@ -132,7 +132,7 @@ class Business(models.Model):
 		taxes = []
 		tax_list = [ tax for tax in Fee.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 		for tax in tax_list:
-			payment_list = payments.setdefault(tax.pk, [])  
+			payment_list = payments.setdefault(tax.pk, [])
 			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
 			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
 			# get tax in the same period
@@ -154,7 +154,7 @@ class Business(models.Model):
 					continue
 
 			taxes.append(tax)
-			
+
 		for tax in taxes:
 			tax.pk_old = tax.pk
 			tax.pk = None
@@ -213,8 +213,8 @@ class Business(models.Model):
 				payment.save()
 				messages.append("%s deactivated for %s" % (tlt, business1))
 			tlt.i_status = 'inactive'
-			tlt.save()	
-			messages.append("%s deactivated for %s" % (tlt, business1))	
+			tlt.save()
+			messages.append("%s deactivated for %s" % (tlt, business1))
 
 		for tlt in business2.tradinglicensetax_set.all():
 			for payment in tlt.payments.all():
@@ -302,8 +302,8 @@ class Business(models.Model):
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
-	##### get a new PM tin 
-	##### TIN + 10 digit 
+	##### get a new PM tin
+	##### TIN + 10 digit
 	def getNewPMTIN(self):
 		business = Business.objects.filter(tin__isnull = False).order_by('-pm_tin')
 		if len(business) == 0:
@@ -340,7 +340,7 @@ class Business(models.Model):
 		"""
 		if self.i_status != 'active':
 			return None
-		
+
 		if not now:
 			now = timezone.make_aware(datetime.now(), timezone.get_default_timezone())
 		else:
@@ -356,22 +356,6 @@ class Business(models.Model):
 
 		subbusinesses = SubBusiness.objects.filter(business = self, i_status='active')
 
-		if not include_only or 'trading_license' in include_only:
-			#no trading license tax, create one
-			try:
-				trading_license_tax, created = TradingLicenseTax.objects.get_or_create(business=self, date_to = year_end_date, i_status='active', defaults=dict(date_from=date_from, period_from=year_start, period_to=year_end, is_paid=False, currency='RWF', date_time=now))
-				if not trading_license_tax.is_paid:
-					trading_license_tax.calc_tax()
-			except:
-				pass
-			
-			for subbusiness in subbusinesses:
-				try:
-					trading_license_tax, created = TradingLicenseTax.objects.get_or_create(subbusiness=subbusiness, date_to = year_end_date, i_status='active', defaults=dict(date_from=date_from, period_from=period_from, period_to=year_end, is_paid=False, currency='RWF', date_time=now))
-					if not trading_license_tax.is_paid:
-						trading_license_tax.calc_tax()
-				except:
-					pass
 
 		if not include_only or 'cleaning' in include_only:
 			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
@@ -380,7 +364,7 @@ class Business(models.Model):
 					cleaning_month = date(self.date_started.year, self.date_started.month, 1)
 				else:
 					cleaning_month = year_start_date
-				
+
 				while cleaning_month <= year_end_date:
 					next_month = cleaning_month + relativedelta(months=1)
 					end_month = next_month - timedelta(days=1)
@@ -450,7 +434,7 @@ class SubBusiness(models.Model):
 		for ownership in ownerships:
 			owners.append(ownership.owner_citizen)
 		return owners
-		
+
 
 @receiver(post_save, sender=SubBusiness)
 def after_sub_business_save(sender, instance, created, **kwargs):
@@ -540,13 +524,13 @@ class Office(models.Model):
 class Ownership(models.Model):
 	#owner_type = models.CharField(max_length=20,choices = variables.owner_types, help_text='Owner Types')
 	#owner_id = models.IntegerField(help_text='Owner ID')
-	#asset_type = models.CharField(max_length=20,choices = variables.asset_types, help_text='Asset Types') 
+	#asset_type = models.CharField(max_length=20,choices = variables.asset_types, help_text='Asset Types')
 	#asset_id =  models.IntegerField(help_text='Asset ID')
-	
+
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="assets")
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="assets")
 	owner_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="assets")
-	
+
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="owners")
 	asset_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="owners")
 	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="owners")
@@ -557,10 +541,10 @@ class Ownership(models.Model):
 
 	date_started = models.DateField(help_text='Date this ownership started')
 	date_ended = models.DateField(help_text='Date this ownership ended', null=True, blank = True)
-	
+
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
-	
+
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
@@ -641,7 +625,7 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 						message = message + ","
 					count = count + 1
 					if type(value) is not list:
-						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"       
+						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"
 		if message == "":
 			message = "No change made"
 		message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
