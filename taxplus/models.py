@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.db.models import Sum
 
 
+
 class Boundary(models.Model):
 	shape_area = models.FloatField(blank=True, null=True)
 	polygon_imported = gis_models.PolygonField(srid=3857, blank=True, null= True)
@@ -848,16 +849,33 @@ class Fee(models.Model):
 		else:
 			return self.addressee_name or None
 
-	def calc_penalty(self, pay_date):
-		penalty_limit = 10000
-		due_date = date(self.date_to.year, 12, 31) # end of year due date
-		months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
-		interest = 0.015 * float(self.amount) * months_late
-		penalty = 0.1 * float(self.amount)
-		if penalty > penalty_limit:
-			return (penalty_limit, interest)
+	def calc_penalty(self, pay_date=None):
+		if not pay_date:
+			pay_date = date.today()
+
+		if self.category.code == 'land_lease':
+			penalty_limit = 10000
+			due_date = date(self.date_to.year, 12, 31) # end of year due date
+			months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
+			interest = round(0.015 * float(self.amount) * months_late)
+
+			if self.date_to < date(2012,7,9):
+				penalty = round(0.08 * float(self.amount))
+			else:
+				penalty = round(0.1 * float(self.amount))
+			if penalty > penalty_limit:
+				return (penalty_limit, interest)
+			else:
+				return (penalty, interest)
+
 		else:
-			return (penalty, interest)
+			raise NotImplentedError
+
+	def get_late(self,  pay_date=None):
+		if not pay_date:
+			pay_date = date.today()
+		penalty, interest = self.calc_penalty(pay_date)
+		return penalty + interest
 
 	@property
 	def property_owners(self):
