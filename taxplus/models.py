@@ -898,14 +898,10 @@ class Fee(models.Model):
 					return 0
 
 			if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
-				amount = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
-				if save:
-					self.amount = amount
-					self.save()
-				return amount
+				rate = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
 
 
-			if self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
+			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
 				if self.prop.land_zone.code == 'residential':
 					rate = 80
 
