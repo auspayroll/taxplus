@@ -2,12 +2,12 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.http import Http404, HttpResponseRedirect,HttpResponse
-from django.core.urlresolvers import reverse 
+from django.core.urlresolvers import reverse
 from django.contrib import messages
 from django.conf import settings
 from dev1 import variables
 from media.models import *
-#from media.modelforms import MediaUploadForm
+from media.modelforms import MediaUploadForm
 from jtax.models import *
 from log.mappers.LogMapper import LogMapper
 from property.models import Property
@@ -25,7 +25,7 @@ from django.contrib.auth.decorators import login_required
 def index(request, content_type_name, action = None):
 	"""
 	Search logs by 1)username, 2)plot id or 3)transaction id
-	"""   
+	"""
 	form = MediaUploadForm(request.GET)
 	business = None
 	citizen = None
