@@ -7,3 +7,6 @@ dev1/wsgi.py
 */migrations_old/*
 *.zip
 *.pdf
+invoices/*
+*.gzip
+*.gz
