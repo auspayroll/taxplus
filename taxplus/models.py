@@ -947,7 +947,7 @@ class Fee(models.Model):
 			self.amount = round(self.amount)
 
 			if save:
-				self.save()
+				self.save(update_fields=('qty', 'rate', 'amount', 'remaining_amount'))
 
 			return self.amount
 
