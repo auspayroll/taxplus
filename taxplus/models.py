@@ -835,7 +835,7 @@ class Fee(models.Model):
 		total = paid['amount'] or 0
 		fines = paid['fines'] or 0
 		capital_amount = total - fines
-		return capital_amount, fines
+		return float(capital_amount), float(fines)
 
 
 	def get_remaining_amount(self):
