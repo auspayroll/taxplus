@@ -6,7 +6,8 @@ from property.models import *
 from dateutil.relativedelta import relativedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, CategoryChoice
+from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, CategoryChoice, PropertyTitle
+from citizen.models import Citizen
 
 
 class BusinessCategory(models.Model):
@@ -398,9 +399,11 @@ class Business(models.Model):
 
 @receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
-	if created:
-		business = instance
-		instance.calc_taxes()
+	business = instance
+	#instance.calc_taxes()
+	try:
+		entity = Entity.objects.get(business_id=business.pk)
+	except Entity.DoesNotExist:
 		entity = Entity()
 		entity.entity_type_id = CategoryChoice.objects.get(category__code='entity_type', code='business').pk
 		entity.business_id = business.pk
@@ -438,9 +441,11 @@ class SubBusiness(models.Model):
 
 @receiver(post_save, sender=SubBusiness)
 def after_sub_business_save(sender, instance, created, **kwargs):
-	if created:
-		instance.business.calc_taxes()
-		sub = instance
+	#instance.business.calc_taxes()
+	sub = instance
+	try:
+		entity  = Entity.objects.get(subbusiness_id=sub.pk)
+	except Entity.DoesNotExist:
 		entity = Entity()
 		entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='subsiduary')
 		entity.subbusiness_id = sub.pk
@@ -548,56 +553,115 @@ class Ownership(models.Model):
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
+	@property
+	def property_ownership(self):
+		instance=self
+		if instance.owner_citizen_id:
+			citizen = Citizen.objects.get(pk=instance.owner_citizen_id)
+			owner = Entity.objects.get(pk=citizen.entity_id)
+
+		elif instance.owner_business_id:
+			try:
+				owner = Entity.objects.get(business_id=instance.owner_business_id)
+			except Entity.DoesNotExist:
+				business = Business.objects.get(pk=instance.owner_business_id)
+				business.save()
+				owner = Entity.objects.get(business_id=instance.owner_business_id)
+
+		elif instance.owner_subbusiness_id:
+			try:
+				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
+			except Entity.DoesNotExist:
+				sbusiness = SubBusiness.objects.get(pk=instance.owner_subbusiness_id)
+				sbusiness.save()
+				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
+
+
+		ownership = PropertyOwnership.objects.get(owner=owner, prop__id=instance.asset_property_id)
+		return ownership
+
+
 @receiver(post_save, sender=Ownership)
 def after_ownership_save(sender, instance, created, **kwargs):
 	ownership = None
-	if instance.asset_property_id:
+	if instance.asset_property_id and instance.i_status=='active':
+		if instance.owner_citizen_id:
+			citizen = Citizen.objects.get(pk=instance.owner_citizen_id)
+			owner = Entity.objects.get(pk=citizen.entity_id)
+
+		elif instance.owner_business_id:
+			try:
+				owner = Entity.objects.get(business_id=instance.owner_business_id)
+			except Entity.DoesNotExist:
+				business = Business.objects.get(pk=instance.owner_business_id)
+				business.save()
+				owner = Entity.objects.get(business_id=instance.owner_business_id)
+
+		elif instance.owner_subbusiness_id:
+			try:
+				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
+			except Entity.DoesNotExist:
+				sbusiness = SubBusiness.objects.get(pk=instance.owner_subbusiness_id)
+				sbusiness.save()
+				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
+
 		try:
-			ownership = PropertyOwnership.objects.get(legacy_id=instance.pk)
+			ownership = instance.property_ownership
+
 		except PropertyOwnership.DoesNotExist:
 			ownership = PropertyOwnership()
-			if instance.owner_citizen_id:
-				owner = Entity.objects.get(citizen_id=instance.owner_citizen_id)
-
-			elif instance.owner_business_id:
-				owner = Entity.objects.get(business_id=instance.owner_citizen_id)
-
-			elif instance.owner_subbusiness_id:
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-
 			ownership.owner = owner
-			ownership.prop_id = ownership.asset_property_id
-			ownership.save()
+			ownership.prop_id = instance.asset_property_id
+			title, created = PropertyTitle.objects.get_or_create(prop_id=instance.asset_property_id, date_from=instance.date_started, defaults=dict(date_to=instance.date_ended, status_id=1))
+			title.save()
+			ownership.prop_title = title
 
-	elif instance.asset_business or instance.asset_subbusiness:
-		try:
-			ownership = BusinessOwnership.objects.get(legacy_id=instance.pk)
-		except BusinessOwnership.DoesNotExist:
-			ownership = BusinessOwnership()
-			if instance.owner_citizen_id:
-				owner = Entity.objects.get(citizen_id=instance.owner_citizen_id)
-
-			elif instance.owner_business_id:
-				owner = Entity.objects.get(business_id=instance.owner_citizen_id)
-
-			elif instance.owner_subbusiness_id:
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-
-			if instance.asset_business_id:
-				asset = Entity.objects.get(business_id=instance.asset_business_id)
-
-			elif instance.asset_subbusiness_id:
-				asset = Entity.objects.get(subbusiness_id=instance.asset_subbusiness_id)
-
-			ownership.owner = owner
-			ownership.business = asset
-			ownership.save()
-
-	if ownership:
 		ownership.date_from = instance.date_started
 		ownership.date_to = instance.date_ended
-		ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
+		if ownership.date_to:
+			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'inactive'))
+
+		else:
+			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
+
 		ownership.stake = instance.share
+		ownership.save()
+
+	elif instance.asset_business or instance.asset_subbusiness:
+		if instance.owner_citizen_id:
+			owner = Entity.objects.get(citizen_id=instance.owner_citizen_id)
+
+		elif instance.owner_business_id:
+			owner = Entity.objects.get(business_id=instance.owner_business_id)
+
+		elif instance.owner_subbusiness_id:
+			owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
+
+		if instance.asset_business_id:
+			asset = Entity.objects.get(business_id=instance.asset_business_id)
+
+		elif instance.asset_subbusiness_id:
+			asset = Entity.objects.get(subbusiness_id=instance.asset_subbusiness_id)
+
+		try:
+			BusinessOwnership.objects.get(business=asset, owner=owner)
+
+		except BusinessOwnership.DoesNotExist:
+			ownership = BusinessOwnership()
+			ownership.business = asset
+			ownership.owner = owner
+
+		ownership.date_from = instance.date_started
+		ownership.date_to = instance.date_ended
+		if ownership.date_to:
+			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'inactive'))
+		else:
+			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
+		ownership.stake = instance.share
+		if created:
+			title = PropertyTitle(prop_id=instance.asset_property_id, date_from=ownership.date_from, date_to=ownership.date_to)
+			title.save()
+			ownership.title = title
 		ownership.save()
 
 
