@@ -860,8 +860,10 @@ class Fee(models.Model):
 			months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
 			interest = round(0.015 * float(self.amount) * months_late)
 
-			if self.date_to < date(2012,7,9):
-				penalty = round(0.08 * float(self.amount))
+			if self.date_to <= date(2012,12,31):
+				interest = round((pay_date.year - due_date.year) * 0.08 * float(self.amount))
+				penalty = 0
+
 			else:
 				penalty = round(0.1 * float(self.amount))
 			if penalty > penalty_limit:
