@@ -65,10 +65,6 @@ class Citizen(models.Model):
 			self.gender = 'Unknown'
 
 		#strip whitespaces before save
-		self.citizen_id = self.citizen_id.strip()
-		self.first_name = self.first_name.strip()
-		self.middle_name = self.middle_name.strip()
-		self.last_name = self.last_name.strip()
 		models.Model.save(self)
 
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
@@ -104,20 +100,19 @@ class Citizen(models.Model):
 
 @receiver(post_save, sender=Citizen)
 def after_citizen_save(sender, instance, created, **kwargs):
-	if created:
-		self = instance
-		try:
-			entity = Entity.objects.get(identifier=self.citizen_id, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
+	self = instance
+	try:
+		entity = Entity.objects.get(identifier=self.citizen_id, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
 
-		except Entity.DoesNotExist:
-			entity = Entity(citizen_id=self.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'), status=active, identifier=self.citizen_id)
-			entity.save()
+	except Entity.DoesNotExist:
+		entity = Entity(citizen_id=self.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'), status_id=1, identifier=self.citizen_id)
+		entity.save()
 
-		if entity.citizen_id != self.pk: # if this citizen is not the one used in the entity record, update status to inactive.
-			# note: use update to avoid infinite recursion
-			Citizen.objects.filter(pk=self.pk).update(status_id=2, status_new_id=2)
+	if entity.citizen_id != self.pk: # if this citizen is not the one used in the entity record, update status to inactive.
+		# note: use update to avoid infinite recursion
+		Citizen.objects.filter(pk=self.pk).update(status_new_id=2)
 
-		Citizen.objects.filter(pk=self.pk).update(entity_id=entity.pk)
+	Citizen.objects.filter(pk=self.pk).update(entity_id=entity.pk)
 
 
 
