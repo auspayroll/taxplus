@@ -606,7 +606,6 @@ class Entity(models.Model):
 		else:
 			return None
 
-
 	@property
 	def name(self):
 		if self.entity_type.code == 'business':
@@ -615,7 +614,6 @@ class Entity(models.Model):
 		elif self.entity_type.code == 'individual':
 			title = self.citizen
 			return "%s %s" % (self.citizen.first_name, self.citizen.last_name)
-
 
 		elif self.entity_type.code == 'subsiduary':
 			return self.subbusiness.branch
@@ -853,6 +851,9 @@ class Fee(models.Model):
 		if not pay_date:
 			pay_date = date.today()
 
+		if pay_date <= self.due_date:
+			return (0,0)
+
 		if self.category.code == 'land_lease':
 			penalty_limit = 10000
 			due_date = date(self.date_to.year, 12, 31) # end of year due date
@@ -1061,6 +1062,76 @@ class PropertyOwnership(models.Model):
 	legacy = models.ForeignKey(Ownership, null=True)
 	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
 	modified = models.DateTimeField(auto_now=True, null=True)
+
+
+@receiver(post_save, sender=PropertyOwnership)
+def after_prop_ownership_save(sender, instance, created, **kwargs):
+
+	# title with no start date fix
+	try:
+		title = instance.prop_title
+		title.date_from = instance.date_from
+		title.date_to = instance.date_to
+		try:
+			dup_title = PropertyTitle.objects.exclude(pk=title.pk).get(prop=instance.prop, date_from=instance.date_from)
+		except PropertyTitle.DoesNotExist:
+			PropertyOwnership.objects.filter(prop_title=title).update(date_to=instance.date_to)
+		else:
+			PropertyOwnership.objects.filter(prop_title=title).update(prop_title=dup_title, date_to=instance.date_to)
+			title.delete()
+			title = dup_title
+
+		title.save()
+	except:
+		import pdb
+		pdb.set_trace()
+
+	try:
+		if instance.owner.citizen_id:
+			citizen = Citizen.objects.get(pk=instance.owner.citizen_id)
+			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_citizen=citizen, i_status='active', defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, i_status=instance.status.code))
+			if not created:
+				#o.share = instance.stake or 0
+				o.date_started = instance.date_from
+				o.date_ended = instance.date_to
+				o.save()
+
+		elif instance.owner.business_id:
+			business = Business.objects.get(pk=instance.owner.business_id)
+			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status='active', defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, i_status=instance.status.code))
+			if not created:
+				#o.share = instance.stake or 0
+				o.date_started = instance.date_from
+				o.date_ended = instance.date_to
+				o.save()
+
+		elif instance.owner.subbusiness_id:
+			business = SubBusiness.objects.get(pk=instance.owner.business_id)
+			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_subbusiness=business, i_status='active', defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, i_status=instance.status.code))
+			if not created:
+				#o.share = instance.stake or 0
+				o.date_started = instance.date_from
+				o.date_ended = instance.date_to
+				o.save()
+
+	except Ownership.MultipleObjectsReturned:
+		if instance.owner.citizen_id:
+			ownerships = Ownership.objects.filter(asset_property=instance.prop, owner_citizen=citizen, i_status='active')
+
+		elif instance.owner.business_id:
+			ownerships = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status='active')
+
+		elif instance.owner.subbusiness_id:
+			ownerships = Ownership.objects.get_or_create(asset_property=instance.prop, owner_subbusiness=business, i_status='active')
+
+		o = ownerships[0]
+		ownerships.exclude(pk=o.pk).update(i_status='inactive')
+		#o.share = instance.stake or 0
+		o.date_started = instance.date_from
+		o.date_ended = instance.date_to
+		o.save()
+
+
 
 
 class BusinessOwnership(models.Model):
