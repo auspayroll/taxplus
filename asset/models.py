@@ -584,7 +584,10 @@ class Ownership(models.Model):
 @receiver(post_save, sender=Ownership)
 def after_ownership_save(sender, instance, created, **kwargs):
 	ownership = None
-	if instance.asset_property_id and instance.i_status=='active':
+	status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
+
+	#property ownerships
+	if instance.asset_property_id:
 		if instance.owner_citizen_id:
 			citizen = Citizen.objects.get(pk=instance.owner_citizen_id)
 			owner = Entity.objects.get(pk=citizen.entity_id)
@@ -605,28 +608,22 @@ def after_ownership_save(sender, instance, created, **kwargs):
 				sbusiness.save()
 				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
 
-		try:
-			ownership = instance.property_ownership
-
-		except PropertyOwnership.DoesNotExist:
-			ownership = PropertyOwnership()
-			ownership.owner = owner
-			ownership.prop_id = instance.asset_property_id
-			title, created = PropertyTitle.objects.get_or_create(prop_id=instance.asset_property_id, date_from=instance.date_started, defaults=dict(date_to=instance.date_ended, status_id=1))
+		title, created = PropertyTitle.objects.get_or_create(prop_id=instance.asset_property_id, date_from=instance.date_started, defaults=dict(date_to=instance.date_ended, status=status))
+		if not created:
+			title.date_to = instance.date_ended
+			title.status = CategoryChoice.objects.get(category__code='status', code=instance.i_status)
 			title.save()
+		ownership, created = PropertyOwnership.objects.get_or_create(prop=title.prop, owner=owner, defaults=dict(date_from=title.date_from, date_to=title.date_to, prop_title=title, stake=instance.share, status=status))
+		if not created:
 			ownership.prop_title = title
+			ownership.date_from = title.date_from
+			ownership.date_to = title.date_to
+			ownership.stake = instance.share
+			ownership.save()
+		#remove orphan titles
+		PropertyTitle.objects.filter(prop__id=instance.asset_property_id, title_ownership__isnull=True).distinct().delete()
 
-		ownership.date_from = instance.date_started
-		ownership.date_to = instance.date_ended
-		if ownership.date_to:
-			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'inactive'))
-
-		else:
-			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
-
-		ownership.stake = instance.share
-		ownership.save()
-
+	#business ownerships
 	elif instance.asset_business or instance.asset_subbusiness:
 		if instance.owner_citizen_id:
 			owner = Entity.objects.get(citizen_id=instance.owner_citizen_id)
@@ -643,29 +640,11 @@ def after_ownership_save(sender, instance, created, **kwargs):
 		elif instance.asset_subbusiness_id:
 			asset = Entity.objects.get(subbusiness_id=instance.asset_subbusiness_id)
 
-		try:
-			BusinessOwnership.objects.get(business=asset, owner=owner)
-
-		except BusinessOwnership.DoesNotExist:
-			ownership = BusinessOwnership()
-			ownership.business = asset
-			ownership.owner = owner
-
-		ownership.date_from = instance.date_started
-		ownership.date_to = instance.date_ended
-		if ownership.date_to:
-			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'inactive'))
-		else:
-			ownership.status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
-		ownership.stake = instance.share
-		if created:
-			title = PropertyTitle(prop_id=instance.asset_property_id, date_from=ownership.date_from, date_to=ownership.date_to)
-			title.save()
-			ownership.title = title
-		ownership.save()
-
-
-
+		ownership, created = BusinessOwnership.objects.get_or_create(business=asset, owner=owner, defaults=dict(date_from=instance.date_started, date_to=instance.date_ended, stake=instance.share, status=status))
+		if not created:
+			ownership.date_from = instnace.date_started
+			ownership.date_to = instance.date_ended
+			ownership.save()
 
 
 #General functions used in many models
