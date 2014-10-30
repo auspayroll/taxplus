@@ -146,7 +146,7 @@ def getPropertySector(request):
 			info['sector_id'] = sector.id
 			info['sector_name'] = sector.name
 			cells = Cell.objects.filter(sector = sector).order_by('name')
-			
+
 			cells_to_return = []
 			for cell in cells:
 				cell_dict = {}
@@ -162,10 +162,10 @@ def add_property(request):
 		POST = request.POST
 		is_leasing = POST['is_leasing']
 		parcel_id = POST['parcel_id']
-		sector = Sector.objects.get(id=POST['sector']) 
-		cell = Cell.objects.get(id=POST["cell"]) 
-		village = Village.objects.get(id=POST['village']) 
-		
+		sector = Sector.objects.get(id=POST['sector'])
+		cell = Cell.objects.get(id=POST["cell"])
+		village = Village.objects.get(id=POST['village'])
+
 		conditions = {"parcel_id":parcel_id,"village":village,"cell":cell,"sector":sector}
 		existing_properties = PropertyMapper.getPropertiesByConditions(conditions)
 		if existing_properties:
@@ -183,18 +183,18 @@ def add_property(request):
 			plist.append(plist[0])
 			polygon = Polygon(plist)
 			new_boundary = Boundary.objects.create(polygon=polygon, type = "manual", i_status="active")
-		
+
 		property = Property()
 		property.parcel_id = parcel_id
 		property.village = village
 		property.cell = cell
 		property.sector = sector
-		
+
 		if is_leasing == 'true':
 			property.is_leasing = True
 		else:
 			property.is_leasing = False
-		
+
 		if new_boundary:
 			property.boundary = new_boundary
 		property.status=Status.objects.get(name = 'Active')
@@ -209,14 +209,14 @@ def generate_property_tax(request):
 		to_json = {}
 		to_json['message']=''
 		plot_id = request.GET['plot_id']
-		
+
 		## No declared values at all.
 		declaredValues = DeclaredValueMapper.getDeclaredValuesByPlotId(plot_id)
 		if declaredValues is None:
 			to_json['message']='Sorry! No declared value for this property.'
 			to_json['propertytaxitems'] = []
 			return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
-		
+
 		## No usable declared values to generate tax due form.
 		declaredValueDueDate = None
 		declaredValue = DeclaredValueMapper.getDeclaredValueByPlotId(plot_id)
@@ -227,7 +227,7 @@ def generate_property_tax(request):
 			to_json['message']='No usable declared values to generate tax due form.'
 			to_json['propertytaxitems'] = []
 			return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
-		
+
 		tax_items = TaxBusiness.generatePropertyTax(request,plot_id)
 		tax_items = PropertyTaxItemMapper.getCleanPropertyTaxItems(tax_items)
 		to_json = {}
@@ -235,12 +235,12 @@ def generate_property_tax(request):
 		return HttpResponse(simplejson.dumps(to_json), mimetype='application/json')
 """
 def add_district(request):
-	
+
 	if request.method == 'POST':
 		POST = request.POST
 		name = POST['name']
 		boundary = POST['boundary']
-		
+
 		plist=[]
 		points = boundary.split('#')
 		for point in points:
@@ -256,7 +256,7 @@ def add_district(request):
 		district.boundary = boundary
 		district.i_status="active"
 		district.save()
-		
+
 		new_data = model_to_dict(district)
 		LogMapper.createLog(request,object=district,action="add")
 		return HttpResponse('OK')
@@ -271,7 +271,7 @@ def add_sector(request):
 		district = POST['district']
 		boundary = POST['boundary']
 		council = POST['council']
-		
+
 		plist=[]
 		points = boundary.split('#')
 		for point in points:
@@ -302,7 +302,7 @@ def add_council(request):
 		name = POST['name']
 		address = POST['address']
 		boundary = POST['boundary']
-		
+
 		plist=[]
 		points = boundary.split('#')
 		for point in points:
@@ -335,12 +335,12 @@ def search_user(request):
 	match_count = 0
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('keyword'):	  
+		if GET.has_key('keyword'):
 			keyword = GET['keyword'].lower()
 			users = PMUser.objects.all()
 			for user in users:
 				fullname = user.firstname.lower() + ' ' + user.lastname.lower()
-				match = keyword in fullname				 
+				match = keyword in fullname
 				if match:
 					match_count = match_count + 1
 					if match_count == 1:
@@ -358,7 +358,7 @@ def search_object_names(request):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term') and GET.has_key('type'):		 
+		if GET.has_key('term') and GET.has_key('type'):
 			keyword = GET['term'].lower().strip()
 			list = []
 			if GET['type'] == 'district':
@@ -382,7 +382,7 @@ def search_citizen(request):
 	match_count = 0
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('keyword'):		 
+		if GET.has_key('keyword'):
 			keyword = GET['keyword'].lower()
 			citizens = Citizen.objects.all()
 			for citizen in citizens:
@@ -390,7 +390,7 @@ def search_citizen(request):
 					fullname = citizen.first_name.lower() + ' ' + citizen.middle_name.lower() + ' ' + citizen.last_name.lower()
 				else:
 					fullname = citizen.first_name.lower() + ' ' + citizen.last_name.lower()
-				match = keyword in fullname				 
+				match = keyword in fullname
 				if match:
 					match_count = match_count + 1
 					if match_count == 1:
@@ -405,7 +405,7 @@ def search_citizen(request):
 def search_property_in_area(request):
 	"""
 	search properties within a specified area.
-	For each property satisfying the above requirement, info is returned including plot_id, parcel_id, village, cell, sector 
+	For each property satisfying the above requirement, info is returned including plot_id, parcel_id, village, cell, sector
 	and shape (This is represented Propertyby a polygon with known vertice coordinates).
 	The above info is returned with json format
 	"""
@@ -416,7 +416,7 @@ def search_property_in_area(request):
 		GET = request.GET
 		if GET.has_key('purpose'):
 			purpose = GET['purpose']
-		if GET.has_key('boundary'):		 
+		if GET.has_key('boundary'):
 			boundary = GET['boundary']
 			plist=[]
 			points = boundary.split('#')
@@ -470,21 +470,21 @@ def search_property_in_area(request):
 					point_json['y']=point_y
 					points_json.append(point_json)
 				property_json['points']=points_json
-				
+
 				property_json['plot_id']=property.plot_id
 				property_json['upi'] = property.getUPI()
 				property_json['parcel_id']=property.parcel_id
 				property_json['village']=property.village
 				property_json['cell']=property.cell
 				property_json['sector']=property.sector.name
-				
-				
-				
+
+
+
 				propertytaxitems_json=[]
 				propertytaxitems = PropertyTaxItemMapper.getCleanPropertyTaxItems(property)
 				property_json['propertytaxitems'] = propertytaxitems
-				
-					
+
+
 				declarevalues_json=[]
 				declarevalues = DeclaredValue.objects.filter(plot_id = property.plot_id).order_by("-date_time")
 				for declare_value in declarevalues:
@@ -494,7 +494,7 @@ def search_property_in_area(request):
 					declare_value_json['staffid']=declare_value.staff_id
 					declare_value_json['amount']=str(declare_value.currency) + " " +str(declare_value.amount)
 					declarevalues_json.append(declare_value_json)
-				property_json['declarevalues']=declarevalues_json				
+				property_json['declarevalues']=declarevalues_json
 				properties.append(property_json)
 			to_json['properties'] = properties
 	search_message_all = "does a map search of properties for " + purpose + " purpose."
@@ -509,7 +509,7 @@ def search_property_field(request):
 	"""
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('sector'):		 
+		if GET.has_key('sector'):
 			keyword = GET['sector']
 			matched_properties = Property.objects.filter(sector__pk = int(keyword))
 			if len(matched_properties) == 0:
@@ -519,7 +519,7 @@ def search_property_field(request):
 				if property.sector not in result:
 					result.append(property.sector)
 			return HttpResponse(simplejson.dumps(result), mimetype='application/json')
-		if GET.has_key('cell'):		 
+		if GET.has_key('cell'):
 			keyword = GET['cell']
 			matched_cells = Cell.objects.filter(name__istartswith=keyword)
 			if GET.has_key('sector_id'):
@@ -530,7 +530,7 @@ def search_property_field(request):
 			for cell in matched_cells[:20]:
 				result.append(cell.name)
 			return HttpResponse(simplejson.dumps(result), mimetype='application/json')
-		if GET.has_key('village'):		 
+		if GET.has_key('village'):
 			keyword = GET['village']
 			matched_properties = Property.objects.filter(village__istartswith=keyword)
 			if len(matched_properties) == 0:
@@ -540,14 +540,14 @@ def search_property_field(request):
 				if property.village not in result:
 					result.append(property.village)
 			return HttpResponse(simplejson.dumps(result), mimetype='application/json')
-		
+
 def search_property_by_fields(request):
 	"""
 	Search a property or properties by provided conditions
 	If plotid is given, the remaining conditions will not be considered, as each plotid corresponds to a property
 	The above info is returned with json format
 	"""
-	
+
 	result = ""
 	to_json = {}
 	properties=[]
@@ -577,13 +577,13 @@ def search_property_by_fields(request):
 				cell = cells[0]
 		if GET.has_key('parcel_id') and GET['parcel_id']!='':
 			parcel_id = GET['parcel_id']
-		
+
 		if upi:
 			matched_properties = PropertyMapper.getPropertyByUPI(upi)
 		else:
 			#matched_properties = PropertyMapper.getPropertiesByConditions({'sector':sector,'cell':cell, 'village':village, 'parcel_id':parcel_id})
 			matched_properties = PropertyMapper.getPropertiesByConditions({'sector':sector,'cell':cell, 'parcel_id':parcel_id})
-		
+
 		property_list = []
 		if type(matched_properties) == Property:
 			property_list.append(matched_properties)
@@ -618,11 +618,11 @@ def search_property_by_fields(request):
 			property_json['village']=property.village
 			property_json['cell']=property.cell
 			property_json['sector']=property.sector.name
-			
+
 			propertytaxitems_json=[]
 			propertytaxitems = PropertyTaxItemMapper.getCleanPropertyTaxItems(property)
 			property_json['propertytaxitems'] = propertytaxitems
-			
+
 			declarevalues_json=[]
 			declarevalues = DeclaredValue.objects.filter(property = property).order_by("-date_time")
 			for declare_value in declarevalues:
@@ -640,9 +640,9 @@ def search_property_by_fields(request):
 				declare_value_json['amount']=str(declare_value.currency) + " " +str(declare_value.amount)
 				declarevalues_json.append(declare_value_json)
 			property_json['declarevalues']=declarevalues_json
-			properties.append(property_json)			
+			properties.append(property_json)
 		to_json['properties'] = properties
-		
+
 		"""
 		if int(refresh) == 0:
 			if sector:
@@ -673,7 +673,7 @@ def search_properties_for_printing(request):
 		has_ownership = 'all'
 		page_records = 20
 		properties_to_return = []
-		
+
 		if GET.has_key("boundary"):
 			boundary = GET['boundary']
 			plist=[]
@@ -683,7 +683,7 @@ def search_properties_for_printing(request):
 				count = count + 1
 				if count%2 == 1:
 					point_x=point
-					point_y = points[count]				
+					point_y = points[count]
 				else:
 					continue
 				plist.append(GEOSGeometry('POINT(%s %s)' %(point_x, point_y)))
@@ -744,8 +744,8 @@ def search_properties_for_printing(request):
 			if GET.has_key('page'):
 				page = int(GET['page'])
 			properties_to_return = PropertyMapper.getPropertiesByConditions({'sector':sector,'village':village, 'cell':cell, 'parcel_id':parcel_id,'citizen':citizen,'has_ownership':has_ownership,})
-		
-		
+
+
 		if page:
 			if (page+1)*page_records<=len(properties_to_return):
 				properties_to_return = properties_to_return[page*page_records:page*page_records+20]
@@ -757,28 +757,28 @@ def search_properties_for_printing(request):
 		if len(properties_to_return) > 0:
 			upi_prefix = Common.get_upi_prefix(properties_to_return[0])
 		for obj in properties_to_return:
-			
+
 			property_obj = {}
 			property_obj['upi'] = obj.upi
 			property_obj['parcel_id'] = obj.parcel_id
-			
+
 			if obj.sector:
 				property_obj['sector'] = obj.sector.getDisplayName()
 			else:
 				property_obj['sector'] = ''
-			
+
 			if obj.cell:
 				property_obj['cell'] = obj.cell.name
 			else:
 				property_obj['cell'] = ''
-			
+
 			if obj.village:
 				property_obj['village'] = obj.village.name
 			else:
 				property_obj['village'] = ''
-			
+
 			property_obj['address'] = obj.getDisplayName()
-			
+
 
 			ownerships = OwnershipMapper.getCurrentOwnershipsByPropertyId(obj.id)
 			owners = ''
@@ -796,7 +796,7 @@ def search_properties_for_printing(request):
 					if email == '' and ownership.owner_citizen.email:
 						email = ownership.owner_citizen.email
 			TaxMapper.generateTaxes(obj,request)
-					
+
 			# check whether rental income tax application to this property
 			tax_count = 0
 			if obj.is_leasing:
@@ -828,7 +828,7 @@ def search_property_by_plot_id(request):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			properties = Property.objects.filter(plot_id__istartswith=keyword).order_by('plot_id','cell')[:20]
 			for b in properties:
@@ -844,7 +844,7 @@ def search_property_by_upi(request):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			b = PropertyMapper.getPropertyByUPI(keyword)
 			if b:
@@ -860,7 +860,7 @@ def search_property_by_upi(request):
 #	result = []
 #	if request.method == 'GET':
 #		GET = request.GET
-#		if GET.has_key('term'):		 
+#		if GET.has_key('term'):
 #			keyword = GET['term'].lower().strip()
 			#check if user enter 2 words
 #			if " " in keyword:
@@ -883,7 +883,7 @@ def search_citizen_clean(request):
 	citizens = None
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			if GET.has_key('stype') and GET['stype'] in ['nid','first_name','last_name']:
 				if GET['stype'] == 'nid':
@@ -936,12 +936,9 @@ def search_citizen_clean(request):
 					else:
 						citizens = []
 			for b in citizens:
-				fullname = None
-				if b.middle_name:
-					fullname = b.first_name + ' ' + b.middle_name + ' ' + b.last_name
-				else:
-					fullname = b.first_name + ' ' + b.last_name
-				record = { 'id': b.id, 'value': b.first_name + ' ' + b.last_name + ' (CID: ' + b.citizen_id +')', 'first_name':b.first_name,'last_name':b.last_name,'middle_name':b.middle_name,'nid':b.citizen_id, 'fullname':fullname}
+				fullname = ' '.join([name or '' for name in (b.first_name, b.middle_name, b.last_name) if name])
+				value = "%s (CID: %s)" % (fullname, b.citizen_id)
+				record = { 'id': b.id, 'value': value, 'first_name':b.first_name,'last_name':b.last_name,'middle_name':b.middle_name,'nid':b.citizen_id, 'fullname':fullname}
 				result.append(record)
 	return HttpResponse(json.dumps(result), mimetype="application/json")
 
@@ -954,7 +951,7 @@ def search_business(request):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			if GET.has_key('stype') and GET['stype'] in ['nid','first_name','last_name']:
 				if GET['stype'] == 'tin':
@@ -996,7 +993,7 @@ def search_vehicle(request):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			list = Vehicle.objects.filter(plate_number__icontains=keyword)[:20]
 			for i in list:
@@ -1025,7 +1022,7 @@ def search_asset_by_name(request,modelName):
 	result = []
 	if request.method == 'GET':
 		GET = request.GET
-		if GET.has_key('term'):		 
+		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
 			list = get_model('asset',modelName).objects.filter(name__icontains=keyword).order_by('name')[:20]
 			for i in list:
