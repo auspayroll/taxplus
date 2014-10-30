@@ -839,7 +839,7 @@ class Fee(Tax):
 	staff_id = models.IntegerField(help_text="The staff who generates this fee item.", null=True, blank=True)
 	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
-	business = models.ForeignKey(Business, null=True, blank=True)
+	business = models.ForeignKey(Business, null=True, blank=True, related_name='business_fees')
 	subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	property = models.ForeignKey(Property,null=True,blank=True, related_name='property_fees')
 	citizen = models.ForeignKey(Citizen,null=True,blank=True)
@@ -847,6 +847,8 @@ class Fee(Tax):
 	land_lease_type = models.ForeignKey(LandUse, null=True, blank=True, default=None)
 	#citizen_owners = models.ManyToManyField(Citizen)
 	#business_owners = models.ManyToManyField(Business)
+	category = models.ForeignKey(CategoryChoice, related_name='fee_category')
+	status = models.ForeignKey(CategoryChoice)
 
 	def __unicode__(self):
 		if 'cleaning' in self.fee_type:
@@ -898,12 +900,9 @@ class Fee(Tax):
 			business = self.subbusiness.business
 		else:
 			business = self.business
-		if business.business_category and business.business_category.pk == 0 or self.exempt:
-			self.amount = 0
-			self.remaining_amount = 0
-			return 0, None
 
-		if business.business_category:
+		if business.business_category is not None:
+			"""
 			schedule = CleaningSchedule.objects.filter(business_category=business.business_category)
 
 			if business.cell:
@@ -917,8 +916,18 @@ class Fee(Tax):
 				schedule = schedule.filter(sector__isnull=True).filter(district__isnull=True)
 
 			schedule = schedule.order_by('-valid_from', '-cell', '-sector', '-district')[0]
-
 			self.amount  = schedule.amount
+			"""
+
+			if business.business_category_id in range(1,7):
+				self.amount = 10000
+			elif business.business_category_id == 7:
+				self.amount = 5000
+			elif business.business_category_id == 8:
+				self.amount = 3000
+			else:
+				self.amount = 0
+
 			self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
 			if self.remaining_amount <= 0:
 				self.is_paid = True
@@ -931,8 +940,6 @@ class Fee(Tax):
 			return self.amount, self.due_date
 		else:
 			self.reset_tax()
-
-
 
 	def calc_cleaningFee_deprecated(self):
 		if self.subbusiness:

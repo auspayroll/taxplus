@@ -10,6 +10,8 @@ from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, Categor
 from citizen.models import Citizen
 
 
+active = CategoryChoice.objects.get(category__code='status', code='active')
+
 class BusinessCategory(models.Model):
 	name = models.CharField(max_length=100)
 
@@ -54,8 +56,6 @@ class Business(models.Model):
 	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True)
 	business_subcategory = models.ForeignKey(BusinessSubCategory, null=True, blank=True)
 	entity_id = models.IntegerField(null=True)
-
-
 
 
 	def merge(self, business1, business2):
@@ -333,7 +333,6 @@ class Business(models.Model):
 			self.tin = self.tin.strip()
 		models.Model.save(self)
 
-
 	def calc_taxes(self, now=None, include_only=False):
 		from jtax.models import TradingLicenseTax, Fee
 		"""
@@ -356,11 +355,10 @@ class Business(models.Model):
 		year_end_date = date(now.year, 12, 31)
 
 		subbusinesses = SubBusiness.objects.filter(business = self, i_status='active')
-
-
+		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
 		if not include_only or 'cleaning' in include_only:
 			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
-			if not self.business_type or 'No premises' not in self.business_type:
+			if self.business_category is not None:
 				if self.date_started and self.date_started > year_start_date:
 					cleaning_month = date(self.date_started.year, self.date_started.month, 1)
 				else:
@@ -371,20 +369,23 @@ class Business(models.Model):
 					end_month = next_month - timedelta(days=1)
 					month_from = timezone.make_aware(datetime.combine(cleaning_month, datetime.min.time()), timezone.get_default_timezone())
 					month_to = timezone.make_aware(datetime.combine(end_month, datetime.min.time()), timezone.get_default_timezone())
-					try:
-						fee, created = Fee.objects.get_or_create(fee_type='cleaning', business=self, date_from=cleaning_month, i_status='active', defaults=dict(is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to))
-						if not fee.is_paid:
-							fee.calc_cleaningFee()
-					except:
-						pass
+
+					fee, created = Fee.objects.get_or_create(fee_type='cleaning', business=self, date_from=cleaning_month, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, category=cleaning, status=active, i_status='active', remaining_amount=0))
+					if not fee.is_paid:
+						fee.calc_cleaningFee()
+
 					for subbusiness in subbusinesses:
 						try:
-							fee, created = Fee.objects.get_or_create(fee_type='cleaning', subbusiness=subbusiness, date_from=cleaning_month, i_status='active', defaults=dict(is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to))
+							fee, created = Fee.objects.get_or_create(fee_type='cleaning', subbusiness=subbusiness, date_from=cleaning_month, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, category=cleaning, status=active, i_status='active', remaining_amount=0))
 							if not fee.is_paid:
 								fee.calc_cleaningFee()
 						except:
 							pass
 					cleaning_month = next_month
+
+		Fee.objects.filter(business__pk=self.pk, category=cleaning, amount=0).delete()
+		Fee.objects.filter(subbusiness__business=self.pk, category=cleaning, amount=0).delete()
+
 
 	def get_properties(self):
 		return Property.objectsIgnorePermission.filter(owners__owner_business=self)
@@ -400,9 +401,10 @@ class Business(models.Model):
 @receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
-	#instance.calc_taxes()
+	instance.calc_taxes()
 	try:
 		entity = Entity.objects.get(business_id=business.pk)
+
 	except Entity.DoesNotExist:
 		entity = Entity()
 		entity.entity_type_id = CategoryChoice.objects.get(category__code='entity_type', code='business').pk
