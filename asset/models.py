@@ -10,8 +10,6 @@ from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, Categor
 from citizen.models import Citizen
 
 
-active = CategoryChoice.objects.get(category__code='status', code='active')
-
 class BusinessCategory(models.Model):
 	name = models.CharField(max_length=100)
 
@@ -356,6 +354,7 @@ class Business(models.Model):
 
 		subbusinesses = SubBusiness.objects.filter(business = self, i_status='active')
 		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
+		active = CategoryChoice.objects.get(category__code='status', code='active')
 		if not include_only or 'cleaning' in include_only:
 			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
 			if self.business_category is not None:
