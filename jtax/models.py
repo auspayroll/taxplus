@@ -30,7 +30,7 @@ class IncompletePaymentManager(models.Manager):
 			else:
 				return super(IncompletePaymentManager,self).get_query_set().filter(district__in = District.objects.all(), sector__in = Sector.objects.all()).distinct()
 		else:
-			super(IncompletePaymentManager,self).get_query_set().none()
+			return super(IncompletePaymentManager,self).get_query_set().none()
 
 
 class IncompletePayment(models.Model):
@@ -46,7 +46,7 @@ class IncompletePayment(models.Model):
 	bank_receipt = models.CharField(max_length = 100, null = True, blank = True, verbose_name = 'Bank Receipt')
 	sector_receipt = models.CharField(max_length = 100, null = True, blank = True, verbose_name = 'Sector Receipt/manual receipt')
 	district = models.ForeignKey(District, null=True, blank=True, verbose_name = 'District')
-	sector = models.ForeignKey(Sector, null = True, blank = True, verbose_name = 'Sector')	
+	sector = models.ForeignKey(Sector, null = True, blank = True, verbose_name = 'Sector')
 	cell = models.ForeignKey(Cell, null = True, blank = True, verbose_name = 'Cell')
 	village = models.ForeignKey(Village, null = True, blank = True, verbose_name = 'Village')
 	parcel_id = models.CharField(max_length = 100, null = True, blank=True, verbose_name = 'Plot/Parcel ID')
@@ -72,7 +72,7 @@ class IncompletePayment(models.Model):
 
 	def __unicode__(self):
 		return "Incomplete Payment " + str(self.id)
-		
+
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
@@ -92,10 +92,10 @@ class Historical(models.Model):
 	invoince_no = models.CharField(max_length = 50, null=True, blank = True)
 
 """
-The DeclaredValue Models are based around Declared Values Supplied by Property Owners 
-These need to be checked against the Valuration system and checked if the supplied value is in line 
-If it is not it needs to be flaged and manually checked. 
-The Goverment / Council only has 6 months to Challange this value before it is automatticly accepted. 
+The DeclaredValue Models are based around Declared Values Supplied by Property Owners
+These need to be checked against the Valuration system and checked if the supplied value is in line
+If it is not it needs to be flaged and manually checked.
+The Goverment / Council only has 6 months to Challange this value before it is automatticly accepted.
 """
 class DeclaredValue(models.Model):
 	"""
@@ -141,7 +141,7 @@ class DeclaredValueNotes(models.Model):
 
 class DeclaredValueMedia(models.Model):
 	"""
-	This is a list of media files that have been attached to the Declared Value Application / Item directly. 
+	This is a list of media files that have been attached to the Declared Value Application / Item directly.
 	"""
 	declared_value = models.ForeignKey(DeclaredValue)
 	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')
@@ -156,8 +156,8 @@ class DeclaredValueMedia(models.Model):
 		return str(self.file_name)
 
 """
-The Assigned Value models are for the assigned Values to a property, this would be the official price of the land/property accepted by the Goverment. All Tax Items based off Property Value should use this table. 
-These values are apparently accepted for 4 years from timme of acceptance. 
+The Assigned Value models are for the assigned Values to a property, this would be the official price of the land/property accepted by the Goverment. All Tax Items based off Property Value should use this table.
+These values are apparently accepted for 4 years from timme of acceptance.
 """
 class AssignedValue(models.Model):
 	"""
@@ -228,18 +228,18 @@ class Tax(models.Model):
 		surcharge_rate = payment['surcharge_rate']
 		surcharge_max = payment['surcharge_max']
 		total = payment['total']
-		
+
 		default_installments = []
 		installments = self.installments.all().order_by('due')
 		late_installments = [ installment for installment in installments if installment.due < pay_date and installment.paid < installment.amount ]
-		if installments and not late_installments: # set the next installment date as due date	
+		if installments and not late_installments: # set the next installment date as due date
 			try:
 				next_installment = [ installment for installment in installments if installment.due > pay_date and installment.owed > 0 ][0]
 				due_date = next_installment.due
 				amount_due = next_installment.owed
-			except IndexError: 
+			except IndexError:
 				pass
-	
+
 		total_due = amount_due + Decimal(late_fees)
 		return { 'due_date':due_date, 'amount_due':amount_due, 'interest':interest, 'total':total,
 		  'surcharge':surcharge, 'late_fees':late_fees, 'interest_rate':float(interest_rate * 100), 'total_due':total_due, 'months_late':months_late,
@@ -268,7 +268,7 @@ class Tax(models.Model):
 			sector = property_or_business.sector
 		else:
 			sector = None
-		
+
 		due_date = self.due_date
 		tax_amount = self.amount or 0
 		amount_paid = tax_amount - ( self.remaining_amount or 0)
@@ -281,7 +281,7 @@ class Tax(models.Model):
 		months_late = Decimal(0)
 		total_due = Decimal(0)
 		interest = Decimal(0)
-		surcharge = Decimal(0) 
+		surcharge = Decimal(0)
 		principle = Decimal(0)
 
 		# get the settings to calculate late fee
@@ -296,25 +296,25 @@ class Tax(models.Model):
 		late_installments = False
 		paid_amount = amount_paid
 		unpaid_installments = []
-		
+
 		for i in installments:
-			if paid_amount < i.amount: 
+			if paid_amount < i.amount:
 				paid_amount = 0
 				unpaid_installments.append(i)
 			else: # already paid
 				paid_amount -= i.amount
-				
+
 		late_installments = [ i for i in unpaid_installments if pay_date > i.due ]
 
-		if not late_installments and unpaid_installments: # set the next installment date as due date	
+		if not late_installments and unpaid_installments: # set the next installment date as due date
 			due_date = unpaid_installments[0].due
 			amount_due = unpaid_installments[0].remaining
 
 		if due_date and pay_date > due_date:
 			late_fees, months_late, interest, surcharge, principle = calc_interest(due_date, amount_due, surcharge_rate, surcharge_max, interest_rate, payment_amount, pay_date)
-		
+
 		return { 'due_date':due_date, 'amount_due':amount_due, 'interest':interest,
-		  'surcharge':surcharge, 'late_fees':late_fees, 'interest_rate':float(interest_rate * 100), 
+		  'surcharge':surcharge, 'late_fees':late_fees, 'interest_rate':float(interest_rate * 100),
 		  'months_late':months_late, 'principle':principle, 'amount_paid':amount_paid,
 		  'surcharge_rate':float(surcharge_rate * 100), 'surcharge_max':surcharge_max }
 
@@ -344,7 +344,7 @@ class Tax(models.Model):
 		paid = (self.amount or 0) - (self.remaining_amount or 0)
 		installments = self.installments.all().order_by('due')
 		for i in installments:
-			if paid < i.amount: 
+			if paid < i.amount:
 				i.paid = paid
 				paid = 0
 			else: # already paid
@@ -353,7 +353,7 @@ class Tax(models.Model):
 			i.owed = i.amount - i.paid
 		return installments
 
-	
+
 	def calculateRemainingAmount(self, amount):
 		from django.db.models import Sum
 		"""given a new amount, calculate the amount remaining"""
@@ -397,7 +397,7 @@ class Tax(models.Model):
 			return 'trading_license_tax'
 		elif type(self) is Fee and 'land_lease' in self.fee_type:
 			return 'land_lease_fee'
-		elif type(self) is Fee: 
+		elif type(self) is Fee:
 			return 'fee'
 
 
@@ -420,7 +420,7 @@ class Tax(models.Model):
 			amount = round(self.remaining_amount / no_installments)
 			Installment.objects.create(fee=self, amount=amount, paid=0, due=due_date)
 		return self.installments.all()
-		
+
 	def pay_installment(self, amount, paid_on=None):
 		installments = self.installments.filter(paid__lt=F('amount')).order_by('due')
 		paid_on = paid_on or date.today()
@@ -436,7 +436,7 @@ class Tax(models.Model):
 				installment.paid_on = paid_on
 				installment.save()
 				amount -= unpaid
-	
+
 	def next_outstanding_installment(self):
 		installments = self.installments.filter(paid__lt=F('amount')).order_by('due')
 		if installments:
@@ -478,7 +478,7 @@ class Tax(models.Model):
 			if date_from > date_to:
 				date_from = date_to
 		"""
-	
+
 		return date_from, date_to
 
 
@@ -525,7 +525,7 @@ class LandRentalTaxMedia(models.Model):
 
 """
 The following Models are Related to the P = IncompletePayment.objects.all()
-			search_iroperty Asset Tax Collection and Evalutional 
+			search_iroperty Asset Tax Collection and Evalutional
 """
 
 class PropertyTaxItem(Tax):
@@ -619,14 +619,14 @@ class ChallengePropertyTaxItemNote(models.Model):
 	challenge_property_tax_item = models.ForeignKey(ChallengePropertyTaxItem)
 	staff_id = models.IntegerField(help_text="The government staff who records this challenge.")
 	note = models.TextField(help_text="Note on why this property tax item is challenged.")
-	
+
 class ChallengePropertyTaxItemMedia(models.Model):
 	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
 	mediatype = models.CharField(max_length=4,choices=variables.media_types,help_text='This is the type of media the file is')
 	mediafile = models.FileField(help_text='This is the location of the file on the file system.',upload_to='tmp')
 	staffid = models.IntegerField(help_text='The ID of the Staff Member who uploaded the file')
 	mediadatetime = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True,auto_now=True)
-	
+
 class ReviewPropertyTaxItem(models.Model):
 	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
 	staffid = models.IntegerField(help_text="The government staff who review the challenge.")
@@ -634,7 +634,7 @@ class ReviewPropertyTaxItem(models.Model):
 	note = models.CharField(max_length=255, help_text="review result.")
 
 """
-The following Models are Related to the Rental Income Tax Collection and Evalutional 
+The following Models are Related to the Rental Income Tax Collection and Evalutional
 """
 class RentalIncomeTax(Tax):
 	plot_id = models.CharField(max_length = 50, help_text='This is the ID of the Plot that the Declared Value is for.')
@@ -705,7 +705,7 @@ class RentalIncomeTaxNotes(Tax):
 		return getLogMessage(self,old_data,new_data, action)
 
 """
-The following Models are Related to the Trading License Tax Collection and Evalutional 
+The following Models are Related to the Trading License Tax Collection and Evalutional
 """
 class TradingLicenseTax(Tax):
 	business = models.ForeignKey(Business, null=True, blank=True, help_text="Business that have trading license to be taxed.")
@@ -732,13 +732,13 @@ class TradingLicenseTax(Tax):
 
 	def __unicode__(self):
 		if self.business:
-			name = "Trading License Tax (TIN: " + str(self.business.tin) + ") " 
+			name = "Trading License Tax (TIN: " + str(self.business.tin) + ") "
 
 		elif self.subbusiness:
 			name = "Trading License Tax (TIN: " + str(self.subbusiness.business.tin) + ",branch:"+self.subbusiness.branch + ") [" + DateFormat(self.period_from).format('d/m/Y') + " - " + DateFormat(self.period_to).format('d/m/Y') + "]"
 			if self.date_from and self.date_to:
 				name += "[" + DateFormat(self.date_from).format('d/m/Y') + " - " + DateFormat(self.date_to).format('d/m/Y') + "]"
-		return name 
+		return name
 
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
@@ -749,7 +749,7 @@ class TradingLicenseTax(Tax):
 			self.reset_tax()
 			return None
 		else:
-			activity_data = pickle.loads(self.activity_data.decode('base64')) 
+			activity_data = pickle.loads(self.activity_data.decode('base64'))
 		tax_due = 0
 		date_from = self.date_from
 		date_to = self.date_to
@@ -782,10 +782,10 @@ class TradingLicenseTax(Tax):
 			business = self.business
 
 		self.date_from, self.date_to = self.calc_tax_period()
-		
+
 		if business.vat_register:
 			if self.turnover:
-				tax_summary = Setting.calculateTradingLicenseTax(self.date_from, self.date_to, self.turnover, 
+				tax_summary = Setting.calculateTradingLicenseTax(self.date_from, self.date_to, self.turnover,
 					sector=business.sector)
 			else:
 				tax_summary = None
@@ -856,10 +856,10 @@ class Fee(Tax):
 		if self.date_from and self.date_to:
 			name += "[" + DateFormat(self.date_from).format('d/m/Y') + " - " + DateFormat(self.date_to).format('d/m/Y') + "]"
 		return name
-	
+
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
-	
+
 
 	def calc_tax(self):
 		if self.fee_type in ('cleaning_fee', 'cleaning'):
@@ -887,7 +887,7 @@ class Fee(Tax):
 				fd.save()
 				self.save()
 				return tax_summary
-		
+
 		self.due_date = Setting.get_due_date('land_lease_fee', self.date_to)
 		self.reset_tax()
 		return None
@@ -956,7 +956,7 @@ class Fee(Tax):
 			self.reset_tax()
 
 
-	
+
 	def medias(self):
 		from media.models import Media
 		return Media.objects.filter(tax_type__in=['cleaning_fee','cleaning','fee'], tax_id=self.pk)
@@ -1118,7 +1118,7 @@ class PendingPayment(models.Model):
 		return getLogMessage(self,old_data,new_data, action)
 
 class FormulaData(models.Model):
-		
+
 	data = models.TextField()
 	fee = models.OneToOneField(Fee, null=True)
 	property_item = models.OneToOneField(PropertyTaxItem, null=True)
@@ -1164,17 +1164,17 @@ class Setting(models.Model):
 	village = models.ForeignKey(Village, null=True, blank=True, help_text="")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	date_time = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
-	
+
 	def __unicode__(self):
 		return "ID:" + str(self.id) + " - " + str(self.tax_fee_name) + " " + str(self.setting_name) + " - " + str(self.sub_type) + "[ " + str(self.value) + " ] (" + self.i_status + ")"
-	
+
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
 
 	@classmethod
 	def calculateFixedAssetTax(cls, date_from, date_to, residential=0, commercial=0, agricultural=0, land_use_type=None, *args, **kwargs):
-		
+
 		if type(date_from) is datetime:
 			date_from = date_from.astimezone(timezone.get_default_timezone()).date()
 
@@ -1197,14 +1197,14 @@ class Setting(models.Model):
 			period = (date_from, date_to)
 			formula_data[period] = {}
 			days_in_period = Decimal((date_to - date_from).days + 1)
-			
+
 
 			residential = residential - period_setting['residential_deduction']
 			if residential < 0:
 				residential = 0
 			taxable = residential + commercial + agricultural
 			taxable = (Decimal(taxable) / 1000).quantize(Decimal(0)) * 1000
-			
+
 			if taxable > 0:
 				amount = (days_in_period / total_days_in_period  * period_setting['tax_rate'] * taxable).quantize(Decimal('.01'))
 				tax += amount
@@ -1214,7 +1214,7 @@ class Setting(models.Model):
 			formula_data[period]['tax_rate'] = period_setting['tax_rate']
 			formula_data[period]['days'] = days_in_period
 			formula_data[period]['taxable'] = taxable
-		
+
 		tax = Decimal(int(tax))
 		return {'amount':tax, 'due':due_date, 'days':total_days_in_period, 'due_date':due_date, 'formula_data':formula_data, 'vat':True}
 
@@ -1252,7 +1252,7 @@ class Setting(models.Model):
 			else:
 				taxable = last_year_rental_income - ( last_year_rental_income * period_setting['rate']) - last_year_bank_interest
 				formula_data[period]['taxable_rate'] = period_setting['rate']
-			
+
 			formula_data[period]['taxable'] = taxable
 			tax_ranges = period_setting['tax_ranges']
 			amounts = []
@@ -1269,7 +1269,7 @@ class Setting(models.Model):
 				amounts.append({'taxable':taxable, 'rate':tax_ranges['180000-1000000'], 'amount':amount})
 				taxable = 180000
 				period_total += amount
-			
+
 			amount = taxable * tax_ranges['0-180000']
 			period_total += amount
 			period_total = (days_in_period / total_days_in_period * period_total).quantize(Decimal('0.01'))
@@ -1290,7 +1290,7 @@ class Setting(models.Model):
 
 		if type(date_to) is datetime:
 			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
-		
+
 		size = Decimal(size).quantize(Decimal('.0001'))
 		land_use_types = None
 		if land_use_type == 'Agricultural':
@@ -1332,8 +1332,8 @@ class Setting(models.Model):
 		due_date = date_to
 		tax = Decimal(int(tax))
 		return {'amount':tax, 'due':due_date, 'due_date':due_date, 'days':total_days_in_period, 'formula_data':formula_data }
-	
-		
+
+
 	@classmethod
 	def calculateCleaningFee(cls, period_date, business_type, area_type, sector=None, cell=None, village=None):
 		#calculate due date
@@ -1401,10 +1401,10 @@ class Setting(models.Model):
 		current_date = date.today()
 		if tax_fee_name in ('trading_license_tax', 'land_lease_fee'):
 			return date(period_date.year, 12, 31)
-		due_date = cls.getTaxSetting(tax_fee_name, 'due_date', current_date, current_date, sector, district, *args, **kwargs) 
+		due_date = cls.getTaxSetting(tax_fee_name, 'due_date', current_date, current_date, sector, district, *args, **kwargs)
 		due_month, due_day = due_date.split('-')
 		return date(period_date.year, int(due_month), int(due_day))
-	
+
 
 	@classmethod
 	def getTaxSetting(cls, tax_fee_name, setting_name, date_from, date_to, sector=None, district=None, *args, **kwargs):
@@ -1422,10 +1422,10 @@ class Setting(models.Model):
 		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
 		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
 		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
-		The order of precedence s Sector tax values, District tax values then 
+		The order of precedence s Sector tax values, District tax values then
 		tax values with no associated Sector or District
 		"""
-		
+
 		if district and type(district) is int:
 			district = District.objectsIgnorePermission.get(pk=district)
 
@@ -1462,7 +1462,7 @@ class Setting(models.Model):
 			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
 		else:
 			settings = settings.filter(district__isnull=True)
-		
+
 		settings = settings.select_related('district','sector', 'cell', 'village').order_by('-valid_from', '-village', '-cell', '-sector', '-district', 'sub_type')
 
 		fees = {}
@@ -1477,7 +1477,7 @@ class Setting(models.Model):
 				sub_type['pk'] = setting.pk
 
 		return fees
-		
+
 
 	@classmethod
 	def getTaxPeriods(cls, tax_fee_name, date_from, date_to, setting_name=None, sub_type=None, district=None, sector=None, cell=None, village=None, *args, **kwargs):
@@ -1486,10 +1486,10 @@ class Setting(models.Model):
 		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
 		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
 		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
-		The order of precedence s Sector tax values, District tax values then 
+		The order of precedence s Sector tax values, District tax values then
 		tax values with no associated Sector or District
 		"""
-		
+
 		if district and type(district) is int:
 			district = District.objectsIgnorePermission.get(pk=district)
 
@@ -1546,7 +1546,7 @@ class Setting(models.Model):
 			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
 		else:
 			settings = settings.filter(district__isnull=True)
-		
+
 		settings = settings.order_by('-valid_from', '-village', '-cell', '-sector', '-district')
 
 		settings = [setting for setting in settings]
@@ -1648,7 +1648,7 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 						message = message + ","
 					count = count + 1
 					if type(value) is not list:
-						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"	   
+						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"
 		if message == "":
 			message = "No change made"
 		message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"
@@ -1669,7 +1669,7 @@ class Installment(models.Model):
 		if hasattr(self, 'paid'):
 			return "%s due on %s: %s paid" % (self.amount, self.due, self.paid)
 		else:
-			return "%s due on %s" % (self.amount, self.due) 
+			return "%s due on %s" % (self.amount, self.due)
 
 	@staticmethod
 	def previewInstallments(amount, date_from):
@@ -1677,7 +1677,7 @@ class Installment(models.Model):
 		no_installments = 4
 		installments = {}
 		due_date = date_from
-		
+
 		amount = (amount / no_installments).quantize(Decimal('.01'))
 		for i in range(no_installments):
 			due_date = due_date + relativedelta(months=months-1) + relativedelta(day=31)

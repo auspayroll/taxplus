@@ -77,7 +77,7 @@ class ProvinceManager(models.Manager):
 			else:
 				return super(ProvinceManager,self).get_query_set().filter(permission__in = user.getPermissions()).distinct()
 		else:
-			super(ProvinceManager,self).get_query_set().none()
+			return super(ProvinceManager,self).get_query_set().none()
 
 
 class Province(models.Model):
