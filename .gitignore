@@ -10,3 +10,4 @@ dev1/wsgi.py
 invoices/*
 *.gzip
 *.gz
+*.xls
