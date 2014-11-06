@@ -841,7 +841,7 @@ class Fee(models.Model):
 
 
 	def get_remaining_amount(self):
-		return (self.amount - self.get_paid_amount()[0])
+		return (float(self.amount) - self.get_paid_amount()[0])
 
 
 	@property
@@ -934,24 +934,29 @@ class Fee(models.Model):
 
 			else:
 				try:
-					rate = Rate.objects.get(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
+					rate = Rate.objects.get(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
+					rate = float(rate.amount)
 				except Rate.MultipleObjectsReturned:
-					rate = Rate.objects.filter(date_from__lte=self.date_from, date_to__gte=self.date_to, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
-
-				rate = float(rate.amount)
+					rate = Rate.objects.filter(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
+					rate = float(rate.amount)
+				except Rate.DoesNotExist:
+					rate = 0
 
 			self.qty = self.prop.area or 0
 			self.rate = rate or 0
 			self.amount = self.qty * self.rate
-			self.remaining_amount = self.get_remaining_amount()
 			if self.remaining_amount <= 0:
 				self.is_paid = True
+			else:
+				self.is_paid = False
 
 			#calculate part year payment
 			if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
 				self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
 
 			self.amount = round(self.amount)
+			capital_paid_amount = self.get_paid_amount()[0]
+			self.remaining_amount = self.amount - capital_paid_amount
 
 			if save:
 				self.save(update_fields=('qty', 'rate', 'amount', 'remaining_amount'))
