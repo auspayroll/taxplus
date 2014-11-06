@@ -21,8 +21,41 @@ from django.conf import settings
 from django.contrib.humanize.templatetags.humanize import intcomma
 
 import os
+
+
+from PIL import Image
+
+def make_transparent(filename):
+	img = Image.open(filename)
+	img = img.convert("RGBA")
+	datas = img.getdata()
+
+	newData = []
+	for item in datas:
+	    if item[0] == 255 and item[1] == 255 and item[2] == 255:
+	        newData.append((255, 255, 255, 0))
+	    else:
+	        newData.append(item)
+
+	img.putdata(newData)
+	filename = filename.replace('.jpg', '.png')
+	img.save(filename, "PNG")
+
+
+
 stylesheet=getSampleStyleSheet()
 normalStyle = stylesheet['Normal']
+acute_e = u'u\00E9'
+circumflex_e = u'u\00E10'
+
+pm_officers = { 'Masaka': 'Uwimana Amani', 'Nyarugunga': 'Nyangezi David', 'Kanombe': 'Rwagasore Marius', 'Gahanga': 'Uwamurutasate Divine',
+'Kigarama':'Mbishibishi Brian', 'Gikondo':'Umwali Agnes', 'Gatenga':'Murwanashayaka Potein', 'Kicukiro':'Uwamahoro Christa Diane', 'Kagarama':'Uwajeneza Belise',
+'Niboye':'Kirezi Modeste'}
+
+sector_officers = { 'Masaka': 'Hicumunsi Alexis', 'Nyarugunga': 'Niyonsaba Jerome', 'Kanombe': 'Sangano J Gentil', 'Gahanga': 'Nyirandagijimana Delphine',
+'Gikondo':'Mutesi Sylvie', 'Gatenga':'Kamanzi Jean de Dieu', 'Kicukiro':'Umererwa Immaculee', 'Kagarama':'Maniraguha Jean Claude',
+'Niboye':'Yizerwe Pierre Celestin'}
+
 
 
 def generate_invoice(canvas, pagesize, title, fees):
@@ -30,41 +63,67 @@ def generate_invoice(canvas, pagesize, title, fees):
 	border_x = 2.5
 	border_y = 1
 	kigali_icon = os.path.join(settings.PROJECT_DIR, 'static', 'images', 'sectors', 'kigali_icon.gif')
+	address_info_x = width * 2 / 3.0 - 2 * cm
 
 	p = canvas
 
-	p.setFont("Helvetica-Bold", 16)
-	p.drawCentredString(width/2.0, height - (border_y * cm), 'LAND LEASE FEE OVERDUES')
+	titletext = p.beginText()
+	titletext.setFont("Helvetica-Bold", 16)
+	titletext.setTextOrigin(border_x * cm, height - (border_y * cm))
+	titletext.textOut("FAGITIRI Y'UBUKODE BW'IBIBANZA")
+	titletext.moveCursor(0, 9)
+	titletext.setFont("Times-Italic", 10)
+	titletext.textOut("Land Lease Arrears / La facture du bail foncier")
+	p.drawText(titletext)
 
 	p.setFont("Helvetica", 12)
-	p.drawRightString(width - border_x * cm, height - (border_y * cm), 'No: KK%s' % title.id)
+	p.drawRightString(width - border_x * cm, height - (border_y * cm), 'Italiki / Date: %s' % date.today().strftime('%d/%m/%Y'))
 
-	frame1_y_offset = height - 2.3 * cm
+	frame1_y_offset = height - 2 * cm
 	frame1_y_line_diff = 0.5 * cm
 
 	p.setStrokeColor(colors.grey)
 	p.line(border_x * cm, height - ( (border_y + 0.5) * cm), width - border_x * cm, height - ( (border_y + 0.5) * cm))
 
-	p.setFont("Helvetica", 11)
-	p.drawString(border_x * cm, frame1_y_offset, 'Republic of Rwanda')
+	headertext = p.beginText()
+	headertext.setFont("Helvetica-Bold", 11)
+	headertext.setTextOrigin(border_x * cm, frame1_y_offset)
+	headertext.textOut("Repubulika y'uRwanda ")
+	headertext.setFont("Times-Italic", 9)
+	headertext.moveCursor(0, 9)
+	headertext.textOut(u"Republic of Rwanda / R\u00E9publique du Rwanda")
+	p.drawText(headertext)
 
 	p.drawImage(kigali_icon, border_x * cm, height - 5 *cm, width=2.5*cm, height=2.5*cm)
 
+	citytext = p.beginText()
+	citytext.setFont("Helvetica-Bold", 9)
+	citytext.setTextOrigin(border_x * cm, frame1_y_offset - 6.7 * frame1_y_line_diff)
+	citytext.textOut("Umujyi wa Kigali ")
+	citytext.setFont("Times-Italic", 9)
+	citytext.moveCursor(0, 9)
+	citytext.textOut(u"City of Kigali / La Ville de Kigali")
+	p.drawText(citytext)
 
-	p.setFont("Helvetica", 11)
-	p.drawString(border_x * cm, frame1_y_offset - 6.4 * frame1_y_line_diff, 'Kigali City')
-	p.drawString(border_x * cm, frame1_y_offset - 7.4 * frame1_y_line_diff, 'Kicukiro District')
+	districttext = p.beginText()
+	districttext.setFont("Helvetica-Bold", 9)
+	districttext.setTextOrigin(border_x * cm, frame1_y_offset - 8.3 * frame1_y_line_diff)
+	districttext.textOut("Akarere ka Kicukiro ")
+	districttext.setFont("Times-Italic", 9)
+	districttext.moveCursor(0, 9)
+	districttext.textOut(u"Kicukiro District / District de Kicukiro")
+	p.drawText(districttext)
 
 
 
 	p.setFont("Helvetica", 11)
 	display_name = None
 	ownerships = title.title_ownership.all()
+	to_line = 11
 	if ownerships:
-		to_line = 9
 		for ownership in ownerships:
 			display_name = "%s ( Citizen ID: %s )" % (ownership.owner.name, ownership.owner.identifier)
-			if to_line == 9:
+			if to_line == 11:
 				p.drawString(border_x * cm, frame1_y_offset - to_line * frame1_y_line_diff, "To: %s" % display_name)
 			else:
 				p.drawString(border_x * cm + 18.5, frame1_y_offset - to_line * frame1_y_line_diff, display_name)
@@ -72,10 +131,87 @@ def generate_invoice(canvas, pagesize, title, fees):
 
 	elif not ownerships and title.last_name:
 		display_name = ("%s %s %s " % (title.first_name or '', title.middle_name or '', title.last_name or '')).replace('  ', '').strip()
-		p.drawString(border_x * cm, frame1_y_offset - 9 * frame1_y_line_diff, 'To: %s' % display_name)
+		p.drawString(border_x * cm, frame1_y_offset - to_line * frame1_y_line_diff, 'To: %s' % display_name)
 
 
+	text = p.beginText()
+	text.setLeading(8)
 	frame1_y_offset -= 2*cm
+	text.setTextOrigin(border_x * cm, frame1_y_offset - 13 * frame1_y_line_diff)
+	text.setFont("Helvetica-Bold", 10)
+	text.textLine('IKIBANZA - AHO KIBARIZWA')
+	text.setFont("Times-Italic", 9)
+	text.textLine('PLOT PROPERTY LOCATION AND DESCRIPTION / LOCALISATION ET DESCRIPTION DE PARCEL')
+	text.textLine()
+
+	slh = 9
+	lh = 16
+
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut("NO Y'IKIBANZA: ")
+	x, y = text.getCursor()
+	text.setFont("Helvetica", 10)
+	text.textOut('%s' % title.prop.upi)
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut('UPI / No de parcel')
+	text.moveCursor(0,lh)
+
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut('Ingano: ')
+	text.setFont("Helvetica", 10)
+	text.textOut('%s sqm' % intcomma('%.f' % title.prop.area))
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut('size / taille')
+	text.moveCursor(0,lh)
+
+	land_uses = {'Commercial':('Amashyamba', 'Commercial'), 'Agricultural':('Ubuhinzi', 'Agriculture'), 'Residential':('Gutura', 'Residential')}
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut('Icyo ubutaka bukoreshwa: ')
+	text.setFont("Helvetica", 10)
+	text.textOut(land_uses[title.prop.land_zone.name][0])
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut("land use / l'utilisation des terres: %s / %s" % (title.prop.land_zone.name, land_uses[title.prop.land_zone.name][1]))
+	p.drawText(text)
+
+	text = p.beginText()
+	text.setLeading(lh)
+	text.setTextOrigin(address_info_x, y)
+
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut("Akagali: ")
+	text.setFont("Helvetica", 10)
+	text.textOut(title.prop.village.cell.name)
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut('Cell / Cellule')
+	text.moveCursor(0,lh)
+
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut('Umurenge: ')
+	text.setFont("Helvetica", 10)
+	text.textOut(title.prop.village.cell.sector.name)
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut('Sector / Secteur')
+	text.moveCursor(0,lh)
+
+	text.setFont("Helvetica-Bold", 10)
+	text.textOut('Akarere: ')
+	text.setFont("Helvetica", 10)
+	text.textOut(title.prop.village.cell.sector.district.name)
+	text.moveCursor(0,slh)
+	text.setFont('Times-Italic', 9)
+	text.textOut('District ')
+
+	p.drawText(text)
+
+
+
+	"""
+
 	p.setFont("Helvetica-Bold", 9)
 	p.drawString(border_x * cm, frame1_y_offset - 11 * frame1_y_line_diff, 'LAND LEASE - PROPERTY LOCATION AND DESCRIPTION')
 	p.setFont("Helvetica", 11)
@@ -86,20 +222,41 @@ def generate_invoice(canvas, pagesize, title, fees):
 
 	#p.drawString(border_x * cm, frame1_y_offset - 14 * frame1_y_line_diff, 'UPI: 12/312/21/42342')
 
-	address_info_x = width * 2 / 3.0 - 2 * cm
+
 	p.drawString(address_info_x, frame1_y_offset - 12 * frame1_y_line_diff, 'Cell: %s' % title.prop.village.cell.name)
 	p.drawString(address_info_x, frame1_y_offset - 13 * frame1_y_line_diff, 'Sector: %s' % title.prop.village.cell.sector)
 	p.drawString(address_info_x, frame1_y_offset - 14 * frame1_y_line_diff, 'District: %s' % title.prop.village.cell.sector.district)
+	"""
 
 
 	# right column
 	x_offset = width  * ( 1 -   33.0 / 100.0 )
-	p.setFont("Helvetica", 11)
-	p.drawRightString(width - border_x * cm, frame1_y_offset, 'As at %s' % date.today().strftime('%d %B %Y'))
+	#p.setFont("Helvetica-Bold", 14)
+	#p.drawRightString(address_info_x, height - 2 * cm, 'EPAY No: %s%s%s' % ('KK', title.prop.cell.sector.name.upper()[0:3], title.id))
+
+
+	text = p.beginText()
+	text.setLeading(8)
+	text.setTextOrigin(address_info_x - 1*cm, height - 2.2 * cm)
+	text.setFont("Helvetica-Bold", 14)
+	text.textOut('EPAY No: %s%s%s' % ('KK', title.prop.cell.sector.name.upper()[0:3], title.id))
+	text.moveCursor(0,slh)
+	text.setFont("Times-Bold", 9)
+	text.textOut('Icyitonderwa: ')
+	text.setFont("Times-Roman", 9)
+	text.textLines("""Musabwe gutanga iyi numero y'inyemezabuguzi
+	 kuri guichet ya banki mwishyuriraho
+	 """)
+	text.setFont("Times-Italic", 9)
+	text.textLine("Please give this EPAY number to the bank teller")
+	text.textOut(u"S'il vous pla\u00EEt donnez ce num\u00E9ro d'EPAY \u00E0 la caissi\u00E8re de la banque")
+	p.drawText(text)
+
 
 
 	data = [
-	['Tax/Fee', 'Period', 'Rate', 'Principle', 'Penalty', 'Interest', 'Total'],
+	["Ikoro", 'Igihe', 'Angahe', 'Igiciro fatizo', 'Amande', 'Ubukererwe', 'Umubumbe'],
+	['Tax/Impot', u"Period/P\u00E9riode", 'Rate/Taux', 'Principle/Principale', 'Penalty/Amande', u'Interest/Int\u00E9r\u00EAts', 'Total'],
 
 	]
 
@@ -116,51 +273,99 @@ def generate_invoice(canvas, pagesize, title, fees):
 
 		data.append(['LL', period, intcomma(tax.rate), intcomma('%.f' % tax.remaining_amount), intcomma('%.f' % penalty), intcomma('%.f' % interest), intcomma('%.f' % subtotal) ])
 
-	data.append(['', '', '', '', '', '', 'Total outstanding   %s Rwf' % intcomma('%.f' % total)],)
+	data.append(['', '', '', '', '', '', 'Umubumbe wose (Grand total)   %s Rwf' % intcomma('%.f' % total)],)
 
 
 	table_style = TableStyle(
-		[('LINEBELOW', (0,0), (-1,0), 1, colors.grey),
-		('FONT', (0,0), (-1,0), 'Helvetica-Bold', 10),
-		('FONT', (0,1), (-1,-1), 'Helvetica', 10),
+		[
+		('LINEABOVE', (0,0), (-1,0), 1, colors.grey),
+		('LINEBELOW', (0,1), (-1,1), 1, colors.grey),
+		('FONT', (0,0), (-1,0), 'Helvetica-Bold', 8), # first row
+		('FONT', (0,1), (-1,1), 'Times-Italic', 8), # English heading
+		('LEADING', (0,0), (-1,0), 4),
+
+		('FONT', (0,2), (-1,-2), 'Helvetica', 9), # data rows
+
 		('ALIGN', (-1,0), (-1,-1,), 'RIGHT'),
 		('LINEABOVE', (-2,-1), (-1,-1), 1, colors.grey),
-		('FONT', (-2,-1), (-1,-1), 'Helvetica-Bold', 10),
+		('FONT', (0,-1), (-1,-1), 'Helvetica-Bold', 10), # summary line
 		]
 	)
-	table = Table(data, colWidths=(1.5*cm, 4*cm, 2*cm, 2*cm, 2.5*cm, 2*cm, 2*cm), style=table_style)
+	table = Table(data, colWidths=(1.9*cm, 4.4*cm, 2*cm, 2.4*cm, 2*cm, 2*cm, 2*cm), style=table_style)
 	table.wrapOn(p, width, height)
-	table.drawOn(p, border_x*cm, height / 2.0 - 1*cm )
+	table.drawOn(p, border_x*cm, height / 2.0 - 3*cm )
 	#--------------------------------signatures
 	sig_y_height = height / 3.0
 	p.setStrokeColor(colors.grey)
 
 	p.setDash(1)
-	p.line(border_x * cm, sig_y_height -  0.3 *cm, 9 * cm, sig_y_height -  0.3 *cm)
+	p.line(border_x * cm, sig_y_height -  0.4 *cm, 9 * cm, sig_y_height -  0.4 *cm)
 	p.setDash(1,2)
 	p.setFont("Helvetica-Bold", 11)
-	p.drawString(border_x * cm, sig_y_height, 'On behalf of the District')
+	p.drawString(border_x * cm, sig_y_height, 'Uhagarariye Akarere')
+	p.setFont("Times-Italic", 9)
+	p.drawString(border_x * cm, sig_y_height - 9, 'On behalf of the District')
+
 	p.setFont("Helvetica", 11)
-	p.drawString(border_x * cm, sig_y_height - 3 * frame1_y_line_diff, 'Done by:')
-	p.line(4.5 * cm, sig_y_height - 3 * frame1_y_line_diff, 9 * cm, sig_y_height - 3 * frame1_y_line_diff)
-	p.drawString(border_x * cm, sig_y_height - 5 * frame1_y_line_diff, 'Signature:')
-	p.line(4.5 * cm, sig_y_height - 5 * frame1_y_line_diff, 9 * cm, sig_y_height - 5 * frame1_y_line_diff)
-	p.drawString(border_x * cm, sig_y_height - 7 * frame1_y_line_diff, 'Title:')
-	p.line(3.5 * cm, sig_y_height - 7 * frame1_y_line_diff, 9 * cm, sig_y_height - 7 * frame1_y_line_diff)
+	sector_officer = sector_officers.get(title.prop.cell.sector.name, '')
+
+	sector_officer = sector_officers.get(title.prop.cell.sector.name,'')
+	if sector_officer:
+		sector_officer_signature_file = "%s_%s_RC.png" % (title.prop.cell.sector.name, sector_officer.replace(' ', ''))
+		sector_officer_signature_file_path = os.path.join(settings.PROJECT_DIR, 'static', 'images', 'signatures', sector_officer_signature_file)
+		p.drawImage(sector_officer_signature_file_path, border_x * cm + 2.5*cm, sig_y_height - 7 * frame1_y_line_diff, width=5*cm, height=3*cm, preserveAspectRatio=True)
+
+	p.drawString(border_x * cm, sig_y_height - 3 * frame1_y_line_diff, 'Bikozwe na: %s' % sector_officer)
+	p.setFont("Times-Italic", 9)
+	p.drawString(border_x * cm, sig_y_height - 3 * frame1_y_line_diff - slh, 'Done by / Fair par')
+
+	p.setFont("Helvetica", 11)
+	#p.line(4.5 * cm, sig_y_height - 3 * frame1_y_line_diff, 9 * cm, sig_y_height - 3 * frame1_y_line_diff)
+	p.drawString(border_x * cm, sig_y_height - 5 * frame1_y_line_diff, 'Umukono:')
+	p.setFont("Times-Italic", 9)
+	p.drawString(border_x * cm, sig_y_height - 5 * frame1_y_line_diff - slh, 'Signature')
+
+	p.setFont("Helvetica", 11)
+	#p.line(4.5 * cm, sig_y_height - 5 * frame1_y_line_diff, 9 * cm, sig_y_height - 5 * frame1_y_line_diff)
+	p.drawString(border_x * cm, sig_y_height - 7 * frame1_y_line_diff, 'Icyo ashinzwe: Revenue Officer')
+	p.setFont("Times-Italic", 9)
+	p.drawString(border_x * cm, sig_y_height - 7 * frame1_y_line_diff - slh, 'Title / Titre')
+	#p.line(3.5 * cm, sig_y_height - 7 * frame1_y_line_diff, 9 * cm, sig_y_height - 7 * frame1_y_line_diff)
 
 
 	p.setDash(1)
-	p.line(address_info_x, sig_y_height -  0.3 *cm, width - border_x * cm, sig_y_height -  0.3 *cm)
+	p.line(address_info_x, sig_y_height -  0.4 *cm, width - border_x * cm, sig_y_height -  0.4 *cm)
 	p.setDash(1,2)
 	p.setFont("Helvetica-Bold", 11)
-	p.drawString(address_info_x, sig_y_height , 'On behalf of Propertmode Rwanda')
+	p.drawString(address_info_x, sig_y_height , 'Uhagarariye')
+	p.setFont("Times-Italic", 9)
+	p.drawString(address_info_x, sig_y_height - 9, 'On behalf of Propertymode Rwanda')
 	p.setFont("Helvetica", 11)
-	p.drawString(address_info_x, sig_y_height - 3 * frame1_y_line_diff, 'Done by:')
-	p.line(14 * cm, sig_y_height - 3 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 3 * frame1_y_line_diff)
-	p.drawString(address_info_x, sig_y_height - 5 * frame1_y_line_diff, 'Signature:')
-	p.line(14* cm, sig_y_height - 5 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 5 * frame1_y_line_diff)
-	p.drawString(address_info_x, sig_y_height - 7 * frame1_y_line_diff, 'Title:')
-	p.line(13 * cm, sig_y_height - 7 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 7 * frame1_y_line_diff)
+
+	pm_officer = pm_officers.get(title.prop.cell.sector.name,'')
+	if pm_officer:
+		pm_officer_signature_file = "%s_%s_PM.png" % (title.prop.cell.sector.name, pm_officer.replace(' ', ''))
+		pm_officer_signature_file_path = os.path.join(settings.PROJECT_DIR, 'static', 'images', 'signatures', pm_officer_signature_file)
+		p.drawImage(pm_officer_signature_file_path, address_info_x + 2.5*cm, sig_y_height - 7 * frame1_y_line_diff, width=5*cm, height=3*cm, preserveAspectRatio=True)
+
+	p.drawString(address_info_x, sig_y_height - 3 * frame1_y_line_diff, 'Bikozwe na: %s' % pm_officer)
+	p.setFont("Times-Italic", 9)
+	p.drawString(address_info_x, sig_y_height - 3 * frame1_y_line_diff - slh, 'Done by / Fair par')
+
+	p.setFont("Helvetica", 11)
+	#p.line(14 * cm, sig_y_height - 3 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 3 * frame1_y_line_diff)
+	p.drawString(address_info_x, sig_y_height - 5 * frame1_y_line_diff, 'Umukono:')
+	p.setFont("Times-Italic", 9)
+	p.drawString(address_info_x, sig_y_height - 5 * frame1_y_line_diff - slh, 'Signature')
+
+
+	#p.line(14* cm, sig_y_height - 5 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 5 * frame1_y_line_diff) #signature line
+	p.setFont("Helvetica", 11)
+	p.drawString(address_info_x, sig_y_height - 7 * frame1_y_line_diff, 'Icyo ashinzwe: Propertymode collection staff')
+	p.setFont("Times-Italic", 9)
+	p.drawString(address_info_x, sig_y_height - 7 * frame1_y_line_diff - slh, 'Title / Titre')
+
+	#p.line(13 * cm, sig_y_height - 7 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 7 * frame1_y_line_diff)
 
 
 	#----------------------------------------footer
