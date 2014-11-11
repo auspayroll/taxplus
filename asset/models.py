@@ -609,20 +609,23 @@ def after_ownership_save(sender, instance, created, **kwargs):
 				sbusiness.save()
 				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
 
-		title, created = PropertyTitle.objects.get_or_create(prop_id=instance.asset_property_id, date_from=instance.date_started, defaults=dict(date_to=instance.date_ended, status=status))
-		if not created:
-			title.date_to = instance.date_ended
-			title.status = CategoryChoice.objects.get(category__code='status', code=instance.i_status)
-			title.save()
-		ownership, created = PropertyOwnership.objects.get_or_create(prop=title.prop, owner=owner, defaults=dict(date_from=title.date_from, date_to=title.date_to, prop_title=title, stake=instance.share, status=status))
-		if not created:
-			ownership.prop_title = title
-			ownership.date_from = title.date_from
-			ownership.date_to = title.date_to
+		try:
+			ownership = PropertyOwnership.objects.get(prop__id=instance.asset_property_id, owner=owner)
+
+		except PropertyOwnership.DoesNotExist:
+			status = CategoryChoice.objects.get(category__code='status', code=instance.i_status)
+			title = PropertyTitle.objects.create(prop_id=instance.asset_property_id, date_from=instance.date_started, date_to=instance.date_ended, status=status)
+			po = PropertyOwnership.objects.create(prop=title.prop, date_from=title.date_from, date_to=title.date_to, prop_title=title, stake=instance.share, status=status, owner=owner)
+
+		else:
+			ownership.date_from = instance.date_started
+			ownership.date_to = instance.date_ended
 			ownership.stake = instance.share
 			ownership.save()
-		#remove orphan titles
-		PropertyTitle.objects.filter(prop__id=instance.asset_property_id, title_ownership__isnull=True).distinct().delete()
+			title = ownership.prop_title
+			title.date_from = instance.date_started
+			title.date_to = instance.date_ended
+			title.save()
 
 	#business ownerships
 	elif instance.asset_business or instance.asset_subbusiness:
@@ -641,7 +644,8 @@ def after_ownership_save(sender, instance, created, **kwargs):
 		elif instance.asset_subbusiness_id:
 			asset = Entity.objects.get(subbusiness_id=instance.asset_subbusiness_id)
 
-		ownership, created = BusinessOwnership.objects.get_or_create(business=asset, owner=owner, defaults=dict(date_from=instance.date_started, date_to=instance.date_ended, stake=instance.share, status=status))
+		ownership, created = BusinessOwnership.objects.get_or_create(business=asset, owner=owner,\
+			defaults=dict(date_from=instance.date_started, date_to=instance.date_ended, stake=instance.share, status=status))
 		if not created:
 			ownership.date_from = instnace.date_started
 			ownership.date_to = instance.date_ended
