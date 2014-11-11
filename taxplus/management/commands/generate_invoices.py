@@ -166,7 +166,7 @@ def generate_invoice(canvas, pagesize, title, fees):
 	text.textOut('size / taille')
 	text.moveCursor(0,lh)
 
-	land_uses = {'Commercial':('Amashyamba', 'Commercial'), 'Agricultural':('Ubuhinzi', 'Agriculture'), 'Residential':('Gutura', 'Residential')}
+	land_uses = {'Commercial':('Ubucuruzi', 'Commercial'), 'Agricultural':('Ubuhinzi', 'Agriculture'), 'Residential':('Gutura', 'Residential')}
 	text.setFont("Helvetica-Bold", 10)
 	text.textOut('Icyo ubutaka bukoreshwa: ')
 	text.setFont("Helvetica", 10)
@@ -326,7 +326,7 @@ def generate_invoice(canvas, pagesize, title, fees):
 	p.drawString(border_x * cm, sig_y_height - 5 * frame1_y_line_diff - slh, 'Signature')
 
 	p.setFont("Helvetica", 11)
-	#p.line(4.5 * cm, sig_y_height - 5 * frame1_y_line_diff, 9 * cm, sig_y_height - 5 * frame1_y_line_diff)
+	p.line(4.5 * cm, sig_y_height - 5 * frame1_y_line_diff, 9 * cm, sig_y_height - 5 * frame1_y_line_diff)
 	p.drawString(border_x * cm, sig_y_height - 7 * frame1_y_line_diff, 'Icyo ashinzwe: Revenue Officer')
 	p.setFont("Times-Italic", 9)
 	p.drawString(border_x * cm, sig_y_height - 7 * frame1_y_line_diff - slh, 'Title / Titre')
@@ -359,7 +359,7 @@ def generate_invoice(canvas, pagesize, title, fees):
 	p.drawString(address_info_x, sig_y_height - 5 * frame1_y_line_diff - slh, 'Signature')
 
 
-	#p.line(14* cm, sig_y_height - 5 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 5 * frame1_y_line_diff) #signature line
+	p.line(14* cm, sig_y_height - 5 * frame1_y_line_diff, 18.5 * cm, sig_y_height - 5 * frame1_y_line_diff) #signature line
 	p.setFont("Helvetica", 11)
 	p.drawString(address_info_x, sig_y_height - 7 * frame1_y_line_diff, 'Icyo ashinzwe: Propertymode collection staff')
 	p.setFont("Times-Italic", 9)
