@@ -851,7 +851,8 @@ class Fee(models.Model):
 		else:
 			return self.addressee_name or None
 
-	def calc_penalty(self, pay_date=None):
+	def calc_penalty(self, pay_date=None, remaining_amount=None):
+		remaining_amount = remaining_amount or self.remaining_amount
 		if not pay_date:
 			pay_date = date.today()
 
@@ -862,14 +863,16 @@ class Fee(models.Model):
 			penalty_limit = 10000
 			due_date = date(self.date_to.year, 12, 31) # end of year due date
 			months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
-			interest = round(0.015 * float(self.remaining_amount) * months_late)
+			interest = round(0.015 * float(remaining_amount) * months_late)
 
 			if self.date_to <= date(2012,12,31):
-				interest = round((pay_date.year - due_date.year) * 0.08 * float(self.remaining_amount))
+				interest = round((pay_date.year - due_date.year) * 0.08 * float(remaining_amount))
 				penalty = 0
 
 			else:
-				penalty = round(0.1 * float(self.remaining_amount))
+				penalty = round(0.1 * float(remaining_amount))
+			penalty = int(penalty)
+			interest = int(interest)
 			if penalty > penalty_limit:
 				return (penalty_limit, interest)
 			else:
