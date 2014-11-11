@@ -790,9 +790,63 @@ class PropertyTitle(models.Model):
 
 			return periods
 
+	def calc_taxes(self):
+		prop_title = self
+		active = CategoryChoice.objects.get(category__code='status', code='active')
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		if self.prop.is_land_lease:
+			land_lease_issue_date = self.land_lease_issue_date or date(2011,4,5)
+			if prop_title.date_from < land_lease_issue_date:
+				start_date = land_lease_issue_date
+			else:
+				start_date = prop_title.date_from
+
+			date_from = start_date
+			end_date = prop_title.date_to or date(date.today().year,12,31)
+			while date_from <= end_date:
+				date_to = date(date_from.year,12,31)
+				if end_date < date_to:
+					date_to = end_date
+
+				try:
+					fee = Fee.objects.get(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop, prop_title=self)
+
+				except Fee.DoesNotExist:
+					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
+					fee = Fee.objects.create(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, \
+						prop=self.prop, fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
+					print 'created Fee %s' % fee
+
+				except Fee.MultipleObjectsReturned:
+					import pdb
+					pdb.set_trace()
+
+				else:
+					fee.date_from = date_from
+					fee.date_to = date_to
+					fee.prop_title = prop_title
+					fee.calc_amount(save=True)
+
+					if fee.remaining_amount > 0:
+						fee.is_paid = False
+					else:
+						fee.is_paid = True
+
+					if prop_title.date_to:
+						fee.remaining_amount = 0
+
+					fee.save()
+				date_from = date(date_from.year+1, 1, 1)
+
+			if self.date_to:
+				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(prop_title=None)
+			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(prop_title=None)
+
+
 @receiver(post_save, sender=PropertyTitle)
 def after_prop_title_save(sender, instance, created, **kwargs):
 	instance.title_ownership.update(date_from=instance.date_from, date_to=instance.date_to)
+	instance.calc_taxes()
 
 
 class Fee(models.Model):
