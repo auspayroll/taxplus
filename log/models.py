@@ -36,6 +36,8 @@ class Log(models.Model):
 	old_data = models.CharField(blank=True, null=True, max_length=1000)
 	new_data = models.CharField(blank=True, null=True, max_length=1000)
 	message = models.TextField(blank=True, null=True)
+	fee_id = models.IntegerField(blank=True, null=True)
+	payfee_id = models.IntegerField(blank=True, null=True)
 
 	def setUser(self,user):
 		self.user = user
@@ -49,13 +51,13 @@ class Log(models.Model):
 		str= Common.objToStr(obj)
 		self.new_data = str
 	def setMessage(self,message):
-		self.message = message  
+		self.message = message
 
 
 	"""
 	Rollback the changes recorded in the log
 	This function is to be used later.
-	"""  
+	"""
 	def rollback(self):
 		old_data = ast.literal_eval(self.old_data)
 		new_data = ast.literal_eval(self.new_data)
@@ -69,8 +71,8 @@ class Log(models.Model):
 					sql = sql + ' set'
 				if type(value) is bool:
 					if value:
-						sql = sql + " "+key + " = 1"  
-					else: 
+						sql = sql + " "+key + " = 1"
+					else:
 						sql = sql + " "+key + " = 0"
 				elif type(value) is datetime:
 					sql = sql + " "+key + " = '" + value.strftime('%Y-%m-%d %H:%M:%S')+"'"
@@ -121,7 +123,7 @@ class Log(models.Model):
 		cursor = connection.cursor()
 		cursor.execute(sql)
 		transaction.commit_unless_managed()
-		return True    
+		return True
 
 
 

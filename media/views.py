@@ -77,7 +77,6 @@ def update(request, content_type_name):
 
 
 def upload_ajax(request, content_type_name, action = None):
-
 	if request.method == 'POST' and request.FILES != None:
 		file = request.FILES['file']
 		file_valid = True
@@ -123,6 +122,7 @@ def upload_ajax(request, content_type_name, action = None):
 			if request.POST.get('tags',None)  and request.POST.get('tags') != '':
 				tags = request.POST.get('tags');
 
+
 			if request.POST.get('tax_type'):
 				#upload from Invoice Generate page
 				tax_type = request.POST.get('tax_type')
@@ -130,21 +130,12 @@ def upload_ajax(request, content_type_name, action = None):
 				payment_id = request.POST.get('payment_id',None)
 				payment_type = 'pay_'+tax_type
 
-				if tax_type == 'fee':
-					tax = Fee.objects.get(pk=tax_id)
-					business = tax.business
-					subbusiness = tax.subbusiness
-					property = tax.property
-				elif tax_type == 'fixed_asset':
-					tax = PropertyTaxItem.objects.get(pk=tax_id)
-					property = tax.property
-				elif tax_type == 'trading_license':
-					tax = TradingLicenseTax.objects.get(pk=tax_id)
-					business = tax.business
-					subbusiness = tax.subbusiness
-				elif tax_type == 'rental_income':
-					tax = RentalIncomeTax.objects.get(pk=tax_id)
-					property = tax.property
+
+				tax = Fee.objects.get(pk=tax_id)
+				business = tax.business
+				subbusiness = tax.subbusiness
+				property = tax.property
+
 
 				#determine the location to upload file to, use the priority:  tax > citizen > property > business
 				# (if file associated with citizen then put inside citizen folder, etc)
@@ -184,7 +175,7 @@ def upload_ajax(request, content_type_name, action = None):
 				for chunk in file.chunks():
 					destination.write(chunk)
 
-			media = Media(title=title,description=description,tags=tags,file_name=file_name,path=file_path,file_type=file.content_type,
+			media = Media(title=title,description=description,tags=tags,file_name=file_name,path=file_path,file_type=file.content_type, fee_id=tax_id, payfee_id=payment_id,
 							file_size=file.size,citizen=citizen,business=business,property=property,billboard=billboard,incomplete_payment=incomplete_payment,
 							tax_type=tax_type,tax_id=tax_id,payment_type=payment_type,payment_id=payment_id,user_id=staff.id)
 			media.save()

@@ -12,10 +12,10 @@ from django.db.models import Q
 
 
 class LogMapper:
-	
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get logs by conditions
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getLogsByConditions(conditions):
 		logs = None
@@ -31,7 +31,7 @@ class LogMapper:
 					count = count + 1
 				else:
 					return None
-				
+
 			if key == 'transaction_id' and value and value!="":
 				if count > 0:
 					logs = logs.filter(transaction_id = value)
@@ -121,18 +121,18 @@ class LogMapper:
 
 		logs = logs.order_by('-date_time').select_related('citizen','business','property','property__cell')
 		return logs
-	
-	
+
+
 	@staticmethod
 	def raw(sql):
 		return Log.objects.raw(sql)
-	
-	
-	
+
+
+
 	@staticmethod
 	def getTransactionId():
 		"""
-		Generate a new transactionid by using max transactionid + 1 
+		Generate a new transactionid by using max transactionid + 1
 		"""
 		count = Log.objects.all().count()
 		if count == 0:
@@ -142,8 +142,8 @@ class LogMapper:
 			#log = Log.objects.all().order_by("-transactionid")[0]
 			#return log.transactionid + 1
 
-		
-	# action could be: 1)view 2)add 3)change 4)delete 5)login 6)logout 
+
+	# action could be: 1)view 2)add 3)change 4)delete 5)login 6)logout
 	@staticmethod
 	def createLog(request,**kwargs):
 		"""
@@ -165,14 +165,14 @@ class LogMapper:
 		search_message_purpose =None
 		search_object_class_name = None
 		search_conditions = {}
-		
+
 		log = Log()
 		log.transaction_id = LogMapper.getTransactionId()
 		if request.session.has_key("user"):
 			user = request.session.get('user')
 			log.setUser(user)
 		message = ""
-		
+
 		# get parameters from arguments
 		for key, value in kwargs.iteritems():
 			if key == "user":
@@ -211,7 +211,11 @@ class LogMapper:
 			if key == "message":
 				message = kwargs['message']
 			if key in ('tax_id','payment_id','media_id','payment_type','tax_type'):
-				setattr(log, key, value) 
+				setattr(log, key, value)
+			if key == 'payment_id':
+				setattr(log, 'payfee_id', int(value))
+			if key == 'tax_id':
+				setattr(log, 'fee_id', int(value))
 
 		if action == "login" or action == "logout":
 			message = action
@@ -246,7 +250,7 @@ class LogMapper:
 			if new_data is not None:
 				for key, value in new_data.iteritems():
 					if type(value) is datetime:
-						new_data[key]=value.astimezone(pytz.utc)  
+						new_data[key]=value.astimezone(pytz.utc)
 			log.setOldObj(old_data)
 			log.setNewObj(new_data)
 			if not log.table and object:
@@ -272,7 +276,7 @@ class LogMapper:
 
 		log.setMessage("User ["+user.firstname+" "+user.lastname+"] "+message)
 		log.save()
-		
+
 	# create logs from Command Apps
 	@staticmethod
 	def createLogCommand(**kwargs):
@@ -289,11 +293,11 @@ class LogMapper:
 		new_data = None
 		action = None
 		message_all = None
-		
+
 		log = Log()
 
 		message = ""
-		
+
 		# get parameters from arguments
 		for key, value in kwargs.iteritems():
 			if key == "username":
@@ -321,14 +325,14 @@ class LogMapper:
 			if key == "message":
 				message = kwargs['message']
 			if key in ('tax_id','payment_id','media_id','payment_type','tax_type'):
-				setattr(log, key, value) 
+				setattr(log, key, value)
 
 		if message == "":
 			message = LogMapper.getLogMessage(object,old_data, new_data, action)
 		if new_data is not None:
 			for key, value in new_data.iteritems():
 				if type(value) is datetime:
-					new_data[key]=value.astimezone(pytz.utc)  
+					new_data[key]=value.astimezone(pytz.utc)
 		log.setOldObj(old_data)
 		log.setNewObj(new_data)
 		if not log.table and object:
@@ -342,10 +346,10 @@ class LogMapper:
 			log.business = business
 		if subbusiness:
 			log.subbusiness = subbusiness
-		
+
 		log.setMessage("User ["+log.username+"] "+message)
 		log.save()
-	
+
 	@staticmethod
 	def getLogMessage(obj,olddata=None,newdata=None,action=None):
 		"""
@@ -358,4 +362,3 @@ class LogMapper:
 		if newdata is not None:
 			new_data=ast.literal_eval(Common.objToStr(newdata))
 		return obj.getLogMessage(old_data,new_data,action)
-	
