@@ -527,6 +527,23 @@ class Office(models.Model):
 		return getLogMessage(self,old_data,new_data, action)
 
 
+class PropertyOwner(models.Model):
+	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_propertyowners")
+	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_propertyowners")
+	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="property_assets")
+
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
+
+class BusinessOwnership(models.Model):
+	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
+	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
+
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
+
 class Ownership(models.Model):
 	#owner_type = models.CharField(max_length=20,choices = variables.owner_types, help_text='Owner Types')
 	#owner_id = models.IntegerField(help_text='Owner ID')
