@@ -929,7 +929,7 @@ class Fee(Tax):
 				self.amount = 0
 
 			self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
-			if self.remaining_amount <= 0:
+			if self.remaining_amount <= 0 and self.amount > 0:
 				self.is_paid = True
 			else:
 				self.is_paid = False

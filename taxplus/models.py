@@ -1002,7 +1002,7 @@ class Fee(models.Model):
 			self.qty = self.prop.area or 0
 			self.rate = rate or 0
 			self.amount = self.qty * self.rate
-			if self.remaining_amount <= 0:
+			if self.remaining_amount <= 0 and amount > 0:
 				self.is_paid = True
 			else:
 				self.is_paid = False
