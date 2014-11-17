@@ -350,9 +350,13 @@ class Business(models.Model):
 		year_start = period_from = timezone.make_aware(parser.parse("%s-01-01 00:00:00" % current_year), timezone.get_default_timezone())
 		year_end = timezone.make_aware(parser.parse("%s-12-31 23:59:59" % current_year), timezone.get_default_timezone())
 		year_start_date = date_from = date(now.year, 1,1)
-		year_end_date = date(now.year, 12, 31)
 
 		subbusinesses = SubBusiness.objects.filter(business = self, i_status='active')
+		if now.month >=10:
+			year_end_date = date(now.year + 1, 12, 31)
+		else:
+			year_end_date =  yed = date(now.year, 12, 31)
+
 		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		if not include_only or 'cleaning' in include_only:
