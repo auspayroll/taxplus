@@ -10,6 +10,7 @@ from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, Categor
 from citizen.models import Citizen
 
 
+
 class BusinessCategory(models.Model):
 	name = models.CharField(max_length=100)
 
@@ -332,7 +333,7 @@ class Business(models.Model):
 		models.Model.save(self)
 
 	def calc_taxes(self, now=None, include_only=False):
-		from jtax.models import TradingLicenseTax, Fee
+		from jtax.models import Fee
 		"""
 		generate business taxes & fees(Trading Licence, Cleaning Fee)
 		"""
@@ -351,7 +352,6 @@ class Business(models.Model):
 		year_end = timezone.make_aware(parser.parse("%s-12-31 23:59:59" % current_year), timezone.get_default_timezone())
 		year_start_date = date_from = date(now.year, 1,1)
 
-		subbusinesses = SubBusiness.objects.filter(business = self, i_status='active')
 		if now.month >=10:
 			year_end_date = date(now.year + 1, 12, 31)
 		else:
@@ -359,6 +359,7 @@ class Business(models.Model):
 
 		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
 		active = CategoryChoice.objects.get(category__code='status', code='active')
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
 		if not include_only or 'cleaning' in include_only:
 			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
 			if self.business_category is not None:
@@ -373,22 +374,20 @@ class Business(models.Model):
 					month_from = timezone.make_aware(datetime.combine(cleaning_month, datetime.min.time()), timezone.get_default_timezone())
 					month_to = timezone.make_aware(datetime.combine(end_month, datetime.min.time()), timezone.get_default_timezone())
 
-					fee, created = Fee.objects.get_or_create(fee_type='cleaning', business=self, date_from=cleaning_month, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, category=cleaning, status=active, i_status='active', remaining_amount=0))
+					try:
+						fee, created = Fee.objects.get_or_create(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0))
+					except Fee.MultipleObjectsReturned:
+						fees= Fee.objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active)
+						created = False
+						fee = fees[0]
+						fees.exclude(id=fee.pk).update(status=inactive, i_status='inactive')
+
 					if not fee.is_paid:
 						fee.calc_cleaningFee()
 
-					for subbusiness in subbusinesses:
-						try:
-							fee, created = Fee.objects.get_or_create(fee_type='cleaning', subbusiness=subbusiness, date_from=cleaning_month, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, category=cleaning, status=active, i_status='active', remaining_amount=0))
-							if not fee.is_paid:
-								fee.calc_cleaningFee()
-						except:
-							pass
 					cleaning_month = next_month
 
 		Fee.objects.filter(business__pk=self.pk, category=cleaning, amount=0).delete()
-		Fee.objects.filter(subbusiness__business=self.pk, category=cleaning, amount=0).delete()
-
 
 	def get_properties(self):
 		return Property.objectsIgnorePermission.filter(owners__owner_business=self)
@@ -540,7 +539,7 @@ class PropertyOwner(models.Model):
 		db_table = 'asset_ownership'
 		managed = False
 
-class BusinessOwnership(models.Model):
+class BusinessOwner(models.Model):
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
 
