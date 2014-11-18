@@ -7,6 +7,20 @@ from datetime import date, datetime
 from decimal import Decimal
 from django.db.models import Sum
 
+class PMUser(models.Model):
+	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
+	firstname = models.CharField(max_length=30, help_text='Enter first name.')
+	lastname = models.CharField(max_length=30, help_text='Enter last name.')
+	contactnumber = models.CharField(max_length=30, blank=True, help_text='Telephone number or mobile number.')
+	email = models.EmailField(unique=True,help_text='Enter email address.')
+	superuser = models.BooleanField(default=False,help_text='Designates that this user has all permissions without explicitly assigning them.')
+	lastlogin = models.DateTimeField(help_text='last login')
+	datejoined = models.DateTimeField(help_text='date joined')
+	active = models.BooleanField(default="active", blank = True)
+	i_status = models.CharField(max_length= 10, default="active", blank = True, help_text='Designates whether this user should be treated as active.')
+
+	class Meta:
+		db_table = 'auth_pmuser'
 
 
 class Boundary(models.Model):
