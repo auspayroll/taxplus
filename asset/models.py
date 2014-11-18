@@ -375,19 +375,19 @@ class Business(models.Model):
 					month_to = timezone.make_aware(datetime.combine(end_month, datetime.min.time()), timezone.get_default_timezone())
 
 					try:
-						fee, created = Fee.objects.get_or_create(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active, defaults=dict(amount=0, is_paid=False, date_time=now, currency='RWF', date_to=end_month, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0))
+						fee = Fee.all_objects.get(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month)
+					except Fee.DoesNotExist:
+						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=now, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0)
+
 					except Fee.MultipleObjectsReturned:
-						fees= Fee.objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active)
+						fees= Fee.all_objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active)
 						created = False
 						fee = fees[0]
 						fees.exclude(id=fee.pk).update(status=inactive, i_status='inactive')
 
-					if not fee.is_paid:
-						fee.calc_cleaningFee()
+					fee.calc_cleaningFee()
 
 					cleaning_month = next_month
-
-		Fee.objects.filter(business__pk=self.pk, category=cleaning, amount=0).delete()
 
 	def get_properties(self):
 		return Property.objectsIgnorePermission.filter(owners__owner_business=self)

@@ -896,29 +896,11 @@ class Fee(Tax):
 
 
 	def calc_cleaningFee(self):
-		if self.subbusiness:
-			business = self.subbusiness.business
-		else:
-			business = self.business
+		if self.is_paid:
+			return (None, None)
 
+		business = self.business
 		if business.business_category is not None:
-			"""
-			schedule = CleaningSchedule.objects.filter(business_category=business.business_category)
-
-			if business.cell:
-				schedule = schedule.filter(Q(cell__isnull=True) | Q(cell=business.cell))
-			else:
-				schedule = schedule.filter(cell__isnull=True)
-
-			if business.sector:
-				schedule = schedule.filter(Q(sector__isnull=True) | Q(sector=business.sector)).filter(Q(district__isnull=True) | Q(district=business.sector.district))
-			else:
-				schedule = schedule.filter(sector__isnull=True).filter(district__isnull=True)
-
-			schedule = schedule.order_by('-valid_from', '-cell', '-sector', '-district')[0]
-			self.amount  = schedule.amount
-			"""
-
 			if business.business_category_id in range(1,7):
 				self.amount = 10000
 			elif business.business_category_id == 7:
@@ -933,36 +915,26 @@ class Fee(Tax):
 				self.is_paid = True
 			else:
 				self.is_paid = False
+
 			self.submit_date = datetime.now()
 			due_date = self.date_from + relativedelta(months=1)
 			self.due_date = date(due_date.year, due_date.month, 5)
+
+			if self.amount:
+				self.i_status = 'active'
+				self.status = CategoryChoice.objects.get(category__code='status', code='active')
 			self.save()
 			return self.amount, self.due_date
-		else:
-			self.reset_tax()
 
-	def calc_cleaningFee_deprecated(self):
-		if self.subbusiness:
-			business = self.subbusiness.business
-		else:
-			business = self.business
-		if business.business_type == 'No premises':
-			self.amount = 0
-			self.remaining_amount = 0
+		if self.pk:
+			self.submit_date = None
+			self.amount = self.remaining_amount = 0
+			self.i_status = 'inactive'
+			self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+			self.is_paid = False
 			self.save()
-		elif business.business_type and business.area_type:
-			amount, self.due_date = Setting.calculateCleaningFee(self.date_from, business.business_type, business.area_type, sector=business.sector, cell=business.cell)
-			self.amount = amount
-			self.remaining_amount = amount
-			if self.exempt:
-				self.amount = 0
-				self.remaining_amount = 0
-			self.save()
-			return self.amount, self.due_date
-		else:
-			self.reset_tax()
 
-
+		return (None, None)
 
 	def medias(self):
 		from media.models import Media
