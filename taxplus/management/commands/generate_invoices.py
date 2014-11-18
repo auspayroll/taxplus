@@ -58,7 +58,8 @@ sector_officers = { 'Masaka': 'Hicumunsi Alexis', 'Nyarugunga': 'Niyonsaba Jerom
 
 
 
-def generate_invoice(canvas, pagesize, title, fees):
+def generate_invoice(canvas, pagesize, title):
+	fees = title.title_fees.filter(remaining_amount__gt=0)
 	width, height = pagesize
 	border_x = 2.5
 	border_y = 1
@@ -166,7 +167,7 @@ def generate_invoice(canvas, pagesize, title, fees):
 	text.textOut('size / taille')
 	text.moveCursor(0,lh)
 
-	land_uses = {'Commercial':('Ubucuruzi', 'Commercial'), 'Agricultural':('Ubuhinzi', 'Agriculture'), 'Residential':('Gutura', 'Residential')}
+	land_uses = {'Commercial':('Ubucuruzi', 'Commercial'), 'Agricultural':('Amashyamba', 'Agriculture'), 'Residential':('Gutura', 'Residential')}
 	text.setFont("Helvetica-Bold", 10)
 	text.textOut('Icyo ubutaka bukoreshwa: ')
 	text.setFont("Helvetica", 10)
@@ -232,14 +233,14 @@ def generate_invoice(canvas, pagesize, title, fees):
 	# right column
 	x_offset = width  * ( 1 -   33.0 / 100.0 )
 	#p.setFont("Helvetica-Bold", 14)
-	#p.drawRightString(address_info_x, height - 2 * cm, 'EPAY No: %s%s%s' % ('KK', title.prop.cell.sector.name.upper()[0:3], title.id))
+	#p.drawRightString(address_info_x, height - 2 * cm, 'EPAY No: %s' % title.)
 
 
 	text = p.beginText()
 	text.setLeading(8)
 	text.setTextOrigin(address_info_x - 1*cm, height - 2.2 * cm)
 	text.setFont("Helvetica-Bold", 14)
-	text.textOut('EPAY No: %s%s%s' % ('KK', title.prop.cell.sector.name.upper()[0:3], title.id))
+	text.textOut('EPAY No: %s' % title.epay)
 	text.moveCursor(0,slh)
 	text.setFont("Times-Bold", 9)
 	text.textOut('Icyitonderwa: ')
@@ -586,7 +587,7 @@ class Command(BaseCommand):
 				if fees:
 					counter += 1
 					print 'creating invoice %s' % counter
-					generate_invoice(canvas=p, pagesize=pagesize, title=title, fees=fees)
+					generate_invoice(canvas=p, pagesize=pagesize, title=title)
 		print counter
 
 
