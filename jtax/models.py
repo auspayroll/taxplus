@@ -818,6 +818,11 @@ class TradingLicenseTax(Tax):
 		return tax_summary
 
 
+class FeeManager(models.Manager):
+	def get_query_set(self):
+		return super(FeeManager,self).get_query_set().filter(status__code='active')
+
+
 class Fee(Tax):
 	fee_type = models.CharField(max_length=25, choices=variables.fee_types)
 	name = models.CharField(max_length=50, null=True, blank=True)
@@ -849,6 +854,8 @@ class Fee(Tax):
 	#business_owners = models.ManyToManyField(Business)
 	category = models.ForeignKey(CategoryChoice, related_name='fee_category')
 	status = models.ForeignKey(CategoryChoice)
+	objects = FeeManager()
+	all_objects = models.Manager()
 
 	def __unicode__(self):
 		if 'cleaning' in self.fee_type:

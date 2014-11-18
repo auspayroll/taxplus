@@ -848,6 +848,9 @@ def after_prop_title_save(sender, instance, created, **kwargs):
 	instance.title_ownership.update(date_from=instance.date_from, date_to=instance.date_to)
 	instance.calc_taxes()
 
+class FeeManager(models.Manager):
+	def get_query_set(self):
+		return super(FeeManager,self).get_query_set().filter(status__code='active')
 
 class Fee(models.Model):
 	# new  field
@@ -874,6 +877,8 @@ class Fee(models.Model):
 	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
 	qty = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	rate = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	objects = FeeManager()
+	all_objects = models.Manager()
 
 	class Meta:
 		db_table = 'jtax_fee'
