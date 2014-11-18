@@ -956,18 +956,19 @@ class Fee(models.Model):
 		if pay_date <= self.due_date:
 			return (0,0)
 
-		if self.category.code == 'land_lease':
+		if self.category.code in ('land_lease', 'cleaning'):
 			penalty_limit = 10000
-			due_date = date(self.date_to.year, 12, 31) # end of year due date
+			due_date = self.due_date # end of year due date
 			months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
 			interest = round(0.015 * float(remaining_amount) * months_late)
 
-			if self.date_to <= date(2012,12,31):
+			if self.date_to <= date(2012,12,31) and self.category.code == 'land_lease':
 				interest = round((pay_date.year - due_date.year) * 0.08 * float(remaining_amount))
 				penalty = 0
 
 			else:
 				penalty = round(0.1 * float(remaining_amount))
+
 			penalty = int(penalty)
 			interest = int(interest)
 			if penalty > penalty_limit:
@@ -975,8 +976,7 @@ class Fee(models.Model):
 			else:
 				return (penalty, interest)
 
-		else:
-			raise NotImplentedError
+
 
 	def get_late(self,  pay_date=None):
 		if not pay_date:
