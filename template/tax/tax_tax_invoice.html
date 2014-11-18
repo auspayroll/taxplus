@@ -6,20 +6,30 @@
 {% block crumbbody %}
 	{% breadcrumb "Home" "/admin/" %}
 	{% breadcrumb "Tax" "/admin/tax/tax/" %}
-	{% breadcrumb "Receipt" %}	
+	{% breadcrumb "Receipt" %}
 {% endblock %}
 {% block mainbody %}
 
 	<script type="text/javascript" src="/static/js/jquery.printElement.min.js"></script>
 
+    <style>
+    #outstanding_payments TH{
+        border-bottom: 1pt black solid;
+    }
+
+    #outstanding_payments TD{
+        padding:4px;
+    }
+    </style>
+
 	<script type="text/javascript">
         $(function(){
             {% if tablet_printing %}
             var html = $("#receipt").html();
-            $("#header").hide(); 
-            $(".positionbar").hide(); 
-            $("#wrapper div fieldset").hide(); 
-            $("#wrapper div h4").hide(); 
+            $("#header").hide();
+            $(".positionbar").hide();
+            $("#wrapper div fieldset").hide();
+            $("#wrapper div h4").hide();
             $("#receipt").parent().attr("style",'');
             $("#receipt").css('border','none');
             $("body").css('background','white');
@@ -44,20 +54,20 @@
                 if(!$("#send_email_input_check").is(':checked'))
                 {
                     $("#send_email_input").val('');
-                }   
+                }
             });
             $("#send_sms_input_check").click(function(){
                 if(!$("#send_sms_input_check").is(':checked'))
                 {
                     $("#send_sms_input").val('');
-                }   
+                }
             });
 
             $("#send_email_input").keyup(function(){
                 if($("#send_email_input").val() == '')
                 {
                     $("#send_email_input_check").removeAttr('checked');
-                }   
+                }
                 else
                 {
                     $("#send_email_input_check").attr('checked','checked');
@@ -67,7 +77,7 @@
                 if($("#send_sms_input").val() == '')
                 {
                     $("#send_sms_input_check").removeAttr('checked');
-                }   
+                }
                 else
                 {
                     $("#send_sms_input_check").attr('checked','checked');
@@ -86,7 +96,7 @@
                 }
             });
         });
-    
+
         function addCustomInput(type)
         {
             var clone = $("#custom_" + type + "_input").clone();
@@ -124,7 +134,7 @@
         <input type="button" class="my_button" id="start_uploads" value="Upload Selected Files" name="Save" style="display: none;">
 
         {% if media %}
-		    {% include "media/_media_box_invoice.html" with media=media %}						
+		    {% include "media/_media_box_invoice.html" with media=media %}
         {% endif %}
 
 
@@ -143,15 +153,15 @@
 					            if (!regexp.test(files[index].name)) {
 						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>ONLY IMAGES ALLOWED!</strong></div></div>");
 						            setTimeout(
-							            function () {handler.removeNode(handler.uploadRow); }, 
+							            function () {handler.removeNode(handler.uploadRow); },
 							            10000
 						            );
 						            return;
-					            } else  */ 
+					            } else  */
                                 if (files[index].size > 2097152) {
 						            handler.uploadRow.find(".file_upload_progress").html("<div class=\"form\"><div class=\"errorSummary\"><strong>FILE TOO BIG!</strong></div></div>");
 						            setTimeout(
-							            function () { handler.removeNode(handler.uploadRow); }, 
+							            function () { handler.removeNode(handler.uploadRow); },
 							            10000
 						            );
 						            return;
@@ -208,86 +218,45 @@
 	    <div id="receipt" >
             <div class="pay_details">
                 {% if receipt.paid_at %}<label>Paid At:</label> {{ receipt.paid_at}} <br/>{% endif %}
-                <label>Date Paid:</label> {{ receipt.paid_date|date:"d/m/Y"}} <br/>
-                <label>ePay No:</label> {{ receipt.epay_no}} <br/>
-            </div>		
+                <label>Date Paid:</label> {{ taxplus_receipt.paid_date }} <br/>
+                <label>Receipt no:</label> {{ taxplus_receipt.sector_receipt }} <br/>
+            </div>
             <h2>PAYMENT RECEIPT FOR CITY OF KIGALI</h2>
-            {{ receipt.payer.name }}<br/>
-            {% if receipt.payer.address %}
-                {{ receipt.payer.address }}<br/>
-            {% endif %}
-            {{ receipt.payer.idString }}
+            {% if payer %}PAYER: {{ payer }}{% endif %}
 
-            Owners: {% if owners_string %}{{ owners_string }} {% else %} N/A {% endif %}<br>
+
 
             <h2>SUMMARY OF GOVERNMENT CHARGES</h2>
             {% if receipt.note %}
                 <div style="font-style:italic; ">{{ receipt.note }}</div><br />
             {% endif %}
-            <table id="payments" cellpadding="0" cellspacing="0">
+            <table id="payments" cellpadding="0" cellspacing="0" width="95%">
 			    <tr>
 				    <th>Tax / Fee</th>
-				    <th class="reference_col">Reference</th>
-                    {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
-                    <th class="center">Manual Receipt No.</th>
-                    {% endif %}
-				    <th class="center">Receipt No.</th>
-				    <th class="center">Bank Receipt No.</th>
-				    <th style="text-align:right; padding: 0px 11px 0px 0px;" >Amount Paid</th>
-			    </tr>	
-                {% if receipt.taxes %}
-                    {% for i in receipt.taxes %}
-                    <tr>
-                        <td>{{ i.name }}</td>
-                        <td class="reference_col">{{ i.reference }}</td>
-                        {% if i.manual_receipt %}
-                        <td class="center">{{i.manual_receipt}}</td>
+                    <th class="center">Fine / Penalty</th>
+                    <th style="text-align:right">Amount</th>
+			    </tr>
+                {% for pay in taxplus_receipt.receipt_payments.all %}
+                <tr>
+                    <td>{{ pay.fee }}
+                        {% if pay.fee.business %}<br/>{{ pay.fee.business.name }}
                         {% endif %}
-                        <td class="center">{{ i.invoice_no }}</td>
-                        <td class="center">{{ i.bank_receipt }}</td>
-                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|currency }} {{i.currency|title}}</td>
-                    </tr>			
-                    {% endfor %}
-                {% endif %}
-                {% if receipt.late_fees %}
-                    {% for i in receipt.late_fees %}
-                    <tr>
-                        <td>{{ i.name }}</td>
-                        <td class="reference_col">{{ i.reference }}</td>
-                        {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
-                        <td class="center">{{ receipt.taxes.0.manual_receipt }}</td>
+                        {% if pay.fee.prop %}<br/>UPI: {{ pay.fee.prop.upi }}
                         {% endif %}
-                        <td class="center">{{ i.invoice_no }}</td>
-                        <td class="center">{{ i.bank_receipt }}</td>
-                        <td style="text-align:right; padding: 0px 11px 0px 0px;">{{ i.amount|currency}} {{i.currency|title}}</td>
-                    </tr>			
-                    {% endfor %}
-                {% endif %}
-                {% if receipt.taxes and receipt.taxes.0.manual_receipt %}
-                <tr class="no_border"><td colspan="6"><br/></td></tr>
+                    </td><td>{% if pay.fine_amount %}{{ pay.fine_amount|intcomma }} Rwf ({{ pay.fine_description }}){% endif %}</td><td style="text-align:right;" >{{ pay.amount|intcomma }}</td></tr>
+                </tr>
+                {% endfor %}
+
+                <tr class="no_border"><td colspan="3"><br/></td></tr>
                 <tr class="no_border">
-                    <td colspan="5" style="text-align:right;" ><b>PAID<b/></td>
-                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|currency }} {{receipt.taxes.0.currency|title}}</div></td>
-                </tr>	
-				<tr class="no_border">
-                    <td colspan="5" style="text-align:right;" ><b>Total Outstanding as at {% now "d/m/Y" %}<b/></td>
-                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total_outstanding|currency }} {{receipt.taxes.0.currency|title}}</div></td>
-                </tr>	
-                {% else %}
-                <tr class="no_border"><td colspan="5"><br/></td></tr>
-                <tr class="no_border">
-                    <td colspan="4" style="text-align:right;" ><b>PAID<b/></td>
-                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total|currency }} {{receipt.taxes.0.currency|title}}</div></td>
-                </tr>	
-				<tr class="no_border">
-                    <td colspan="4" style="text-align:right;" ><b>Total Outstanding as at {% now "d/m/Y" %}<b/></td>
-                    <td  style="text-align:right;" ><div class="total_amount">{{ receipt.total_outstanding|currency }} {{receipt.taxes.0.currency|title}}</div></td>
-                </tr>		
-                {% endif %}
+                    <td colspan="2" style="text-align:right;" ><b>TOTAL PAID<b/></td>
+                    <td style="text-align:right;" ><div class="total_amount">{{ taxplus_receipt.amount|intcomma  }} Rwf</div></td>
+                </tr>
+
 
             </table>
             <br/>
-			{% if receipt.installments %}
+			{% if False %}
 				<h3>Installments:</h3>
 			    <table cellpadding="0" cellspacing="0" id="Table1" border="1">
 				<thead><th>Due</th>
@@ -300,20 +269,21 @@
                         <td width="70" style="text-align:right;">{{ i.amount|currency }}</td>
                         <td width="70" style="text-align:right;">{{ i.paid|currency }}</td>
 						<td width="100" style="text-align:right;">{{ i.owed|currency }}</td>
-                    </tr>			
+                    </tr>
                     {% endfor %}
                 </table>
 				<br />
 			{% endif %}
-            {% if receipt.future_payments %}
-                <h3>Future Payments Due On:</h3>
-                <table cellpadding="0" cellspacing="0" id="future_payments">
-                    {% for i in receipt.future_payments %}
+            {% if future_payments %}
+                <h3>Outstanding Payments Due:</h3>
+                <table cellpadding="0" cellspacing="0" id="outstanding_payments">
+                    <tr><th>Due on</th><th>Fee/Tax</th><th>Amount</th></tr>
+                    {% for i in future_payments %}
                      <tr>
                         <td width="50">{{ i.due_date|date:"d/m/y" }}</td>
-                        <td width="320">{{ i.name }}</td>
-                        {% if i.amount and i.amount > 0 %}<td>{{ i.amount|currency }} {{i.currency|title}}</td>{% endif %}
-                    </tr>			
+                        <td width="320">{{ i }}</td>
+                        <td>{{ i.remaining_amount|intcomma }} Rwf</td>
+                    </tr>
                     {% endfor %}
                 </table>
                 <div class="warning">* All payments after the due date will incure a fee</div>
@@ -333,7 +303,7 @@
 			{% csrf_token %}
             <table>
                 <tr><td colspan="2">
-                    <ul class="messages" style="margin: 0px; {% if send_receipt_message or send_receipt_error %} {% else %} display:none; {% endif %}" >                    
+                    <ul class="messages" style="margin: 0px; {% if send_receipt_message or send_receipt_error %} {% else %} display:none; {% endif %}" >
                         {% if send_receipt_message %}<li class="success">{{ send_receipt_message }}</li>{% endif%}
                         {% if send_receipt_error %}<li class="error">{{ send_receipt_error }}</li>{% endif%}
                     </ul>
@@ -354,17 +324,17 @@
                             <div id="custom_sms_input">
                                 <input type="checkbox" id="send_sms_input_check"  checked="checked" />
                                 <input type="text" id="send_sms_input" name="send_sms_input[]" style="width:200px;" value="{{ i }}" placeholder="Enter custom phone number" />
-                                <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />        
+                                <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />
                             </div>
                             {% endfor %}
                         {% else %}
                         <div id="custom_sms_input">
                             <input type="checkbox" id="send_sms_input_check"  />
                             <input type="text" id="send_sms_input" name="send_sms_input[]" style="width:200px;" value="" placeholder="Enter custom phone number" />
-                            <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />        
+                            <input type="text" id="send_sms_info_input" name="send_sms_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />
                         </div>
                         {% endif%}
-                        <a id="add_sms_custom_input" href="javascript:addCustomInput('sms');">Add more custom input</a>                
+                        <a id="add_sms_custom_input" href="javascript:addCustomInput('sms');">Add more custom input</a>
                     </td>
                 </tr>
                 <tr>
@@ -383,14 +353,14 @@
                             <div id="custom_sms_input">
                                 <input type="checkbox" id="send_email_input_check"  checked="checked" />
                                 <input type="text" id="send_email_input" name="send_email_input[]" style="width:200px;" value="{{ i }}" placeholder="Enter custom email" />
-                                <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />        
+                                <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="{{ e }}" placeholder="Who is it for?" />
                             </div>
                             {% endfor %}
                         {% else %}
                         <div id="custom_email_input">
                             <input type="checkbox" id="send_email_input_check" />
                             <input type="text" id="send_email_input" name="send_email_input[]"  style="width:200px;" value="" placeholder="Enter custom email" />
-                            <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />                        
+                            <input type="text" id="send_email_info_input" name="send_email_info_input[]"  style="width:250px;" value="" placeholder="Who is it for?" />
                         </div>
                         {% endif%}
                         <a id="add_email_custom_input" href="javascript:addCustomInput('email');">Add more custom input</a>
@@ -410,7 +380,7 @@
         </form>
     </fieldset>
 
-    <br/>    
+    <br/>
     <br/>
 
 </div>

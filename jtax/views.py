@@ -3988,46 +3988,17 @@ def displayGenerateInvoicePage(request):
 		send_receipt_error = ''
 
 		try:
-			if tax_type == 'fixed_asset':
-				payment = get_object_or_404(PayFixedAssetTax,pk=id,i_status='active')
-				tax = payment.property_tax_item
-				property = tax.property
-				property_id = tax.property.id
-				tax_label = 'Fixed Asset Tax for '
+			payment = get_object_or_404(PayFee,pk=id,i_status='active')
+			pay_fee = get_object_or_404(TP_PayFee, pk=id)
+			taxplus_receipt = pay_fee.receipt
+			tax = payment.fee
+			tax_label = 'Fee'
 
-			elif tax_type == 'rental_income':
-				payment = get_object_or_404(PayRentalIncomeTax,pk=id,i_status='active')
-				tax = payment.rental_income_tax
-				property = tax.property
-				property_id = tax.property.id
+			property = tax.property
+			business = tax.business
+			if tax.subbusiness:
+				business = tax.subbusiness.business
 
-			elif tax_type == 'trading_license':
-				payment = get_object_or_404(PayTradingLicenseTax,pk=id,i_status='active')
-				tax = payment.trading_license_tax
-				business = tax.business
-				if tax.subbusiness:
-					business = tax.subbusiness.business
-
-			elif tax_type == 'misc_fee':
-				payment = get_object_or_404(PayMiscellaneousFee,pk=id,i_status='active')
-				tax = payment.fee
-				tax_label = 'Miscellaneous Fee'
-
-				property = tax.property
-				business = tax.business
-				citizen = tax.citizen
-				if tax.subbusiness:
-					business = tax.subbusiness.business
-
-			else:
-				payment = get_object_or_404(PayFee,pk=id,i_status='active')
-				tax = payment.fee
-				tax_label = 'Fee'
-
-				property = tax.property
-				business = tax.business
-				if tax.subbusiness:
-					business = tax.subbusiness.business
 		except Exception:
 			raise Http404
 
@@ -4043,8 +4014,8 @@ def displayGenerateInvoicePage(request):
 		reference = getTaxReference(tax_type, tax)
 		tax_label = tax_label + reference
 
-		epay_no = PaymentMapper.generateEpayNo(tax_type, tax)
-		#get the list of support medias for this tax/fee if exist
+		#epay_no = PaymentMapper.generateEpayNo(tax_type, tax)
+	 	#get the list of support medias for this tax/fee if exist
 		media = Media.objects.filter(tax_type__exact=tax_type,tax_id__exact=tax.id,i_status='active')
 		#get current view taxes url in the session if exist
 		if request.session.has_key('tax_url'):
@@ -4052,6 +4023,7 @@ def displayGenerateInvoicePage(request):
 
 		#generate receipt
 		receipt = None
+		"""
 		if citizen:
 			national_citizen_id = citizen.citizen_id
 			receipt = generateReceipt(tax_type, payment, tax, 'citizen',citizen)
@@ -4095,7 +4067,7 @@ def displayGenerateInvoicePage(request):
 								smsList.append(business.phone2)
 						if business.email != None and business.email != '' and business.email not in emailList:
 								emailList.append(business.email)
-
+		"""
 		#send receipt if submited
 		if request.POST.has_key('send_receipt'):
 			invoice_id = PaymentMapper.generateInvoiceId(tax_type, payment)
@@ -4224,7 +4196,31 @@ def displayGenerateInvoicePage(request):
 		owners_string = None
 		if owners:
 			owners_string = ','.join(owners)
-		receipt['epay_no'] = epay_no
+		#receipt['epay_no'] = epay_no
+		future_payments = None
+
+		if taxplus_receipt.citizen_id:
+			citizen = Citizen.objects.get(pk=taxplus_receipt.citizen_id)
+			future_payments = Fee.objects.filter(Q(property__property_assets__owner_citizen=citizen) | Q(business__business_assets__owner_citizen=citizen)).filter(remaining_amount__gt=0).order_by('due_date')
+			payer = citizen.getDisplayName()
+			if citizen.citizen_id:
+				payer += ' - CID:%s' % citizen.citizen_id
+
+		elif taxplus_receipt.business_id:
+			business = Business.objects.get(pk=taxplus_receipt.business_id)
+			future_payments = Fee.objects.filter(business=business, remaining_amount__gt=0).order_by('due_date')
+			payer = business.name
+			if business.tin:
+				payer += ' - TIN:%s' % business.tin
+
+		elif taxplus_receipt.payer_name:
+			payer = taxplus_receipt.payer_name
+
+		else:
+			payer = None
+
+		if future_payments:
+			future_payments = future_payments[0:4]
 
 
 		return render_to_response('tax/tax_tax_invoice.html',{'tablet_printing':tablet_printing,'tablet_print_link':tablet_print_link,'tax_url':tax_url,'tax_label':tax_label,'receipt':receipt,
@@ -4232,7 +4228,8 @@ def displayGenerateInvoicePage(request):
 														'sendEmailList':sendEmailList,'send_receipt_message':send_receipt_message,
 														'send_receipt_error':send_receipt_error,'emailInputPairList':emailInputPairList,
 														'smsInputPairList':smsInputPairList,'media':media,'tax':tax,'payment':payment,'tax_type':tax_type,
-														'business_id':business_id,'citizen_id':citizen_id,'property_id':property_id,'owners_string':owners_string,},
+														'business_id':business_id,'citizen_id':citizen_id,'property_id':property_id,'owners_string':owners_string,
+														'taxplus_receipt': taxplus_receipt, 'payer':payer, 'future_payments':future_payments},
 								context_instance=RequestContext(request))
 
 
@@ -4527,7 +4524,6 @@ def displayGenerateMultipayInvoicePage(request, id=None):
 
 		send_receipt_message = ''
 		send_receipt_error = ''
-
 		#only allow pay multiple cleaning fees for 1 business/branch atm (prevent even the case of trying to play cleaning fee for main business & branch at the same time)
 		multipay_receipt = get_object_or_404(MultipayReceipt,id=id,i_status='active')
 
