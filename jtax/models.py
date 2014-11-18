@@ -874,7 +874,7 @@ class Fee(Tax):
 		if self.fee_type in ('cleaning_fee', 'cleaning'):
 			return self.calc_cleaningFee()
 		elif self.fee_type in ('land_lease', 'land_lease_fee'):
-			return self.calc_landlease()
+			raise Exception('not implemented')
 		else:
 			return None
 
