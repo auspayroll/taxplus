@@ -1286,3 +1286,23 @@ class RateNotFound(models.Model):
 	sector = models.ForeignKey(Sector, null=True)
 	created = models.DateTimeField(auto_now_add=True)
 
+
+class PropertyOwner(models.Model):
+	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_propertyowners")
+	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_propertyowners")
+	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="property_assets")
+
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
+
+class BusinessOwner(models.Model):
+	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
+	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
+
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
+
+
+
