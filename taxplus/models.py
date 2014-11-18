@@ -535,8 +535,16 @@ class Citizen(models.Model):
 	status_new = models.ForeignKey(CategoryChoice, null=True)
 	entity_id = models.IntegerField(null=True)
 
+
 	class Meta:
 		db_table = 'citizen_citizen'
+
+	@property
+	def name(self):
+		if self.middle_name and self.middle_name!='' and self.middle_name !='null':
+			return self.first_name +' '+ self.middle_name +' '+ self.last_name
+		else:
+			return self.first_name + ' ' + self.last_name
 
 
 
