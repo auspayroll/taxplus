@@ -1034,6 +1034,7 @@ class PayFee(models.Model):
 	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
+	receipt_id = models.IntegerField(null=True)
 
 	def __unicode__(self):
 		return "Fee Payment"
