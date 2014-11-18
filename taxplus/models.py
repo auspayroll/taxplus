@@ -778,6 +778,11 @@ class PropertyTitle(models.Model):
 			name += " land lease issue date: %s" % self.land_lease_issue_date.strftime('%d/%m/%Y')
 		return name
 
+	@property
+	def owners(self):
+		for ownership in self.title_ownership.all():
+			yield ownership.owner.name
+
 
 	def close(self, close_date):
 		for ownership in self.title_ownership.filter(date_to__isnull=False):
@@ -785,6 +790,17 @@ class PropertyTitle(models.Model):
 			ownership.save()
 		self.date_to = close_date
 		self.save()
+
+	@property
+	def epay(self):
+		if self.prop.cell.sector.district.name == 'Kicukiro':
+			district_code = 'KK'
+		else:
+			district_code = self.prop.cell.sector.district.name.upper()[0:2]
+
+		sector_code = self.prop.cell.sector.name.upper()[0:2]
+
+		return '%s%s%s' % (district_code, sector_code, self.pk)
 
 	@property
 	def land_lease_periods(self):
