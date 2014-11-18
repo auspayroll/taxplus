@@ -1,8 +1,8 @@
 from django.forms import ModelForm
 from django import forms
-from media.models import *
 from datetime import date, datetime, time
 from dev1 import variables
+from media.models import Media
 
 class MediaUploadForm(ModelForm):
 
