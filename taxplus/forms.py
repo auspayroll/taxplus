@@ -3,6 +3,10 @@ from property.models import District, Sector, Cell, Village
 from django.conf import settings
 from datetime import date
 from django.forms.widgets import RadioSelect, CheckboxSelectMultiple
+from dev1 import variables
+from common.fields import CurrencyField, CurrencyInput
+from datetime import date
+import math
 
 
 include_field_choices = [('Business Name','Business Name'), ('Fines', 'Fines'),('Receipt','Sector Receipt'),
@@ -73,4 +77,60 @@ class DebtorsForm(forms.Form):
 
 		cleaned_data = super(DebtorsForm, self).clean()
 		return cleaned_data
+
+bank_choices = [('','----------')] + [ (code, name) for code, name in variables.banks]
+payer_type_choices = (('citizen','Citizen'),('business','Business'))
+
+
+class PaymentForm(forms.Form):
+	paid_date = forms.DateField(label="Payment date", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',),initial=date.today().strftime('%d/%m/%Y'),)
+	citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
+	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
+	payer_name = forms.CharField(max_length=200, required=True)
+	payer_id = forms.ChoiceField(choices=[], required=False)
+	amount = CurrencyField(label="Payment Amount") #  widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'})
+	sector_receipt = forms.CharField(label="Sector Receipt Number")
+	payer_type = forms.ChoiceField(widget=forms.RadioSelect, label="Payer", required=False, choices=payer_type_choices)
+	bank = forms.ChoiceField(choices=bank_choices)
+	bank_receipt = forms.CharField()
+
+	def __init__(self, *args, **kwargs):
+		self.fee = kwargs.pop('fee')
+		super(PaymentForm, self).__init__(*args, **kwargs)
+		self.fields['payer_id'].choices = [(ownership.owner.pk, ownership.owner.name) for ownership in self.fee.prop_title.title_ownership.all() ]
+
+	def clean(self):
+		cleaned_data = super(PaymentForm, self).clean()
+		amount = cleaned_data.get('amount')
+		paid_date = cleaned_data.get('paid_date')
+		if amount is not None and paid_date:
+				if amount <=0:
+					self._errors["amount"] = self.error_class(["Specify a fee amount to pay"])
+
+				if paid_date > self.fee.due_date and amount < self.fee.remaining_amount:
+					self._errors["amount"] = self.error_class(["Overdue payment amount must be atleast %s Rwf" % self.fee.remaining_amount])
+
+				total_due = self.fee.total_due(paid_date)
+				if amount > total_due:
+					self._errors["amount"] = self.error_class(["Payment amount is more than what is owed: %s Rwf" % total_due])
+
+		return cleaned_data
+
+
+class PayFeesForm(forms.Form):
+	paid_date = forms.DateField(label="Payment date", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',),initial=date.today().strftime('%d/%m/%Y'),)
+	citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
+	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
+	payer_name = forms.CharField(max_length=200, required=True)
+	sector_receipt = forms.CharField(label="Sector Receipt Number")
+	payer_type = forms.ChoiceField(widget=forms.RadioSelect, label="Payer", required=False, choices=[(i,i) for i in ('citizen','business')])
+	bank = forms.ChoiceField(choices=bank_choices)
+	bank_receipt = forms.CharField()
+
+	def __init__(self, *args, **kwargs):
+		super(PayFeesForm, self).__init__(*args, **kwargs)
+
+
 

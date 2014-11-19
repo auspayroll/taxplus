@@ -8,7 +8,7 @@
 
 {% load breadcrumb %}
 {% block crumbbody %}
-	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Home" "/admin/" %}
 	{% breadcrumb "Tax" "/admin/tax/tax/"  %}
 	{% breadcrumb "Verify target"  "/admin/tax/tax/verify_target/" %}
 	{% breadcrumb "Business" %}
@@ -50,10 +50,10 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Business Info</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/edit_business/">Edit</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
-					<div class="info">						
+					<div class="info">
 						<table cellpadding="2" cellspacing="0" >
 							<tr>
 								<td width="100"><strong>TIN/RRA:</strong></td>
@@ -92,7 +92,7 @@ table.fixed td { overflow: hidden; }
 								<td>
 									{% if business.vat_register %} Yes {% else %} No {% endif %}
 								</td>
-							</tr>	
+							</tr>
 						</table>
 					</div>
 					<div class="custom_title">
@@ -100,15 +100,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Business Owner(s)</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/owners/">View</a></span></td>
-							</tr>					
-						</table>
-					</div>
-					<div class="custom_title">
-						<table cellpadding="0" cellspacing="0" width="100%">
-							<tr>
-								<td align="left">Taxes</td>
-								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/taxes/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 
@@ -117,7 +109,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Fees</td>
 								<td align="right"><span class="edit"><a href="{% url 'misc_fee_business' business.pk %}">Add</a> | <a href="/admin/tax/tax/business/{{business.id}}/fees/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<!--
@@ -126,7 +118,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Miscellaneous Fees</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/miscellaneous_fees/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					-->
@@ -135,7 +127,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">History</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/history/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<div class="custom_title">
@@ -143,7 +135,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Attached Media</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/media/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<div class="custom_title">
@@ -151,7 +143,7 @@ table.fixed td { overflow: hidden; }
 							<tr>
 								<td align="left">Logs</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/business/{{business.id}}/logs/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 				</div>

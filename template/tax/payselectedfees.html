@@ -1,0 +1,177 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block mainbody %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<style>
+
+#fee_table TH, #fee_table TD{
+	border-right:1pt #e4e4e4 solid;
+}
+
+#fee_table TD, #fee_table TH{
+	text-align: left;
+	padding-left:5px;
+}
+
+#fee_table{
+	margin:0 auto;
+	width:95%;
+	border:1pt #e4e4e4 solid;
+}
+
+#fee_table TR{
+	border-bottom:1pt #cccccc solid;
+}
+
+#payment_table TR{
+	padding-top:7px;
+	background-color:default;
+	padding-left:35px;
+	padding-right:0;
+	padding-bottom:7px;
+
+}
+
+#payment_table{
+	font-style: italic;
+}
+
+#payment_table TH{
+	font-weight:normal;
+	width:100px;
+}
+
+#payment_table{
+	width:70%;
+	border-top:0pt #cccccc solid;
+	margin:2px
+}
+
+
+</style>
+
+
+{% if fees %}
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+	<form method="post" action="{% url 'payselectedfees' %}">
+		{% csrf_token %}
+		<table  cellpadding="0" cellspacing="0" id="fee_table">
+			<thead>
+			<tr>
+				<th>Fee Name</th>
+				<th>Amount Rwf</th>
+				<th>Remaining Rwf</th>
+				<th>Due On</th>
+				<th>Penalty Rwf</th>
+				<th>Interest Rwf</th>
+			</tr>
+			</thead>
+			<tbody>
+			{% for fee in fees %}
+				<tr>
+					<td><a>{{fee}}</a></td>
+					<td>{{fee.amount|intcomma}}</td>
+					<td>{{fee.remaining_amount|intcomma}}</td>
+					<td>{{fee.due_date}}</td>
+					<td>{{fee.calc_penalty.0|intcomma}}</td>
+					<td>{{fee.calc_penalty.1|intcomma}}</td>
+					<td>{% if fee.remaining_amount > 0 %}<a href="{% url 'paylandlease' fee.pk %}" class="my_button">pay</a>
+					<input type=checkbox value="{{ fee.pk }}" name="pay_fee">{% endif %}
+
+					<!--
+					<td>
+						{% if not i.is_paid %}
+							{% if i.amount >= 0 %}
+								<div class="pending">{{i.amount|currency}} {{i.currency|title}}</div>
+							{% else %}
+								<div class="pending">Not specified</div>
+							{% endif %}
+						{% else %}
+						<div class="paid">{{i.amount|currency}} {{i.currency|title}}<br/><b>PAID</b></div>
+						{% endif %}
+                            {% if i.past_payments_link %}
+                            <a href="{{ i.past_payments_link }}" class="fancy_box" >show past payments</a>
+                            {% endif %}
+					</td>
+                    <td>
+                        {% if i.due_date %}
+                            {{ i.due_date|date:"d/m/Y"}}
+						{% else %}
+							N/A
+						{% endif %}
+                    </td>
+                    <td>
+                        {% if i.medias %}
+                            {% for media in i.medias %}
+                            <a href="/admin/media/media/preview/{{ media.id }}/" class="fancy_box"><img class="media_link" src="{% static "images/file_thumb.jpg" %}" title="{{ media.title }} <{{media.description}}> - Uploaded on {{ media.date_created|date:'d/m/Y'}}"/></a>
+                            {% endfor %}
+						{% else %}
+							N/A
+						{% endif %}
+                    </td>
+                    <!--td><button class="button_styled" >more info</button></td>
+                    <td><button class="button_styled" >past payment</button></td-->
+                    <!--
+                    <td>
+                    {% if not i.submit_date %}<a href="/admin/tax/tax/submit_tax/?type=fee&id={{ i.id }}"><button  class="my_button" >submit</button></a>{% endif %}
+
+
+                    {% if i.submit_date %}<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}"><button class="my_button" >view ePay Invoice</button></a>{% endif %}
+
+                    {% if i.submit_date and not i.is_paid %}
+	                    <a href="/admin/tax/tax/pay_taxes/?type=fee&id={{ i.id }}"><button class="my_button" >pay</button></a>
+                    {% endif %}
+
+
+                    {% if i.receipt_links %}
+                        {% for link in i.receipt_links %}
+                            <a href="{{ link }}" target="_blank" class="invoice_link"><button  class="my_button" >view receipt</button></a>
+                        {% endfor %}
+                    {% endif %}
+
+                	-->
+				</tr>
+
+				<tr  style="background-color:#e4e4e4;">
+
+			    	<td colspan="7" style="border-top:0; padding-top:0; padding-bottom:10px; padding-left:5px; padding-right:0">
+			    		{% if fee.remaining_amount < fee.amount %}
+					    	<table id="payment_table">
+					    	<tr><th>Payment</th><th>Fine/Penalty</th><th>Paid on</th><th>Paid by</th><th>&nbsp;</th></tr>
+							{% for payment in fee.fee_payments.all %}
+								<tr>
+									<td>{{ payment.amount|intcomma }}</td>
+									<td>{{ payment.fine_amount|default:'-' }}{{ payment.fine_description }}</td>
+									<td>{{ payment.paid_date }}</td>
+									<td><a>{{ payment.receipt.payer_name }}</a></td>
+									<td><a href="/admin/tax/tax/generate_invoice?type=fee&id={{ payment.pk }}">Receipt</a></td>
+								</tr>
+							{% empty %}
+								<tr><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+							{% endfor %}
+							</table>
+
+						{% endif  %}
+
+            		</td>
+
+            	</tr>
+
+			{% endfor %}
+			</tbody>
+		</table>
+		<div style="text-align:right"><input type="submit" name="pay_selected" value="Pay Selected Fees"></div>
+	</form>
+	</div>
+    {% else %}
+    	No fee available.
+	{% endif %}
+
+
+
+
+</div>
+{% endblock %}

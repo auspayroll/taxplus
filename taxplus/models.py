@@ -847,38 +847,20 @@ class PropertyTitle(models.Model):
 					date_to = end_date
 
 				try:
-					fee = Fee.objects.get(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop, prop_title=self)
+					fee = Fee.all_objects.get(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop)
 
 				except Fee.DoesNotExist:
 					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
-					fee = Fee.objects.create(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, \
-						prop=self.prop, fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
-					print 'created Fee %s' % fee
+					fee = Fee(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, \
+						fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
 
-				except Fee.MultipleObjectsReturned:
-					import pdb
-					pdb.set_trace()
+				fee.calc_amount(save=True)
 
-				else:
-					fee.date_from = date_from
-					fee.date_to = date_to
-					fee.prop_title = prop_title
-					fee.calc_amount(save=True)
-
-					if fee.remaining_amount > 0:
-						fee.is_paid = False
-					else:
-						fee.is_paid = True
-
-					if prop_title.date_to:
-						fee.remaining_amount = 0
-
-					fee.save()
 				date_from = date(date_from.year+1, 1, 1)
 
 			if self.date_to:
-				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(prop_title=None)
-			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(prop_title=None)
+				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(prop_title=None, status=inactive)
+			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(prop_title=None, status=inactive)
 
 
 @receiver(post_save, sender=PropertyTitle)
@@ -895,6 +877,7 @@ class Fee(models.Model):
 	category = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'fee_type'}, related_name='fee_type', null=True)
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
 	fee_type = models.CharField(max_length=50)
+	i_status = models.CharField(max_length=50)
 	amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The amount of fee item.")
 	remaining_amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The remaining amount (subtracted past payments).", null=True, blank = True)
 	date_from = models.DateField(null=True)
@@ -920,13 +903,113 @@ class Fee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_fee'
+		ordering = ['-due_date']
+
+	@classmethod
+	def process_payments(cls, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fee_ids=[]):
+		assert payment_date <= date.today(), 'Payment cannot be in the future'
+		active = CategoryChoice.objects.get(category__code='status', code='active')
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		fees = cls.objects.filter(pk__in=fee_ids)
+
+		entity = None
+		if citizen_id:
+			entity = Entity.objects.get(citizen_id=citizen_id)
+			payer_name = Citizen.objects.get(pk=citizen_id).name
+		elif business_id:
+			entity = Entity.objects.get(business_id=business_id)
+			payer_name = Business.objects.get(pk=citizen_id).name
+
+		pr = PaymentReceipt(amount= 0, paid_date=payment_date, payer=entity, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
+		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
+
+		pr.save()
+		for fee in fees:
+			penalty, interest = fee.calc_penalty(payment_date)
+			penalty = int(penalty)
+			interest = int(interest)
+			fee_amount = (penalty + interest + int(fee.remaining_amount))
+			pr.amount += fee_amount
+			fine_amount = interest + penalty
+			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=fee_amount, receipt_no=bank_receipt,
+				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+			if fine_amount:
+				pf.fine_description = "penalty %s Rwf, interest %s Rwf" % (penalty, interest)
+
+			fee.is_paid = True
+			fee.remaining_amount = 0
+			fee.save()
+
+			pf.save()
+		pr.save()
+		return pr
+
+	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None):
+		assert payment_date <= date.today(), 'Payment cannot be in the future'
+		assert self.remaining_amount > 0, 'Fee has no remaining amount'
+		assert payment_amount > 0, 'Invalid payment amount'
+
+		active = CategoryChoice.objects.get(category__code='status', code='active')
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		penalty = 0
+		interest = 0
+
+		payment_amount = int(payment_amount)
+		remaining_amount = int(self.remaining_amount)
+ 		#part payment
+ 		if payment_date <= self.due_date: # no overdues
+	 		# only pay interest on remaining amount, don't pay penalty
+			penalty, interest = 0, 0 #self.calc_penalty(payment_date, remaining_amount=payment_amount)
+			#interest = int(interest)
+			self.remaining_amount = self.remaining_amount - payment_amount
+
+		else: #overdue amounts, must be atleast remaining amount
+			penalty, interest = self.calc_penalty(payment_date)
+			penalty_payment = payment_amount - self.remaining_amount
+			if penalty_payment <= penalty:
+				penalty = penalty_payment
+				penalty_payment = 0
+			else:
+				penalty_payment = penalty_payment - penalty
+
+			if penalty_payment <= interest:
+				interest = penalty_payment
+
+			self.remaining_amount = 0
+			self.is_paid = True
+
+		self.save()
+
+		total_payment = payment_amount
+		payer_entity = None
+
+		if citizen_id:
+			payer_entity = Entity.objects.get(citizen_id=citizen_id)
+			payer_name = Citizen.objects.get(pk=citizen_id).name
+		elif business_id:
+			payer_entity = Entity.objects.get(business_id=business_id)
+			payer_name = Business.objects.get(pk=citizen_id).name
+
+		pr = PaymentReceipt(amount= total_payment, paid_date=payment_date, payer=payer_entity, citizen_id=citizen_id, business_id=business_id,
+			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name)
+		pr.save()
+
+		fine_amount = interest + penalty
+		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=total_payment, receipt_no=bank_receipt,
+			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+
+		if fine_amount:
+			pf.fine_description = "penalty %s Rwf, interest %s Rwf" % (penalty, interest)
+
+		pf.save()
+
 
 	def __unicode__(self):
 		if self.category.code == 'land_lease':
 			return "Land Lease %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
 
 		if self.category.code == 'cleaning':
-			return "Cleaning Fee %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
+			return "Cleaning Fee for %s" % (self.date_from.strftime('%B %Y'))
 
 
 	def get_paid_amount(self):
@@ -984,6 +1067,11 @@ class Fee(models.Model):
 		penalty, interest = self.calc_penalty(pay_date)
 		return penalty + interest
 
+
+	def total_due(self, pay_date=date.today()):
+		total = int(round(self.remaining_amount)) + self.get_late()
+		return total
+
 	@property
 	def property_owners(self):
 		if self.prop_id:
@@ -996,59 +1084,58 @@ class Fee(models.Model):
 		"""
 		calculate the full amount of the fee owing based on fields
 		"""
+		if self.is_paid:
+			return self.amount
+
 		if self.category.code == 'land_lease':
 			rate = 0
 			if self.prop.land_zone.code == 'agricultural':
 				if self.prop.area >= 20000:
-					return 4000
-				else:
-					return 0
+					rate = 0.4
 
-			if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
-				rate = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
+			else:
+				if self.date_from >= date(2014,1,1) and self.date_to <= date(2014,12,31):
+					rate = Setting.calculateLandLeaseFee(self.date_from, self.date_to, self.prop.land_zone.code, self.prop.area, district=self.prop.sector.district, sector=self.prop.sector, cell=self.prop.cell, village=self.prop.village)
 
 
-			elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
-				if self.prop.land_zone.code == 'residential':
-					rate = 80
-
-				elif self.prop.land_zone.code == 'commercial':
-					rate = 100
-
-			elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31):
-				if self.prop.land_zone.code == 'residential':
-					rate = 150
-
-				elif self.prop.land_zone.code == 'commercial':
-					rate = 200
-
-			elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31):
-				if self.prop.land_zone.code == 'residential' and self.prop.village:
-					if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
-						rate = 30
-					else:
+				elif self.date_from >= date(1998,2,1) and self.date_to <= date(2001,12,31):
+					if self.prop.land_zone.code == 'residential':
 						rate = 80
 
-				elif self.prop.land_zone.code == 'commercial':
-					rate = 150
+					elif self.prop.land_zone.code == 'commercial':
+						rate = 100
 
-			else:
-				try:
-					rate = Rate.objects.get(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
-					rate = float(rate.amount)
-				except Rate.MultipleObjectsReturned:
-					rate = Rate.objects.filter(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
-					rate = float(rate.amount)
-				except Rate.DoesNotExist:
-					rate = 0
+				elif self.date_from >= date(2002,1,1) and self.date_to <= date(2002,12,31):
+					if self.prop.land_zone.code == 'residential':
+						rate = 150
+
+					elif self.prop.land_zone.code == 'commercial':
+						rate = 200
+
+				elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31):
+					if self.prop.land_zone.code == 'residential' and self.prop.village:
+						if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
+							rate = 30
+						else:
+							rate = 80
+
+					elif self.prop.land_zone.code == 'commercial':
+						rate = 150
+
+				else:
+					try:
+						rate = Rate.objects.get(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)
+						rate = float(rate.amount)
+					except Rate.MultipleObjectsReturned:
+						rate = Rate.objects.filter(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
+						rate = float(rate.amount)
+					except Rate.DoesNotExist:
+						rate = 0
 
 			self.qty = self.prop.area or 0
+
 			self.rate = rate or 0
 			self.amount = self.qty * self.rate
-			if self.remaining_amount <= 0 and amount > 0:
-				self.is_paid = True
-			else:
-				self.is_paid = False
 
 			#calculate part year payment
 			if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
@@ -1057,23 +1144,31 @@ class Fee(models.Model):
 			self.amount = round(self.amount)
 			capital_paid_amount = self.get_paid_amount()[0]
 			self.remaining_amount = self.amount - capital_paid_amount
+			if self.remaining_amount <= 0 and self.amount > 0:
+				self.is_paid = True
+			else:
+				self.is_paid = False
 
 			if save:
-				self.save(update_fields=('qty', 'rate', 'amount', 'remaining_amount'))
+				if self.pk and not self.amount: # inactivate current records with zero amounts
+					self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+					self.remaining_amount = 0
+					self.i_status = 'inactive'
+					self.save()
+
+				elif not self.pk and not self.amount: #do not create new record for zero amounts
+					pass
+
+				elif self.amount:
+					self.status = CategoryChoice.objects.get(category__code='status', code='active')
+					self.i_status = 'active'
+					self.save()
 
 			return self.amount
 
 
 		raise NotImplentedError('rate for %s not found' % self)
 
-
-		@property
-		def amount_owed(self):
-			"""
-			-check period of ownership and adjust the amount if less than full period.
-			-then subtract the remaining amount
-			"""
-			raise NotImplentedError
 
 
 
@@ -1091,7 +1186,7 @@ class PaymentReceipt(models.Model):
 	citizen_id = models.IntegerField(blank = True, null=True)
 	business_id = models.IntegerField(help_text="The business who pay this tax item.", blank = True, null=True)
 	#subbusiness_id = models.IntegerField(null=True)
-	user_id = models.IntegerField(null=True)
+	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	i_status = models.CharField(max_length = 10, default='active', blank = True)
 	payer_name = models.CharField(max_length=100, blank = True, null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentreceipt_status", null=True)
@@ -1104,7 +1199,7 @@ class PaymentReceipt(models.Model):
 class PayFee(models.Model):
 	citizen_id = models.IntegerField(blank = True, null=True)
 	business_id = models.IntegerField(help_text="The business who pay this tax item.", blank = True, null=True)
-	staff_id  = models.IntegerField(help_text="",blank = True, null=True)
+	staff = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	fee = models.ForeignKey(Fee, help_text="", related_name="fee_payments")
 	amount = models.DecimalField(max_digits = 20, decimal_places = 2)
 	receipt_no = models.CharField(max_length = 50)
@@ -1116,7 +1211,7 @@ class PayFee(models.Model):
 	manual_receipt = models.CharField(max_length = 50)
 	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
 	note = models.TextField(null=True, blank = True, help_text="note about this payment.")
-	receipt = models.ForeignKey(PaymentReceipt, related_name="fee_receipts", null=True)
+	receipt = models.ForeignKey(PaymentReceipt, related_name="receipt_payments", null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentfee_status", null=True)
 	i_status = models.CharField(max_length = 10, blank = True)
 
@@ -1187,7 +1282,8 @@ def after_prop_ownership_save(sender, instance, created, **kwargs):
 				o.date_ended = instance.date_to
 				o.save()
 			else:
-				print 'created'
+				pass
+				# print 'created'
 
 		elif instance.owner.business_id:
 			business = Business.objects.get(pk=instance.owner.business_id)
@@ -1197,8 +1293,6 @@ def after_prop_ownership_save(sender, instance, created, **kwargs):
 				o.date_started = instance.date_from
 				o.date_ended = instance.date_to
 				o.save()
-			else:
-				print 'created'
 
 		elif instance.owner.subbusiness_id:
 			business = SubBusiness.objects.get(pk=instance.owner.business_id)
@@ -1208,8 +1302,6 @@ def after_prop_ownership_save(sender, instance, created, **kwargs):
 				o.date_started = instance.date_from
 				o.date_ended = instance.date_to
 				o.save()
-			else:
-				print 'created'
 
 	except Ownership.MultipleObjectsReturned:
 		if instance.owner.citizen_id:

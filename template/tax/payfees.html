@@ -1,4 +1,4 @@
-{% extends "common/base_paytax_property.html" %}
+{% extends "common/base_design.html" %}
 
 {% load staticfiles %}
 {% load humanize %}{% load simple_tags %}
@@ -11,7 +11,7 @@
 	{% breadcrumb "Show Taxes" show_tax_url %}
 	{% breadcrumb "Pay tax" %}
 {% endblock %}
-{% block rightpanel %}
+{% block mainbody %}
 <style type="text/css">
 	#payment_form TR
 	{
@@ -22,6 +22,20 @@
 	#payment_form SPAN
 	{
 		display:none;
+	}
+
+	#fee_table TH, #fee_table TD{
+		font-style: italic;
+		min-width: 100px;
+		margin-right:6px;
+	}
+
+	#fee_table TR {
+		border-top:1pt #cccccc solid;
+	}
+
+	#fee_table{
+		margin-bottom: 30px;
 	}
 
 </style>
@@ -205,10 +219,7 @@
 		$("input[name='payer_type']").change(function(){
 			var payer_type = $(this).val();
 
-
 			if (payer_type == 'citizen'){
-				$("#id_payer_id").hide();
-				$("#id_payer_name").show();
 				$("#id_payer_name").autocomplete({
 					source: "/admin/ajax/search_citizen_clean/",
 					minLength: 2,
@@ -219,8 +230,6 @@
 			}
 
 			if (payer_type == 'business'){
-				$("#id_payer_id").hide();
-				$("#id_payer_name").show();
 				$("#id_payer_name").autocomplete({
 					source: "/admin/ajax/search_business/",
 					minLength: 2,
@@ -248,48 +257,39 @@
 </script>
 <div style="text-align:left; line-height:30px; margin-left:10px;margin-top:20px;">
 	{% block heading %}
-		<h3>Land Lease - Payment</h3>
-		<div><a href="{% url 'submit_land_lease' tax.id %}">View Fee Details</a></div>
+		<h3>Pay Fees</h3>
 	{% endblock %}
 
 	<form method="post" action="{{ request.build_absolute_uri }}">
+		<table id="fee_table">
+			<tr><th>Fee</th><th>Amount</th><th>Penalty</th><th>Interest</th><th>Total</th></tr>
+			{% for fee in fees %}
+			<tr><td><input type="checkbox" name="pay_fee" value="{{ fee.pk }}" checked> {{ fee }}</td>
+				<td>{{ fee.remaining_amount|intcomma }}</td>
+				<td>{{ fee.penalty|intcomma }}</td>
+				<td>{{ fee.interest|intcomma }}</td>
+				<td>{{ fee.total|intcomma }}</td>
+
+			</tr>
+			{% endfor %}
+			<tr><td colspan="4"></td><td><b>{{ total|default:'0'|intcomma }}</b></td></tr>
+		<table>
 	<div style="margin-top:10px;">
 		<table id="payment_form">
 			{% csrf_token %}
-				{% block payment_details %}
-				<tr><th>Fee</th><td>{{ tax }}<br/>Due: {{ tax.due_date }}<br/>Fee Amount: {{ tax.amount|intcomma }}
-				</td></tr>
-				<tr><th>Property</th><td>Address: {{ tax.prop }}<br/>UPI: {{ tax.prop.upi }}</td></tr>
-				<tr><th>Owners</th><td>{% for owner in tax.prop_title.owners %}{{ owner }}<br/>{% endfor %}Ownership period: {{ tax.prop_title.date_from }} - {{ tax.prop_title.date_to|default:"current" }}</td></tr>
-				{% endblock %}
 				<tr><th>Payment Date</th><td>{{ form.paid_date }}{{ form.paid_date.errors }}<span class="confirm">{{ request.POST.paid_date }}</span></td></tr>
-				<tr><th>Payment made by</th><td><div id="select_payer">{{ form.payer_type }}{{ form.payer_type.errors }}
+				<tr><th>Payment made by</th><td><div id="select_payer">{{ form.payer_id }}{{ form.payer_id.errors }}{{ form.payer_type }}{{ form.payer_type.errors }}
 					{{ form.payer_name }}{{ form.payer_name.errors }}</div><span class="confirm">{{ payer_name }}</span></td></tr>
 				<tr><th>Sector receipt</th><td>{{ form.sector_receipt }}{{ form.sector_receipt.errors }}<span class="confirm">{{ request.POST.sector_receipt }}</span></td></tr>
 				<tr><th>Bank</th><td>{{ form.bank }}{{ form.bank.errors }}<span class="confirm">{{ request.POST.bank }}</span><br/>Bank Receipt: {{ form.bank_receipt }}{{ form.bank_receipt.errors }}
 					<span class="confirm">{{ request.POST.bank_receipt }}</span></td></tr>
 
-				<tr><th>
-				Amount Due:</th>
-				<td>Remaining Amount: {{ tax.remaining_amount|intcomma }}<br/>
-				Penalty: {{ penalty|intcomma }}&nbsp; Interest: {{ interest|intcomma }}<br/>
-				Total {{ total|intcomma }}</td></tr>
-
-
-				<tr><th>Payment Amount</th><td>{{ form.amount }}{{ form.amount.errors }}<span class="confirm">{{ request.POST.amount|intcomma }}</span></td></tr>
-				{% if request.POST.submit and not form.errors %}
 					<tr>
 						<td colspan="2" style="line-height:50px;">
 								<input type="submit" class="pay_tax_btn" name="process_payment" value="Process Payment" />
 	                    </td>
 					</tr>
-				{% else %}
-					<tr>
-						<td colspan="2" style="line-height:50px;">
-								<input type="submit" class="pay_tax_btn" name="submit" value="Submit" />
-	                    </td>
-					</tr>
-				{% endif %}
+
 		</table>
 		{{ form.business_id }}
 		{{ form.citizen_id }}

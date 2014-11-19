@@ -1,0 +1,159 @@
+{% extends "common/base_paytax_business.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<style>
+
+#fee_table TH, #fee_table TD{
+	border-right:1pt #e4e4e4 solid;
+}
+
+#fee_table TD, #fee_table TH{
+	text-align: left;
+	padding-left:5px;
+}
+
+#fee_table{
+	margin:0 auto;
+	width:95%;
+	border:1pt #e4e4e4 solid;
+}
+
+#fee_table TR{
+	border-bottom:1pt #cccccc solid;
+}
+
+#payment_table TR{
+	padding-top:7px;
+	background-color:default;
+	padding-left:35px;
+	padding-right:0;
+	padding-bottom:7px;
+
+}
+
+#payment_table{
+	font-style: italic;
+}
+
+#payment_table TH{
+	font-weight:normal;
+	width:100px;
+}
+
+#payment_table{
+	width:70%;
+	border-top:0pt #cccccc solid;
+
+	margin:2px
+}
+
+#pay_fees_form{
+	border:1pt grey solid;
+	background-color:#e4e4e4;
+	margin-top:20px;
+	float:right;
+	margin-right:25px;
+}
+
+#pay_fees_form TH{
+	text-align:left;
+	font-weight: normal;
+	vertical-align: top;
+	padding:8px;
+	min-width:100px;
+}
+
+#pay_fees_form TD{
+	text-align:left;
+	padding:8px;
+}
+
+
+</style>
+
+
+{% if fees %}
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+		<form action="{% url 'payselectedfees' %}" method="post">
+		<table style="margin:0 auto;" class="tablesorter" cellpadding="0" cellspacing="0">
+			<thead>
+			<tr>
+				<td width="30" style="border: 1px solid #c4c4c4; padding: 5px 8px;"><input type="checkbox" id="checkAllBox" /></td>
+				<th>Fee Name</th>
+				<th>Branch</th>
+				<th>Amount</th>
+				<th>Total Due</th>
+				<th>Due On</th>
+				<th align="center" width="210">Action</th>
+			</tr>
+			</thead>
+			<tbody>
+			{% for i in fees %}
+				<tr {% if i.due_date %}class="overdue"{% endif %}>
+                    <td>
+						{% if not i.is_paid and i.submit_date  %}
+                        <input type="checkbox" name="pay_fee" value="{{i.id}}" class="multi_pay_checkbox" />
+						{% endif %}
+                        <!--<input type="hidden" value="{{i.name}}_{{i.obj_id}}_{{i.branch}}" id="mark_{{i.id}}" />-->
+
+                    </td>
+					<td>{{i}}<br/>{{i.target}}</td>
+					<td>
+						{% if i.subbusiness %}
+							{{i.subbusiness.branch}}
+						{% else %}
+							Main
+						{% endif %}
+					</td>
+					<td>
+						<div class="paid">{{i.amount|intcomma}}</div>
+                        {% if i.payments.count %}
+                        <a href="/admin/tax/tax/past_payments/?type=fee&id={{ i.pk }}" class="fancy_box" >show past payments</a>
+                        {% endif %}
+					</td>
+					<td>
+						{{ i.total_due|intcomma }}
+					</td>
+                    <td>
+
+                            {{ i.due_date|date:"d M Y"}} {% if i.due_date|timesince != '0 minutes' and i.remaining_amount > 0 %}<div class="errorlist">overdue {{ i.due_date|timesince }}</div>{% endif %}
+
+                    </td>
+
+
+                    <td>
+                        {% for payment in i.fee_payments.all %}
+                        	<a href="/admin/tax/tax/generate_invoice?type=fee&id={{ payment.pk }}" class="my_button">Receipt {{ payment.receipt.sector_receipt }}</a>&nbsp;
+                        {% endfor %}
+
+                        {% if i.remaining_amount > 0  %}
+                        	<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}" class="my_button" >view ePay Invoice</a>
+                        {% endif %}
+
+                    </td>
+				</tr>
+			{% endfor %}
+			</tbody>
+		</table>
+        <br/>
+        <input type="hidden" name="payer_name" value="{{business.name}}" >
+        <input type="hidden" name="payer_type" value="business">
+        <button style="float: left;"  class="my_button" id="pay_multiple_btn_old" name="select" value="select">pay selected fees</button>&nbsp;&nbsp;&nbsp;
+        <!--<button style="float: left; margin-left: 20px;"  class="my_button" id="view_epay_multiple_btn" >view ePay Invoice of selected fees</button>-->
+	{% csrf_token %}
+	<input type="hidden" name="template_type" value="business" />
+	<input name="business_pk" value="{{ business.pk }}" type="hidden" />
+	<input type="hidden" name="paid_date" value="{% now 'd/m/Y' %}">
+	</form>
+	</div>
+    {% else %}
+    No fee available.
+	{% endif %}
+
+
+</div>
+{% endblock %}

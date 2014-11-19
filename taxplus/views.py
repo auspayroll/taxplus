@@ -1,4 +1,4 @@
-from django.template.response import TemplateResponse 
+from django.template.response import TemplateResponse
 from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
 from jtax.models import PayFee, Fee
 from property.models import District, Sector, Cell
@@ -12,6 +12,12 @@ from asset.models import Business, Duplicate
 from dateutil.relativedelta import relativedelta
 from taxplus.models import *
 from django.contrib.auth.decorators import login_required
+from taxplus.forms import PaymentForm, PayFeesForm
+from django.contrib import messages
+from django.core.urlresolvers import reverse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4, landscape
+from taxplus.management.commands.generate_invoices import generate_invoice
 
 
 
@@ -76,8 +82,8 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 			if p.fee.subbusiness:
 				row.append(p.fee.subbusiness.name.encode('utf-8'))
 			else:
-				row.append(p.fee.business.name.encode('utf-8'))	
-		
+				row.append(p.fee.business.name.encode('utf-8'))
+
 		if 'Cell' in includes:
 			if p.fee.subbusiness and p.fee.subbusiness.business.cell:
 				row.append(p.fee.subbusiness.business.cell.name.encode('utf-8'))
@@ -180,13 +186,13 @@ def cleaning_debtors_csv(report, line_items, criteria={}, th=None, totals={}):
 	for l in line_items:
 		row = []
 
-		row.append(l.business.name.encode('utf-8'))	
+		row.append(l.business.name.encode('utf-8'))
 
 		if l.business.phone1:
 			row.append(l.business.phone1.encode('utf-8'))
 		else:
 			row.append(l.business.phone2.encode('utf-8') or '')
-		
+
 		row.append(l.business.address or '')
 		row.append(l.month)
 		row.append(l.month_1)
@@ -246,6 +252,144 @@ def duplicates(request):
 	rows = Duplicate.objects.filter(status=1).order_by('-similarity').select_related('business1','business2')
 	return TemplateResponse(request, 'asset/business/duplicates.html', { 'rows':rows })
 
+
+@login_required
+def property_fees(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	fees = prop.property_fees.filter(amount__gt=0)
+
+	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees })
+
+
+@login_required
+def business_fees(request, pk):
+	business = get_object_or_404(Business, pk=pk)
+	fees = business.business_fees.filter(amount__gt=0)
+	return TemplateResponse(request, 'tax/business_fees.html', { 'business':business, 'fees':fees })
+
+
+@login_required
+def payLandLease(request, pk=None):
+	business_id = None
+	citizen_id = None
+	fee = get_object_or_404(Fee, pk=pk)
+	penalty, interest = fee.calc_penalty(date.today())
+	total = fee.remaining_amount + penalty + interest
+	payer_name = ''
+
+	if fee.remaining_amount == 0:
+		messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
+		#return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+	if request.POST:
+		form = PaymentForm(request.POST, fee=fee)
+
+		if form.is_valid():
+			payer_type = form.cleaned_data.get('payer_type')
+			payer_name = form.cleaned_data.get('payer_name')
+			payer = None
+
+			if payer_type == 'citizen':
+				citizen_id = form.cleaned_data.get('citizen_id')
+
+			elif payer_type == 'business':
+				business_id = form.cleaned_data.get('business_id')
+
+
+			if not request.POST.get('process_payment'):
+				penalty, interest = fee.calc_penalty(form.cleaned_data.get('paid_date') or date.today())
+				total = fee.remaining_amount + penalty + interest
+
+			else:
+				d = form.cleaned_data
+				user = request.session.get('user')
+				fee.process_payment(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id, sector_receipt=d.get('sector_receipt'), \
+					bank_receipt=d.get('bank_receipt'), payment_amount=d.get('amount'), staff_id=user.pk, bank=d.get('bank'), payer_name=payer_name)
+				messages.success(request, "Payment successful")
+				if fee.prop_id:
+					return HttpResponseRedirect(reverse('property_fees', args=[fee.prop_id]))
+				elif fee.business_id:
+					return HttpResponseRedirect(reverse('business_fees', args=[fee.business_id]))
+
+		else:
+			pass
+	else:
+		initial={'amount':total}
+		form = PaymentForm(initial=initial, fee=fee)
+
+
+	return TemplateResponse(request, "tax/paylandlease.html", { 'form':form, 'property':fee.prop,
+		'tax':fee, 'total':total, 'penalty':penalty, 'interest':interest, 'payer_name':payer_name })
+
+
+@login_required
+def paySelectedFees(request):
+	pay_fees = [ int(pk) for pk in request.POST.getlist('pay_fee')]
+	fees = Fee.objects.filter(pk__in=pay_fees)
+	total = 0
+	if request.POST:
+		form = PayFeesForm(request.POST)
+
+		if form.is_valid():
+			citizen_id = None
+			business_id = None
+			payer_type = form.cleaned_data.get('payer_type')
+			if payer_type == 'citizen':
+				citizen_id = form.cleaned_data.get('citizen_id')
+				if citizen_id:
+					citizen = Citizen.objects.get(pk=citizen_id)
+				payer_name = form.cleaned_data.get('payer_name')
+
+			elif payer_type == 'business':
+				business_id = form.cleaned_data.get('business_id')
+				if business_id:
+					business = Business.objects.get(pk=business_id)
+				payer_name = form.cleaned_data.get('payer_name')
+
+			if request.POST.get('process_payment'): #process payment
+				d = form.cleaned_data
+				user = request.session.get('user')
+				payment_receipt = Fee.process_payments(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
+					payer_name=d.get('payer_name'), sector_receipt=d.get('sector_receipt'),
+					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee_ids=pay_fees)
+				#redirect to receipt
+				payFee = PayFee.objects.filter(receipt=payment_receipt)[0]
+				return HttpResponseRedirect('/admin/tax/tax/generate_invoice/?type=fee&id=%s' % payFee.pk)
+
+		else:
+			pass
+	else:
+		initial = {'paid_date':date.today().strftime('%d/%m/%Y')}
+		form = PayFeesForm(initial=initial)
+
+
+	if hasattr(form,'cleaned_data'):
+		paid_date = form.cleaned_data.get('paid_date')
+	else:
+		paid_date = date.today()
+	for fee in fees:
+		penalty, interest = fee.calc_penalty(paid_date)
+		fee.penalty = penalty
+		fee.interest = interest
+		fee.total = fee.remaining_amount + penalty + interest
+		total += fee.total
+
+
+	return TemplateResponse(request, "tax/payfees.html", { 'form':form, 'fees':fees, 'total':total  })
+
+
+def property_invoice(request, pk):
+	title = get_object_or_404(PropertyTitle, pk=pk)
+	response = HttpResponse(content_type='application/pdf')
+	response['Content-Disposition'] = 'attachment; filename="invoice.pdf"'
+	p = canvas.Canvas(response, pagesize=A4)
+	generate_invoice(canvas=p, pagesize=A4, title=title)
+	return response
+
+
+@login_required
+def get_property_invoice(request, pk):
+	return property_invoice(request, pk)
 
 
 
