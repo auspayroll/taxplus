@@ -3988,7 +3988,7 @@ def displayGenerateInvoicePage(request):
 		send_receipt_error = ''
 
 		try:
-			payment = get_object_or_404(PayFee,pk=id,i_status='active')
+			payment = get_object_or_404(PayFee,pk=id)
 			pay_fee = get_object_or_404(TP_PayFee, pk=id)
 			taxplus_receipt = pay_fee.receipt
 			tax = payment.fee

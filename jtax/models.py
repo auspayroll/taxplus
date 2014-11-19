@@ -359,13 +359,13 @@ class Tax(models.Model):
 		"""given a new amount, calculate the amount remaining"""
 		if amount is None:
 			return None
-		paid_amount = self.payments.filter(amount__gt=0, i_status='active').aggregate(sum=Sum('amount'))['sum'] or 0
+		paid_amount = self.payments.filter(amount__gt=0).aggregate(sum=Sum('amount'))['sum'] or 0
 		remaining_amount = amount - paid_amount
 		return remaining_amount
 
 	def get_paid_amount(self):
 		from django.db.models import Sum
-		paid = self.payments.filter(amount__gt=0, i_status='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
+		paid = self.payments.filter(amount__gt=0).aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
 		total = paid['amount'] or 0
 		fines = paid['fines'] or 0
 		capital_amount = total - fines
@@ -903,43 +903,40 @@ class Fee(Tax):
 
 
 	def calc_cleaningFee(self):
-		if self.is_paid:
-			return (None, None)
+		if self.category.code == 'cleaning' and not self.is_paid:
+			business = self.business
+			if business.business_category is not None:
+				if business.business_category_id in range(1,7):
+					self.amount = 10000
+				elif business.business_category_id == 7:
+					self.amount = 5000
+				elif business.business_category_id == 8:
+					self.amount = 3000
+				else:
+					self.amount = 0
 
-		business = self.business
-		if business.business_category is not None:
-			if business.business_category_id in range(1,7):
-				self.amount = 10000
-			elif business.business_category_id == 7:
-				self.amount = 5000
-			elif business.business_category_id == 8:
-				self.amount = 3000
-			else:
-				self.amount = 0
+				self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
+				if self.remaining_amount <= 0 and self.amount > 0:
+					self.is_paid = True
+				else:
+					self.is_paid = False
 
-			self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
-			if self.remaining_amount <= 0 and self.amount > 0:
-				self.is_paid = True
-			else:
+				self.submit_date = datetime.now()
+				due_date = self.date_from + relativedelta(months=1)
+				self.due_date = date(due_date.year, due_date.month, 5)
+
+				if self.amount:
+					self.i_status = 'active'
+					self.status = CategoryChoice.objects.get(category__code='status', code='active')
+				self.save()
+				return self.amount, self.due_date
+
+			if self.pk:
+				self.submit_date = None
+				self.i_status = 'inactive'
+				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
 				self.is_paid = False
-
-			self.submit_date = datetime.now()
-			due_date = self.date_from + relativedelta(months=1)
-			self.due_date = date(due_date.year, due_date.month, 5)
-
-			if self.amount:
-				self.i_status = 'active'
-				self.status = CategoryChoice.objects.get(category__code='status', code='active')
-			self.save()
-			return self.amount, self.due_date
-
-		if self.pk:
-			self.submit_date = None
-			self.amount = self.remaining_amount = 0
-			self.i_status = 'inactive'
-			self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-			self.is_paid = False
-			self.save()
+				self.save()
 
 		return (None, None)
 
@@ -1018,6 +1015,9 @@ class PayTradingLicenseTax(models.Model):
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
+class PayFeeManager(models.Manager):
+	def get_query_set(self):
+		return super(PayFeeManager,self).get_query_set().filter(status__code='active')
 
 class PayFee(models.Model):
 	citizen_id = models.IntegerField(blank = True, null=True)
@@ -1035,6 +1035,9 @@ class PayFee(models.Model):
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	receipt_id = models.IntegerField(null=True)
+	status = models.ForeignKey(CategoryChoice)
+	objects = PayFeeManager()
+	all_objects = models.Manager()
 
 	def __unicode__(self):
 		return "Fee Payment"

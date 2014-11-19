@@ -1195,6 +1195,9 @@ class PaymentReceipt(models.Model):
 	class Meta:
 		db_table = 'jtax_multipayreceipt'
 
+class PayFeeManager(models.Manager):
+	def get_query_set(self):
+		return super(PayFeeManager,self).get_query_set().filter(status__code='active')
 
 class PayFee(models.Model):
 	citizen_id = models.IntegerField(blank = True, null=True)
@@ -1214,6 +1217,8 @@ class PayFee(models.Model):
 	receipt = models.ForeignKey(PaymentReceipt, related_name="receipt_payments", null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentfee_status", null=True)
 	i_status = models.CharField(max_length = 10, blank = True)
+	objects = PayFeeManager()
+	all_objects = models.Manager()
 
 	class Meta:
 		db_table = 'jtax_payfee'
