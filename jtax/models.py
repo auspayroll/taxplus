@@ -903,17 +903,18 @@ class Fee(Tax):
 
 
 	def calc_cleaningFee(self):
-		if self.category.code == 'cleaning' and not self.is_paid:
+		if self.category.code == 'cleaning':
 			business = self.business
 			if business.business_category is not None:
-				if business.business_category_id in range(1,7):
-					self.amount = 10000
-				elif business.business_category_id == 7:
-					self.amount = 5000
-				elif business.business_category_id == 8:
-					self.amount = 3000
-				else:
-					self.amount = 0
+				if not self.is_paid:
+					if business.business_category_id in range(1,7):
+						self.amount = 10000
+					elif business.business_category_id == 7:
+						self.amount = 5000
+					elif business.business_category_id == 8:
+						self.amount = 3000
+					else:
+						self.amount = 0
 
 				self.remaining_amount = self.calculateRemainingAmount(self.amount) or 0
 				if self.remaining_amount <= 0 and self.amount > 0:

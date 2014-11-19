@@ -1135,13 +1135,14 @@ class Fee(models.Model):
 			self.qty = self.prop.area or 0
 
 			self.rate = rate or 0
-			self.amount = self.qty * self.rate
 
-			#calculate part year payment
-			if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
-				self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
+			if not self.is_paid:
+				self.amount = self.qty * self.rate
+				#calculate part year payment
+				if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
+					self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
+				self.amount = round(self.amount)
 
-			self.amount = round(self.amount)
 			capital_paid_amount = self.get_paid_amount()[0]
 			self.remaining_amount = self.amount - capital_paid_amount
 			if self.remaining_amount <= 0 and self.amount > 0:
