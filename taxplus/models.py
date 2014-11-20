@@ -769,6 +769,7 @@ class PropertyTitle(models.Model):
 	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
 	modified = models.DateTimeField(auto_now=True, null=True)
 	imported = models.DateTimeField(null=True)
+	hash_key = models.CharField(max_length=50)
 
 	def __unicode__(self):
 		name = "%s %s - " % (self.prop, self.date_from.strftime('%d/%m/%Y'))
@@ -777,6 +778,11 @@ class PropertyTitle(models.Model):
 		if self.land_lease_issue_date:
 			name += " land lease issue date: %s" % self.land_lease_issue_date.strftime('%d/%m/%Y')
 		return name
+
+	def set_hash_key(self):
+		if not self.hash_key:
+			hash_key = binascii.hexlify(os.urandom(3))
+			PropertyTitle.objects.filter(pk=self.pk).update(hash_key=hash_key)
 
 	@property
 	def owners(self):
