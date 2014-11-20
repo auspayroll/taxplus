@@ -6,6 +6,8 @@ from django.dispatch import receiver
 from datetime import date, datetime
 from decimal import Decimal
 from django.db.models import Sum
+import binascii
+import os
 
 class PMUser(models.Model):
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
