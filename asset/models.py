@@ -571,6 +571,7 @@ class Ownership(models.Model):
 
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
+	prop_title = models.ForeignKey(PropertyTitle, null=True)
 
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)

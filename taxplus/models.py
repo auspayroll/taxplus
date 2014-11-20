@@ -1264,6 +1264,7 @@ class Ownership(models.Model):
 
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
+	prop_title = models.ForeignKey(PropertyTitle)
 
 
 	class Meta:
@@ -1289,33 +1290,30 @@ def after_prop_ownership_save(sender, instance, created, **kwargs):
 	try:
 		if instance.owner.citizen_id:
 			citizen = Citizen.objects.get(pk=instance.owner.citizen_id)
-			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_citizen=citizen, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to))
+			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_citizen=citizen, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, prop_title=instance.prop_title))
 			if not created:
 				#o.share = instance.stake or 0
 				o.date_started = instance.date_from
 				o.date_ended = instance.date_to
+				o.prop_title = instance.prop_title
 				o.save()
+				print 'citizen_owner updated'
 			else:
-				pass
-				# print 'created'
+				print 'citizen owner created'
 
 		elif instance.owner.business_id:
 			business = Business.objects.get(pk=instance.owner.business_id)
-			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to))
+			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, prop_title=instance.prop_title))
 			if not created:
 				#o.share = instance.stake or 0
 				o.date_started = instance.date_from
 				o.date_ended = instance.date_to
+				o.prop_title = instance.prop_title
 				o.save()
+				print 'business owner updated'
+			else:
+				print 'business owner created'
 
-		elif instance.owner.subbusiness_id:
-			business = SubBusiness.objects.get(pk=instance.owner.business_id)
-			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_subbusiness=business, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to))
-			if not created:
-				#o.share = instance.stake or 0
-				o.date_started = instance.date_from
-				o.date_ended = instance.date_to
-				o.save()
 
 	except Ownership.MultipleObjectsReturned:
 		if instance.owner.citizen_id:
@@ -1435,6 +1433,7 @@ class PropertyOwner(models.Model):
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_propertyowners")
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_propertyowners")
 	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="property_assets")
+	prop_title = models.ForeignKey(PropertyTitle)
 
 	class Meta:
 		db_table = 'asset_ownership'
@@ -1443,6 +1442,7 @@ class PropertyOwner(models.Model):
 class BusinessOwner(models.Model):
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
+	prop_title = models.ForeignKey(PropertyTitle)
 
 	class Meta:
 		db_table = 'asset_ownership'
