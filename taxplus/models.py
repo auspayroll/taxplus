@@ -893,7 +893,6 @@ class PropertyTitle(models.Model):
 
 @receiver(post_save, sender=PropertyTitle)
 def after_prop_title_save(sender, instance, created, **kwargs):
-	instance.title_ownership.update(date_from=instance.date_from, date_to=instance.date_to)
 	instance.calc_taxes()
 
 class FeeManager(models.Manager):
