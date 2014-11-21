@@ -854,21 +854,27 @@ class PropertyTitle(models.Model):
 				if end_date < date_to:
 					date_to = end_date
 
-				try:
-					fee = Fee.all_objects.get(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop)
+				fees = Fee.all_objects.filter(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop)
 
-				except Fee.DoesNotExist:
+				if not fees:
 					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
 					fee = Fee(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, \
 						fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
-
-				fee.calc_amount(save=True)
+					fee.calc_amount()
+				else:
+					for fee in fees:
+						if not fee.is_paid:
+							fee.date_to = date_to
+						fee.status = active
+						fee.prop_title = self
+						fee.save(update_fields=['date_to', 'status', 'prop_title'])
+						fee.calc_amount(save=True)
 
 				date_from = date(date_from.year+1, 1, 1)
 
 			if self.date_to:
-				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(prop_title=None, status=inactive)
-			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(prop_title=None, status=inactive)
+				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(status=inactive)
+			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(status=inactive)
 
 
 @receiver(post_save, sender=PropertyTitle)
