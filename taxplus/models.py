@@ -1129,11 +1129,11 @@ class Fee(models.Model):
 
 	def calc_amount(self, save=True):
 		"""
-		calculate the full amount of the fee owing based on fields
+		calculate the Fee Amount and also the remaining amount based
+		on payments made. If the Fee is marked as 'is_paid', then the amount
+		wont be recalculated, but the remaining amount from paid amounts should still
+		be calculated.
 		"""
-		if self.is_paid:
-			return self.amount
-
 		if self.category.code == 'land_lease':
 			rate = 0
 			if self.prop.land_zone.code == 'agricultural':
@@ -1191,7 +1191,7 @@ class Fee(models.Model):
 				self.amount = round(self.amount)
 
 			capital_paid_amount = self.get_paid_amount()[0]
-			self.remaining_amount = self.amount - capital_paid_amount
+			self.remaining_amount = float(self.amount) - capital_paid_amount
 			if self.remaining_amount <= 0 and self.amount > 0:
 				self.is_paid = True
 			else:
