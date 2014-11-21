@@ -790,6 +790,21 @@ class PropertyTitle(models.Model):
 		for ownership in self.title_ownership.all():
 			yield ownership.owner.name
 
+	@property
+	def citizens(self):
+		for ownership in self.title_ownership.all():
+			citizen = ownership.citizen
+			if not citizen:
+				business = ownership.business
+
+			if citizen:
+				yield citizen
+
+			elif business:
+				for business_owner in BusinessOwner.objects.filter(asset_business=business):
+					if business_owner.owner_citizen:
+						yield business_owner.owner_citizen
+
 
 	def close(self, close_date):
 		for ownership in self.title_ownership.filter(date_to__isnull=False):
