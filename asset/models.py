@@ -576,102 +576,28 @@ class Ownership(models.Model):
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
-	@property
-	def property_ownership(self):
-		instance=self
-		if instance.owner_citizen_id:
-			citizen = Citizen.objects.get(pk=instance.owner_citizen_id)
-			owner = Entity.objects.get(pk=citizen.entity_id)
-
-		elif instance.owner_business_id:
-			try:
-				owner = Entity.objects.get(business_id=instance.owner_business_id)
-			except Entity.DoesNotExist:
-				business = Business.objects.get(pk=instance.owner_business_id)
-				business.save()
-				owner = Entity.objects.get(business_id=instance.owner_business_id)
-
-		elif instance.owner_subbusiness_id:
-			try:
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-			except Entity.DoesNotExist:
-				sbusiness = SubBusiness.objects.get(pk=instance.owner_subbusiness_id)
-				sbusiness.save()
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-
-
-		ownership = PropertyOwnership.objects.get(owner=owner, prop__id=instance.asset_property_id)
-		return ownership
-
-
 @receiver(post_save, sender=Ownership)
 def after_ownership_save(sender, instance, created, **kwargs):
-	ownership = None
-	status = CategoryChoice.objects.get(category__code='status', code=(instance.i_status or 'active'))
+	if instance.asset_property:
+		if not instance.prop_title:
+			title, created = PropertyTitle.objects.get_or_create(prop_id=instance.asset_property.pk, date_from=instance.date_started,
+				defaults=dict(status=CategoryChoice.objects.get(category__code='status', code='active'), date_to=instance.date_ended))
 
-	#property ownerships
-	if instance.asset_property_id:
-		if instance.owner_citizen_id:
-			citizen = Citizen.objects.get(pk=instance.owner_citizen_id)
-			owner = Entity.objects.get(pk=citizen.entity_id)
-
-		elif instance.owner_business_id:
-			try:
-				owner = Entity.objects.get(business_id=instance.owner_business_id)
-			except Entity.DoesNotExist:
-				business = Business.objects.get(pk=instance.owner_business_id)
-				business.save()
-				owner = Entity.objects.get(business_id=instance.owner_business_id)
-
-		elif instance.owner_subbusiness_id:
-			try:
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-			except Entity.DoesNotExist:
-				sbusiness = SubBusiness.objects.get(pk=instance.owner_subbusiness_id)
-				sbusiness.save()
-				owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
-
-		try:
-			ownership = PropertyOwnership.objects.get(prop__id=instance.asset_property_id, owner=owner)
-
-		except PropertyOwnership.DoesNotExist:
-			status = CategoryChoice.objects.get(category__code='status', code=instance.i_status)
-			title = PropertyTitle.objects.create(prop_id=instance.asset_property_id, date_from=instance.date_started, date_to=instance.date_ended, status=status)
-			po = PropertyOwnership.objects.create(prop=title.prop, date_from=title.date_from, date_to=title.date_to, prop_title=title, stake=instance.share, status=status, owner=owner)
+			Ownership.objects.filter(pk=instance.pk).update(prop_title=title)
 
 		else:
-			ownership.date_from = instance.date_started
-			ownership.date_to = instance.date_ended
-			ownership.stake = instance.share
-			ownership.save()
-			title = ownership.prop_title
-			title.date_from = instance.date_started
+			title = instance.prop_title
+
+		if title.title_ownership.filter(date_to__isnull=True).count() == 0:
 			title.date_to = instance.date_ended
 			title.save()
 
-	#business ownerships
-	elif instance.asset_business or instance.asset_subbusiness:
-		if instance.owner_citizen_id:
-			owner = Entity.objects.get(citizen_id=instance.owner_citizen_id)
+		if title.date_from > instance.date_started:
+			title.date_from = instance.date_started
+			title.save()
 
-		elif instance.owner_business_id:
-			owner = Entity.objects.get(business_id=instance.owner_business_id)
 
-		elif instance.owner_subbusiness_id:
-			owner = Entity.objects.get(subbusiness_id=instance.owner_subbusiness_id)
 
-		if instance.asset_business_id:
-			asset = Entity.objects.get(business_id=instance.asset_business_id)
-
-		elif instance.asset_subbusiness_id:
-			asset = Entity.objects.get(subbusiness_id=instance.asset_subbusiness_id)
-
-		ownership, created = BusinessOwnership.objects.get_or_create(business=asset, owner=owner,\
-			defaults=dict(date_from=instance.date_started, date_to=instance.date_ended, stake=instance.share, status=status))
-		if not created:
-			ownership.date_from = instnace.date_started
-			ownership.date_to = instance.date_ended
-			ownership.save()
 
 
 #General functions used in many models
