@@ -610,37 +610,36 @@ class SubBusiness(models.Model):
 
 
 class Entity(models.Model):
-	entity_type = models.ForeignKey(CategoryChoice, related_name="entity_type", limit_choices_to={'category__code':'entity_type'})
-	parent = models.ForeignKey('self', related_name='branches', null=True)
-	owners = models.ManyToManyField('self', through='BusinessOwnership', symmetrical=False)
-	sector = models.ForeignKey(Sector, null=True, blank=True)
-	cell = models.ForeignKey(Cell, null=True, blank=True)
-	village = models.ForeignKey(Village, null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'})
-	business = models.OneToOneField(Business, null=True)
-	citizen = models.OneToOneField(Citizen, null=True)
-	subbusiness = models.OneToOneField(SubBusiness, null=True)
-	identifier = models.CharField(max_length=100, null=True)
+	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
+	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
+	subbusiness = models.OneToOneField(SubBusiness, null=True, db_column='owner_subbusiness_id')
+
+	class Meta:
+		db_table = 'asset_ownership'
 
 	@property
-	def primary_owner(self):
-		owners = self.owners.order_by('-stake')
-		if owners:
-			return owners[0]
-		else:
-			return None
+	def entity_type(self):
+		if self.citizen:
+			return 'citizen'
+
+		elif self.business:
+			return 'business'
+
+	@property
+	def identifier(self):
+		if self.citizen:
+			return self.citizen.citizen_id
+
+		elif self.business:
+			return self.business.tin
 
 	@property
 	def name(self):
-		if self.entity_type.code == 'business':
+		if self.citizen:
+			return self.citizen.name
+
+		elif self.business:
 			return self.business.name
-
-		elif self.entity_type.code == 'individual':
-			title = self.citizen
-			return "%s %s" % (self.citizen.first_name, self.citizen.last_name)
-
-		elif self.entity_type.code == 'subsiduary':
-			return self.subbusiness.branch
 
 
 class IdentityDocument(models.Model):
@@ -1270,7 +1269,7 @@ class Ownership(models.Model):
 
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
-	prop_title = models.ForeignKey(PropertyTitle)
+	prop_title = models.ForeignKey(PropertyTitle, related_name='prop_title_ownerships')
 
 
 	class Meta:
@@ -1278,18 +1277,20 @@ class Ownership(models.Model):
 
 
 class PropertyOwnership(models.Model):
-	owner = models.ForeignKey(Entity, related_name='ownership')
-	prop = models.ForeignKey(Property, related_name='property_ownership')
+	owner = models.ForeignKey(Entity, related_name='ownership', db_column='id')
+	prop = models.ForeignKey(Property, related_name='property_ownership', db_column='asset_property_id')
 	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_ownership')
-	date_from = models.DateField(null=True, blank=True)
-	date_to = models.DateField(null=True, blank=True)
+	date_from = models.DateField(null=True, blank=True, db_column='date_started')
+	date_to = models.DateField(null=True, blank=True, db_column='date_ended')
 	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
-	stake = models.FloatField(null=True, blank=True)
-	primary = models.NullBooleanField(blank=True)
-	legacy = models.ForeignKey(Ownership, null=True)
-	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
-	modified = models.DateTimeField(auto_now=True, null=True)
+	stake = models.FloatField(null=True, blank=True, db_column='share')
+	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True, db_column='date_created')
+	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
+	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
 
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
 
 @receiver(post_save, sender=PropertyOwnership)
 def after_prop_ownership_save(sender, instance, created, **kwargs):
@@ -1337,21 +1338,6 @@ def after_prop_ownership_save(sender, instance, created, **kwargs):
 		o.date_started = instance.date_from
 		o.date_ended = instance.date_to
 		o.save()
-
-
-
-
-class BusinessOwnership(models.Model):
-	owner = models.ForeignKey(Entity, related_name='entity_businessownership')
-	business = models.ForeignKey(Entity, related_name='business_businessownership')
-	date_from = models.DateField(null=True, blank=True)
-	date_to = models.DateField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, related_name='business_ownership_status', )
-	stake = models.FloatField(null=True, blank=True)
-	primary = models.NullBooleanField(blank=True)
-	legacy = models.ForeignKey(Ownership, null=True)
-	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
-	modified = models.DateTimeField(auto_now=True, null=True)
 
 
 
@@ -1453,6 +1439,10 @@ class BusinessOwner(models.Model):
 	class Meta:
 		db_table = 'asset_ownership'
 		managed = False
+
+class BusinessOwnership:
+	pass
+	#deprecated
 
 
 
