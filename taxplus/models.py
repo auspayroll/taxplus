@@ -824,6 +824,26 @@ class PropertyTitle(models.Model):
 
 		return '%s%s%s' % (district_code, sector_code, self.pk)
 
+
+
+	@property
+	def outstanding_fees(self, overdue_only=False):
+		fees = self.title_fees.filter(remaining_amount__gt=0).order_by('due_date')
+		total = 0
+		overdue = 0
+		for fee in fees:
+			penalty, interest = fee.calc_penalty(date.today())
+			fee.total = subtotal = float(fee.remaining_amount) + penalty + interest
+			fee.penalty = penalty
+			fee.interest = interest
+			total += subtotal
+			if fee.due_date < date.today():
+				overdue += subtotal
+
+		return {'fees':fees, 'total':total, 'overdue':overdue }
+
+
+
 	@property
 	def land_lease_periods(self):
 			date_from = date(2011,1,1)
