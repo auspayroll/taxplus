@@ -1,0 +1,88 @@
+{% load staticfiles %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en" >
+	<head>
+		<title>PropertyMode outstanding land lease</title>
+		<meta name="viewport" content="width=device-width">
+		<style>
+			BODY{
+				font-family: Verdana, Sans-Serif;
+				font-size:11px;
+				background-color:#87B3DE;
+			}
+
+			#main{
+				border:0pt black solid;
+				padding:5px;
+			}
+
+			#fee_table{
+				margin-top:15px;
+				width:100%;
+			}
+
+			#fee_table TR{
+				border:1pt #cccccc solid;
+			}
+
+			#fee_table TH{
+				text-align: left;
+				border-bottom:1pt grey solid;
+				border-right:1pt grey solid;
+				background-color:#cccccc;
+				font-weight:normal;
+			}
+
+			#fee_table TD{
+				padding:6px;
+				font-size:10px;
+				border-bottom:1pt grey solid;
+				border-right:1pt grey solid;
+			}
+
+			#download{
+				margin-top:15px;
+				min-height: 70px;
+			}
+
+			H1{
+				font-size:16px;
+			}
+
+			#overdue{
+				color:red;
+			}
+		</style>
+	</head>
+
+
+	<body>
+		<div style="background-color:white; padding:8px; border-radius:7px; height:500px;">
+		<div><img src="{% static 'images/sectors/kigali_icon.gif' %}" width="50"><h3>Kigali City</h3></div>
+		<hr>
+		<div id="owners">{{ title.owners|join:', ' }}</div>
+		<div id="main">Below is a summary of fees and taxes for property {{ title.prop.upi }} </div>
+
+		<div>
+			District: {{ title.prop.village.cell.sector.district.name }}, Sector: {{ title.prop.village.cell.sector.name }}, Cell: {{ title.prop.village.cell.name }},
+			Village: {{ title.prop.village.name }}, plot: {{ title.prop.parcel_id }}
+		</div>
+
+		<div>
+			<table id="fee_table">
+				<tr><th>Fee</th><th>Amount</th><th>Penalty</th><th>Interest</th><th>Due on<th>Total Due</th></tr>
+			{% for fee in title.outstanding_fees.fees %}
+				<tr><td>{{ fee }}</td><td>{{ fee.amount|intcomma}}</td><td>{{ fee.penalty }}</td><td>{{ fee.interest}}</td><td>{{ fee.due_date|date:'d/m/Y' }}</td><td>{{ fee.total|intcomma}}</td></tr>
+			{% endfor %}
+			</table>
+		</div>
+
+		<div><H1>OUTSTANDING AMOUNT: {{ title.outstanding_fees.total|intcomma }} Rwf</H1></div>
+		{% if title.outstanding_fees.overdue %}
+			<div id="overdue"><H1>OVERDUE: {{ title.outstanding_fees.overdue|intcomma }} Rwf</H1></div>
+		{% endif %}
+		<div id="download">Please <a href="{% url 'mobile_invoice' key %}">download the PDF <img src="{% static 'images/pdf.png' %}"></a> of your invoice</div>
+	</div>
+	</body>
+</html>

@@ -5,6 +5,10 @@ from taxplus import views as taxplus_views
 
 
 urlpatterns = patterns('',
+
+	url(r'^il/(?P<key>\w+)/$', taxplus_views.mobile_invoice_landing, name='mobile_invoice_landing'),
+	url(r'^i/(?P<key>\w+)/$', taxplus_views.mobile_invoice, name='mobile_invoice'),
+
 	url(r'^admin/property/', include('property.urls')),
 	url(r'^admin/auth/', include('pmauth.urls')),
 	url(r'^admin/log/', include('log.urls')),

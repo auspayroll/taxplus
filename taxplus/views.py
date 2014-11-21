@@ -392,4 +392,24 @@ def get_property_invoice(request, pk):
 	return property_invoice(request, pk)
 
 
+def mobile_invoice(request, key):
+	try:
+		pk, hash_key = key.split('_')
+	except:
+		raise Http404
+
+	title = get_object_or_404(PropertyTitle, pk=pk, hash_key=hash_key)
+	return property_invoice(request, title.pk)
+
+
+def mobile_invoice_landing(request, key):
+	try:
+		pk, hash_key = key.split('_')
+	except:
+		raise Http404
+
+	title = get_object_or_404(PropertyTitle, pk=pk, hash_key=hash_key)
+	return render_to_response('common/mobile_invoice.html', {'title':title, 'key':key})
+
+
 
