@@ -59,7 +59,7 @@ sector_officers = { 'Masaka': 'Hicumunsi Alexis', 'Nyarugunga': 'Niyonsaba Jerom
 
 
 def generate_invoice(canvas, pagesize, title):
-	fees = title.title_fees.filter(remaining_amount__gt=0)
+	outstanding_fees = title.outstanding_fees
 	width, height = pagesize
 	border_x = 2.5
 	border_y = 1
@@ -229,12 +229,10 @@ def generate_invoice(canvas, pagesize, title):
 	p.drawString(address_info_x, frame1_y_offset - 14 * frame1_y_line_diff, 'District: %s' % title.prop.village.cell.sector.district)
 	"""
 
-
 	# right column
 	x_offset = width  * ( 1 -   33.0 / 100.0 )
 	#p.setFont("Helvetica-Bold", 14)
 	#p.drawRightString(address_info_x, height - 2 * cm, 'EPAY No: %s' % title.)
-
 
 	text = p.beginText()
 	text.setLeading(8)
@@ -253,8 +251,6 @@ def generate_invoice(canvas, pagesize, title):
 	text.textOut(u"S'il vous pla\u00EEt donnez ce num\u00E9ro d'EPAY \u00E0 la caissi\u00E8re de la banque")
 	p.drawText(text)
 
-
-
 	data = [
 	["Ikoro", 'Igihe', 'Angahe', 'Igiciro fatizo', 'Amande', 'Ubukererwe', 'Umubumbe'],
 	['Tax/Impot', u"Period/P\u00E9riode", 'Rate/Taux', 'Principle/Principale', 'Penalty/Amande', u'Interest/Int\u00E9r\u00EAts', 'Total'],
@@ -262,19 +258,20 @@ def generate_invoice(canvas, pagesize, title):
 	]
 
 	total = 0
-	for tax in fees:
-		penalty, interest = tax.calc_penalty(date.today())
-		subtotal = float(tax.remaining_amount) + penalty + interest
-		total += subtotal
-
+	for tax in outstanding_fees['fees']:
 		if tax.date_from.month != 1 and tax.date_from.day != 1 or tax.date_to.month != 12 and tax.date_to.day != 31:
 			period = '%s - %s' % (tax.date_from.strftime('%d/%m/%Y'), tax.date_to.strftime('%d/%m/%Y'))
 		else:
 			period = str(tax.date_from.year)
 
-		data.append(['LL', period, intcomma(tax.rate), intcomma('%.f' % tax.remaining_amount), intcomma('%.f' % penalty), intcomma('%.f' % interest), intcomma('%.f' % subtotal) ])
+		data.append(['LL', period, intcomma(tax.rate), intcomma('%.f' % tax.remaining_amount), intcomma('%.f' % tax.penalty), intcomma('%.f' % tax.interest), intcomma('%.f' % tax.total) ])
 
-	data.append(['', '', '', '', '', '', 'Umubumbe wose (Grand total)   %s Rwf' % intcomma('%.f' % total)],)
+	data.append(['', '', '', '', '', '', 'Umubumbe wose (Grand total)   %s Rwf' % intcomma('%.f' % outstanding_fees['total'])],)
+
+	if outstanding_fees['overdue']:
+		data.append(['', '', '', '', '', '', 'Late (Overdue)   %s Rwf' % intcomma('%.f' % outstanding_fees['overdue'])],)
+	else:
+		data.append(['', '', '', '', '', '', ''],)
 
 
 	table_style = TableStyle(
@@ -282,19 +279,21 @@ def generate_invoice(canvas, pagesize, title):
 		('LINEABOVE', (0,0), (-1,0), 1, colors.grey),
 		('LINEBELOW', (0,1), (-1,1), 1, colors.grey),
 		('FONT', (0,0), (-1,0), 'Helvetica-Bold', 8), # first row
-		('FONT', (0,1), (-1,1), 'Times-Italic', 8), # English heading
+		('FONT', (0,1), (-1,1), 'Times-Italic', 8), # 2nd row, translated heading
 		('LEADING', (0,0), (-1,0), 4),
 
-		('FONT', (0,2), (-1,-2), 'Helvetica', 9), # data rows
+		('FONT', (0,2), (-1,-3), 'Helvetica', 9), # data rows
 
-		('ALIGN', (-1,0), (-1,-1,), 'RIGHT'),
-		('LINEABOVE', (-2,-1), (-1,-1), 1, colors.grey),
-		('FONT', (0,-1), (-1,-1), 'Helvetica-Bold', 10), # summary line
+		('ALIGN', (-2,0), (-1,-1,), 'RIGHT'),
+		('LINEABOVE', (-2,-2), (-1,-2), 1, colors.grey),
+		('FONT', (0,-2), (-1,-1), 'Helvetica-Bold', 10), # summary line
+		('LEADING', (0,-2), (-1,-1), 8),
+		('TEXTCOLOR', (0,-1),(-1,-1), colors.red)
 		]
 	)
-	table = Table(data, colWidths=(1.9*cm, 4.4*cm, 2*cm, 2.4*cm, 2*cm, 2*cm, 2*cm), style=table_style)
+	table = Table(data, colWidths=(1.9*cm, 4*cm, 2*cm, 2.4*cm, 2.3*cm, 2*cm, 2*cm), style=table_style)
 	table.wrapOn(p, width, height)
-	table.drawOn(p, border_x*cm, height / 2.0 - 3*cm )
+	table.drawOn(p, border_x*cm, height / 2.0 - 3.8*cm )
 	#--------------------------------signatures
 	sig_y_height = height / 3.0
 	p.setStrokeColor(colors.grey)
@@ -582,12 +581,10 @@ class Command(BaseCommand):
 			filename = os.path.join( dir_name, "%s-%s-%s.pdf" % (village.cell.sector.name, village.cell.name, village.name))
 			p = canvas.Canvas(filename, pagesize=pagesize)
 
-			for title in PropertyTitle.objects.filter(prop__village=village).order_by('prop__parcel_id'):
-				fees = title.title_fees.filter(remaining_amount__gt=0, category=land_lease, date_from__gte=date(2011,1,1), date_to__lte=date(2013,12,31)).order_by('date_from')
-				if fees:
-					counter += 1
-					print 'creating invoice %s' % counter
-					generate_invoice(canvas=p, pagesize=pagesize, title=title)
+			for title in PropertyTitle.objects.filter(prop__village=village, title_fees__remaining_amount__gt=0, title_fees__due_date__lt=date.today(), title_fees__status__code='active').distinct().order_by('prop__parcel_id'):
+				print 'creating invoice %s' % counter
+				generate_invoice(canvas=p, pagesize=pagesize, title=title)
+				counter += 1
 		print counter
 
 
