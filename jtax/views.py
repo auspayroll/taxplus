@@ -5226,7 +5226,7 @@ def displayPaymentReversePage(request):
 					tax.remaining_amount = tax.amount
 				tax.save()
 
-
+			"""
 			# reverse any installments
 			installments = tax.installments.filter(paid_on = payment.paid_date)
 			if installments:
@@ -5236,7 +5236,7 @@ def displayPaymentReversePage(request):
 					installment.paid = 0
 					paid_on = None
 					installment.save()
-
+			"""
 			#start upload file & create media record
 			if request.FILES != None:
 				tax_folder = 'tax/' + type + '/'
