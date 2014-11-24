@@ -434,25 +434,6 @@ class SubBusiness(models.Model):
 		return owners
 
 
-@receiver(post_save, sender=SubBusiness)
-def after_sub_business_save(sender, instance, created, **kwargs):
-	#instance.business.calc_taxes()
-	sub = instance
-	try:
-		entity  = Entity.objects.get(subbusiness_id=sub.pk)
-	except Entity.DoesNotExist:
-		entity = Entity()
-		entity.entity_type = CategoryChoice.objects.get(category__code='entity_type', code='subsiduary')
-		entity.subbusiness_id = sub.pk
-		entity.parent = Entity.objects.get(business_id=sub.business.pk)
-		entity.status = CategoryChoice.objects.get(category__code='status', code=(sub.business.i_status or 'active'))
-		entity.sector_id = sub.sector_id
-		entity.cell_id = sub.cell_id
-		entity.village_id = sub.village_id
-		entity.save()
-		SubBusiness.objects.filter(pk=instance.pk).update(entity_id=entity.pk)
-
-
 class Billboard(models.Model):
 	name = models.CharField(max_length=100,help_text='Billboard Name')
 	property = models.ForeignKey(Property, null=True, blank = True, help_text="The property that this hold this billboard.")
