@@ -98,22 +98,4 @@ class Citizen(models.Model):
 
 
 
-@receiver(post_save, sender=Citizen)
-def after_citizen_save(sender, instance, created, **kwargs):
-	self = instance
-	try:
-		entity = Entity.objects.get(identifier=self.citizen_id, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'))
-
-	except Entity.DoesNotExist:
-		entity = Entity(citizen_id=self.pk, entity_type=CategoryChoice.objects.get(category__code='entity_type', code='individual'), status_id=1, identifier=self.citizen_id)
-		entity.save()
-
-	if entity.citizen_id != self.pk: # if this citizen is not the one used in the entity record, update status to inactive.
-		# note: use update to avoid infinite recursion
-		Citizen.objects.filter(pk=self.pk).update(status_new_id=2)
-
-	Citizen.objects.filter(pk=self.pk).update(entity_id=entity.pk)
-
-
-
 

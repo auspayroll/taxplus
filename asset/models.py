@@ -405,16 +405,6 @@ class Business(models.Model):
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
 	instance.calc_taxes()
-	try:
-		entity = Entity.objects.get(business_id=business.pk)
-
-	except Entity.DoesNotExist:
-		entity = Entity()
-		entity.entity_type_id = CategoryChoice.objects.get(category__code='entity_type', code='business').pk
-		entity.business_id = business.pk
-		entity.status_id = CategoryChoice.objects.get(category__code='status', code=(business.i_status or 'active')).pk
-		entity.save()
-		Business.objects.filter(pk=instance.pk).update(entity_id=entity.pk)
 
 
 class SubBusiness(models.Model):
