@@ -858,13 +858,17 @@ class Fee(Tax):
 	all_objects = models.Manager()
 
 	def __unicode__(self):
-		if 'cleaning' in self.fee_type:
-			return 'Cleaning fee for %s' % self.date_from.strftime("%B %Y")
+		if self.category.code == 'land_lease':
+			return "Land Lease %s - %s" % (self.date_from.strftime('%d/%m/%Y'), self.date_to.strftime('%d/%m/%Y'))
 
-		name = self.fee_type.title() + " Fee "
-		if self.date_from and self.date_to:
-			name += "[" + DateFormat(self.date_from).format('d/m/Y') + " - " + DateFormat(self.date_to).format('d/m/Y') + "]"
-		return name
+		if self.category.code == 'cleaning':
+			return "Cleaning Fee for %s" % (self.date_from.strftime('%B %Y'))
+
+		else:
+			name = self.fee_type.title() + " Fee "
+			if self.date_from and self.date_to:
+				name += "[" + DateFormat(self.date_from).format('d/m/Y') + " - " + DateFormat(self.date_to).format('d/m/Y') + "]"
+			return name
 
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
