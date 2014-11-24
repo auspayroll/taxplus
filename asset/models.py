@@ -378,7 +378,7 @@ class Business(models.Model):
 						fee = Fee.all_objects.get(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month)
 
 					except Fee.DoesNotExist:
-						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=now, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0)
+						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=now, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0, fee_type='cleaning')
 
 					except Fee.MultipleObjectsReturned:
 						fees= Fee.all_objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, status=active)
