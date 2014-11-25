@@ -20,8 +20,8 @@ def set_temp_password(request):
 	username=request.GET['username']
 	if(generate_temp_passwd(username)):
 
-# 		return HttpResponse(stringok) 
-		
+# 		return HttpResponse(stringok)
+
 		return render_to_response('admin/temp_password.html', {'errorMessage':''}, context_instance=RequestContext(request))
 	else:
 # 		return HttpResponse(stringerror)
@@ -33,6 +33,7 @@ def login(request):
 	Show login form if user hasn't yet logged in. Otherwise, go to home page
 	"""
 	if request.method == 'POST':
+		username = None
 		form = LoginForm(request.POST)
 		errorMessage=None
 		if form.is_valid():
@@ -62,9 +63,9 @@ def login(request):
 			except ValidationError, e:
 					errorMessage= e.messages[0]
 		else:
-			errorMessage=form.errors 
+			errorMessage=form.errors
 		return render_to_response('admin/login.html', {'form':form,'errorMessage':errorMessage, 'username':username}, context_instance=RequestContext(request))
-		
+
 	form = LoginForm()
 	return render_to_response('admin/login.html', {'form': form}, context_instance=RequestContext(request))
 
