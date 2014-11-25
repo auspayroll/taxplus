@@ -243,7 +243,9 @@
                         {% endif %}
                         {% if pay.fee.prop %}<br/>UPI: {{ pay.fee.prop.upi }}
                         {% endif %}
-                    </td><td>{% if pay.fine_amount %}{{ pay.fine_amount|intcomma }} Rwf ({{ pay.fine_description }}){% endif %}</td><td style="text-align:right;" >{{ pay.amount|intcomma }}</td></tr>
+                    </td>
+                    <td style="text-align:right;" >{{ pay.fine_amount|intcomma }} {{ pay.fine_description|default:'' }}</td>
+                    <td style="text-align:right;" >{{ pay.amount|intcomma }}</td></tr>
                 </tr>
                 {% endfor %}
 
