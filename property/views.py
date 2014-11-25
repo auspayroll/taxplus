@@ -7,6 +7,7 @@ from django.forms import model_to_dict
 from django.conf import settings
 from dev1 import variables
 from django.contrib.auth.decorators import login_required
+from taxplus.models import CategoryChoice
 
 import os
 import json
@@ -48,7 +49,6 @@ def access_content_type(request, content_type_name, action = None, content_type_
 	"""
 	This function direct request to the correspodding {module}_{contenttype}_default page
 	"""
-
 	if not request.session.get('user'):
 		return login(request);
 	if content_type_name == 'property':
@@ -609,7 +609,7 @@ def view_property(request, action, content_type_name1, obj_id, part):
 
 					#redirect to transfer ownership page after assigned
 					return HttpResponseRedirect('/admin/property/property/view_property/' + str(property.id) + '/transfer_ownership/' )
-			
+
 			ownerships = Ownership.objects.filter(asset_property=property,i_status='active')
 
 			if not ownerships:
@@ -777,12 +777,11 @@ def property_default(request,  action, content_type_name1, obj_id, part):
 	elif action == "update" and content_type_name1 == "landusetype":
 		property = get_object_or_404(Property,id=obj_id)
 		property.get_sq_m()
-		if request.GET.get('land_use_type',None) != None:
-			for i in variables.land_use_types:
-				if i[0] == request.GET.get('land_use_type'):
-					property.land_use_type = i[0]
-					property.save()
-					LogMapper.createLog(request,object=property,action="change", property = property,message="updated Land Use Type to " + str(property.land_use_type) )
+		if request.GET.get('land_use_type'):
+			land_zone = CategoryChoice.objects.get(category__code='land_use', code=request.GET.get('land_use_type'))
+			property.land_zone = land_zone
+			property.save()
+			LogMapper.createLog(request,object=property,action="change", property = property,message="updated Land Use Type to %s" % land_zone.name )
 		return HttpResponse("")
 	elif action == "update" and content_type_name1 == "landleasetype":
 		property = get_object_or_404(Property,id=obj_id)
@@ -806,7 +805,7 @@ def property_default(request,  action, content_type_name1, obj_id, part):
 			property.save()
 			LogMapper.createLog(request,object=property,action="change", property = property,message="updated Land Size to " + str(request.GET.get('size')) + ' ' + size_type )
 		return HttpResponse("")
-	
+
 	elif action == "update" and content_type_name1 == "taxexempt":
 		property = get_object_or_404(Property,id=obj_id)
 		form = PropertyUpdateTaxExemptForm(initial=model_to_dict(property))
@@ -820,7 +819,7 @@ def property_default(request,  action, content_type_name1, obj_id, part):
 					file = request.FILES['proof']
 					file_info = os.path.splitext(file.name)
 					file_name = 'Tax_Exempt_Proof_' + now + file_info[1]
-					folder = 'property/' + str(property.id) + '/' 
+					folder = 'property/' + str(property.id) + '/'
 					file_path = folder + file_name
 					if os.path.exists(settings.MEDIA_ROOT + folder) == False:
 						os.mkdir(settings.MEDIA_ROOT + folder)
@@ -835,7 +834,7 @@ def property_default(request,  action, content_type_name1, obj_id, part):
 				property.tax_exempt_reason = form.cleaned_data['tax_exempt_reason']
 				property.tax_exempt_note = form.cleaned_data['tax_exempt_note']
 
-				property.save()				
+				property.save()
 				if property.is_tax_exempt:
 					tax_exempt_status = ' True (Reason: ' + property.tax_exempt_reason + ') [' + property.tax_exempt_note + ']'
 
@@ -848,7 +847,7 @@ def property_default(request,  action, content_type_name1, obj_id, part):
 				return HttpResponseRedirect('/admin/property/property/view_property/' + str(property.id) + '/')
 
 		return render_to_response('property/_update_tax_exempt.html', {'form':form,'property':property},
-							context_instance=RequestContext(request))	
+							context_instance=RequestContext(request))
 	else:
 		raise Http404
 
