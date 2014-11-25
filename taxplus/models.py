@@ -1194,6 +1194,7 @@ class Fee(models.Model):
 						rate = Rate.objects.filter(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
 						rate = float(rate.amount)
 					except Rate.DoesNotExist:
+						RateNotFound.objects.create(category=self.category, sub_category=self.prop.land_zone, date_from=self.date_from, date_to=self.date_to, village=self.prop.village)
 						rate = 0
 
 			self.qty = self.prop.area or 0
