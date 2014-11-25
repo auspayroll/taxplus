@@ -11,6 +11,9 @@ from django.conf import settings
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
 from dateutil import parser
+from taxplus.models import CategoryChoice , Fee as TP_Fee
+from django.dispatch import receiver
+from django.db.models.signals import post_save
 #from taxplus.models import Entity
 
 class upiBreakdown(models.Model):
@@ -374,6 +377,7 @@ class Property(models.Model):
 	status = models.ForeignKey(Status, blank = True, null = True, help_text = 'Status')
 	land_use_types = models.ManyToManyField(LandUse)
 	lease_type = models.ForeignKey(LandUse, related_name='leased_property', null=True, blank=True, default=None)
+	land_zone = models.ForeignKey(CategoryChoice, related_name="pp_land_zone", null=True, blank=True)
 
 
 	def get_sq_m(self):
@@ -393,19 +397,6 @@ class Property(models.Model):
 	objects1 = PropertyManager1()
 	objectsIgnorePermission = models.Manager()
 
-	def save(self, *args, **kwargs):
-		if self.plot_id == None or self.plot_id == '':
-			if Property.objects.count() == 0:
-				self.plot_id = "PM0000000001"
-			else:
-				last_plot_id = Property.objects1.all().order_by("-id")[0].plot_id
-				plot_id_digit_part = int(last_plot_id[2:]) + 1
-				plot_id_digit_part = str(plot_id_digit_part)
-				zeros = ''
-				for i in range(10-len(plot_id_digit_part)):
-					zeros = zeros + '0'
-				self.plot_id = 'PM' + zeros + plot_id_digit_part
-		super(Property,self).save(*args,**kwargs)
 
 	def __unicode__(self):
 		display_str = ""
@@ -499,3 +490,9 @@ class Property(models.Model):
 			taxes.append(tax)
 
 		return taxes
+
+@receiver(post_save, sender=Property)
+def after_prop_save(sender, instance, created, **kwargs):
+	fees = TP_Fee.objects.filter(prop=instance, is_paid=False)
+	for fee in fees:
+		 fee.calc_amount(save=True)
