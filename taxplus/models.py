@@ -881,7 +881,10 @@ class PropertyTitle(models.Model):
 		prop_title = self
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
-		if self.prop.is_land_lease:
+		if self.prop.is_tax_exempt:
+			Fee.objects.filter(prop_title=self).update(status=inactive)
+
+		elif self.prop.is_land_lease:
 			land_lease_issue_date = self.land_lease_issue_date or date(2011,4,5)
 			if prop_title.date_from < land_lease_issue_date:
 				start_date = land_lease_issue_date
@@ -889,33 +892,44 @@ class PropertyTitle(models.Model):
 				start_date = prop_title.date_from
 
 			date_from = start_date
-			end_date = prop_title.date_to or date(date.today().year,12,31)
+			end_date = prop_title.date_to or date(2013,12,31)
 			while date_from <= end_date:
 				date_to = date(date_from.year,12,31)
 				if end_date < date_to:
 					date_to = end_date
 
-				fees = Fee.all_objects.filter(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop=self.prop)
+				try:
+					fee = Fee.all_objects.get(category__code='land_lease', date_from=date_from, date_to=date_to, prop_title=self)
 
-				if not fees:
+				except Fee.DoesNotExist:
 					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
 					fee = Fee(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, \
 						fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
 					fee.calc_amount()
+
+				except Fee.MultipleObjectsReturned:
+					fees = Fee.all_objects.filter(category__code='land_lease', date_from=date_from, date_to=date_to, prop=self.prop).order_by('date_from')
+					fee = fees[0]
+					dup_fees = fees.exclude(pk=fee.pk)
+					dup_fees.update(status=inactive, i_status='inactive')
+					#Media.objects.filter(fee_pk__in=dup_fees.all().values('pk', flat=True)).update(fee_id=fee.pk)
+
 				else:
-					for fee in fees:
-						if not fee.is_paid:
-							fee.date_to = date_to
-						fee.status = active
-						fee.prop_title = self
-						fee.save(update_fields=['date_to', 'status', 'prop_title'])
-						fee.calc_amount(save=True)
+					if not fee.is_paid:
+						fee.date_to = date_to
+					fee.status = active
+					fee.prop_title = self
+					fee.save(update_fields=['date_to', 'status', 'prop_title'])
+					fee.calc_amount(save=True)
 
 				date_from = date(date_from.year+1, 1, 1)
 
 			if self.date_to:
 				Fee.objects.filter(prop_title=self, date_to__gt=self.date_to).update(status=inactive)
 			Fee.objects.filter(prop_title=self, date_from__lt=self.date_from).update(status=inactive)
+
+		else:
+			Fee.objects.filter(prop_title=self, category__code='land_lease').update(status=inactive)
 
 
 @receiver(post_save, sender=PropertyTitle)
