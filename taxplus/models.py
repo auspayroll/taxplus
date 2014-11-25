@@ -758,6 +758,13 @@ class Property(models.Model):
 			return 0
 
 
+@receiver(post_save, sender=Property)
+def after_prop_save(sender, instance, created, **kwargs):
+	fees = Fee.objects.filter(prop=instance, is_paid=False)
+	for fee in fees:
+		 fee.calc_amount(save=True)
+
+
 class PropertyTitle(models.Model):
 	prop = models.ForeignKey(Property, related_name='property_title')
 	date_from = models.DateField(null=True, blank=True)
