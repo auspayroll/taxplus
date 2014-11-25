@@ -86,6 +86,7 @@
 			<thead>
 			<tr>
 				<th>Fee Name</th>
+				<th>Amount</th>
 				<th>Due Rwf</th>
 				<th>Total Due On</th>
 				<th>EPAY</th>
@@ -95,10 +96,12 @@
 			{% for fee in fees %}
 				<tr>
 					<td><a>{{fee}}</a></td>
-					<td>{{fee.total_due|intcomma}}</td>
+					<td>{{fee.amount|intcomma}}</td>
+					<td>{% if fee.is_paid %}<span style='color:green; font-weight:bold;'>PAID</span>{% else %}{{fee.total_due|intcomma}}{% endif %}</td>
 					<td>{{fee.due_date}}</td>
 					<td>{{fee.prop_title.epay}}</td>
-					<td>{% if fee.remaining_amount > 0 %}<a href="{% url 'property_invoice' fee.prop_title.pk %}">PDF Invoice</a></td><td><a href="{% url 'paylandlease' fee.pk %}" class="my_button">pay</a>
+					<td>{% if fee.remaining_amount > 0 %}<a href="{% url 'property_invoice' fee.prop_title.pk %}">PDF Invoice</a></td>
+					<td><a href="{% url 'paylandlease' fee.pk %}" class="my_button">pay</a>
 					<input type=checkbox value="{{ fee.pk }}" name="pay_fee">{% endif %}
 				</tr>
 
