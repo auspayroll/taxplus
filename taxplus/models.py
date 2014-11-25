@@ -1223,7 +1223,10 @@ class Fee(models.Model):
 					self.save()
 
 				elif not self.pk and not self.amount: #do not create new record for zero amounts
-					pass
+					self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+					self.remaining_amount = 0
+					self.i_status = 'inactive'
+					self.save()
 
 				elif self.amount:
 					self.status = CategoryChoice.objects.get(category__code='status', code='active')
