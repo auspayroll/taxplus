@@ -968,13 +968,11 @@ class Fee(models.Model):
 
 		entity = None
 		if citizen_id:
-			entity = Entity.objects.get(citizen_id=citizen_id)
 			payer_name = Citizen.objects.get(pk=citizen_id).name
 		elif business_id:
-			entity = Entity.objects.get(business_id=business_id)
-			payer_name = Business.objects.get(pk=citizen_id).name
+			payer_name = Business.objects.get(pk=business_id).name
 
-		pr = PaymentReceipt(amount= 0, paid_date=payment_date, payer=entity, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
+		pr = PaymentReceipt(amount= 0, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
 		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
 		pr.save()
@@ -1038,13 +1036,11 @@ class Fee(models.Model):
 		payer_entity = None
 
 		if citizen_id:
-			payer_entity = Entity.objects.get(citizen_id=citizen_id)
 			payer_name = Citizen.objects.get(pk=citizen_id).name
 		elif business_id:
-			payer_entity = Entity.objects.get(business_id=business_id)
 			payer_name = Business.objects.get(pk=citizen_id).name
 
-		pr = PaymentReceipt(amount= total_payment, paid_date=payment_date, payer=payer_entity, citizen_id=citizen_id, business_id=business_id,
+		pr = PaymentReceipt(amount= total_payment, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id,
 			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name)
 		pr.save()
 
