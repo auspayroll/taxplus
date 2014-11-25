@@ -892,7 +892,7 @@ class PropertyTitle(models.Model):
 				start_date = prop_title.date_from
 
 			date_from = start_date
-			end_date = prop_title.date_to or date(2013,12,31)
+			end_date = prop_title.date_to or date(date.today().year,12,31)
 			while date_from <= end_date:
 				date_to = date(date_from.year,12,31)
 				if end_date < date_to:
