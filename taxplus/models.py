@@ -1077,7 +1077,7 @@ class Fee(models.Model):
 
 
 	def get_paid_amount(self):
-		paid = self.fee_payments.filter(amount__gt=0, i_status='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
+		paid = self.fee_payments.filter(amount__gt=0, status__code='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
 		total = paid['amount'] or 0
 		fines = paid['fines'] or 0
 		capital_amount = total - fines
