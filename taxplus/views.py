@@ -25,7 +25,12 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_audit.csv"'
 	writer = csv.writer(response)
-	writer.writerow(['CLEANING FEE AUDIT REPORT'])
+	fee_type = criteria.get('fee_type')
+	if fee_type == 'land_lease':
+		writer.writerow(['LAND LEASE FEE AUDIT REPORT'])
+	else:
+		writer.writerow(['CLEANING FEE AUDIT REPORT'])
+
 	if criteria.get('district'):
 		writer.writerow(['District:', criteria.get('district').name] )
 	if criteria.get('sector'):
@@ -41,8 +46,10 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 	header.append('Payment Amount')
 	header.append('Month/Year')
 
-	if 'Business Name' in includes:
-		header.append('Business Name')
+	if fee_type == 'land_lease':
+		header.append('Property')
+	else:
+		header.append('Business')
 
 	if 'Cell' in includes:
 		header.append('Cell')
@@ -78,17 +85,25 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 		row.append(p.amount)
 		row.append(p.fee.date_from.strftime('%b/%Y'))
 
-		if 'Business Name' in includes:
-			if p.fee.subbusiness:
-				row.append(p.fee.subbusiness.name.encode('utf-8'))
-			else:
-				row.append(p.fee.business.name.encode('utf-8'))
+		if fee_type == 'land_lease':
+			row.append(p.fee.prop.__unicode__().encode('utf-8'))
+		else:
+			row.append('')
+			#row.append(p.fee.business.name.encode('utf-8'))
 
-		if 'Cell' in includes:
-			if p.fee.subbusiness and p.fee.subbusiness.business.cell:
-				row.append(p.fee.subbusiness.business.cell.name.encode('utf-8'))
-			elif p.fee.business and p.fee.business.cell:
+		if 'Cell' in includes and fee_type == 'cleaning':
+			if p.fee.business and p.fee.business.cell:
 				row.append(p.fee.business.cell.name.encode('utf-8'))
+			else:
+				row.append('')
+
+		elif 'Cell' in includes and fee_type == 'land_lease':
+			if p.fee.prop and p.fee.prop.village:
+				row.append(p.fee.prop.village.cell.name.encode('utf-8'))
+
+			elif p.fee.prop and p.fee.prop.cell:
+				row.append(p.fee.prop.cell.name.encode('utf-8'))
+
 			else:
 				row.append('')
 
@@ -96,16 +111,18 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 			row.append(p.fine_amount or '0.00')
 
 		if 'Receipt' in includes:
-			row.append(p.manual_receipt or '')
+			row.append(p.manual_receipt.encode('utf-8') or '')
 
 		if 'Bank' in includes:
 			row.append(p.bank or '')
 
 		if 'Bank Receipt' in includes:
-			row.append(p.receipt_no or '')
+			row.append(p.receipt_no.encode('utf-8') or '')
 
-		if 'User' in includes:
+		if 'User' in includes and p.staff:
 			row.append(p.staff.username or '')
+		else:
+			row.append('')
 
 		if 'Timestamp' in includes:
 			row.append(p.date_time or '')
@@ -120,12 +137,9 @@ def cleaning_audit_csv(payments, includes, criteria={}):
 
 	return response
 
-
 @login_required
 def cleaning_audit(request):
 	user = request.session.get('user')
-	if not user or not user.superuser:
-		return HttpResponseRedirect('/')
 	payments = PayFee.objects.none()
 	totals = {}
 	include_fields = []
@@ -133,11 +147,31 @@ def cleaning_audit(request):
 		form = SearchForm(request.POST)
 		if form.is_valid():
 			include_fields = form.cleaned_data['include_fields']
-			payments = PayFee.objects.filter(i_status='active', fee__fee_type='cleaning', date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to']).select_related('fee', 'fee__business', 'staff').order_by('date_time')
-			if form.cleaned_data['sector']:
-				payments = payments.filter(Q(fee__business__sector=form.cleaned_data['sector'])| Q(fee__subbusiness__sector=form.cleaned_data['sector']))
-			if form.cleaned_data['cell']:
-				payments = payments.filter(Q(fee__business__cell=form.cleaned_data['cell']) | Q(fee__subbusiness__cell=form.cleaned_data['cell']))
+			fee_type = form.cleaned_data['fee_type']
+			payments = PayFee.objects.filter(status__code='active', fee__category__code=fee_type, date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to'])
+			if form.cleaned_data['village']:
+				if fee_type == 'cleaning':
+					payments = payments.filter(fee__business__village=form.cleaned_data['village'])
+				else:
+					payments = payments.filter(fee__prop__village=form.cleaned_data['village'])
+
+			elif form.cleaned_data['cell']:
+				if fee_type == 'cleaning':
+					payments = payments.filter(fee__business__cell=form.cleaned_data['cell'])
+				else:
+					payments = payments.filter(fee__prop__cell=form.cleaned_data['cell'])
+
+			elif form.cleaned_data['sector']:
+				if fee_type == 'cleaning':
+					payments = payments.filter(fee__business__sector=form.cleaned_data['sector'])
+				else:
+					payments = payments.filter(fee__prop__sector=form.cleaned_data['sector'])
+
+			if fee_type == 'cleaning':
+				payments = payments.select_related('fee', 'fee__business', 'staff').order_by('date_time')
+			else:
+				payments = payments.select_related('fee', 'fee__prop', 'staff').order_by('date_time')
+
 			totals['payment'] = payments.aggregate(Sum('amount'))['amount__sum']
 			totals['fee'] = payments.aggregate(Sum('fee__amount'))['fee__amount__sum']
 			totals['remaining'] = payments.filter(fee__remaining_amount__gte=0).aggregate(Sum('fee__remaining_amount'))['fee__remaining_amount__sum']
