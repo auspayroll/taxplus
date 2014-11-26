@@ -148,7 +148,7 @@ def cleaning_audit(request):
 		if form.is_valid():
 			include_fields = form.cleaned_data['include_fields']
 			fee_type = form.cleaned_data['fee_type']
-			payments = PayFee.objects.filter(status__code='active', fee__category__code=fee_type, date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to'])
+			payments = PayFee.objects.filter(status__code='active', fee__status__code='active', fee__category__code=fee_type, date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to'])
 			if form.cleaned_data['village']:
 				if fee_type == 'cleaning':
 					payments = payments.filter(fee__business__village=form.cleaned_data['village'])
