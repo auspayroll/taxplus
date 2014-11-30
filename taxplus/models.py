@@ -1010,10 +1010,10 @@ class Fee(models.Model):
 		pr.save()
 		return pr
 
-	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None):
+	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
+		self.calc_amount()
 		assert payment_date <= date.today(), 'Payment cannot be in the future'
-		assert self.remaining_amount > 0, 'Fee has no remaining amount'
-		assert payment_amount > 0, 'Invalid payment amount'
+		assert payment_amount > 0, 'Invalid zero payment amount'
 
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
@@ -1024,12 +1024,12 @@ class Fee(models.Model):
 		remaining_amount = int(self.remaining_amount)
  		#part payment
  		if payment_date <= self.due_date: # no overdues
-	 		# only pay interest on remaining amount, don't pay penalty
-			penalty, interest = 0, 0 #self.calc_penalty(payment_date, remaining_amount=payment_amount)
-			#interest = int(interest)
+	 		# don't pay penalty/interest
+			penalty, interest = 0, 0
 			self.remaining_amount = self.remaining_amount - payment_amount
 
 		else: #overdue amounts, must be atleast remaining amount
+			assert payment_amount >= self.remaining_amount, 'Payment amount must be atleast remaining_amount'
 			penalty, interest = self.calc_penalty(payment_date)
 			penalty_payment = payment_amount - self.remaining_amount
 			if penalty_payment <= penalty:
@@ -1055,12 +1055,12 @@ class Fee(models.Model):
 			payer_name = Business.objects.get(pk=citizen_id).name
 
 		pr = PaymentReceipt(amount= total_payment, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id,
-			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name)
+			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name, note=notes)
 		pr.save()
 
 		fine_amount = interest + penalty
 		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=total_payment, receipt_no=bank_receipt,
-			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id, note=notes)
 
 		if fine_amount:
 			pf.fine_description = "penalty %s Rwf, interest %s Rwf" % (penalty, interest)
