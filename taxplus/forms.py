@@ -22,7 +22,7 @@ class SearchForm(forms.Form):
 	date_from = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':'date from is invalid', 'required':'date from is required'}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.TextInput(attrs={'class':'date_picker'}))
 	date_to = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, initial=date.today().strftime('%d/%m/%Y'), error_messages={'invalid':'date to is invalid', 'required':'date to is required' }, widget=forms.TextInput(attrs={'class':'date_picker'}))
 	fee_type = forms.ChoiceField(required = False, choices=(('cleaning','cleaning'), ('land_lease','land lease')))
-	include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=include_field_choices)
+	#include_fields = forms.MultipleChoiceField(required=False, widget=CheckboxSelectMultiple, choices=include_field_choices)
 
 	def __init__(self, *args, **kw):
 		super(SearchForm, self).__init__(*args, **kw)

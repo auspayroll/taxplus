@@ -146,7 +146,6 @@ def cleaning_audit(request):
 	if request.method == 'POST':
 		form = SearchForm(request.POST)
 		if form.is_valid():
-			include_fields = form.cleaned_data['include_fields']
 			fee_type = form.cleaned_data['fee_type']
 			payments = PayFee.objects.filter(status__code='active', fee__status__code='active', fee__category__code=fee_type, date_time__gte=form.cleaned_data['date_from'], date_time__lte=form.cleaned_data['date_to'])
 			if form.cleaned_data['village']:
@@ -167,10 +166,11 @@ def cleaning_audit(request):
 				else:
 					payments = payments.filter(fee__prop__sector=form.cleaned_data['sector'])
 
+
 			if fee_type == 'cleaning':
-				payments = payments.select_related('fee', 'fee__business', 'staff').order_by('date_time')
+				payments = payments.select_related('fee', 'fee__business', 'staff', 'fee__business__cell', 'fee__business__village', 'fee__business__village__cell').order_by('date_time')
 			else:
-				payments = payments.select_related('fee', 'fee__prop', 'staff').order_by('date_time')
+				payments = payments.select_related('fee', 'fee__prop', 'staff', 'fee__prop__village', 'fee__prop__village__cell').order_by('date_time')
 
 			totals['payment'] = payments.aggregate(Sum('amount'))['amount__sum']
 			totals['fee'] = payments.aggregate(Sum('fee__amount'))['fee__amount__sum']
@@ -178,9 +178,9 @@ def cleaning_audit(request):
 			totals['fines'] = payments.aggregate(Sum('fine_amount'))['fine_amount__sum']
 
 			if request.POST.get('web_button') or not payments:
-				return TemplateResponse(request, 'tax/cleaning_fee_audit.html', { 'payments':payments, 'form':form, 'include_fields':include_fields, 'totals':totals })
+				return TemplateResponse(request, 'tax/cleaning_fee_audit.html', { 'payments':payments, 'form':form, 'totals':totals })
 			else: # csv
-				return cleaning_audit_csv(payments, form.cleaned_data.get('include_fields'), form.cleaned_data)
+				return cleaning_audit_csv(payments, form.cleaned_data)
 
 	else:
 		form = SearchForm()

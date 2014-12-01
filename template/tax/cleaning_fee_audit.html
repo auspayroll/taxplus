@@ -84,9 +84,6 @@
 					<div>
 						Date from*: {{ form.date_from }}{{ form.date_from.errors }} Date to*: {{ form.date_to }}{{ form.date_to.errors }}
 					</div>
-					<div class="include_fields">
-						Include Fields: {{ form.include_fields }}
-					</div>
 					<div>
 						<input type="submit" name="web_button" value="Generate Web Report" class="btn green"><input type="submit" name="csv_button" value="Download CSV Report"  class="btn green">
 					</div>
@@ -105,82 +102,79 @@
 
 				<table class="tablesorter">
 				<tr>
-					<th>Payment Amount<br/>{{ totals.payment|currency }}</th>
+					<th>Total Payment Amount (inc. fines)<br/>{{ totals.payment|currency }}</th>
+
+					<th>Fines<br/>{{ totals.fines|currency }}</th>
+
+					<th>Fee Amount (no fines)<br>{{ totals.fee|currency }}</th>
+
+					<th>Remaining Fee Amount (no fines)<br>{{ totals.remaining|currency }}</th>
+
 					<th>Month/Year</th>
 					{% if request.POST.fee_type == 'cleaning' %}
 						<th>Business</th>
 					{% else %}
-						<th>Property</th>
+						<th>Plot ID</th>
 					{% endif %}
-					{% if 'Cell' in include_fields %}
-						<th>Cell</th>
-					{% endif %}
-					{% if 'Village' in include_fields %}
-						<th>Village</th>
-					{% endif %}
-					{% if 'Fines' in include_fields %}
-					<th style="width:100px">Fines<br/>{{ totals.fines|currency }}</th>
-					{% endif %}
-					{% if 'Receipt' in include_fields %}
-						<th>Sector Receipt</th>
-					{% endif %}
-					{% if 'Bank' in include_fields %}
-						<th>Bank</th>
-					{% endif %}
-					{% if 'Bank Receipt' in include_fields %}
-						<th>Bank Receipt</th>
-					{% endif %}
-					{% if 'User' in include_fields %}
-						<th>User</th>
-					{% endif %}
-					{% if 'Timestamp' in include_fields %}
-						<th>Timestamp</th>
-					{% endif %}
-					{% if 'Total Fee Amount' in include_fields %}
-						<th>Total Fee Amount<br>{{ totals.fee|currency }}</th>
-					{% endif %}
-					{% if 'Remaining Fee Amount' in include_fields %}
-						<th>Remaining Amount<br>{{ totals.remaining|currency }}</th>
-					{% endif %}
+
+					<th>Cell</th>
+
+					<th>Village</th>
+
+					<th>Sector Receipt</th>
+
+					<th>Bank</th>
+
+					<th>Bank Receipt</th>
+
+					<th>User</th>
+
+					<th>Timestamp</th>
+
 				</tr>
 
 
 				{% for p in payments %}
-					<tr><td class="currency">{{ p.amount|currency }}<!-- payment.pk={{ p.pk }} --><!-- fee.pk={{ p.fee.pk }} --></td>
-						<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
-						<td>{% if request.POST.fee_type == 'cleaning' %}{{ p.fee.business.name }}{% else %}{{ p.fee.prop }}{% endif %}</td>
-						{% if 'Cell' in include_fields %}
-							<td>{% if request.POST.fee_type == 'cleaning' %}{% if p.fee.business.village %}{{ p.fee.business.village.cell }}{% else %}{{ p.fee.business.cell }}{% endif %}
-								{% else %}{{ p.fee.property.village.cell.name }}{% endif %}</td>
+
+				<tr>
+					<td class="currency">{{ p.amount|currency }}<!-- payment.pk={{ p.pk }} --><!-- fee.pk={{ p.fee.pk }} --></td>
+
+					<td class="currency">{% if p.fine_amount %}{{ p.fine_amount|currency }} {{ p.fine_description }} {% endif %}</td>
+
+					<td class="currency">{{ p.fee.amount|currency }}</td>
+
+					<td class="currency">{{ p.fee.remaining_amount|currency }}</td>
+
+					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
+
+					<td>{% if request.POST.fee_type == 'cleaning' %}{{ p.fee.business.name }}{% else %}{{ p.fee.prop.parcel_id }}{% endif %}</td>
+
+					<td>{% if request.POST.fee_type == 'cleaning' %}
+							{% if p.fee.business.village %}
+								{{ p.fee.business.village.cell }}
+							{% else %}
+								{{ p.fee.business.cell }}
+							{% endif %}
+						{% else %}
+							{{ p.fee.prop.village.cell.name }}
 						{% endif %}
-						{% if 'Village' in include_fields %}
-							<td>{% if request.POST.fee_type == 'cleaning' %}{{ p.fee.business.village.name }}{% else %}{{ p.fee.prop.village.name }}{% endif %}</td>
-						{% endif %}
-						{% if 'Fines' in include_fields %}
-							<td class="currency">{% if p.fine_amount %}{{ p.fine_amount|currency }} {{ p.fine_description }} {% endif %}</td>
-						{% endif %}
-						{% if 'Receipt' in include_fields %}
-							<td>{{ p.manual_receipt }}</td>
-						{% endif %}
-						{% if 'Bank' in include_fields %}
-							<td>{{ p.bank }}</td>
-						{% endif %}
-						{% if 'Bank Receipt' in include_fields %}
-							<td>{{ p.receipt_no }}</td>
-						{% endif %}
-						{% if 'User' in include_fields %}
-							<td>{{ p.staff.username }}</td>
-						{% endif %}
-						{% if 'Timestamp' in include_fields %}
-							<td>{{ p.date_time }}</td>
-						{% endif %}
-						{% if 'Total Fee Amount' in include_fields %}
-							<td class="currency">{{ p.fee.amount|currency }}</td>
-						{% endif %}
-						{% if 'Remaining Fee Amount' in include_fields %}
-							<td class="currency">{{ p.fee.remaining_amount|currency }}</td>
-						{% endif %}
-					</tr>
+					</td>
+
+					<td>{% if request.POST.fee_type == 'cleaning' %}{{ p.fee.business.village.name }}{% else %}{{ p.fee.prop.village.name }}{% endif %}</td>
+
+
+					<td>{{ p.manual_receipt }}</td>
+
+					<td>{{ p.bank }}</td>
+
+					<td>{{ p.receipt_no }}</td>
+
+					<td>{{ p.staff.username }}</td>
+
+					<td>{{ p.date_time }}</td>
+
+				</tr>
+
 				{% endfor %}
 				</table>
 				{% endif %}
