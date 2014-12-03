@@ -109,6 +109,9 @@ class PaymentForm(forms.Form):
 				if amount <=0:
 					self._errors["amount"] = self.error_class(["Specify a fee amount to pay"])
 
+				if paid_date >= date.today():
+					self._errors['paid_date'] = self.error_class(["Paid date cannot be in the future"])
+
 				if paid_date > self.fee.due_date and amount < self.fee.remaining_amount:
 					self._errors["amount"] = self.error_class(["Overdue payment amount must be atleast %s Rwf" % self.fee.remaining_amount])
 
