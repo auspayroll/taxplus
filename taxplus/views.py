@@ -168,9 +168,9 @@ def cleaning_audit(request):
 
 
 			if fee_type == 'cleaning':
-				payments = payments.select_related('fee', 'fee__business', 'staff', 'fee__business__cell', 'fee__business__village', 'fee__business__village__cell').order_by('date_time')
+				payments = payments.select_related('fee', 'fee__business', 'staff', 'receipt', 'fee__business__cell', 'fee__business__village', 'fee__business__village__cell').order_by('date_time')
 			else:
-				payments = payments.select_related('fee', 'fee__prop', 'staff', 'fee__prop__village', 'fee__prop__village__cell').order_by('date_time')
+				payments = payments.select_related('fee', 'fee__prop', 'staff', 'receipt', 'fee__prop__village', 'fee__prop__village__cell').order_by('date_time')
 
 			totals['payment'] = payments.aggregate(Sum('amount'))['amount__sum']
 			totals['fee'] = payments.aggregate(Sum('fee__amount'))['fee__amount__sum']

@@ -1251,7 +1251,7 @@ class PaymentReceipt(models.Model):
 	bank_receipt = models.CharField(max_length = 50, null=True, blank=True)
 	bank = models.CharField(max_length=100, null=True, blank=True)
 	note = models.TextField(null=True, blank=True)
-	paid_date = models.DateField(null=True)
+	paid_date = models.DateField()
 	citizen_id = models.IntegerField(blank = True, null=True)
 	business_id = models.IntegerField(help_text="The business who pay this tax item.", blank = True, null=True)
 	#subbusiness_id = models.IntegerField(null=True)

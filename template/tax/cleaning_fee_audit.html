@@ -110,7 +110,8 @@
 
 					<th>Remaining Fee Amount (no fines)<br>{{ totals.remaining|currency }}</th>
 
-					<th>Month/Year</th>
+					<th>Fee</th>
+
 					{% if request.POST.fee_type == 'cleaning' %}
 						<th>Business</th>
 					{% else %}
@@ -127,9 +128,9 @@
 
 					<th>Bank Receipt</th>
 
-					<th>User</th>
+					<th>Paid Date</th>
 
-					<th>Timestamp</th>
+					<th>Processed</th>
 
 				</tr>
 
@@ -145,7 +146,14 @@
 
 					<td class="currency">{{ p.fee.remaining_amount|currency }}</td>
 
-					<td>{{ p.fee.date_from|date:"b Y"|upper }}</td>
+					{% if request.POST.fee_type == 'cleaning' %}
+						<td>Cleaning {{ p.fee.date_from|date:"b Y"|upper }}</td>
+
+					{% endif %}
+
+					{% if request.POST.fee_type == 'land_lease' %}
+						<td>LL {{ p.fee.date_from|date:"Y" }}</td>
+					{% endif %}
 
 					<td>{% if request.POST.fee_type == 'cleaning' %}{{ p.fee.business.name }}{% else %}{{ p.fee.prop.parcel_id }}{% endif %}</td>
 
@@ -169,9 +177,9 @@
 
 					<td>{{ p.receipt_no }}</td>
 
-					<td>{{ p.staff.username }}</td>
+					<td style="white-space:nowrap;">{{ p.receipt.paid_date|date:'d/m/Y' }}</td>
 
-					<td>{{ p.date_time }}</td>
+					<td>{{ p.staff.username }} {{ p.date_time|date:'d/m/Y' }}</td>
 
 				</tr>
 
