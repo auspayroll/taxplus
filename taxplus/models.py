@@ -995,11 +995,16 @@ class Fee(models.Model):
 		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
 		pr.save()
+		total_payment = 0
 		for fee in fees:
-			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=fee_amount, receipt_no=bank_receipt,
+			total_due = fee.total_due
+			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=total_due, receipt_no=bank_receipt,
 				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+			total_payment += total_due
 			pf.save()
 			fee.adjust_payments()
+
+		pr.amount = total_payment
 		pr.save()
 		return pr
 
@@ -1183,7 +1188,7 @@ class Fee(models.Model):
 		penalty, interest = self.calc_penalty(pay_date)
 		return penalty + interest
 
-
+	@property
 	def total_due(self, pay_date=date.today()):
 		return self.remaining_amount + self.penalty + self.interest
 

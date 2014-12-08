@@ -300,6 +300,8 @@ def property_fees(request, pk):
 def business_fees(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	fees = business.business_fees.filter(amount__gt=0)
+	for fee in fees:
+		fee.adjust_payments()
 	return TemplateResponse(request, 'tax/business_fees.html', { 'business':business, 'fees':fees })
 
 
