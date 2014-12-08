@@ -21,10 +21,12 @@ class Command(BaseCommand):
 
 
 	def handle(self, *args, **options):
-		fees = Fee.objects.filter(fee_payments__isnull=False, due_date__isnull=False).distinct()
+		today = timezone.make_aware(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0), timezone.get_default_timezone())
+		fees = Fee.objects.filter(fee_payments__isnull=False, due_date__isnull=False, date_time__lt=today).distinct().order_by('id')
 		for fee in fees:
-			fee.adjust_payments()
 			print fee.pk
+			fee.adjust_payments()
+
 
 
 
