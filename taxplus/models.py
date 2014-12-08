@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from datetime import date, datetime
 from decimal import Decimal
 from django.db.models import Sum
+from django.utils import timezone
 import binascii
 import os
 
@@ -1080,6 +1081,7 @@ class Fee(models.Model):
 			self.is_paid = True
 		else:
 			self.is_paid = False
+		self.submit_date =  timezone.make_aware(datetime.today(), timezone.get_default_timezone())
 		self.save()
 
 
