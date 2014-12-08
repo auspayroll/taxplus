@@ -272,8 +272,8 @@
 				<tr><th>
 				Amount Due:</th>
 				<td>Remaining Amount: {{ tax.remaining_amount|intcomma }}<br/>
-				Penalty: {{ penalty|intcomma }}&nbsp; Interest: {{ interest|intcomma }}<br/>
-				Total {{ total|intcomma }}</td></tr>
+				Penalty: {{ tax.penalty|intcomma }}&nbsp; Interest: {{ tax.interest|intcomma }}<br/>
+				Total {{ tax.total_due|intcomma }}</td></tr>
 
 
 				<tr><th>Payment Amount</th><td>{{ form.amount }}{{ form.amount.errors }}<span class="confirm">{{ request.POST.amount|intcomma }}</span></td></tr>

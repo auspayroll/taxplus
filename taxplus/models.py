@@ -948,6 +948,10 @@ class Fee(models.Model):
 	i_status = models.CharField(max_length=50)
 	amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The amount of fee item.")
 	remaining_amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The remaining amount (subtracted past payments).", null=True, blank = True)
+	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
+	penalty = models.IntegerField(default=0) # penalty remaining
+	penalty_owed = models.IntegerField(default=0) # full amount of penalty
+	residual_interest = models.IntegerField(default=0)
 	date_from = models.DateField(null=True)
 	date_to = models.DateField(null=True)
 	due_date = models.DateField(help_text="The date this fee item is due.", null=True, blank=True)
@@ -991,82 +995,121 @@ class Fee(models.Model):
 
 		pr.save()
 		for fee in fees:
-			penalty, interest = fee.calc_penalty(payment_date)
-			penalty = int(penalty)
-			interest = int(interest)
-			fee_amount = (penalty + interest + int(fee.remaining_amount))
-			pr.amount += fee_amount
-			fine_amount = interest + penalty
 			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=fee_amount, receipt_no=bank_receipt,
-				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id)
-			if fine_amount:
-				pf.fine_description = "penalty %s Rwf, interest %s Rwf" % (penalty, interest)
-
-			fee.is_paid = True
-			fee.remaining_amount = 0
-			fee.save()
-
+				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
 			pf.save()
+			fee.adjust_payments()
 		pr.save()
 		return pr
 
+
+	def adjust_payments(self):
+		remaining_amount = float(self.amount)
+		balance = 0
+		residual_interest = 0
+		penalty_balance = self.penalty_owed
+		#if self.pk == 1340124:
+		#	import pdb
+		#	pdb.set_trace()
+		for payment in self.fee_payments.filter(status__code='active').order_by('paid_date').order_by('id'):
+			interest_paid, penalty_paid = 0, 0
+
+
+			_, interest = self.calc_penalty(payment.paid_date, remaining_amount)
+			balance += float(payment.amount)
+			fine_amount = 0
+
+			#pay off principle
+			if balance >= remaining_amount:
+				balance -= remaining_amount
+				remaining_amount = 0
+
+				#pay off interest
+				interest += residual_interest
+				if interest > 0:
+					if balance >= interest:
+						balance -= interest
+						interest_paid = interest
+						residual_interest = 0
+					elif balance > 0:
+						interest_paid = balance
+						residual_interest += (interest - balance)
+						balance = 0
+
+				#pay penalty
+				if penalty_balance > 0:
+					if balance >= penalty_balance:
+						balance -= penalty_balance
+						penalty_paid = penalty_balance
+						penalty_balance = 0
+					elif balance > 0:
+						penalty_paid = balance
+						penalty_balance -= balance
+						balance = 0
+
+			else: #payment is less than the principle, don't pay interest
+				residual_interest += interest
+				remaining_amount -= balance
+				balance = 0
+
+
+			payment.fine_amount = interest_paid + penalty_paid
+			if interest_paid > 0:
+				payment.fine_description = "interest %s Rwf; " % interest_paid
+
+			if penalty_paid > 0:
+				payment.fine_description += "penalty %s Rwf" % penalty_paid
+
+			payment.save()
+			#remaining_amount -= (float(payment.amount) - float(payment.fine_amount)) # reduce principle
+
+		if balance > 0 and residual_interest > 0:
+			if balance < residual_interest:
+				balance = 0
+				residual_interest -= balance
+			else:
+				balance -= residual_interest
+				residual_interest = 0
+
+		self.residual_interest = residual_interest
+		self.remaining_amount = remaining_amount - balance
+		self.penalty_owed, self.interest = self.calc_penalty(date.today(), self.remaining_amount)
+		self.penalty = penalty_balance
+		self.interest += self.residual_interest
+		if self.total_due <=0 and self.amount > 0:
+			self.is_paid = True
+		else:
+			self.is_paid = False
+		self.save()
+
+
 	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
 		self.calc_amount()
-		assert payment_date <= date.today(), 'Payment cannot be in the future'
-		assert payment_amount > 0, 'Invalid zero payment amount'
 
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
-		penalty = 0
-		interest = 0
 
 		payment_amount = int(payment_amount)
 		remaining_amount = int(self.remaining_amount)
- 		#part payment
- 		if payment_date <= self.due_date: # no overdues
-	 		# don't pay penalty/interest
-			penalty, interest = 0, 0
-			self.remaining_amount = self.remaining_amount - payment_amount
-
-		else: #overdue amounts, must be atleast remaining amount
-			assert payment_amount >= self.remaining_amount, 'Payment amount must be atleast remaining_amount'
-			penalty, interest = self.calc_penalty(payment_date)
-			penalty_payment = payment_amount - self.remaining_amount
-			if penalty_payment <= penalty:
-				penalty = penalty_payment
-				penalty_payment = 0
-			else:
-				penalty_payment = penalty_payment - penalty
-
-			if penalty_payment <= interest:
-				interest = penalty_payment
-
-			self.remaining_amount = 0
-			self.is_paid = True
-
-		self.save()
 
 		total_payment = payment_amount
-		payer_entity = None
 
 		if citizen_id:
 			payer_name = Citizen.objects.get(pk=citizen_id).name
-		elif business_id:
-			payer_name = Business.objects.get(pk=citizen_id).name
 
-		pr = PaymentReceipt(amount= total_payment, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id,
+		elif business_id:
+			payer_name = Business.objects.get(pk=business_id).name
+
+		pr = PaymentReceipt(amount= payment_amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id,
 			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name, note=notes)
 		pr.save()
 
-		fine_amount = interest + penalty
-		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=total_payment, receipt_no=bank_receipt,
-			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = fine_amount, receipt=pr, status=active, i_status='active', staff_id=staff_id, note=notes)
-
-		if fine_amount:
-			pf.fine_description = "penalty %s Rwf, interest %s Rwf" % (penalty, interest)
+		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=payment_amount, receipt_no=bank_receipt,
+			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id, note=notes)
 
 		pf.save()
 
+		self.adjust_payments()
 
 	def __unicode__(self):
 		if self.category.code == 'land_lease':
@@ -1075,14 +1118,12 @@ class Fee(models.Model):
 		if self.category.code == 'cleaning':
 			return "Cleaning Fee for %s" % (self.date_from.strftime('%B %Y'))
 
-
 	def get_paid_amount(self):
 		paid = self.fee_payments.filter(amount__gt=0, status__code='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
 		total = paid['amount'] or 0
 		fines = paid['fines'] or 0
 		capital_amount = total - fines
 		return float(capital_amount), float(fines)
-
 
 	def get_remaining_amount(self):
 		return (float(self.amount) - self.get_paid_amount()[0])
@@ -1114,10 +1155,15 @@ class Fee(models.Model):
 				penalty = 0
 
 			else:
-				penalty = round(0.1 * float(remaining_amount))
+				penalty = round(0.1 * float(self.amount))
 
 			penalty = int(penalty)
-			interest = int(interest)
+			if remaining_amount <= 0:
+				interest = 0
+			else:
+				interest = int(interest)
+
+
 			if penalty > penalty_limit:
 				return (penalty_limit, interest)
 			else:
@@ -1133,8 +1179,7 @@ class Fee(models.Model):
 
 
 	def total_due(self, pay_date=date.today()):
-		total = int(round(self.remaining_amount)) + self.get_late()
-		return total
+		return self.remaining_amount + self.penalty + self.interest
 
 	@property
 	def property_owners(self):
@@ -1194,7 +1239,6 @@ class Fee(models.Model):
 						rate = Rate.objects.filter(date_from__lte=self.date_to, date_to__gte=self.date_from, category__code='land_lease', sub_category=self.prop.land_zone, village=self.prop.village)[0]
 						rate = float(rate.amount)
 					except Rate.DoesNotExist:
-						RateNotFound.objects.create(category=self.category, sub_category=self.prop.land_zone, date_from=self.date_from, date_to=self.date_to, village=self.prop.village)
 						rate = 0
 
 			self.qty = self.prop.area or 0
@@ -1207,13 +1251,6 @@ class Fee(models.Model):
 				if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
 					self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
 				self.amount = round(self.amount)
-
-			capital_paid_amount = self.get_paid_amount()[0]
-			self.remaining_amount = float(self.amount) - capital_paid_amount
-			if self.remaining_amount <= 0 and self.amount > 0:
-				self.is_paid = True
-			else:
-				self.is_paid = False
 
 			if save:
 				if self.pk and not self.amount: # inactivate current records with zero amounts
@@ -1233,7 +1270,7 @@ class Fee(models.Model):
 					self.i_status = 'active'
 					self.save()
 
-			return self.amount
+			return {'amount': self.amount, 'rate':rate, 'qty':self.qty }
 
 
 		raise NotImplentedError('rate for %s not found' % self)

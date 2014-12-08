@@ -89,7 +89,7 @@ class PaymentForm(forms.Form):
 	citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 	payer_name = forms.CharField(max_length=200, required=True)
-	payer_id = forms.ChoiceField(choices=[], required=False)
+	payer_id = forms.CharField(required=False)
 	amount = CurrencyField(label="Payment Amount") #  widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'})
 	sector_receipt = forms.CharField(label="Sector Receipt Number")
 	payer_type = forms.ChoiceField(widget=forms.RadioSelect, label="Payer", required=False, choices=payer_type_choices)
@@ -99,25 +99,15 @@ class PaymentForm(forms.Form):
 	def __init__(self, *args, **kwargs):
 		self.fee = kwargs.pop('fee')
 		super(PaymentForm, self).__init__(*args, **kwargs)
-		self.fields['payer_id'].choices = [(ownership.owner.pk, ownership.owner.name) for ownership in self.fee.prop_title.title_ownership.all() ]
+		#self.fields['payer_id'].choices = [(ownership.owner.pk, ownership.owner.name) for ownership in self.fee.prop_title.title_ownership.all() ]
 
 	def clean(self):
 		cleaned_data = super(PaymentForm, self).clean()
 		amount = cleaned_data.get('amount')
 		paid_date = cleaned_data.get('paid_date')
 		if amount is not None and paid_date:
-				if amount <=0:
-					self._errors["amount"] = self.error_class(["Specify a fee amount to pay"])
-
-				if paid_date >= date.today():
+				if paid_date > date.today():
 					self._errors['paid_date'] = self.error_class(["Paid date cannot be in the future"])
-
-				if paid_date > self.fee.due_date and amount < self.fee.remaining_amount:
-					self._errors["amount"] = self.error_class(["Overdue payment amount must be atleast %s Rwf" % self.fee.remaining_amount])
-
-				total_due = self.fee.total_due(paid_date)
-				if amount > total_due:
-					self._errors["amount"] = self.error_class(["Payment amount is more than what is owed: %s Rwf" % total_due])
 
 		return cleaned_data
 

@@ -291,7 +291,8 @@ def duplicates(request):
 def property_fees(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	fees = prop.property_fees.filter(amount__gt=0)
-
+	for fee in fees:
+		fee.adjust_payments()
 	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees })
 
 
@@ -331,9 +332,7 @@ def payLandLease(request, pk=None):
 
 
 			if not request.POST.get('process_payment'):
-				penalty, interest = fee.calc_penalty(form.cleaned_data.get('paid_date') or date.today())
-				total = fee.remaining_amount + penalty + interest
-
+				pass
 			else:
 				d = form.cleaned_data
 				user = request.session.get('user')
@@ -348,12 +347,12 @@ def payLandLease(request, pk=None):
 		else:
 			pass
 	else:
-		initial={'amount':total}
+		initial={'amount':fee.total_due}
 		form = PaymentForm(initial=initial, fee=fee)
 
 
 	return TemplateResponse(request, "tax/paylandlease.html", { 'form':form, 'property':fee.prop,
-		'tax':fee, 'total':total, 'penalty':penalty, 'interest':interest, 'payer_name':payer_name })
+		'tax':fee, 'payer_name':payer_name })
 
 
 @login_required
