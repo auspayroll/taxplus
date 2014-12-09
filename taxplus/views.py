@@ -306,12 +306,10 @@ def business_fees(request, pk):
 
 
 @login_required
-def payLandLease(request, pk=None):
+def payFee(request, pk=None):
 	business_id = None
 	citizen_id = None
 	fee = get_object_or_404(Fee, pk=pk)
-	penalty, interest = fee.calc_penalty(date.today())
-	total = fee.remaining_amount + penalty + interest
 	payer_name = ''
 
 	if fee.remaining_amount == 0:
@@ -353,7 +351,7 @@ def payLandLease(request, pk=None):
 		form = PaymentForm(initial=initial, fee=fee)
 
 
-	return TemplateResponse(request, "tax/paylandlease.html", { 'form':form, 'property':fee.prop,
+	return TemplateResponse(request, "tax/pay_fee.html", { 'form':form, 'property':fee.prop,
 		'tax':fee, 'payer_name':payer_name })
 
 
