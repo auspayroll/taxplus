@@ -68,67 +68,9 @@ class Business(models.Model):
 		images = [ image for image in Media.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 		messages = []
 
-		#merge trading license taxes
-		payments = {}
-		self.tradinglicensetax_set.all().update(i_status='inactive')
-		taxes = []
-		tax_list = [ tax for tax in TradingLicenseTax.objects.filter(business__pk__in=[business1.pk, business2.pk])]
-
-		for tax in tax_list:
-			payment_list = payments.setdefault(tax.pk, [])
-			payment_list.extend([p for p in tax.payments.filter(i_status='active')])
-			matches = [ t for t in taxes if t.date_from == tax.date_from and t.date_to == tax.date_to ]
-			# get tax in the same period
-			for tax_match in matches:
-				if (tax_match.amount or 0) < (tax.amount or 0) or tax.amount and not tax_match.amount:
-					taxes.pop(taxes.index(tax_match))
-					payment_list_match = payments.setdefault(tax_match.pk, [])
-					payment_list = payments.setdefault(tax.pk, [])
-					if payment_list_match:
-						payment_list.extend(payment_list_match)
-						del(payments[tax_match.pk])
-				else:
-					payment_list_match = payments.setdefault(tax_match.pk, [])
-					payment_list = payments.setdefault(tax.pk, [])
-					if payment_list:
-						payment_list_match.extend(payment_list)
-						del(payments[tax.pk])
-					continue
-
-			taxes.append(tax)
-
-		for tax in taxes:
-			tax.pk_old = tax.pk
-			tax.pk = None
-			tax.business = self
-			tax.save()
-			Log.objects.filter(business__pk__in=[business1.pk, business2.pk], tax_id=tax.pk_old, tax_type='trading_license').update(tax_id=tax.pk, business=self)
-			messages.append("%s added for %s" % (tax, self))
-			paid_amount = 0
-			for payment in payments.setdefault(tax.pk_old, []):
-				payment.pk_old = payment.pk
-				payment.pk = None
-				payment.trading_license_tax = tax
-				payment.save()
-				messages.append("payment %s added for %s" % (payment, tax))
-				Log.objects.filter(business__pk__in=[business1.pk, business2.pk], payment_id=payment.pk_old, payment_type='pay_trading_license').update(payment_id=payment.pk, business=self)
-				image_matches = [image for image in images if image.tax_type == 'trading_license' and image.payment_id == payment.pk_old]
-				for image_match in image_matches:
-					image_match.payment = payment
-					image_match.business = self
-					image_match.tax = tax
-					image_match.save()
-					messages.append("media %s added for %s" % (image_match, payment))
-				paid_amount += (payment.amount - payment.fine_amount )
-			tax.remaining_amount = (tax.amount or 0) - paid_amount
-			if tax.remaining_amount < 0:
-				tax.remaining_amount = 0
-			tax.save()
-
-
 		#merge fees
 		payments = {}
-		self.fee_set.all().update(i_status='inactive')
+		self.business_fees.all().update(i_status='inactive')
 		taxes = []
 		tax_list = [ tax for tax in Fee.objects.filter(business__pk__in=[business1.pk, business2.pk])]
 		for tax in tax_list:
@@ -198,16 +140,9 @@ class Business(models.Model):
 				owner.asset_business = self
 				owner.save()
 
-		#add branches
-		subbusinesses = [b for b in business1.subbusiness_set.filter(i_status='active')]
-		subbusinesses.extend([b for b in business2.subbusiness_set.filter(i_status='active')])
-		for sb in subbusinesses:
-			sb.business = self
-			sb.save()
-			messages.append("branch %s added" % sb)
 
-		#deactive business1 and business2 and all records
-		for tlt in business1.tradinglicensetax_set.all():
+		#deactive business1 and business2 and all record
+		for tlt in business1.business_fees.all():
 			for payment in tlt.payments.all():
 				payment.i_status = 'inactive'
 				payment.save()
@@ -216,26 +151,7 @@ class Business(models.Model):
 			tlt.save()
 			messages.append("%s deactivated for %s" % (tlt, business1))
 
-		for tlt in business2.tradinglicensetax_set.all():
-			for payment in tlt.payments.all():
-				payment.i_status = 'inactive'
-				payment.save()
-				messages.append("%s deactivated for %s" % (tlt, business2))
-			tlt.i_status = 'inactive'
-			tlt.save()
-			messages.append("%s deactivated for %s" % (tlt, business2))
-
-
-		for tlt in business1.fee_set.all():
-			for payment in tlt.payments.all():
-				payment.i_status = 'inactive'
-				payment.save()
-				messages.append("%s deactivated for %s" % (tlt, business1))
-			tlt.i_status = 'inactive'
-			tlt.save()
-			messages.append("%s deactivated for %s" % (tlt, business1))
-
-		for tlt in business2.fee_set.all():
+		for tlt in business2.business_fees.all():
 			for payment in tlt.payments.all():
 				payment.i_status = 'inactive'
 				payment.save()
