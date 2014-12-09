@@ -1063,14 +1063,15 @@ class Fee(models.Model):
 			if interest_paid > 0:
 				payment.fine_description = "interest %s Rwf; " % interest_paid
 
+			payment.fine_description = ''
+
 			if penalty_paid > 0:
 				penalty_desc = "penalty %s Rwf" % penalty_paid
-				if payment.fine_description:
-					payment.fine_description += penalty_desc
-				else:
-					payment.fine_description = penalty_desc
+				payment.fine_description += penalty_desc
+
 
 			payment.save()
+
 			#remaining_amount -= (float(payment.amount) - float(payment.fine_amount)) # reduce principle
 
 		if balance > 0 and residual_interest > 0:
