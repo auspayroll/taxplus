@@ -1095,7 +1095,6 @@ class Fee(models.Model):
 
 
 	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
-		self.calc_amount()
 
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
@@ -1280,6 +1279,7 @@ class Fee(models.Model):
 					self.status = CategoryChoice.objects.get(category__code='status', code='active')
 					self.i_status = 'active'
 					self.save()
+				self.adjust_payments()
 
 			return {'amount': self.amount, 'rate':rate, 'qty':self.qty }
 
