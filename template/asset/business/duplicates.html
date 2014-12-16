@@ -6,13 +6,13 @@
 {% block crumbbody %}
 	{% breadcrumb "Home" "/admin/" %}
 	{% breadcrumb "Business" "/admin/asset/business/" %}
-	{% breadcrumb "Merge Business List" %}	
+	{% breadcrumb "Merge Business List" %}
 {% endblock %}
 
 
 {% block mainbody %}
 	<script type="text/javascript"  src="{% static "js/admin/populate_geo.js" %}"></script>
-	
+
 	<style>
 		#search_table{
 			overflow:hidden;
@@ -20,14 +20,14 @@
 			float:left;
 			padding:10px;
 		}
-	
+
 		.include_fields{
 			margin-top:20px;
 			height:100px;
 			width:100%;
 			overflow:hidden;
 		}
-		
+
 		.include_fields li{
 			float:left;
 			margin-right:20px;
@@ -79,18 +79,12 @@
 				<h2>Business Merge List</h2>
 
 					<table class="tablesorter">
-					<tr>
-						<th>Business 1</th>
-						<th>Business 2</th>
-						<th>Similarity</th>
-					</tr>
-
-					{% for row in rows %}
+						<tr><th>Name</th><th>TIN</th><th>Village</th><th>Sector</th><th>Phone</th></tr>
+					{% for b in businesses %}
 						<tr>
-							<td><a href="{% url 'update_business' row.business1.pk %}">{{ row.business1 }}</a></td>
-							<td><a href="{% url 'update_business' row.business2.pk %}">{{ row.business2 }}</a></td>
-							<td>{{ row.similarity }} %</td>
-							<td><a href="{% url 'merge_business' row.business1.pk row.business2.pk %}">Merge Preview</a></td>
+							<td>{{ b.name }}</td><td>{{ b.tin|default:'' }}</td><td>{{ b.village|default:'' }}</td>
+							<td>{{ b.sector|default:'' }}</td><td>{{ b.phone1|default:b.phone2|default:'' }}</td>
+							<td><a href="{% url 'merge_preview' b.pk %}">Merge Preview</a></td>
 						</tr>
 					{% endfor %}
 					</table>

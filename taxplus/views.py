@@ -4,11 +4,10 @@ from jtax.models import PayFee, Fee
 from property.models import District, Sector, Cell
 from datetime import date
 import json
-from taxplus.forms import SearchForm, DebtorsForm
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm
 from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
-from asset.models import Business, Duplicate
 from dateutil.relativedelta import relativedelta
 from taxplus.models import *
 from django.contrib.auth.decorators import login_required
@@ -283,8 +282,15 @@ def cleaning_debtors(request):
 
 @login_required
 def duplicates(request):
-	rows = Duplicate.objects.filter(status=1).order_by('-similarity').select_related('business1','business2')
-	return TemplateResponse(request, 'asset/business/duplicates.html', { 'rows':rows })
+	businesses =  Business.objects.filter(duplicates__isnull=False, duplicates__status=1).distinct()
+	return TemplateResponse(request, 'asset/business/duplicates.html', { 'businesses':businesses })
+
+
+@login_required
+def merge_preview(request, pk):
+	business = get_object_or_404(Business,pk=pk)
+	duplicates = Duplicate.objects.filter(business1=business)
+	return TemplateResponse(request, 'asset/business/merge_preview.html', { 'business':business, 'duplicates':duplicates })
 
 
 @login_required

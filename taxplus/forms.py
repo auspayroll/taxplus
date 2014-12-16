@@ -5,13 +5,62 @@ from datetime import date
 from django.forms.widgets import RadioSelect, CheckboxSelectMultiple
 from dev1 import variables
 from common.fields import CurrencyField, CurrencyInput
-from datetime import date
+from datetime import date, datetime
+from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory
 import math
 
 
 include_field_choices = [('Fines', 'Fines'),('Receipt','Sector Receipt'),
 		('Bank','Bank'),('Bank Receipt','Bank Receipt'),('User','User'),('Timestamp','Timestamp'),('Total Fee Amount','Total Fee Amount'),
 		('Remaining Fee Amount','Remaining Fee Amount'), ('Cell','Cell'), ('Village','Village')]
+
+
+
+class MergeBusinessForm(forms.ModelForm):
+	class Meta:
+		model = Business
+		fields = ['name', 'tin', 'date_started', 'address', 'phone1', 'phone2', 'email', 'po_box', 'sector', 'cell', 'village', 'closed_date', 'i_status', 'credit',
+		'accountant_name', 'accountant_phone', 'accountant_email', 'cleaning_category', 'business_category']
+
+	name = forms.ChoiceField(choices=[], required=False )
+	tin = forms.ChoiceField(choices=[], required=False )
+	date_started = forms.TypedChoiceField(choices=[], coerce=lambda x: datetime.strptime(x,'%Y-%m-%d').date(), empty_value=None)
+	address = forms.ChoiceField(choices=[], required=False )
+	phone1 = forms.ChoiceField(choices=[], required=False )
+	phone2 = forms.ChoiceField(choices=[], required=False )
+	email = forms.ChoiceField(choices=[], required=False )
+	po_box = forms.ChoiceField(choices=[], required=False )
+	sector = forms.ModelChoiceField(queryset=None, required=False )
+	cell = forms.ModelChoiceField(queryset=None, required=False )
+	village = forms.ModelChoiceField(queryset=None, required=False )
+	#credit =forms.TypedChoiceField(choices=[], required=False, coerce=lambda x: 7)
+	closed_date = forms.TypedChoiceField(choices=[], required=False, coerce=lambda x: datetime.strptime(x,'%Y-%m-%d').date(), empty_value=None)
+	i_status  = forms.ChoiceField(choices=[], label='status' )
+	credit = forms.TypedChoiceField(choices=[], required=False, coerce=int, empty_value=0)
+	accountant_name = forms.ChoiceField(choices=[], required=False )
+	accountant_phone = forms.ChoiceField(choices=[], required=False )
+	accountant_email = forms.ChoiceField(choices=[], required=False )
+	cleaning_category = forms.ModelChoiceField(queryset=None, required=False, label='Cleaning Fee Category')
+	business_category = forms.ModelChoiceField(queryset=None, required=False, label='Business Category')
+
+	def __init__(self, *args, **kwargs):
+		businesses = kwargs.pop('businesses')
+		super(MergeBusinessForm, self).__init__(*args, **kwargs)
+
+		for field_name, field in self.fields.items():
+			if type(field) is forms.ModelChoiceField:
+				continue
+
+			field.choices = [(i or '', i or 'None') for i in [getattr(b1,field_name) for b1 in businesses]]
+
+		self.fields['sector'].queryset = Sector.objects.filter(pk__in=[business.sector.pk for business in businesses if business.sector])
+		self.fields['cell'].queryset = Cell.objects.filter(pk__in=[business.cell.pk for business in businesses if business.cell])
+		self.fields['village'].queryset = Village.objects.filter(pk__in=[business.village.pk for business in businesses if business.village])
+
+		self.fields['cleaning_category'].queryset = CleaningCategory.objects.filter(pk__in=[business.cleaning_category.pk for business in businesses if business.cleaning_category])
+		self.fields['business_category'].queryset = BusinessCategory.objects.filter(pk__in=[business.business_category.pk for business in businesses if business.business_category])
+
+
 
 
 class SearchForm(forms.Form):

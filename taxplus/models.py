@@ -181,18 +181,24 @@ class Village(models.Model):
 
 class CleaningCategory(models.Model):
 	name = models.CharField(max_length=50)
-	amount = models.DecimalField(max_digits=8, decimal_places=0)
+	#amount = models.DecimalField(max_digits=8, decimal_places=0)
 
 	class Meta:
 		db_table = 'asset_businesscategory'
 
+	def __unicode__(self):
+		return self.name
+
 
 class BusinessCategory(models.Model):
 	name = models.CharField(max_length=100)
-	cleaning_category = models.ForeignKey(CleaningCategory)
+	cleaning_category = models.ForeignKey(CleaningCategory, db_column='business_category_id')
 
 	class Meta:
 		db_table = 'asset_businesssubcategory'
+
+	def __unicode__(self):
+		return self.name
 
 
 
@@ -1539,9 +1545,16 @@ class BusinessOwner(models.Model):
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
 	prop_title = models.ForeignKey(PropertyTitle)
+class Duplicate(models.Model):
+	business1 = models.ForeignKey(Business, related_name='duplicates')
+	business2 = models.ForeignKey(Business, related_name='duplicate2')
+	#merged_business = models.ForeignKey(Business, related_name='merged_business', null=True)
+	status = models.IntegerField(default=1)
+	similarity = models.FloatField(null=True)
+	modified = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True, null=True)
 
 	class Meta:
-		db_table = 'asset_ownership'
+		db_table = 'asset_duplicate'
 		managed = False
 
 class BusinessOwnership:

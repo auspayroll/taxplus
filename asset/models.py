@@ -515,11 +515,4 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 
 
 
-class Duplicate(models.Model):
-	business1 = models.ForeignKey(Business, related_name='duplicate')
-	business2 = models.ForeignKey(Business, related_name='duplicate2')
-	#merged_business = models.ForeignKey(Business, related_name='merged_business', null=True)
-	status = models.IntegerField(default=1)
-	similarity = models.FloatField(null=True)
-	modified = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True, null=True)
 

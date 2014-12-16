@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError 
+from django.core.management.base import BaseCommand, CommandError
 from log.models import CronLog
 from datetime import date, datetime, time, timedelta
 import dateutil.parser
@@ -16,20 +16,29 @@ class Command(BaseCommand):
 	args = ''
 	help = 'Convert tax periods from timestamps to dates for simplicity'
 	name= 'Convert tax dates'
-	
+
 	def handle(self, *args, **options):
-		cursor = connection.cursor()
-		cursor.execute("""
-			select count(*), coalesce(phone1, phone2)
-			from asset_business join property_sector on asset_business.sector_id = property_sector.id
-			join property_district on property_sector.district_id = property_district.id
-			where property_district.id = 22
-			group by coalesce(phone1, phone2)
-			having count(*) = 2 
-			""")
-		rows = [ list(item) for item in cursor.fetchall()]
-		for row in rows:
-			matches = Business.objects.filter(phone1=row[1], sector__district__pk=22)
-			dup, created = Duplicate.objects.get_or_create(business1=matches[0], business2=matches[1], status=1)
-			dup.similarity = fuzz.ratio(dup.business1, dup.business2)
-			dup.save()
+
+		fuzz_threshold = 85
+		for b in Business.objects.filter(i_status='active').order_by('id'):
+			print "searching %s" % b
+			for b2 in Business.objects.filter(i_status='active', pk__gt=b.pk).order_by('pk'):
+				similarity = fuzz.ratio(b.name.upper(), b2.name.upper())
+				if similarity >= fuzz_threshold:
+					dup, created = Duplicate.objects.get_or_create(business1=b, business2=b2, defaults=dict(status=1))
+					if not created:
+						if dup.status <> 1:
+							continue
+
+					if similarity >= fuzz_threshold:
+						dup.similary = similarity
+						print "name match %s " % similarity
+					else: # phone match
+						dup.similary = -1
+						print "phone match"
+
+					dup.save()
+
+
+
+

@@ -31,36 +31,25 @@
 {% endblock %}
 
 {% block mainbody %}
-<h2>Business Merge</h2>
-<form method="post" action="{{ request.get_full_path }}">
+<h2>Business Merge - Preview</h2>
+<form method="post" action="{% url 'merge_business' %}">
 
 {{ form.errors }}
-<table>
-{{ form }}
-</table>
-
-
-
-<div style="margin-top:20px;">
-    <div style="border:1pt #cccccc solid; background-color:pink; padding:4px; margin-bottom:10px;">
-        WARNING: A business merge will perform the following steps:
-        <ul>
-        <li>- Business records for {{ business1 }} and {{ business2 }} will be deactivated.</li>
-        <li>- A new business record will be created combining the values of the above fields.</li>
-        <li>- All fees, taxes will be merged into the new business record. </li>
-        <li>- All media from each business will be added to the new business record. </li>
-        <li>- All tax/fee payments from each business will be added to</li>
-        <li>- All owners for each business will be added to the new business record. </li>
-        </ul>
-
-        Once the new business record is created, please review all the above records to ensure they are correct.
-    </div>
-
-<button name="merge" value="1">Perform Business Merge Now</button></div>
-{% csrf_token %}
-{% for business in businesses %}
-    <input type="hidden" name="business" value="{{ business.pk }}" >
+<table class="tablesorter">
+<tr><th>Name</th><th>Started</th><th>Phone</th><th>TIN</th></tr>
+<tr><td><input type="checkbox" name="business" value="{{ business.pk }}"><b>{{ business }}</b></td>
+    <td>{{ business.date_started }}</td>
+    <td>{{ business.phone1|default:business.phone2 }}</td><td>{{ business.tin|default:'' }}</td></tr>
+{% for duplicate in duplicates %}
+    <tr><td><input type="checkbox" name="business" value="{{ duplicate.business2.pk }}">{{ duplicate.business2 }}</td>
+        <td>{{ business.date_started }}</td>
+        <td>{{ duplicate.business2.phone1|default:duplicate.business2.phone2 }}</td>
+        <td>{{ duplicate.business2.tin|default:'' }}</td>
+    </tr>
 {% endfor %}
+</table>
+<input type="submit" value="Merge Selected Businesses" name="merge_preview">
+{% csrf_token %}
 </form>
 
 {% endblock %}
