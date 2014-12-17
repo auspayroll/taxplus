@@ -1289,6 +1289,44 @@ class Fee(models.Model):
 			else:
 				return (penalty, interest)
 
+	def calc_cleaningFee(self):
+		if self.category.code == 'cleaning':
+			business = self.business
+			if business.cleaning_category:
+				if not self.is_paid:
+					if business.cleaning_category_id in range(1,7):
+						self.amount = 10000
+					elif business.cleaning_category_id == 7:
+						self.amount = 5000
+					elif business.cleaning_category_id == 8:
+						self.amount = 3000
+					else:
+						self.amount = 0
+
+				self.remaining_amount = self.get_remaining_amount()
+				if self.remaining_amount <= 0 and self.amount > 0:
+					self.is_paid = True
+				else:
+					self.is_paid = False
+
+				self.submit_date = datetime.now()
+				due_date = self.date_from + relativedelta(months=1)
+				self.due_date = date(due_date.year, due_date.month, 5)
+
+				if self.amount:
+					self.i_status = 'active'
+					self.status = CategoryChoice.objects.get(category__code='status', code='active')
+				self.save()
+				return self.amount, self.due_date
+
+			if self.pk:
+				self.submit_date = None
+				self.i_status = 'inactive'
+				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+				self.is_paid = False
+				self.save()
+
+		return (None, None)
 
 
 	def get_late(self,  pay_date=None):
