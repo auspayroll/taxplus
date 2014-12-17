@@ -618,8 +618,67 @@ class Business(models.Model):
 
 
 
+	def calc_taxes(self, now=None, include_only=False):
+		"""
+		generate business taxes & fees(Cleaning Fee)
+		"""
+		if self.i_status != 'active':
 			return None
 
+		if not now:
+			now = timezone.make_aware(datetime.now(), timezone.get_default_timezone())
+		else:
+			if type(now) is datetime and not now.tzinfo:
+				now = timezone.make_aware(now, timezone.get_default_timezone())
+			elif type(now) is date:
+				now = timezone.make_aware(datetime.combine(now, datetime.min.time()), timezone.get_default_timezone())
+		current_year = str(now.year)
+		year_start = period_from = timezone.make_aware(parser.parse("%s-01-01 00:00:00" % current_year), timezone.get_default_timezone())
+		year_end = timezone.make_aware(parser.parse("%s-12-31 23:59:59" % current_year), timezone.get_default_timezone())
+		year_start_date = date_from = date(now.year, 1,1)
+
+		if now.month >=10:
+			year_end_date = date(now.year + 1, 12, 31)
+		else:
+			year_end_date =  yed = date(now.year, 12, 31)
+
+		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
+		active = CategoryChoice.objects.get(category__code='status', code='active')
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		if not include_only or 'cleaning' in include_only:
+			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
+			if self.cleaning_category is not None:
+				if self.date_started and self.date_started > year_start_date:
+					cleaning_month = date(self.date_started.year, self.date_started.month, 1)
+				else:
+					cleaning_month = year_start_date
+
+				while cleaning_month <= year_end_date:
+					next_month = cleaning_month + relativedelta(months=1)
+					end_month = next_month - timedelta(days=1)
+					month_from = timezone.make_aware(datetime.combine(cleaning_month, datetime.min.time()), timezone.get_default_timezone())
+					month_to = timezone.make_aware(datetime.combine(end_month, datetime.min.time()), timezone.get_default_timezone())
+
+					try:
+						fee = Fee.all_objects.get(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month)
+
+					except Fee.DoesNotExist:
+						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=now, period_from=month_from, period_to=month_to, i_status='active', remaining_amount=0, fee_type='cleaning')
+
+					except Fee.MultipleObjectsReturned:
+						fees = Fee.all_objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month).order_by('date_from')
+						fee = fees[0]
+						fees.exclude(id=fee.pk).update(status=inactive, i_status='inactive')
+
+					fee.calc_cleaningFee()
+
+					cleaning_month = next_month
+
+
+@receiver(post_save, sender=Business)
+def after_business_save(sender, instance, created, **kwargs):
+	business = instance
+	instance.calc_taxes()
 
 
 class SubBusiness(models.Model):
@@ -720,7 +779,6 @@ class Property(models.Model):
 	#ideal_for = models.ManyToManyField(CategoryChoice, related_name='property_ideal_for', limit_choices_to={'category__code':'property_ideal'})
 	#days_on_market = models.IntegerField(null=True)
 	#assets = models.ManyToManyField(Asset, related_name="property_assets")
-	owners = models.ManyToManyField(Entity, through='PropertyOwnership', related_name='properties')
 	date_created = models.DateTimeField(auto_now_add=True, blank=True)
 	date_modified = models.DateTimeField(auto_now=True, blank=True)
 
@@ -732,18 +790,12 @@ class Property(models.Model):
 	def outstanding_fees(self):
 		return self.property_fees.filter(remaining_amount__gt=0)
 
-
-
-	def get_owners_on(self, date):
-		return self.owners.filter(ownership__date_from__lte=date).filter( Q(ownership__date_to__gte=date) | Q(ownership__date_to__isnull=True)).order_by('-ownership__stake')
-
-
-	def get_owners_between(self, date_from, date_to):
-		return self.owners.filter(Q(ownership__date_from__lte=date_to) | Q(ownership__date_from__isnull=True)).filter(Q(ownership__date_to__gte=date_from) | Q(ownership__date_to__isnull=True)).order_by('-ownership__stake')
-
 	@property
-	def current_owners(self):
-		return self.get_owners_on(date.today())
+	def owners(self):
+		for ownership in PropertyOwnership.objects.filter(prop=self, date_to__isnull=True):
+			owner = ownership.citizen or ownership.business
+			if owner:
+				yield owner
 
 
 	def __unicode__(self):
