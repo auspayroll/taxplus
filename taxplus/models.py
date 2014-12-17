@@ -1412,21 +1412,13 @@ class Fee(models.Model):
 			if save:
 				if self.pk and not self.amount: # inactivate current records with zero amounts
 					self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-					self.remaining_amount = 0
 					self.i_status = 'inactive'
 					self.save()
 
-				elif not self.pk and not self.amount: #do not create new record for zero amounts
-					self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-					self.remaining_amount = 0
-					self.i_status = 'inactive'
-					self.save()
-
-				elif self.amount:
+				elif self.amount and self.pk:
 					self.status = CategoryChoice.objects.get(category__code='status', code='active')
 					self.i_status = 'active'
 					self.save()
-				self.adjust_payments()
 
 			return {'amount': self.amount, 'rate':rate, 'qty':self.qty }
 
