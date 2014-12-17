@@ -1032,7 +1032,9 @@ class Fee(models.Model):
 	remaining_amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The remaining amount (subtracted past payments).", null=True, blank = True)
 	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
 	penalty = models.IntegerField(default=0) # penalty remaining
-	penalty_owed = models.IntegerField(default=0) # full amount of penalty
+	penalty_paid = models.IntegerField(default=0) # full amount of penalty
+	interest_paid = models.IntegerField(default=0) # full amount of penalty
+	#total_due = models.IntegerField(default=0) # full amount of penalty
 	residual_interest = models.IntegerField(default=0)
 	date_from = models.DateField(null=True)
 	date_to = models.DateField(null=True)
@@ -1052,6 +1054,8 @@ class Fee(models.Model):
 	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
 	qty = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	rate = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	period_from = models.DateTimeField(help_text="The start date of a period that this fee item is for.")
+	period_to = models.DateTimeField(help_text="The end date of a period that this fee item is for.")
 	objects = FeeManager()
 	all_objects = models.Manager()
 
@@ -1088,6 +1092,15 @@ class Fee(models.Model):
 		pr.amount = total_payment
 		pr.save()
 		return pr
+
+
+	@property
+	def total_due(self, pay_date=date.today()):
+		total_due = self.remaining_amount + self.penalty + self.interest
+		if total_due < 0:
+			return 0
+		else:
+			return total_due
 
 
 	def adjust_payments(self):
