@@ -97,7 +97,6 @@
 			</thead>
 			<tbody>
 			{% for fee in fees %}
-				{{ fee.adjust_payments }}
 				<tr>
 					<td><a>{{fee}}</a><!-- {{ fee.pk }} --></td>
 					<td>{{fee.amount|intcomma}}</td>
