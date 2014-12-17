@@ -1336,10 +1336,6 @@ class Fee(models.Model):
 		return penalty + interest
 
 	@property
-	def total_due(self, pay_date=date.today()):
-		return self.remaining_amount + self.penalty + self.interest
-
-	@property
 	def property_owners(self):
 		if self.prop_id:
 			return self.prop.get_owners_between(self.date_from, self.date_to)
@@ -1501,37 +1497,37 @@ class MultipayReceiptPaymentRelation(models.Model):
 		db_table ="jtax_multipayreceiptpaymentrelation"
 
 
-
 class Ownership(models.Model):
-	#owner_type = models.CharField(max_length=20,choices = variables.owner_types, help_text='Owner Types')
-	#owner_id = models.IntegerField(help_text='Owner ID')
-	#asset_type = models.CharField(max_length=20,choices = variables.asset_types, help_text='Asset Types')
-	#asset_id =  models.IntegerField(help_text='Asset ID')
-
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="assets")
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="assets")
-	owner_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="assets")
-
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="related_name1")
-	asset_subbusiness = models.ForeignKey(SubBusiness,null=True,blank=True, related_name="related_name2")
 	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="related_name3")
-
 	share = models.FloatField(help_text="Owner's share of the asset")
-
 	date_started = models.DateField(help_text='Date this ownership started')
 	date_ended = models.DateField(help_text='Date this ownership ended', null=True, blank = True)
-
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 	prop_title = models.ForeignKey(PropertyTitle, related_name='prop_title_ownerships')
-
 
 	class Meta:
 		db_table = 'asset_ownership'
 
 
+class BusinessOwnership(models.Model):
+	citizen = models.ForeignKey(Citizen,null=True,blank=True, db_column='owner_citizen_id', related_name="citizen_businessowners")
+	business = models.ForeignKey(Business,null=True,blank=True, db_column='asset_business_id', related_name="business_ownership")
+	date_from = models.DateField(null=True, blank=True, db_column='date_started')
+	date_to = models.DateField(null=True, blank=True, db_column='date_ended')
+	status = models.ForeignKey(CategoryChoice, related_name='business_ownership_status', )
+	stake = models.FloatField(null=True, blank=True, db_column='share')
+	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True, db_column='date_created')
+
+	class Meta:
+		db_table = 'asset_ownership'
+		managed = False
+
+
 class PropertyOwnership(models.Model):
-	owner = models.ForeignKey(Entity, related_name='ownership', db_column='id')
 	prop = models.ForeignKey(Property, related_name='property_ownership', db_column='asset_property_id')
 	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_ownership')
 	date_from = models.DateField(null=True, blank=True, db_column='date_started')
@@ -1620,10 +1616,9 @@ class Log(models.Model):
 	transaction_id = models.IntegerField(null = True, blank = True)
 	#user_id = models.IntegerField(null=True, blank=True)
 	user_id = models.IntegerField(null=True, blank=True)
-	citizen_id = models.IntegerField(null=True, blank=True)
+	citizen = models.ForeignKey(Citizen, null=True, blank=True)
 	property = models.ForeignKey(Property, null=True, blank=True)
-	business_id = models.IntegerField(null = True, blank = True)
-	subbusiness = models.IntegerField(null=True, blank=True)
+	business = models.ForeignKey(Business, null = True, blank = True)
 	tids = models.CharField(max_length = 200, null=True, blank = True)
 	tax_type = models.CharField(max_length = 50, null=True, blank = True)
 	tax_id = models.CharField(max_length = 50, null=True, blank = True)
@@ -1637,7 +1632,7 @@ class Log(models.Model):
 	new_data = models.CharField(blank=True, null=True, max_length=1000)
 	message = models.TextField(blank=True, null=True)
 	fee = models.ForeignKey(Fee, null=True, blank=True)
-	pay_receipt = models.ForeignKey(PaymentReceipt, null=True, blank=True)
+	payfee = models.ForeignKey(PayFee, blank=True, null=True)
 
 	class Meta:
 		db_table = 'log_log'
@@ -1675,20 +1670,46 @@ class RateNotFound(models.Model):
 	created = models.DateTimeField(auto_now_add=True)
 
 
-class PropertyOwner(models.Model):
-	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_propertyowners")
-	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_propertyowners")
-	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="property_assets")
-	prop_title = models.ForeignKey(PropertyTitle)
+
+class MediaManager(models.Manager):
+	def get_query_set(self):
+		return super(MediaManager,self).get_query_set().exclude(restored=False, missing=1)
+
+
+class Media(models.Model):
+	tags = models.CharField(max_length = 150, help_text = 'Tags for the Media', null=True, blank = True)
+	title = models.CharField(max_length = 150, null=True, blank = True, help_text = 'Display name of the media')
+	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')
+	file_name = models.CharField(max_length = 150)
+	path = models.CharField(max_length = 255)
+	file_type = models.CharField(max_length = 50)
+	file_size = models.CharField(max_length = 50)
+	citizen = models.ForeignKey(Citizen,  null=True, blank=True)
+	business = models.ForeignKey(Business,  null=True, blank=True)
+	property = models.ForeignKey(Property,  null=True, blank=True)
+	tax_type = models.CharField(max_length = 50,  help_text = 'Type of Tax/Fee Associated with this Media', null=True, blank = True)
+	tax_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
+	payment_type = models.CharField(max_length = 50, help_text = 'Type of Payment Associated with this Media', null=True, blank = True)
+	payment_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
+	user_id = models.IntegerField(max_length = 10, null=True, blank=True, help_text="")
+	#user_id = models.IntegerField(max_length = 10, help_text="")
+	i_status = models.CharField(max_length = 10, default='active', blank = True)
+	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
+	missing = models.IntegerField(null=True)
+	restored = models.NullBooleanField()
+	payfee = models.ForeignKey(PayFee, null=True, blank=True)
+	fee = models.ForeignKey(Fee, null=True, blank=True)
+
+	objects = MediaManager()
 
 	class Meta:
-		db_table = 'asset_ownership'
+		db_table = 'media_media'
 		managed = False
 
-class BusinessOwner(models.Model):
-	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="citizen_businessowners")
-	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="business_assets")
-	prop_title = models.ForeignKey(PropertyTitle)
+	def __unicode__(self):
+		return str(self.file_name) + " " + str(self.title)
+
+
 class Duplicate(models.Model):
 	business1 = models.ForeignKey(Business, related_name='duplicates')
 	business2 = models.ForeignKey(Business, related_name='duplicate2')
@@ -1701,9 +1722,7 @@ class Duplicate(models.Model):
 		db_table = 'asset_duplicate'
 		managed = False
 
-class BusinessOwnership:
-	pass
-	#deprecated
+
 
 
 
