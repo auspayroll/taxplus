@@ -583,19 +583,41 @@ class Business(models.Model):
 	i_status = models.CharField(max_length = 10, default='active', blank = True, verbose_name='Status')
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 	closed_date = models.DateField(blank=True, null=True)
-	business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
-	business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+	business_category = models.ForeignKey(BusinessCategory, null=True, blank=True, db_column='business_subcategory_id')
+	cleaning_category = models.ForeignKey(CleaningCategory, null=True, blank=True, db_column='business_category_id')
+	#business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
+	#business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
 	entity_id = models.IntegerField(null=True)
 
 	class Meta:
 		db_table = 'asset_business'
 
+
+	def __unicode__(self):
+		return self.name
+
 	@property
-	def primary_owner(self):
-		owners = self.owners.order_by('-stake')
-		if owners:
-			return owners[0]
+	def owners(self):
+		return Citizen.objects.filter(citizen_businessowners__date_to__isnull=True, citizen_businessowners__business=self)
+
+	def merge(self, businesses):
+		for fee in Fee.objects.filter(business__in=businesses, fee_payments__isnull=False).distinct():
+			matched_fees = self.business_fees.filter(date_to__gte=fee.date_from, date_from__lte=fee.date_to, category=fee.category)
+			if matched_fees:
+				matched_fee = matched_fees[0]
+				fee.fee_payments.update(fee=matched_fee)
 		else:
+				fee.business = self
+				fee.save()
+
+		businesses.update(i_status='inactive')
+		Media.objects.filter(business__in=businesses).update(business=self)
+		Log.objects.filter(business__in=businesses).update(business=self)
+		self.adjust_payments()
+		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
+
+
+
 			return None
 
 
