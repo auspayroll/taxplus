@@ -119,18 +119,18 @@ def generate_invoice(canvas, pagesize, title):
 
 	p.setFont("Helvetica", 11)
 	display_name = None
-	ownerships = title.title_ownership.all()
 	to_line = 11
-	if ownerships:
-		for ownership in ownerships:
-			display_name = "%s ( Citizen ID: %s )" % (ownership.owner.name, ownership.owner.identifier)
-			if to_line == 11:
-				p.drawString(border_x * cm, frame1_y_offset - to_line * frame1_y_line_diff, "To: %s" % display_name)
-			else:
-				p.drawString(border_x * cm + 18.5, frame1_y_offset - to_line * frame1_y_line_diff, display_name)
-			to_line += 1
 
-	elif not ownerships and title.last_name:
+	citizens = title.citizens
+	for citizen in title.citizens:
+		display_name = "%s ( Citizen ID: %s )" % (citizen.name, citizen.citizen_id)
+		if to_line == 11:
+			p.drawString(border_x * cm, frame1_y_offset - to_line * frame1_y_line_diff, "To: %s" % display_name)
+		else:
+			p.drawString(border_x * cm + 18.5, frame1_y_offset - to_line * frame1_y_line_diff, display_name)
+		to_line += 1
+
+	if not citizens:
 		display_name = ("%s %s %s " % (title.first_name or '', title.middle_name or '', title.last_name or '')).replace('  ', '').strip()
 		p.drawString(border_x * cm, frame1_y_offset - to_line * frame1_y_line_diff, 'To: %s' % display_name)
 
