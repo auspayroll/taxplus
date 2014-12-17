@@ -75,7 +75,6 @@
 
 </style>
 
-
 {% if fees %}
 	<div style="margin-left:20px;margin-right:20px;text-align:center;">
 		<form action="{% url 'payselectedfees' %}" method="post">
@@ -102,7 +101,7 @@
                         <!--<input type="hidden" value="{{i.name}}_{{i.obj_id}}_{{i.branch}}" id="mark_{{i.id}}" />-->
 
                     </td>
-					<td>{{i}}<br/>{{i.target}}</td>
+					<td>{{i}}<!-- fee.pk={{ i.pk }}--></td>
 
 					<td><!-- amount -->
 						<div class="paid">{{i.amount|intcomma}}</div>
@@ -124,7 +123,7 @@
 					</td>
                     <td>
 
-                            {{ i.due_date|date:"d M Y"}} {% if i.due_date|timesince != '0 minutes' and i.remaining_amount > 0 %}<div class="errorlist">overdue {{ i.due_date|timesince }}</div>{% endif %}
+                            {{ i.due_date|date:"d M Y"}} {% if i.due_date|timesince != '0 minutes' and i.total_due > 0 %}<div class="errorlist">overdue {{ i.due_date|timesince }}</div>{% endif %}
 
                     </td>
 

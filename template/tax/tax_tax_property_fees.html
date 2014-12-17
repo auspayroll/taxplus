@@ -91,12 +91,13 @@
 				<th>Penalty</th>
 				<th>Interest</th>
 				<th>Total Due Rwf</th>
-				<th>Total Due On</th>
+				<th>Due by</th>
 				<th>EPAY</th>
 			</tr>
 			</thead>
 			<tbody>
 			{% for fee in fees %}
+				{{ fee.adjust_payments }}
 				<tr>
 					<td><a>{{fee}}</a><!-- {{ fee.pk }} --></td>
 					<td>{{fee.amount|intcomma}}</td>
