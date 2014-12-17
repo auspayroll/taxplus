@@ -1273,15 +1273,16 @@ class Fee(models.Model):
 				interest = round((pay_date.year - due_date.year) * 0.08 * float(remaining_amount))
 				penalty = 0
 
-			else:
+			elif pay_date > self.due_date and remaining_amount > 0:
 				penalty = round(0.1 * float(self.amount))
+			else:
+				penalty = 0
 
 			penalty = int(penalty)
 			if remaining_amount <= 0:
 				interest = 0
 			else:
 				interest = int(interest)
-
 
 			if penalty > penalty_limit:
 				return (penalty_limit, interest)
