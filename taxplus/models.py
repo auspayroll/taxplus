@@ -876,7 +876,8 @@ class PropertyTitle(models.Model):
 	@property
 	def owners(self):
 		for ownership in self.title_ownership.all():
-			yield ownership.owner.name
+			owner = ownership.citizen or ownership.business
+			yield owner
 
 	@property
 	def citizens(self):
@@ -889,7 +890,7 @@ class PropertyTitle(models.Model):
 				yield citizen
 
 			elif business:
-				for business_owner in BusinessOwner.objects.filter(asset_business=business):
+				for business_owner in BusinessOwnership.objects.filter(business=business):
 					if business_owner.owner_citizen:
 						yield business_owner.owner_citizen
 
