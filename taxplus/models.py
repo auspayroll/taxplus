@@ -3,12 +3,14 @@ from django.contrib.gis.db import models as gis_models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from django.db.models import Sum
 from django.utils import timezone
 import binascii
+from dateutil import parser
 import os
+from dateutil.relativedelta import relativedelta
 
 class PMUser(models.Model):
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
@@ -1107,15 +1109,19 @@ class Fee(models.Model):
 		remaining_amount = float(self.amount)
 		balance = 0
 		residual_interest = 0
-		penalty_balance = self.penalty_owed
-		#if self.pk == 1340124:
-		#	import pdb
-		#	pdb.set_trace()
+		penalty_balance = 0
+		total_penalty_paid = 0
+		total_interest_paid = 0
+		principle_paid = 0
+		penalty = 0
+
 		for payment in self.fee_payments.filter(status__code='active').order_by('paid_date').order_by('id'):
 			interest_paid, penalty_paid = 0, 0
-
-
-			_, interest = self.calc_penalty(payment.paid_date, remaining_amount)
+			calc_penalty, interest = self.calc_penalty(payment.paid_date, remaining_amount)
+			interest += residual_interest
+			if calc_penalty:
+				penalty = calc_penalty
+			penalty_balance = penalty - total_penalty_paid
 			balance += float(payment.amount)
 			fine_amount = 0
 
@@ -1125,7 +1131,6 @@ class Fee(models.Model):
 				remaining_amount = 0
 
 				#pay off interest
-				interest += residual_interest
 				if interest > 0:
 					if balance >= interest:
 						balance -= interest
@@ -1133,7 +1138,7 @@ class Fee(models.Model):
 						residual_interest = 0
 					elif balance > 0:
 						interest_paid = balance
-						residual_interest += (interest - balance)
+						residual_interest = (interest - balance)
 						balance = 0
 
 				#pay penalty
@@ -1148,10 +1153,17 @@ class Fee(models.Model):
 						balance = 0
 
 			else: #payment is less than the principle, don't pay interest
-				residual_interest += interest
+				_, calc_interest = self.calc_penalty(payment.paid_date, balance)
+				residual_interest += calc_interest
 				remaining_amount -= balance
 				balance = 0
 
+
+			total_penalty_paid += penalty_paid
+			total_interest_paid += interest_paid
+			payment.interest = interest_paid
+			payment.penalty = penalty_paid
+			payment.principle = int(float(payment.amount) - (payment.interest + payment.penalty))
 
 			payment.fine_amount = interest_paid + penalty_paid
 			if interest_paid > 0:
@@ -1163,10 +1175,7 @@ class Fee(models.Model):
 				penalty_desc = "penalty %s Rwf" % penalty_paid
 				payment.fine_description += penalty_desc
 
-
 			payment.save()
-
-			#remaining_amount -= (float(payment.amount) - float(payment.fine_amount)) # reduce principle
 
 		if balance > 0 and residual_interest > 0:
 			if balance < residual_interest:
@@ -1178,9 +1187,14 @@ class Fee(models.Model):
 
 		self.residual_interest = residual_interest
 		self.remaining_amount = remaining_amount - balance
-		self.penalty_owed, self.interest = self.calc_penalty(date.today(), self.remaining_amount)
-		self.penalty = penalty_balance
+		self.penalty_paid = total_penalty_paid
+		self.interest_paid = total_interest_paid
+		calc_penalty, self.interest = self.calc_penalty(date.today(), remaining_amount)
+		if calc_penalty:
+			penalty = calc_penalty
+		self.penalty = penalty - self.penalty_paid
 		self.interest += self.residual_interest
+
 		if self.total_due <=0 and self.amount > 0:
 			self.is_paid = True
 		else:
