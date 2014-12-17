@@ -1379,10 +1379,13 @@ class Fee(models.Model):
 					elif self.prop.land_zone.code == 'commercial':
 						rate = 200
 
-				elif self.date_from >= date(2003,1,1) and self.date_to <= date(2011,12,31):
+				elif self.date_from >= date(2003,1,1) and self.date_to <= date(2012,12,31): #2003 to 2011
 					if self.prop.land_zone.code == 'residential' and self.prop.village:
 						if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
 							rate = 30
+						elif self.prop.village.cell.sector.district.name.lower() == 'Kicukiro' and  self.prop.village.cell.name.lower in ('muyange') and \
+							self.prop.village.cell.village.name.lower() in ('kamuna','mugeyo'):
+							rate = 70
 						else:
 							rate = 80
 
