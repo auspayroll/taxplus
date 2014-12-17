@@ -12,7 +12,7 @@ urlpatterns = patterns('',
 	url(r'^admin/property/', include('property.urls')),
 	url(r'^admin/auth/', include('pmauth.urls')),
 	url(r'^admin/log/', include('log.urls')),
-	url(r'^admin/business_fees/(?P<pk>\d+)/fees/$', taxplus_views.business_fees, name='business_fees'),
+	url(r'^admin/business_fees/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_fees'),
 	url(r'^admin/merge_preview/(?P<pk>\d+)/$', taxplus_views.merge_preview, name='merge_preview'),
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
