@@ -20,7 +20,27 @@ from taxplus.management.commands.generate_invoices import generate_invoice
 
 
 
-def cleaning_audit_csv(payments, includes, criteria={}):
+def merge_business(request):
+	form = None
+	businesses = Business.objects.filter(pk__in=[int(pk) for pk in request.POST.getlist('business')])
+	if request.POST.get('merge'):
+		form = MergeBusinessForm(request.POST, businesses=businesses)
+		if form.is_valid():
+			business = form.save()
+			business.merge(businesses)
+
+			success_message = 'Business merged successfully. <a href="%s">%s</a> ' % (reverse('business_fees', args=[business.pk]), business)
+			messages.success(request, success_message)
+			Duplicate.objects.filter(business1=business, business2__in=businesses).update(status=0)
+			return HttpResponseRedirect(reverse('duplicates'))
+	else:
+		form = MergeBusinessForm(businesses=businesses)
+
+	return TemplateResponse(request, 'asset/business/merge_business.html', { 'form':form, 'businesses':businesses })
+
+
+
+def cleaning_audit_csv(payments, criteria):
 	response = HttpResponse(content_type='text/csv')
 	response['Content-Disposition'] = 'attachment; filename="cleaning_fee_audit.csv"'
 	writer = csv.writer(response)
