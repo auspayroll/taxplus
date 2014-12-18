@@ -263,8 +263,7 @@ def generate_invoice(canvas, pagesize, title):
 			period = '%s - %s' % (tax.date_from.strftime('%d/%m/%Y'), tax.date_to.strftime('%d/%m/%Y'))
 		else:
 			period = str(tax.date_from.year)
-
-		data.append(['LL', period, intcomma(tax.rate), intcomma('%.f' % tax.remaining_amount), intcomma('%.f' % tax.penalty), intcomma('%.f' % tax.interest), intcomma('%.f' % tax.total) ])
+		data.append(['LL', period, tax.rate, intcomma('%.f' % tax.remaining_amount), intcomma('%.f' % tax.penalty), intcomma('%.f' % tax.interest), intcomma('%.f' % tax.total) ])
 
 	data.append(['', '', '', '', '', '', 'Umubumbe wose (Grand total)   %s Rwf' % intcomma('%.f' % outstanding_fees['total'])],)
 
@@ -581,7 +580,7 @@ class Command(BaseCommand):
 			filename = os.path.join( dir_name, "%s-%s-%s.pdf" % (village.cell.sector.name, village.cell.name, village.name))
 			p = canvas.Canvas(filename, pagesize=pagesize)
 
-			for title in PropertyTitle.objects.filter(prop__village=village, title_fees__remaining_amount__gt=0, title_fees__due_date__lt=date.today(), title_fees__status__code='active').distinct().order_by('prop__parcel_id'):
+			for title in PropertyTitle.objects.filter(prop__village=village, title_fees__amount__gt=0, title_fees__is_paid=False, title_fees__due_date__lt=date.today(), title_fees__status__code='active').distinct().order_by('prop__parcel_id'):
 				print 'creating invoice %s' % counter
 				generate_invoice(canvas=p, pagesize=pagesize, title=title)
 				counter += 1
