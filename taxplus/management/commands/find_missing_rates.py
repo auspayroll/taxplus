@@ -58,8 +58,7 @@ class Command(BaseCommand):
 			cut_off_start = date(2012,1,1)
 			cut_off_end = date(2013,12,31)
 
-			check = (('commercial',date(2012,1,1), date(2012,12,31)),  ('commercial',date(2013,1,1), date(2013,12,31)),
-				('residential',date(2012,1,1), date(2012,12,31)),  ('residential',date(2013,1,1), date(2013,12,31)),
+			check = ( ('commercial',date(2013,1,1), date(2013,12,31)), ('residential',date(2013,1,1), date(2013,12,31)),
 			)
 
 			for land_zone, date_from, date_to in check:
