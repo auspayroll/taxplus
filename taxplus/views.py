@@ -11,12 +11,101 @@ from django.http import HttpResponse
 from dateutil.relativedelta import relativedelta
 from taxplus.models import *
 from django.contrib.auth.decorators import login_required
-from taxplus.forms import PaymentForm, PayFeesForm
+from taxplus.forms import PaymentForm, PayFeesForm, TitleForm
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from taxplus.management.commands.generate_invoices import generate_invoice
+from django.forms.models import modelformset_factory
+
+
+@login_required
+def leases(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	#TitleFormSet = modelformset_factory(PropertyTitle, form=TitleForm, extra=0)
+	titles = PropertyTitle.objects.filter(prop=prop).order_by('-date_from')
+	"""
+	if request.method == 'POST':
+		titleformset = TitleFormSet(request.POST)
+		if titleformset.is_valid():
+			user = PMUser.objects.get(pk=request.session.get('user').pk)
+			Log.objects.create(property=prop, user = user, message='Property Titles updated')
+			titleformset.save()
+			for title in titles:
+				title.calc_taxes()
+			messages.success(request, 'Land leases updated')
+			return HttpResponseRedirect(reverse('property_leases', args=[prop.pk]))
+	else:
+		#for title in titles:
+		#	title.calc_taxes()
+		titleformset = TitleFormSet(queryset=titles)
+	"""
+	return TemplateResponse(request, 'tax/property_leases.html', { 'property':prop, 'titles':titles })
+
+
+def edit_lease(request, pk):
+	lease = get_object_or_404(PropertyTitle, pk=pk)
+	if request.method == 'POST':
+		if request.POST.get('payer_type'):
+			payer_type = request.POST.get('payer_type')
+			citizen_id = request.POST.get('citizen_id')
+			business_id = request.POST.get('business_id')
+			if payer_type == 'citizen' and citizen_id:
+				citizen = get_object_or_404(Citizen, pk=citizen_id)
+				ownership, created = Ownership.objects.get_or_create(asset_property=lease.prop, owner_citizen=citizen, defaults=dict(date_started=lease.date_from, date_ended=lease.date_to, prop_title=lease))
+				messages.success(request, 'leaser %s added' % citizen)
+				return HttpResponseRedirect(reverse('edit_lease', args=[lease.pk]))
+
+			elif payer_type == 'business' and business_id:
+				business = get_object_or_404(Business, pk=business_id)
+				ownership, created = Ownership.objects.get_or_create(asset_property=lease.prop, owner_business=business, defaults=dict(date_started=lease.date_from, date_ended=lease.date_to, prop_title=lease))
+				messages.success(request, 'leaser %s added' % business)
+				return HttpResponseRedirect(reverse('edit_lease', args=[lease.pk]))
+
+			else:
+				messages.warning(request, 'could not add leaser')
+				form = TitleForm(instance=lease)
+
+		if request.POST.get('remove_leasers'):
+				delete_ownership = request.POST.getlist('ownership_id')
+				if delete_ownership:
+					Ownership.objects.filter(id__in=delete_ownership).delete()
+				return HttpResponseRedirect(reverse('edit_lease', args=[lease.pk]))
+		else:
+			form = TitleForm(request.POST, instance=lease)
+			if form.is_valid():
+				form.save()
+				lease.calc_taxes()
+				user = PMUser.objects.get(pk=request.session.get('user').pk)
+				Log.objects.create(property=lease.prop, user = user, message='Property Title %s updated. Date from: %s, Date to %s' % (lease.pk, lease.date_from, lease.date_to))
+				messages.success(request, 'Land lease updated')
+				return HttpResponseRedirect(reverse('property_leases', args=[lease.prop.pk]))
+	else:
+		form = TitleForm(instance=lease)
+
+	return TemplateResponse(request, 'tax/property_lease.html', { 'property':lease.prop, 'lease':lease, 'form':form})
+
+
+def new_lease(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	if request.method == 'POST':
+		form = TitleForm(request.POST)
+		if form.is_valid():
+			lease = form.save(commit=False)
+			lease.status = CategoryChoice.objects.get(code='active', category__code='status')
+			lease.prop = prop
+			lease.set_hash_key()
+			lease.save()
+			lease.calc_taxes()
+			user = PMUser.objects.get(pk=request.session.get('user').pk)
+			Log.objects.create(property=lease.prop, user = user, message='Property Title %s updated from: %s to %s' % (lease.pk, lease.date_from, lease.date_to))
+			messages.success(request, 'Land lease created')
+			return HttpResponseRedirect(reverse('edit_lease', args=[lease.pk]))
+	else:
+		form = TitleForm()
+
+	return TemplateResponse(request, 'tax/new_lease.html', { 'property':prop, 'form':form})
 
 
 
@@ -71,19 +160,19 @@ def cleaning_audit_csv(payments, criteria):
 		header.append('Business')
 
 	if 'Cell' in includes:
-		header.append('Cell')
+	header.append('Cell')
 
 	if 'Fines' in includes:
-		header.append('Fines')
+	header.append('Fines')
 
 	if 'Receipt' in includes:
-		header.append('Sector Receipt')
+	header.append('Sector Receipt')
 
 	if 'Bank' in includes:
-		header.append('Bank')
+	header.append('Bank')
 
 	if 'Bank Receipt' in includes:
-		header.append('Bank Receipt')
+	header.append('Bank Receipt')
 
 	if 'User' in includes:
 		header.append('User')
@@ -92,10 +181,10 @@ def cleaning_audit_csv(payments, criteria):
 		header.append('Timestamp')
 
 	if 'Total Fee Amount' in includes:
-		header.append('Total Fee Amount')
+	header.append('Total Fee Amount')
 
 	if 'Remaining Fee Amount' in includes:
-		header.append('Remaining Amount')
+	header.append('Remaining Amount')
 
 	writer.writerow(header)
 
@@ -127,16 +216,16 @@ def cleaning_audit_csv(payments, criteria):
 				row.append('')
 
 		if 'Fines' in includes:
-			row.append(p.fine_amount or '0.00')
+		row.append(p.fine_amount or '0.00')
 
 		if 'Receipt' in includes:
-			row.append(p.manual_receipt.encode('utf-8') or '')
+		row.append(p.manual_receipt.encode('utf-8') or '')
 
 		if 'Bank' in includes:
-			row.append(p.bank or '')
+		row.append(p.bank or '')
 
 		if 'Bank Receipt' in includes:
-			row.append(p.receipt_no.encode('utf-8') or '')
+		row.append(p.receipt_no.encode('utf-8') or '')
 
 		if 'User' in includes and p.staff:
 			row.append(p.staff.username or '')
@@ -147,7 +236,7 @@ def cleaning_audit_csv(payments, criteria):
 			row.append(p.date_time or '')
 
 		if 'Total Fee Amount' in includes:
-			row.append(p.fee.amount or '')
+		row.append(p.fee.amount or '')
 
 		if 'Remaining Fee Amount' in includes:
 			row.append(p.fee.remaining_amount or '')

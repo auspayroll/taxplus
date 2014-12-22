@@ -557,6 +557,9 @@ class Citizen(models.Model):
 		else:
 			return self.first_name + ' ' + self.last_name
 
+	def __unicode__(self):
+		return self.name
+
 
 
 class Business(models.Model):
@@ -608,7 +611,7 @@ class Business(models.Model):
 			if matched_fees:
 				matched_fee = matched_fees[0]
 				fee.fee_payments.update(fee=matched_fee)
-		else:
+			else:
 				fee.business = self
 				fee.save()
 
@@ -617,6 +620,12 @@ class Business(models.Model):
 		Log.objects.filter(business__in=businesses).update(business=self)
 		self.adjust_payments()
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
+
+
+
+	def adjust_payments(self):
+		for fee in self.business_fees.filter(status__code='active').order_by('due_date'):
+			fee.adjust_payments()
 
 
 
@@ -795,9 +804,7 @@ class Property(models.Model):
 	@property
 	def owners(self):
 		for ownership in PropertyOwnership.objects.filter(prop=self, date_to__isnull=True):
-			owner = ownership.citizen or ownership.business
-			if owner:
-				yield owner
+			yield ownership.owner
 
 
 	def __unicode__(self):
@@ -896,7 +903,6 @@ class PropertyTitle(models.Model):
 					if business_owner.owner_citizen:
 						yield business_owner.owner_citizen
 
-
 	def close(self, close_date):
 		for ownership in self.title_ownership.filter(date_to__isnull=False):
 			ownership.date_to = close_date
@@ -915,25 +921,18 @@ class PropertyTitle(models.Model):
 
 		return '%s%s%s' % (district_code, sector_code, self.pk)
 
-
-
 	@property
 	def outstanding_fees(self, overdue_only=False):
-		fees = self.title_fees.filter(remaining_amount__gt=0).order_by('due_date')
+		fees = self.title_fees.filter(remaining_amount__gt=0, status__code='active').order_by('due_date')
 		total = 0
 		overdue = 0
 		for fee in fees:
-			penalty, interest = fee.calc_penalty(date.today())
-			fee.total = subtotal = float(fee.remaining_amount) + penalty + interest
-			fee.penalty = penalty
-			fee.interest = interest
-			total += subtotal
+			fee.total = fee.total_due
+			total += fee.total
 			if fee.due_date < date.today():
-				overdue += subtotal
+				overdue += fee.total
 
 		return {'fees':fees, 'total':total, 'overdue':overdue }
-
-
 
 	@property
 	def land_lease_periods(self):
@@ -982,29 +981,25 @@ class PropertyTitle(models.Model):
 				if end_date < date_to:
 					date_to = end_date
 
-				try:
-					fee = Fee.all_objects.get(category__code='land_lease', date_from=date_from, date_to=date_to, prop_title=self)
+				fees = Fee.all_objects.filter(category__code='land_lease', date_from__lte=date_to, date_to__gte=date_from, prop_title=self)
 
-				except Fee.DoesNotExist:
+				if not fees:
 					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
-					fee = Fee(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, \
-						fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
+					fee = Fee.objects.create(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
 					fee.calc_amount()
-
-				except Fee.MultipleObjectsReturned:
-					fees = Fee.all_objects.filter(category__code='land_lease', date_from=date_from, date_to=date_to, prop=self.prop).order_by('date_from')
-					fee = fees[0]
-					dup_fees = fees.exclude(pk=fee.pk)
-					dup_fees.update(status=inactive, i_status='inactive')
-					#Media.objects.filter(fee_pk__in=dup_fees.all().values('pk', flat=True)).update(fee_id=fee.pk)
+					fee.adjust_payments()
 
 				else:
-					if not fee.is_paid:
-						fee.date_to = date_to
+					fee = fees[0]
+					fee.date_from = date_from
+					fee.date_to = date_to
 					fee.status = active
 					fee.prop_title = self
-					fee.save(update_fields=['date_to', 'status', 'prop_title'])
+					fee.save(update_fields=['date_from', 'date_to', 'status', 'prop_title'])
 					fee.calc_amount(save=True)
+					fee.adjust_payments()
+					dup_fees = fees.exclude(pk=fee.pk)
+					dup_fees.update(status=inactive, i_status='inactive')
 
 				date_from = date(date_from.year+1, 1, 1)
 
@@ -1019,6 +1014,8 @@ class PropertyTitle(models.Model):
 @receiver(post_save, sender=PropertyTitle)
 def after_prop_title_save(sender, instance, created, **kwargs):
 	instance.calc_taxes()
+	Ownership.objects.filter(prop_title=instance).update(date_started=instance.date_from, date_ended=instance.date_to)
+
 
 class FeeManager(models.Manager):
 	def get_query_set(self):
@@ -1497,7 +1494,7 @@ class Ownership(models.Model):
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="assets")
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="related_name1")
 	asset_property = models.ForeignKey(Property,null=True,blank=True, related_name="related_name3")
-	share = models.FloatField(help_text="Owner's share of the asset")
+	share = models.FloatField(help_text="Owner's share of the asset", default=100)
 	date_started = models.DateField(help_text='Date this ownership started')
 	date_ended = models.DateField(help_text='Date this ownership ended', null=True, blank = True)
 	i_status = models.CharField(max_length = 10, default='active', blank = True, null=True)
@@ -1533,56 +1530,14 @@ class PropertyOwnership(models.Model):
 	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
 	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
 
+	@property
+	def owner(self):
+		owner = self.citizen or self.business
+		return owner
+
 	class Meta:
 		db_table = 'asset_ownership'
 		managed = False
-
-@receiver(post_save, sender=PropertyOwnership)
-def after_prop_ownership_save(sender, instance, created, **kwargs):
-	try:
-		if instance.owner.citizen_id:
-			citizen = Citizen.objects.get(pk=instance.owner.citizen_id)
-			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_citizen=citizen, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, prop_title=instance.prop_title))
-			if not created:
-				#o.share = instance.stake or 0
-				o.date_started = instance.date_from
-				o.date_ended = instance.date_to
-				o.prop_title = instance.prop_title
-				o.save()
-				print 'citizen_owner updated'
-			else:
-				print 'citizen owner created'
-
-		elif instance.owner.business_id:
-			business = Business.objects.get(pk=instance.owner.business_id)
-			o, created = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status=instance.status.code, defaults=dict(share=instance.stake or 0, date_started=instance.date_from, date_ended=instance.date_to, prop_title=instance.prop_title))
-			if not created:
-				#o.share = instance.stake or 0
-				o.date_started = instance.date_from
-				o.date_ended = instance.date_to
-				o.prop_title = instance.prop_title
-				o.save()
-				print 'business owner updated'
-			else:
-				print 'business owner created'
-
-
-	except Ownership.MultipleObjectsReturned:
-		if instance.owner.citizen_id:
-			ownerships = Ownership.objects.filter(asset_property=instance.prop, owner_citizen=citizen, i_status=instance.status.code)
-
-		elif instance.owner.business_id:
-			ownerships = Ownership.objects.get_or_create(asset_property=instance.prop, owner_business=business, i_status=instance.status.code)
-
-		elif instance.owner.subbusiness_id:
-			ownerships = Ownership.objects.get_or_create(asset_property=instance.prop, owner_subbusiness=business, i_status=instance.status.code)
-
-		o = ownerships[0]
-		ownerships.exclude(pk=o.pk).update(i_status='inactive')
-		#o.share = instance.stake or 0
-		o.date_started = instance.date_from
-		o.date_ended = instance.date_to
-		o.save()
 
 
 
@@ -1610,7 +1565,7 @@ class Log(models.Model):
 	"""
 	transaction_id = models.IntegerField(null = True, blank = True)
 	#user_id = models.IntegerField(null=True, blank=True)
-	user_id = models.IntegerField(null=True, blank=True)
+	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	citizen = models.ForeignKey(Citizen, null=True, blank=True)
 	property = models.ForeignKey(Property, null=True, blank=True)
 	business = models.ForeignKey(Business, null = True, blank = True)

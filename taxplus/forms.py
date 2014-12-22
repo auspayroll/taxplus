@@ -6,13 +6,24 @@ from django.forms.widgets import RadioSelect, CheckboxSelectMultiple
 from dev1 import variables
 from common.fields import CurrencyField, CurrencyInput
 from datetime import date, datetime
-from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory
+from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle
 import math
 
 
 include_field_choices = [('Fines', 'Fines'),('Receipt','Sector Receipt'),
 		('Bank','Bank'),('Bank Receipt','Bank Receipt'),('User','User'),('Timestamp','Timestamp'),('Total Fee Amount','Total Fee Amount'),
 		('Remaining Fee Amount','Remaining Fee Amount'), ('Cell','Cell'), ('Village','Village')]
+
+
+
+class TitleForm(forms.ModelForm):
+	class Meta:
+		model = PropertyTitle
+		fields = ['date_from', 'date_to']
+
+	date_from = forms.DateField(input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':'date from is invalid', 'required':'date from is required'}, initial=date.today().strftime('%d/%m/%Y'), widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}))
+	date_to = forms.DateField(required=False, input_formats=settings.DATE_INPUT_FORMATS, error_messages={'invalid':'date to is invalid', }, widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}))
+
 
 
 

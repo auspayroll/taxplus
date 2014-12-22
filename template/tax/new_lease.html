@@ -1,0 +1,40 @@
+{% extends "common/base_paytax_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<style>
+
+TABLE TH, TABLE TD {
+	text-align: left;
+	padding:10px;
+	font-size:14px;
+}
+
+INPUT[type=submit]{
+	float:left;
+}
+
+.help_text{
+	font-size:smaller;
+	text-decoration: italic;
+	font-weight: normal;
+}
+
+
+</style>
+
+	<h2>New Property Lease</h2>
+
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+		<form action="{{ request.build_absolute_uri }}" method="post">
+		<table  cellpadding="0" cellspacing="0" >
+			{{ form }}
+		</table>
+		<input type="submit" value="save" class="my_button">
+		{% csrf_token %}
+	</form>
+	</div>
+{% endblock %}

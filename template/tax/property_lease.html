@@ -1,0 +1,106 @@
+{% extends "common/base_paytax_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<style>
+
+TABLE TH, TABLE TD {
+	text-align: left;
+	padding:10px;
+	font-size:14px;
+}
+
+INPUT[type=submit]{
+	float:left;
+	clear:both;
+}
+
+.help_text{
+	font-size:smaller;
+	text-decoration: italic;
+	font-weight: normal;
+}
+
+.warning{
+	color:red;
+	float:left;
+	clear:right;
+}
+
+
+
+</style>
+
+<script type="text/javascript">
+
+    $(function(){
+
+		$("input[name='payer_type']").change(function(){
+			var payer_type = $(this).val();
+
+
+			if (payer_type == 'citizen'){
+				$("#id_payer_name").autocomplete({
+					source: "/admin/ajax/search_citizen_clean/",
+					minLength: 2,
+					select: function (event, ui) {
+						$("#id_citizen_id").val(ui.item['id']);
+					}
+				});
+			}
+
+			if (payer_type == 'business'){
+				$("#id_payer_name").autocomplete({
+					source: "/admin/ajax/search_business/",
+					minLength: 2,
+					select: function (event, ui) {
+						$("#id_business_id").val(ui.item['id']);
+					}
+				});
+			}
+
+		});
+
+		$("input[name='payer_type']:checked").trigger("change");
+
+
+    });
+
+</script>
+
+	<h2>Property Lease</h2>
+
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+		<form action="{{ request.build_absolute_uri }}" method="post">
+		<table  cellpadding="0" cellspacing="0" >
+			<tr><th>Leasers<div class="help_text">select to remove from lease</span></th>
+				<td>{% for ownership in lease.title_ownership.all %}<input type="checkbox" value="{{ ownership.pk }}" name="ownership_id">
+					{% if ownership.citizen %}{{ ownership.citizen }}{% endif %}{% if ownership.business %}{{ ownership.business }}{% endif %}&nbsp;
+					{% empty %}There are no current leasers
+					{% endfor %}</td></tr>
+					{% if lease.title_ownership.all.count %}
+						<tr><td></td><td><input type="submit" name="remove_leasers" value="Remove selected Leasers" class="my_button"></td></tr>
+					{% endif %}
+			{{ form }}
+			<tr><td></td><td><span class="warning">Warning: changing lease dates will also affect the land lease fees applied</span><input type="submit" value="Save Dates" class="my_button"></td></tr>
+		</table>
+
+		{% csrf_token %}
+	</form>
+</div>
+	<p/>
+	<div class="menu_panel" style="clear:both;padding-top:20px;margin:20px;margin-top:60px;padding:10px; overflow:hidden;">
+	<form action="{{ request.build_absolute_uri }}" method="post">
+		<input type="radio" name="payer_type" value="citizen" checked> Add Citizen
+		<input type="radio" name="payer_type" value="business"> Add Business
+		<div style="margin:20px;">Search: <input type="text" name="payer_name" id="id_payer_name" style="width:300px;">
+		<input type="hidden" name="citizen_id" id="id_citizen_id">
+		<input type="hidden" name="business_id" id="id_business_id"></div>
+		<input type="submit" value="Add Leaser" class="my_button">
+		{% csrf_token %}
+	</form>
+	</div>
+{% endblock %}

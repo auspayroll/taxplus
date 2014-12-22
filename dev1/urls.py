@@ -8,6 +8,7 @@ urlpatterns = patterns('',
 
 	url(r'^il/(?P<key>\w+)/$', taxplus_views.mobile_invoice_landing, name='mobile_invoice_landing'),
 	url(r'^i/(?P<key>\w+)/$', taxplus_views.mobile_invoice, name='mobile_invoice'),
+	url(r'^admin/tax/tax/property/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property_default'),
 
 	url(r'^admin/property/', include('property.urls')),
 	url(r'^admin/auth/', include('pmauth.urls')),
@@ -28,6 +29,9 @@ urlpatterns = patterns('',
 	url(r'^admin/cleaning_debtors/', taxplus_views.cleaning_debtors, name='cleaning_debtors'),
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property_fees'),
+	url(r'^admin/property_leases/(?P<pk>\d+)/$', taxplus_views.leases, name='property_leases'),
+	url(r'^admin/edit_lease/(?P<pk>\d+)/$', taxplus_views.edit_lease, name='edit_lease'),
+	url(r'^admin/new_lease/(?P<pk>\d+)/$', taxplus_views.new_lease, name='new_lease'),
 	url(r'^admin/paylandlease/(?P<pk>\d+)/$', taxplus_views.payFee, name='paylandlease'),
 	url(r'^admin/payfee/(?P<pk>\d+)/$', taxplus_views.payFee, name='payfee'),
 	url(r'^admin/pay_selected_fees/$', taxplus_views.paySelectedFees, name='payselectedfees'),
