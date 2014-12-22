@@ -6,7 +6,7 @@ from datetime import date
 from django.utils import timezone
 from django import db
 from dateutil.relativedelta import relativedelta
-from asset.models import Business, Duplicate
+from taxplus.models import Business, Duplicate
 from django.db import connection
 from fuzzywuzzy import fuzz
 
