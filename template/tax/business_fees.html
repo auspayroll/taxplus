@@ -130,7 +130,9 @@
 
                     <td>
 
-                    	<a href="{% url 'payfee' i.pk %}" class="my_button">Pay</a>
+                    	{% if not i.is_paid %}
+                    		<a href="{% url 'payfee' i.pk %}" class="my_button">Pay</a>
+                    	{% endif %}
 
 
                         {% for payment in i.fee_payments.all %}
