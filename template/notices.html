@@ -6,14 +6,14 @@
 {% endblock %}
 
 {% block mainbody %}
-	<h1>Recent Changes to Taxplus</h1>
+	<h1>Recent Changes to Taxplus, Monday 22 Dec. 2014</h1>
 	<div style="padding:20px;"><p>Hi!. This is where I will post some of the most important changes to the system.
 		I will update this page regularly, once a week on a Monday, so any changes won't cause confusion.</p>
 
 		<p>Below are the most recent changes. There are some major changes coming to the screen workflow and layout. This is
 		to make navigation faster and also to remove screens that are no longer working and are outdated.<br/>
 		-Thanks, Simon@propertymode.com.au</p>
-		<br/>Monday 22 Dec. 2014</div>
+		<br/></div>
 
 	<div style="width:90%; border:0pt #e4e4e4 solid; padding:10px;">
 
@@ -26,7 +26,9 @@
 
 				</iframe>
 
-				<p>&nbsp;</p>
+			<hr/>
+
+			<p>
 			<h3>Additon of new Leasing screens for Land Lease.</h3>
 				<p>Screens with the ability to modify land lease dates have been added. Click 'Leases' from the above property menu.
 				You can also added/remove citizens and businesses on the lease.
@@ -36,6 +38,30 @@
 				<iframe src="{% url 'property_leases' 43731 %}" width="100%" height="400px">
 
 				</iframe>
+
+			</p>
+
+
+			<hr/>
+			<p>
+			<h3>Update Merge Business function</h3>
+				<p>The merge business function has been updated, so that multiple businesses can be merged if they share a similar business name.
+					Click on 'merge preview' link to view other businesses that have similar names.</p>
+				<iframe src="{% url 'duplicates' %}" width="100%" height="400px">
+				</iframe>
+
+				<hr/>
+				<p>Of the businesses that are displayed, selected the ones that you want to merge. <span style="color:red">Be careful in your selection as not all suggestions presented
+					will be the same business!</span> Check the phone number and tin to determine if it is a match. Once a selection is made, you will be then taken to a screen to
+					select the values of each field taken from each of the selected businesses.</p>
+
+				<iframe src="{% url 'merge_preview' 12518 %}" width="100%" height="400px">
+
+				</iframe>
+
+
+
+			</p>
 
 	</div>
 
