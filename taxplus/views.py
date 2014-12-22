@@ -159,32 +159,22 @@ def cleaning_audit_csv(payments, criteria):
 	else:
 		header.append('Business')
 
-	if 'Cell' in includes:
 	header.append('Cell')
 
-	if 'Fines' in includes:
 	header.append('Fines')
 
-	if 'Receipt' in includes:
 	header.append('Sector Receipt')
 
-	if 'Bank' in includes:
 	header.append('Bank')
 
-	if 'Bank Receipt' in includes:
 	header.append('Bank Receipt')
 
-	if 'User' in includes:
-		header.append('User')
-
-	if 'Timestamp' in includes:
-		header.append('Timestamp')
-
-	if 'Total Fee Amount' in includes:
 	header.append('Total Fee Amount')
 
-	if 'Remaining Fee Amount' in includes:
 	header.append('Remaining Amount')
+
+	header.append('User')
+
 
 	writer.writerow(header)
 
@@ -195,17 +185,19 @@ def cleaning_audit_csv(payments, criteria):
 
 		if fee_type == 'land_lease':
 			row.append(p.fee.prop.__unicode__().encode('utf-8'))
+
+		elif fee_type == 'cleaning':
+			row.append(p.fee.business.name.encode('utf-8'))
 		else:
 			row.append('')
-			#row.append(p.fee.business.name.encode('utf-8'))
 
-		if 'Cell' in includes and fee_type == 'cleaning':
+		if fee_type == 'cleaning':
 			if p.fee.business and p.fee.business.cell:
 				row.append(p.fee.business.cell.name.encode('utf-8'))
 			else:
 				row.append('')
 
-		elif 'Cell' in includes and fee_type == 'land_lease':
+		elif fee_type == 'land_lease':
 			if p.fee.prop and p.fee.prop.village:
 				row.append(p.fee.prop.village.cell.name.encode('utf-8'))
 
@@ -215,31 +207,17 @@ def cleaning_audit_csv(payments, criteria):
 			else:
 				row.append('')
 
-		if 'Fines' in includes:
 		row.append(p.fine_amount or '0.00')
-
-		if 'Receipt' in includes:
 		row.append(p.manual_receipt.encode('utf-8') or '')
-
-		if 'Bank' in includes:
 		row.append(p.bank or '')
-
-		if 'Bank Receipt' in includes:
 		row.append(p.receipt_no.encode('utf-8') or '')
 
-		if 'User' in includes and p.staff:
-			row.append(p.staff.username or '')
-		else:
-			row.append('')
-
-		if 'Timestamp' in includes:
-			row.append(p.date_time or '')
-
-		if 'Total Fee Amount' in includes:
 		row.append(p.fee.amount or '')
-
-		if 'Remaining Fee Amount' in includes:
-			row.append(p.fee.remaining_amount or '')
+		row.append(p.fee.remaining_amount)
+		if p.staff:
+			row.append("%s %s" % (p.staff.username, p.date_time.strftime('%d/%m/%y')))
+		else:
+			row.append(p.date_time.strftime('%d/%m/%y'))
 
 		writer.writerow(row)
 
