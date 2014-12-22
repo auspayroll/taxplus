@@ -1,0 +1,43 @@
+{% extends "common/base_design.html" %}
+
+{% load breadcrumb %}
+{% block crumbbody %}
+	{% breadcrumb "Home" "/admin/" %}
+{% endblock %}
+
+{% block mainbody %}
+	<h1>Recent Changes to Taxplus</h1>
+	<div style="padding:20px;"><p>Hi!. This is where I will post some of the most important changes to the system.
+		I will update this page regularly, once a week on a Monday, so any changes won't cause confusion.</p>
+
+		<p>Below are the most recent changes. There are some major changes coming to the screen workflow and layout. This is
+		to make navigation faster and also to remove screens that are no longer working and are outdated.<br/>
+		-Thanks, Simon@propertymode.com.au</p>
+		<br/>Monday 22 Dec. 2014</div>
+
+	<div style="width:90%; border:0pt #e4e4e4 solid; padding:10px;">
+
+			<h3>Change to the property screen layout - Monday 22 Dec. 2014</h3>
+				When coming from 'Submit Taxes' for properties, you will be directed to a new
+				screen layout to pay taxes for properties. The menus that were on the left hand side will
+				now be layed out horizontally near the top of the screen. <u>All the same functionality is still present</u>. This is to make effective
+				use of smaller tablet screen sizes. Also some of the fields that were displayed have been deprecated.
+				<iframe src="{% url 'property_fees' 43731 %}" width="100%" height="400px">
+
+				</iframe>
+
+				<p>&nbsp;</p>
+			<h3>Additon of new Leasing screens for Land Lease.</h3>
+				<p>Screens with the ability to modify land lease dates have been added. Click 'Leases' from the above property menu.
+				You can also added/remove citizens and businesses on the lease.
+				Also, new leases can be created b selecting 'New Lease' from the property menu.</p>
+				<p style="color:red">Note that when leasing dates are changes, this will affected the land lease fee amounts. The fee amounts will get
+					automatically recalculated as soon as the dates are changed.</p>
+				<iframe src="{% url 'property_leases' 43731 %}" width="100%" height="400px">
+
+				</iframe>
+
+	</div>
+
+
+{% endblock %}

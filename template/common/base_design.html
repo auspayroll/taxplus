@@ -56,7 +56,7 @@
 				  },
 				  type: "numeric"
 			});
-			
+
 
 			var mydigits= function(node)  {
 				var s=node.innerHTML;
@@ -95,7 +95,7 @@
 			td
 			{
 				padding:3px;
-				
+
 			}
 			td.label
 			{
@@ -135,18 +135,19 @@
                 </div><!-- /.nav-collapse -->
               </div>
             </div><!-- /navbar-inner -->
-          </div><!-- /navbar --> 
+          </div><!-- /navbar -->
 		 <div style="clear:both"></div>
     </div><!-- End #header -->
-	
-	
+
+
 	<!-- You are here bar -->
 	<div class="positionbar">
-		You are here: 
+		You are here:
 		{% block breadcrumbs %}
 				{% block crumbbody %}
 				{% endblock %}
 		{% endblock %}
+		<div style="float:right; padding-right:100px; color:red"><img src="{% static 'images/alert.png' %}"> <a href="{% url 'notices' %}">Notices / Recent Changes</a></div>
 	</div>
 
 	{% if messages %}
@@ -160,7 +161,7 @@
     <div id="wrapper">
 	{% block mainbody %}
 	{% endblock %}
-  
+
     </div><!-- End #wrapper -->
 	</body>
 </html>

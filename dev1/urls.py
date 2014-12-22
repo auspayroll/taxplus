@@ -2,6 +2,7 @@ from django.conf.urls import patterns, include, url
 from django.conf import settings
 from django.conf.urls.static import static
 from taxplus import views as taxplus_views
+from django.views.generic.base import TemplateView
 
 
 urlpatterns = patterns('',
@@ -50,4 +51,6 @@ urlpatterns += patterns('',
 		url(r'^media/(?P<path>.*)$', 'django.views.static.serve', {
 			'document_root': settings.MEDIA_ROOT,
 		}),
+
+		url('^notices/$', TemplateView.as_view(template_name='notices.html'), name='notices'),
    )
