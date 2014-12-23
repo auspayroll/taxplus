@@ -36,15 +36,19 @@
 
 {{ form.errors }}
 <table class="tablesorter">
-<tr><th>Name</th><th>Started</th><th>Phone</th><th>TIN</th></tr>
+<tr><th>Name</th><th>Started</th><th>Phone</th><th>TIN</th><th>Record created</th></tr>
 <tr><td><input type="checkbox" name="business" value="{{ business.pk }}"><b>{{ business }}</b></td>
     <td>{{ business.date_started }}</td>
-    <td>{{ business.phone1|default:business.phone2 }}</td><td>{{ business.tin|default:'' }}</td></tr>
+    <td>{{ business.phone1|default:business.phone2 }}</td>
+    <td>{{ business.tin|default:'' }}</td>
+    <td>{{ business.date_created|default:'' }}</td>
+</tr>
 {% for duplicate in duplicates %}
     <tr><td><input type="checkbox" name="business" value="{{ duplicate.business2.pk }}">{{ duplicate.business2 }}</td>
         <td>{{ business.date_started }}</td>
         <td>{{ duplicate.business2.phone1|default:duplicate.business2.phone2 }}</td>
         <td>{{ duplicate.business2.tin|default:'' }}</td>
+        <td>{{ duplicate.business2.date_created|default:'' }}</td>
     </tr>
 {% endfor %}
 </table>
