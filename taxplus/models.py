@@ -799,7 +799,7 @@ class Property(models.Model):
 
 	@property
 	def outstanding_fees(self):
-		return self.property_fees.filter(remaining_amount__gt=0)
+		return self.property_fees.filter(date_from__gte=date(2012,1,1), remaining_amount__gt=0)
 
 	@property
 	def owners(self):
