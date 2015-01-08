@@ -1113,99 +1113,91 @@ class Fee(models.Model):
 
 
 	def adjust_payments(self):
-		remaining_amount = float(self.amount)
+		remaining_amount = self.amount
 		balance = 0
-		residual_interest = 0
-		penalty_balance = 0
-		total_penalty_paid = 0
-		total_interest_paid = 0
-		principle_paid = 0
+		self.penalty = 0
+		self.penalty_paid = 0
+		self.interest_paid = 0
+		self.principle_paid = 0
 		penalty = 0
+		self.residual_interest = 0
 
 		for payment in self.fee_payments.filter(status__code='active').order_by('paid_date').order_by('id'):
-			interest_paid, penalty_paid = 0, 0
-			calc_penalty, interest = self.calc_penalty(payment.paid_date, remaining_amount)
-			interest += residual_interest
-			if calc_penalty:
+			payment.interest = 0
+			payment.penalty = 0
+			payment.principle = 0
+
+			balance = balance + payment.amount
+
+			#calculate amounts owed before payment
+			calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, remaining_amount)
+			if not penalty:
 				penalty = calc_penalty
-			penalty_balance = penalty - total_penalty_paid
-			balance += float(payment.amount)
-			fine_amount = 0
+			payment.interest_due = calc_interest + self.residual_interest
+			self.penalty = penalty - self.penalty_paid
+			payment.penalty_due = self.penalty
+			payment.principle_due = remaining_amount
 
-			#pay off principle
-			if balance >= remaining_amount:
-				balance -= remaining_amount
-				remaining_amount = 0
-
-				#pay off interest
-				if interest > 0:
-					if balance >= interest:
-						balance -= interest
-						interest_paid = interest
-						residual_interest = 0
-					elif balance > 0:
-						interest_paid = balance
-						residual_interest = (interest - balance)
-						balance = 0
-
-				#pay penalty
-				if penalty_balance > 0:
-					if balance >= penalty_balance:
-						balance -= penalty_balance
-						penalty_paid = penalty_balance
-						penalty_balance = 0
-					elif balance > 0:
-						penalty_paid = balance
-						penalty_balance -= balance
-						balance = 0
-
-			else: #payment is less than the principle, don't pay interest
-				_, calc_interest = self.calc_penalty(payment.paid_date, balance)
-				residual_interest += calc_interest
-				remaining_amount -= balance
+			if balance <= remaining_amount:
+				calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, balance)
+				self.residual_interest = self.residual_interest + calc_interest
+				remaining_amount = remaining_amount - balance
+				payment.interest = 0
+				payment.principle = balance
 				balance = 0
 
+			else: # balance > remaining_amount
+				balance = balance - remaining_amount
+				payment.principle = remaining_amount
 
-			total_penalty_paid += penalty_paid
-			total_interest_paid += interest_paid
-			payment.interest = interest_paid
-			payment.penalty = penalty_paid
-			payment.principle = int(float(payment.amount) - (payment.interest + payment.penalty))
+				if self.residual_interest > 0:
+					if balance > self.residual_interest:
+						balance = balance - self.residual_interest
+						payment.interest = self.residual_interest
+						self.residual_interest = 0
+					else:
+						self.residual_interest = self.residual_interest - balance
+						payment.interest = balance
+						balance = 0
 
-			payment.fine_amount = interest_paid + penalty_paid
-			if interest_paid > 0:
-				payment.fine_description = "interest %s Rwf; " % interest_paid
+				calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, remaining_amount)
 
-			payment.fine_description = ''
+				if balance > calc_interest:
+					balance = balance - calc_interest
+					payment.interest += calc_interest
+				else:
+					self.residual_interest = self.residual_interest + calc_interest
+					balance = 0
 
-			if penalty_paid > 0:
-				penalty_desc = "penalty %s Rwf" % penalty_paid
-				payment.fine_description += penalty_desc
+				remaining_amount = 0
+
+			#pay penalty
+			if self.penalty > 0 and balance > 0:
+				if balance >= self.penalty:
+					balance = balance - self.penalty
+					payment.penalty = self.penalty
+
+				elif balance > 0:
+					payment.penalty = balance
+					balance = 0
 
 			payment.save()
 
-		if balance > 0 and residual_interest > 0:
-			if balance < residual_interest:
-				balance = 0
-				residual_interest -= balance
-			else:
-				balance -= residual_interest
-				residual_interest = 0
+			self.penalty_paid += payment.penalty
+			self.interest_paid += payment.interest
+			self.principle_paid += payment.principle
 
-		self.residual_interest = residual_interest
-		self.remaining_amount = remaining_amount - balance
-		self.penalty_paid = total_penalty_paid
-		self.interest_paid = total_interest_paid
-		calc_penalty, self.interest = self.calc_penalty(date.today(), remaining_amount)
-		if calc_penalty:
+
+		#bring interest  penalty up to date
+		calc_penalty, calc_interest = self.calc_penalty(date.today(), remaining_amount)
+		if not penalty:
 			penalty = calc_penalty
 		self.penalty = penalty - self.penalty_paid
-		self.interest += self.residual_interest
+		self.interest = calc_interest + self.residual_interest
 
 		if self.total_due <=0 and self.amount > 0:
 			self.is_paid = True
-		else:
-			self.is_paid = False
+
 		self.submit_date =  timezone.make_aware(datetime.today(), timezone.get_default_timezone())
 		self.save()
 
