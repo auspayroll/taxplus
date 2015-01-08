@@ -1062,6 +1062,14 @@ class Fee(models.Model):
 	class Meta:
 		db_table = 'jtax_fee'
 		ordering = ['-due_date']
+	@property
+	def remaining_amount(self):
+		remaining_amount = self.amount - self.principle_paid
+		if remaining_amount < 0:
+			return 0
+		else:
+			return remaining_amount
+
 
 	@classmethod
 	def process_payments(cls, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fee_ids=[]):
