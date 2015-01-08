@@ -1208,9 +1208,6 @@ class Fee(models.Model):
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
 
 		payment_amount = int(payment_amount)
-		remaining_amount = int(self.remaining_amount)
-
-		total_payment = payment_amount
 
 		if citizen_id:
 			payer_name = Citizen.objects.get(pk=citizen_id).name
@@ -1237,14 +1234,10 @@ class Fee(models.Model):
 			return "Cleaning Fee for %s" % (self.date_from.strftime('%B %Y'))
 
 	def get_paid_amount(self):
-		paid = self.fee_payments.filter(amount__gt=0, status__code='active').aggregate(amount=Sum('amount'), fines=Sum('fine_amount'))
-		total = paid['amount'] or 0
-		fines = paid['fines'] or 0
-		capital_amount = total - fines
-		return float(capital_amount), float(fines)
+		return self.principle_paid
 
 	def get_remaining_amount(self):
-		return (float(self.amount) - self.get_paid_amount()[0])
+		return self.remaining_amount
 
 
 	@property
