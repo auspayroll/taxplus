@@ -1061,7 +1061,8 @@ class Fee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_fee'
-		ordering = ['-due_date']
+		ordering = ['due_date', 'pk']
+
 	@property
 	def remaining_amount(self):
 		remaining_amount = self.amount - self.principle_paid
