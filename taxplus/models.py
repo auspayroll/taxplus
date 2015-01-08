@@ -681,8 +681,9 @@ class Business(models.Model):
 						fee = fees[0]
 						fees.exclude(id=fee.pk).update(status=inactive)
 
-					fee.calc_amount()
-
+					if not fee.is_paid:
+						fee.calc_amount()
+						fee.adjust_payments()
 					cleaning_month = next_month
 
 
@@ -996,8 +997,9 @@ class PropertyTitle(models.Model):
 					fee.status = active
 					fee.prop_title = self
 					fee.save(update_fields=['date_from', 'date_to', 'status', 'prop_title'])
-					fee.calc_amount(save=True)
-					fee.adjust_payments()
+					if not fee.is_paid:
+						fee.calc_amount(save=True)
+						fee.adjust_payments()
 					dup_fees = fees.exclude(pk=fee.pk)
 					dup_fees.update(status=inactive, i_status='inactive')
 
