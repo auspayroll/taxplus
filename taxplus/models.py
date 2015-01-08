@@ -1282,43 +1282,25 @@ class Fee(models.Model):
 				return (penalty, interest)
 
 	def calc_cleaningFee(self):
-		if self.category.code == 'cleaning':
-			business = self.business
-			if business.cleaning_category:
-				if not self.is_paid:
-					if business.cleaning_category_id in range(1,7):
-						self.amount = 10000
-					elif business.cleaning_category_id == 7:
-						self.amount = 5000
-					elif business.cleaning_category_id == 8:
-						self.amount = 3000
-					else:
-						self.amount = 0
-
-				self.remaining_amount = self.get_remaining_amount()
-				if self.remaining_amount <= 0 and self.amount > 0:
-					self.is_paid = True
+		if self.category.code == 'cleaning' and self.business and self.business.cleaning_category:
+			if not self.is_paid:
+				if self.business.cleaning_category_id in range(1,7):
+					self.amount = 10000
+				elif self.business.cleaning_category_id == 7:
+					self.amount = 5000
+				elif self.business.cleaning_category_id == 8:
+					self.amount = 3000
 				else:
-					self.is_paid = False
+					self.amount = 0
 
-				self.submit_date = datetime.now()
-				due_date = self.date_from + relativedelta(months=1)
-				self.due_date = date(due_date.year, due_date.month, 5)
+			self.submit_date = datetime.now()
+			due_date = self.date_from + relativedelta(months=1)
+			self.due_date = date(due_date.year, due_date.month, 5)
+		else:
+			self.amount = 0
+			self.qty = 0
+			self.rate = 0
 
-				if self.amount:
-					self.i_status = 'active'
-					self.status = CategoryChoice.objects.get(category__code='status', code='active')
-				self.save()
-				return self.amount, self.due_date
-
-			if self.pk:
-				self.submit_date = None
-				self.i_status = 'inactive'
-				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-				self.is_paid = False
-				self.save()
-
-		return (None, None)
 
 
 	def get_late(self,  pay_date=None):
@@ -1335,14 +1317,7 @@ class Fee(models.Model):
 			return None
 
 
-	def calc_amount(self, save=True):
-		"""
-		calculate the Fee Amount and also the remaining amount based
-		on payments made. If the Fee is marked as 'is_paid', then the amount
-		wont be recalculated, but the remaining amount from paid amounts should still
-		be calculated.
-		"""
-		if self.category.code == 'land_lease':
+	def calc_landlease(self):
 			rate = 0
 			if self.prop.land_zone.code == 'agricultural':
 				if self.prop.area >= 20000:
@@ -1398,21 +1373,37 @@ class Fee(models.Model):
 					self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
 				self.amount = round(self.amount)
 
-			if save:
-				if self.pk and not self.amount: # inactivate current records with zero amounts
-					self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-					self.i_status = 'inactive'
-					self.save()
 
-				elif self.amount and self.pk:
-					self.status = CategoryChoice.objects.get(category__code='status', code='active')
-					self.i_status = 'active'
-					self.save()
+	def calc_amount(self, save=True):
+		"""
+		calculate the Fee Amount and also the remaining amount based
+		on payments made. If the Fee is marked as 'is_paid', then the amount
+		wont be recalculated, but the remaining amount from paid amounts should still
+		be calculated.
+		"""
+		if self.category.code == 'land_lease':
+			self.calc_landlease()
 
-			return {'amount': self.amount, 'rate':rate, 'qty':self.qty }
+		elif self.category.code == 'cleaning':
+			self.calc_cleaningFee()
 
+		else:
+			raise NotImplentedError('invalid fee type')
 
-		raise NotImplentedError('rate for %s not found' % self)
+		if save:
+			if self.pk and not self.amount: # inactivate current records with zero amounts
+				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+				self.i_status = 'inactive'
+				self.save()
+
+			elif self.amount and self.pk:
+				self.status = CategoryChoice.objects.get(category__code='status', code='active')
+				self.i_status = 'active'
+				self.save()
+
+			if self.principle_paid or self.penalty_paid or self.interest_paid:
+				self.adjust_payments()
+
 
 
 
