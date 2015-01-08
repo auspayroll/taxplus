@@ -1028,8 +1028,7 @@ class Fee(models.Model):
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
 	fee_type = models.CharField(max_length=50)
 	i_status = models.CharField(max_length=50)
-	amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The amount of fee item.")
-	remaining_amount = models.DecimalField(max_digits = 20, decimal_places = 2, help_text="The remaining amount (subtracted past payments).", null=True, blank = True)
+	amount = models.IntegerField(help_text="The amount of fee item.")
 	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
 	penalty = models.IntegerField(default=0) # penalty remaining
 	penalty_paid = models.IntegerField(default=0) # full amount of penalty
@@ -1052,12 +1051,13 @@ class Fee(models.Model):
 	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
 	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
-	qty = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-	rate = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+	qty = models.FloatField(default=0)
+	rate = models.FloatField(default=0)
 	period_from = models.DateTimeField(help_text="The start date of a period that this fee item is for.")
 	period_to = models.DateTimeField(help_text="The end date of a period that this fee item is for.")
 	objects = FeeManager()
 	all_objects = models.Manager()
+	principle_paid = models.IntegerField(default=0)
 
 	class Meta:
 		db_table = 'jtax_fee'
