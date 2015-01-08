@@ -1449,7 +1449,7 @@ class PayFee(models.Model):
 	business_id = models.IntegerField(help_text="The business who pay this tax item.", blank = True, null=True)
 	staff = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	fee = models.ForeignKey(Fee, help_text="", related_name="fee_payments")
-	amount = models.DecimalField(max_digits = 20, decimal_places = 2)
+	amount = models.IntegerField()
 	receipt_no = models.CharField(max_length = 50)
 	receipts = models.ManyToManyField(PaymentReceipt, through='MultipayReceiptPaymentRelation', related_name='line_items')
 	bank =  models.CharField(max_length = 100, null=True, blank=True)
@@ -1458,6 +1458,9 @@ class PayFee(models.Model):
 	penalty =  models.IntegerField(default=0)
 	interest = models.IntegerField(default=0)
 	principle = models.IntegerField(default=0)
+	penalty_due =  models.IntegerField(default=0)
+	interest_due = models.IntegerField(default=0)
+	principle_due = models.IntegerField(default=0)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
 	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
@@ -1470,6 +1473,12 @@ class PayFee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_payfee'
+		ordering = ['paid_date', 'pk']
+
+
+	@property
+	def total_due(self):
+		return self.interest_due + self.penalty_due + self.principle_due
 
 
 # Model for Receipt of Multiple Tax/Fee payment
