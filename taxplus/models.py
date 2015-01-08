@@ -986,9 +986,8 @@ class PropertyTitle(models.Model):
 
 				if not fees:
 					land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
-					fee = Fee.objects.create(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, fee_type='land_lease', status=active, is_paid=False, submit_date=date.today(), amount=0, remaining_amount=0, due_date=date_to)
+					fee = Fee.objects.create(prop_title=self, category=land_lease, date_from=date_from, date_to=date_to, prop=self.prop, status=active, is_paid=False, submit_date=date.today(), amount=0, due_date=date_to)
 					fee.calc_amount()
-					fee.adjust_payments()
 
 				else:
 					fee = fees[0]
@@ -1001,7 +1000,7 @@ class PropertyTitle(models.Model):
 						fee.calc_amount(save=True)
 						fee.adjust_payments()
 					dup_fees = fees.exclude(pk=fee.pk)
-					dup_fees.update(status=inactive, i_status='inactive')
+					dup_fees.update(status=inactive)
 
 				date_from = date(date_from.year+1, 1, 1)
 
