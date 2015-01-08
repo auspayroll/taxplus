@@ -923,7 +923,7 @@ class PropertyTitle(models.Model):
 
 	@property
 	def outstanding_fees(self, overdue_only=False):
-		fees = self.title_fees.filter(remaining_amount__gt=0, status__code='active').order_by('due_date')
+		fees = self.title_fees.filter(is_paid=False, status__code='active').order_by('due_date')
 		total = 0
 		overdue = 0
 		for fee in fees:
