@@ -1026,31 +1026,23 @@ class Fee(models.Model):
 	# new  field
 	category = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'fee_type'}, related_name='fee_type', null=True)
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
-	fee_type = models.CharField(max_length=50)
-	i_status = models.CharField(max_length=50)
 	amount = models.IntegerField(help_text="The amount of fee item.")
 	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
 	penalty = models.IntegerField(default=0) # penalty remaining
 	penalty_paid = models.IntegerField(default=0) # full amount of penalty
 	interest_paid = models.IntegerField(default=0) # full amount of penalty
-	#total_due = models.IntegerField(default=0) # full amount of penalty
 	residual_interest = models.IntegerField(default=0)
 	date_from = models.DateField(null=True)
 	date_to = models.DateField(null=True)
 	due_date = models.DateField(help_text="The date this fee item is due.", null=True, blank=True)
 	is_paid = models.BooleanField(help_text="Whether fee is payed.")
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
-	submit_details = models.CharField(max_length=500, null=True, blank=True)
 	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
 	business = models.ForeignKey(Business, null=True, related_name='business_fees')
 	citizen = models.ForeignKey(Citizen, null=True, related_name='citizen_fees')
 	subbusiness = models.ForeignKey(SubBusiness, null=True)
 	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_fees')
-	addressee_name = models.CharField(null=True, max_length=100)
-	#business = models.ForeignKey(Business, null=True, blank=True)
-	#subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
-	#citizen = models.ForeignKey(Citizen,null=True,blank=True)
 	qty = models.FloatField(default=0)
 	rate = models.FloatField(default=0)
 	period_from = models.DateTimeField(help_text="The start date of a period that this fee item is for.")
