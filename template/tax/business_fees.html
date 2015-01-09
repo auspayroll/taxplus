@@ -95,7 +95,7 @@
 			{% for i in fees %}
 				<tr {% if i.due_date %}class="overdue"{% endif %}>
                     <td>
-						{% if not i.is_paid and i.submit_date  %}
+						{% if not i.is_paid and i.status.code == 'active' %}
                         <input type="checkbox" name="pay_fee" value="{{i.id}}" class="multi_pay_checkbox" />
 						{% endif %}
                         <!--<input type="hidden" value="{{i.name}}_{{i.obj_id}}_{{i.branch}}" id="mark_{{i.id}}" />-->
@@ -136,10 +136,10 @@
 
 
                         {% for payment in i.fee_payments.all %}
-                        	<a href="/admin/tax/tax/generate_invoice?type=fee&id={{ payment.pk }}" class="my_button">Receipt {{ payment.receipt.sector_receipt }}</a>&nbsp;
+                        	<a href="{% url 'tax_receipt' payment.receipt_id %}" class="my_button">Receipt {{ payment.receipt.sector_receipt }}</a>&nbsp;
                         {% endfor %}
 
-                        {% if i.remaining_amount > 0  %}
+                        {% if i.total_due > 0  %}
                         	<a href="/admin/tax/tax/generate_epayinvoice/?type=fee&id={{ i.id }}" class="my_button" >view ePay Invoice</a>
                         {% endif %}
 

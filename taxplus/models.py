@@ -1053,7 +1053,7 @@ class Fee(models.Model):
 
 	class Meta:
 		db_table = 'jtax_fee'
-		ordering = ['due_date', 'pk']
+		ordering = ['-due_date', 'pk']
 
 	@property
 	def remaining_amount(self):
@@ -1429,7 +1429,7 @@ class PayFee(models.Model):
 	fee = models.ForeignKey(Fee, help_text="", related_name="fee_payments")
 	amount = models.IntegerField()
 	receipt_no = models.CharField(max_length = 50)
-	receipts = models.ManyToManyField(PaymentReceipt, through='MultipayReceiptPaymentRelation', related_name='line_items')
+	#receipts = models.ManyToManyField(PaymentReceipt, through='MultipayReceiptPaymentRelation', related_name='line_items')
 	bank =  models.CharField(max_length = 100, null=True, blank=True)
 	paid_date = models.DateField()
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0,null=True, blank = True)
@@ -1453,19 +1453,24 @@ class PayFee(models.Model):
 		db_table = 'jtax_payfee'
 		ordering = ['paid_date', 'pk']
 
-
 	@property
 	def total_due(self):
 		return self.interest_due + self.penalty_due + self.principle_due
 
+	@property
+	def total_paid(self):
+		return self.interest + self.penalty + self.principle
+
 
 # Model for Receipt of Multiple Tax/Fee payment
+"""
 class MultipayReceiptPaymentRelation(models.Model):
 	payfee = models.ForeignKey(PayFee, related_name="receipt_relations")
 	receipt = models.ForeignKey(PaymentReceipt, related_name="payment_relations")
 
 	class Meta:
 		db_table ="jtax_multipayreceiptpaymentrelation"
+"""
 
 
 class Ownership(models.Model):

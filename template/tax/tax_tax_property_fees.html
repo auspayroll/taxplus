@@ -127,7 +127,7 @@
 									<td>{{ payment.paid_date }}</td>
 									<td><a>{{ payment.receipt.payer_name }}</a></td>
 									<td>{{ payment.receipt.bank }}-{{ payment.receipt.bank_receipt }}</td>
-									<td><a href="/admin/tax/tax/generate_invoice?type=fee&id={{ payment.pk }}">{{ payment.receipt.sector_receipt }}</a></td>
+									<td><a href="{% url 'tax_receipt' payment.receipt_id %}">{{ payment.receipt.sector_receipt }}</a></td>
 									<td>{{ payment.receipt.user.username }}</td>
 								</tr>
 							{% empty %}

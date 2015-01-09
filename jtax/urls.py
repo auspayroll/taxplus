@@ -43,7 +43,7 @@ urlpatterns = patterns('',
 	url(r'^pay_trading_license/(?P<id>\d+)/$','jtax.views.payFee', { 'fee_type':'trading_license'}, name='pay_trading_license'),
 	url(r'^pay_rental_income/(?P<id>\d+)/$','jtax.views.payFee', { 'fee_type':'rental_income'}, name='pay_rental_income'),
 
-	url(r'^multi_invoice/(?P<id>\d+)/$','jtax.views.displayGenerateMultipayInvoicePage', name='multi_invoice'),
+	url(r'^payment_receipt/(?P<id>\d+)/$','taxplus.views.payment_receipt', name='tax_receipt'),
 
 	url(r'^incomplete_payment/$','jtax.views.incomplete_payment_default'),
 	url(r'^incomplete_payment/(?P<action>\w+)_(?P<content_type_name1>\w+)/$','jtax.views.incomplete_payment_default'),

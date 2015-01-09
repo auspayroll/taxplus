@@ -444,6 +444,13 @@ def payFee(request, pk=None):
 		'tax':fee, 'payer_name':payer_name })
 
 
+
+@login_required
+def payment_receipt(request, id):
+	receipt = get_object_or_404(PaymentReceipt, pk=id)
+	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt})
+
+
 @login_required
 def paySelectedFees(request):
 	pay_fees = [ int(pk) for pk in request.POST.getlist('pay_fee')]
