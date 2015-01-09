@@ -1379,10 +1379,12 @@ class Fee(models.Model):
 		"""
 		calculate the Fee Amount and also the remaining amount based
 		on payments made. If the Fee is marked as 'is_paid', then the amount
-		wont be recalculated, but the remaining amount from paid amounts should still
-		be calculated.
+		wont be recalculated.
 		"""
-		if self.category.code == 'land_lease':
+		if self.is_paid:
+			return
+
+		elif self.category.code == 'land_lease':
 			self.calc_landlease()
 
 		elif self.category.code == 'cleaning':
@@ -1394,19 +1396,11 @@ class Fee(models.Model):
 		if save:
 			if self.pk and not self.amount: # inactivate current records with zero amounts
 				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
-				self.i_status = 'inactive'
 				self.save()
 
 			elif self.amount and self.pk:
 				self.status = CategoryChoice.objects.get(category__code='status', code='active')
-				self.i_status = 'active'
 				self.save()
-
-			if self.principle_paid or self.penalty_paid or self.interest_paid:
-				self.adjust_payments()
-
-
-
 
 
 # Model for Receipt of Multiple Tax/Fee payment
