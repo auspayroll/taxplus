@@ -1294,12 +1294,14 @@ class Fee(models.Model):
 					self.amount = 0
 
 			self.submit_date = datetime.now()
-			due_date = self.date_from + relativedelta(months=1)
-			self.due_date = date(due_date.year, due_date.month, 5)
+
 		else:
 			self.amount = 0
 			self.qty = 0
 			self.rate = 0
+
+		due_date = self.date_from + relativedelta(months=1)
+		self.due_date = date(due_date.year, due_date.month, 5)
 
 
 
@@ -1362,11 +1364,10 @@ class Fee(models.Model):
 					except Rate.DoesNotExist:
 						rate = 0
 
-			self.qty = self.prop.area or 0
-
-			self.rate = rate or 0
-
 			if not self.is_paid:
+				self.qty = self.prop.area or 0
+				self.rate = rate or 0
+				self.due_date = date(self.date_from.year, 12, 31)
 				self.amount = self.qty * self.rate
 				#calculate part year payment
 				if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
