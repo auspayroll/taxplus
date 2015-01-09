@@ -115,11 +115,15 @@
 			    	<td colspan="10" style="border-top:0; padding-top:0; padding-bottom:10px; padding-left:5px; padding-right:0">
 			    		{% if fee.remaining_amount < fee.amount %}
 					    	<table id="payment_table">
-					    	<tr><th>Total Payment</th><th>Fine/Penalty</th><th>Paid on</th><th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
+					    	<tr><th>Principle Due</th><th>Penalty Due</th><th>Interest Due</th><th>Total Due</th><th>Payment Amount</th><th>Paid on</th>
+					    		<th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
 							{% for payment in fee.fee_payments.all %}
 								<tr>
-									<td>{{ payment.amount|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
-									<td>{{ payment.fine_amount|default:'-' }} {{ payment.fine_description|default:'' }}</td>
+									<td>{{ payment.principle_due|intcomma }}</td>
+									<td>{{payment.penalty_due|intcomma}}</td>
+									<td>{{payment.interest_due|intcomma}}</td>
+									<td>{{ payment.total_due|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
+									<td><b>{{ payment.amount|intcomma }}</b></td>
 									<td>{{ payment.paid_date }}</td>
 									<td><a>{{ payment.receipt.payer_name }}</a></td>
 									<td>{{ payment.receipt.bank }}-{{ payment.receipt.bank_receipt }}</td>
