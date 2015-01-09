@@ -401,7 +401,7 @@ def payFee(request, pk=None):
 	fee = get_object_or_404(Fee, pk=pk)
 	payer_name = ''
 
-	if fee.remaining_amount == 0:
+	if fee.total_due <= 0:
 		messages.add_message(request, messages.INFO, "This tax/fee has already been paid")
 		#return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
