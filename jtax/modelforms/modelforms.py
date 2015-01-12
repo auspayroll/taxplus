@@ -15,13 +15,13 @@ from common.fields import CurrencyField, CurrencyInput
 class FeeForm(ModelForm):
 	class Meta:
 		model = Fee
-		fields = ('submit_details', 'quantity')
+		fields = ('quantity',)
 
 class InstallmentForm(ModelForm):
 	class Meta:
 		model = Installment
 		fields = ('amount', 'due')
-		
+
 	due = forms.DateField(required=True, input_formats=('%d/%m/%Y',), widget=forms.DateInput(format='%d/%m/%Y', attrs={'width':12}))
 
 class IncompletePaymentModelForm(ModelForm):
@@ -42,7 +42,7 @@ class IncompletePaymentModelForm(ModelForm):
 		filter = False
 		if 'filter' in kw:
 			filter = kw['filter']
-			del kw['filter']		
+			del kw['filter']
 		super(IncompletePaymentModelForm, self).__init__(*args, **kw)
 		self.fields.keyOrder = ['tax_type', 'tin', 'business_select', 'business','subbusiness', 'paid_amount', 'paid_date', 'period_from', \
 			'period_to', 'bank', 'bank_receipt', 'sector_receipt', 'district', 'sector', 'cell', 'village', \
@@ -67,11 +67,11 @@ class IncompletePaymentModelForm(ModelForm):
 		self.fields['paid_date'].widget.format = settings.DATE_INPUT_FORMAT
 		self.fields['paid_date'].input_formats=['%d/%m/%Y']
 		self.fields['paid_date'].widget.attrs['class'] = 'date_picker'
-		
+
 		district_choices = [('','----------')]
 		district_choices.extend((o.id, o.name) for o in District.objects.all().order_by('name'))
 		self.fields['district'].choices = district_choices
-		
+
 		self.fields['sector'].choices = [('','----------')]
 		self.fields['cell'].choices = [('','----------')]
 		self.fields['village'].choices = [('','----------')]
@@ -89,7 +89,7 @@ class IncompletePaymentModelForm(ModelForm):
 				cell = self.instance.village.cell
 				sector = cell.sector
 				district = sector.district
-			
+
 				village_list = Village.objects.filter(cell = cell)
 				village_choices = [('','----------')]
 				if village_list:
@@ -97,7 +97,7 @@ class IncompletePaymentModelForm(ModelForm):
 						village_choices.append((tt.id, tt.name))
 				self.fields['village'].choices = village_choices
 				self.fields['village'].value = self.instance.village.id
-		
+
 				cell_list = Cell.objects.filter(sector = sector)
 				cell_choices = [('','----------')]
 				if cell_list:
@@ -105,7 +105,7 @@ class IncompletePaymentModelForm(ModelForm):
 						cell_choices.append((tt.id, tt.name))
 				self.fields['cell'].choices = cell_choices
 				self.fields['cell'].value = cell.id
-			
+
 				sector_list = Sector.objects.filter(district = district)
 				sector_choices = [('','----------')]
 				if sector_list:
@@ -113,7 +113,7 @@ class IncompletePaymentModelForm(ModelForm):
 						sector_choices.append((tt.id, tt.name))
 				self.fields['sector'].choices = sector_choices
 				self.fields['sector'].value = sector.id
-			
+
 				self.fields['district'].value = district
 			elif self.instance.cell:
 
@@ -126,7 +126,7 @@ class IncompletePaymentModelForm(ModelForm):
 
 				sector = self.instance.cell.sector
 				district = sector.district
-			
+
 				cell_list = Cell.objects.filter(sector = sector)
 				cell_choices = [('','----------')]
 				if cell_list:
@@ -134,7 +134,7 @@ class IncompletePaymentModelForm(ModelForm):
 						cell_choices.append((tt.id, tt.name))
 				self.fields['cell'].choices = cell_choices
 				self.fields['cell'].value = self.instance.cell.id
-			
+
 				sector_list = Sector.objects.filter(district = district)
 				sector_choices = [('','----------')]
 				if sector_list:
@@ -161,7 +161,7 @@ class IncompletePaymentModelForm(ModelForm):
 						sector_choices.append((tt.id, tt.name))
 				self.fields['sector'].choices = sector_choices
 				self.fields['sector'].value = sector.id
-			
+
 				self.fields['district'].value = district.id
 			elif self.instance.district:
 				district = self.instance.district
@@ -190,7 +190,7 @@ class IncompletePaymentModelForm(ModelForm):
 					cell = village.cell
 					sector = cell.sector
 					district = sector.district
-			
+
 					village_list = Village.objects.filter(cell = cell)
 					village_choices = [('','----------')]
 					if village_list:
@@ -198,7 +198,7 @@ class IncompletePaymentModelForm(ModelForm):
 							village_choices.append((tt.id, tt.name))
 					self.fields['village'].choices = village_choices
 					self.fields['village'].value = village.id
-		
+
 					cell_list = Cell.objects.filter(sector = sector)
 					cell_choices = [('','----------')]
 					if cell_list:
@@ -206,17 +206,17 @@ class IncompletePaymentModelForm(ModelForm):
 							cell_choices.append((tt.id, tt.name))
 					self.fields['cell'].choices = cell_choices
 					self.fields['cell'].value = cell.id
-			
+
 					sector_list = Sector.objects.filter(district = district)
 					sector_choices = [('','----------')]
 					if sector_list:
 						for tt in sector_list:
 							sector_choices.append((tt.id, tt.name))
 					self.fields['sector'].choices = sector_choices
-					self.fields['sector'].value = sector.id			
+					self.fields['sector'].value = sector.id
 					self.fields['district'].value = district.id
 
-			
+
 				elif args[0].has_key('cell') and args[0]['cell']:
 					cell = Cell.objects.get(pk=int(args[0]['cell']))
 					village_list = Village.objects.filter(cell = cell)
@@ -228,7 +228,7 @@ class IncompletePaymentModelForm(ModelForm):
 
 					sector = cell.sector
 					district = sector.district
-			
+
 					cell_list = Cell.objects.filter(sector = sector)
 					cell_choices = [('','----------')]
 					if cell_list:
@@ -236,7 +236,7 @@ class IncompletePaymentModelForm(ModelForm):
 							cell_choices.append((tt.id, tt.name))
 					self.fields['cell'].choices = cell_choices
 					self.fields['cell'].value = cell.id
-			
+
 					sector_list = Sector.objects.filter(district = district)
 					sector_choices = [('','----------')]
 					if sector_list:
@@ -256,14 +256,14 @@ class IncompletePaymentModelForm(ModelForm):
 							cell_choices.append((tt.id, tt.name))
 					self.fields['cell'].choices = cell_choices
 					#self.fields['cell'].value = self.instance.cell.id
-			
+
 					sector_list = Sector.objects.filter(district = district)
 					sector_choices = [('','----------')]
 					if sector_list:
 						for tt in sector_list:
 							sector_choices.append((tt.id, tt.name))
 					self.fields['sector'].choices = sector_choices
-					self.fields['sector'].value = sector.id			
+					self.fields['sector'].value = sector.id
 					self.fields['district'].value = district.id
 
 				elif args[0].has_key('district') and args[0]['district']:
@@ -377,20 +377,20 @@ class IncompletePaymentModelForm(ModelForm):
 	def clean_period_to(self):
 		self._validate_period()
 		return self.cleaned_data.get("period_to")
-	
+
 	def clean_paid_amount(self):
 		amount = self.cleaned_data['paid_amount']
 		if amount < 0:
 			raise forms.ValidationError("Please enter a valid paid amount!")
 		return amount
-	
+
 	def clean_tax_type(self):
 		tax_type = self.cleaned_data.get('tax_type')
 		if not tax_type:
 			raise forms.ValidationError("Please select tax type!")
 		return tax_type
-	
-		
+
+
 class PayTaxModelForm(ModelForm):
 	citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None,required=False)
 	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None,required=False)
@@ -518,12 +518,12 @@ def paymentForm(tax_object, *args, **kwargs):
 		i_status = forms.CharField(widget=forms.HiddenInput(), initial='active')
 		fine_amount = CurrencyField(label="Additional Fine", initial='0')
 		fine_description = forms.CharField(widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'}), required=False)
-		
+
 		class Meta:
 			model = paymentModel(tax_object)
 			tax = tax_object
 			fields = [ 'payer_type', 'bank', 'receipt_no', 'paid_date', 'manual_receipt', 'note', 'amount', 'fine_amount', 'fine_description', 'business_id', 'citizen_id']
-		
+
 		def clean(self):
 			cleaned_data = super(PaymentForm, self).clean()
 			fine = cleaned_data.get('fine')
