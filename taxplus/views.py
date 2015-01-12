@@ -449,13 +449,17 @@ def payFee(request, pk=None):
 def payment_receipt(request, id):
 	receipt = get_object_or_404(PaymentReceipt, pk=id)
 	prop = None
+	business = None
 	for payfee in receipt.receipt_payments.all():
 		prop = payfee.fee.prop
 		if prop:
 			break;
+		business = payfee.fee.business
+		if business:
+			break;
 
 	media = Media.objects.filter(Q(receipt=receipt) | Q(payfee__receipt=receipt) )
-	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt, 'media':media, 'property': prop})
+	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt, 'media':media, 'property': prop, 'business': business})
 
 
 @login_required

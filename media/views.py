@@ -131,7 +131,7 @@ def upload_ajax(request, content_type_name, action = None):
 			if citizen:
 				folder = 'citizen/' + str(citizen.id) + '/'
 
-			elif business:
+			if business:
 				folder = 'business/' + str(business.id) + '/'
 
 			folder_path = settings.MEDIA_ROOT + folder
