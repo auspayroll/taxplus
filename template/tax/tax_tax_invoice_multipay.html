@@ -111,9 +111,10 @@
             <input type="hidden" name="tax_type" value="{{ tax_type }}" />
             <input type="hidden" name="tax_id" value="{{ tax.id }}" />
             <input type="hidden" name="payment_id" value="{{ payment.id }}" />
-            <input type="hidden" name="business_id" value="{{ business_id }}" />
-            <input type="hidden" name="citizen_id" value="{{ citizen_id }}" />
-            <input type="hidden" name="property_id" value="{{ property_id }}" />
+            <input type="hidden" name="business_id" value="{{ business_id|default:receipt.business_id|default:'' }}" />
+            <input type="hidden" name="citizen_id" value="{{ citizen_id|default:receipt.citizen_id|default:'' }}" />
+            <input type="hidden" name="property_id" value="{{ property_id|default:property.pk|default:'' }}" />
+            <input type="hidden" name="receipt_id" value="{{ receipt.pk }}" >
 
             <input type="hidden" value="" name="file">
             <input multiple="multiple" name="file" id="path_original" type="file">
@@ -216,17 +217,14 @@
                 <!--label>Time:</label> {{ receipt.paid_date|date:"H:ia"}} <br/-->
             </div>
             <h2>PAYMENT RECEIPT FOR KIGALI CITY COUNCIL</h2>
-            {{ receipt.payer.name }}<br/>
-            {% if receipt.payer.address %}
-                {{ receipt.payer.address }}<br/>
-            {% endif %}
-            {{ receipt.payer.idString }}
+            Paid by: {{ receipt.payer_name|default:receipt.citizen|default:receipt.business }}<br/>
+
             <h2>SUMMARY OF GOVERNMENT CHARGES</h2>
             <table id="payments" cellpadding="0" cellspacing="0">
 			    <tr>
 				    <th>Tax / Fee</th>
 				    <th>Fee Paid</th><th>Penalty</th><th>Interest</th>
-				    <th style="text-align:right; padding: 0px 11px 0px 0px;" >Total</th>
+				    <th style="text-align:right; padding: 0px 11px 0px 0px;">Total</th>
 			    </tr>
 
                 {% for p in receipt.receipt_payments.all %}
@@ -258,11 +256,10 @@
     </div>
     <br/>
     <fieldset>
-	    <legend><h4><b>Receipt Options</b></h4></legend>
-
         <form method="post" id="send_receipt_form">
 			{% csrf_token %}
             <table>
+                <!--
                 <tr><td colspan="2">
                     <ul class="messages" style="margin: 0px; {% if send_receipt_message or send_receipt_error %} {% else %} display:none; {% endif %}" >
                         {% if send_receipt_message %}<li class="success">{{ send_receipt_message }}</li>{% endif%}
@@ -298,6 +295,8 @@
                         <a id="add_sms_custom_input" href="javascript:addCustomInput('sms');">Add more custom input</a>
                     </td>
                 </tr>
+            -->
+                <!--
                 <tr>
                     <td valign="top"><label>Email as PDF to</label></td>
                     <td valign="top">
@@ -327,14 +326,11 @@
                         <a id="add_email_custom_input" href="javascript:addCustomInput('email');">Add more custom input</a>
                     </td>
                 </tr>
+                -->
                 <tr>
                     <td colspan="2">
-                        <input type="submit" name="send_receipt" value="send receipt" />
+                        <!--<input type="submit" name="send_receipt" value="send receipt" />-->
                         <button id="print_btn"  class="button_styled" >print receipt</button>
-                        {% if tax_url %}
-                        <button  class="button_styled" onclick="window.location='{{ tax_url }}';return false;" >pay another tax</button>
-                        {% endif %}
-                        <button  class="button_styled" onclick="window.location='/admin/tax/tax/';return false;">back to tax menu</button>
                     </td>
                 </tr>
             </table>

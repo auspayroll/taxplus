@@ -448,7 +448,14 @@ def payFee(request, pk=None):
 @login_required
 def payment_receipt(request, id):
 	receipt = get_object_or_404(PaymentReceipt, pk=id)
-	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt})
+	prop = None
+	for payfee in receipt.receipt_payments.all():
+		prop = payfee.fee.prop
+		if prop:
+			break;
+
+	media = Media.objects.filter(Q(receipt=receipt) | Q(payfee__receipt=receipt) )
+	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt, 'media':media, 'property': prop})
 
 
 @login_required
@@ -539,6 +546,12 @@ def mobile_invoice_landing(request, key):
 
 	title = get_object_or_404(PropertyTitle, pk=pk, hash_key=hash_key)
 	return render_to_response('common/mobile_invoice.html', {'title':title, 'key':key})
+
+
+def property_media(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	media = Media.objects.filter(property=prop)
+	return TemplateResponse(request, "tax/tax_tax_property_media.html", { 'property':prop, 'media':media  })
 
 
 

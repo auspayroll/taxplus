@@ -210,11 +210,11 @@ class LogMapper:
 				search_conditions = kwargs["search_conditions"]
 			if key == "message":
 				message = kwargs['message']
-			if key in ('tax_id','payment_id','media_id','payment_type','tax_type'):
+			if key in ('tax_id','payment_id','media_id','payment_type','tax_type') and value:
 				setattr(log, key, value)
-			if key == 'payment_id':
+			if key == 'payment_id' and value:
 				setattr(log, 'payfee_id', int(value))
-			if key == 'tax_id':
+			if key == 'tax_id' and value:
 				setattr(log, 'fee_id', int(value))
 
 		if action == "login" or action == "logout":

@@ -21,6 +21,7 @@ from django.utils import simplejson
 from media.mappers.MediaMapper import MediaMapper
 from django.contrib.auth.decorators import login_required
 
+
 @login_required
 def index(request, content_type_name, action = None):
 	"""
@@ -105,63 +106,36 @@ def upload_ajax(request, content_type_name, action = None):
 			tags = ''
 			staff = request.session.get('user')
 
-			if request.POST.get('citizen_id',None) != None and request.POST.get('citizen_id') != '' and request.POST.get('citizen_id') != 'None':
+			if request.POST.get('citizen_id'):
 				citizen = Citizen.objects.get(pk=int(request.POST.get('citizen_id')))
-			if request.POST.get('incomplete_payment_id',None) != None and request.POST.get('incomplete_payment_id') != '' and request.POST.get('incomplete_payment_id') != 'None':
-				incomplete_payment= IncompletePayment.objects.get(pk=int(request.POST.get('incomplete_payment_id')))
-			if request.POST.get('property_id',None) != None and request.POST.get('property_id') != '' and request.POST.get('property_id') != 'None':
+
+			if request.POST.get('property_id'):
 				property = Property.objects.get(pk=int(request.POST.get('property_id')))
-			if request.POST.get('business_id',None) != None and request.POST.get('business_id') != '' and request.POST.get('business_id') != 'None':
+
+			if request.POST.get('business_id'):
 				business = Business.objects.get(pk=int(request.POST.get('business_id')))
-			if request.POST.get('billboard_id',None) != None and request.POST.get('billboard_id') != '' and request.POST.get('billboard_id') != 'None':
-				billboard = Billboard.objects.get(pk=int(request.POST.get('billboard_id')))
-			if request.POST.get('title',None)  and request.POST.get('title') != '':
-				title = request.POST.get('title');
-			if request.POST.get('description',None)  and request.POST.get('description') != '' :
-				description = request.POST.get('description');
-			if request.POST.get('tags',None)  and request.POST.get('tags') != '':
-				tags = request.POST.get('tags');
+
+			if request.POST.get('title'):
+				title = request.POST.get('title')
+
+			if request.POST.get('description'):
+				description = request.POST.get('description')
+
+			if request.POST.get('tags'):
+				tags = request.POST.get('tags')
 
 
-			if request.POST.get('tax_type'):
-				#upload from Invoice Generate page
-				tax_type = request.POST.get('tax_type')
-				tax_id = request.POST.get('tax_id')
-				payment_id = request.POST.get('payment_id',None)
-				payment_type = 'pay_'+tax_type
+			if property:
+				folder = 'property/' + str(property.id) + '/'
 
+			if citizen:
+				folder = 'citizen/' + str(citizen.id) + '/'
 
-				tax = Fee.objects.get(pk=tax_id)
-				business = tax.business
-				subbusiness = tax.subbusiness
-				property = tax.property
+			elif business:
+				folder = 'business/' + str(business.id) + '/'
 
-
-				#determine the location to upload file to, use the priority:  tax > citizen > property > business
-				# (if file associated with citizen then put inside citizen folder, etc)
-				tax_folder = 'tax/' + tax_type.strip() + '/'
-				if os.path.exists(settings.MEDIA_ROOT + tax_folder) == False:
-					os.mkdir(settings.MEDIA_ROOT + tax_folder)
-
-				folder = tax_folder +  str(tax_id) + '/'
-				tags = 'tax|payment'
-			else:
-				#determine the location to upload file to, use the priority:  tax > citizen > property > business
-				# (if file associated with citizen then put inside citizen folder, etc)
-				folder = ''
-				if citizen:
-					folder = 'citizen/' + str(citizen.id) + '/'
-				elif property:
-					folder = 'property/' + str(property.id) + '/'
-				elif business:
-					folder = 'business/' + str(business.id) + '/'
-				elif billboard:
-					folder = 'billboard/' + str(billboard.id) + '/'
-				elif incomplete_payment:
-					folder = 'incomplete_payment/' + str(incomplete_payment.id) + '/'
-					tags = 'tax|incomplete_payment'
-
-			if os.path.exists(settings.MEDIA_ROOT + folder) == False:
+			folder_path = settings.MEDIA_ROOT + folder
+			if os.path.exists(folder_path) == False:
 				os.mkdir(settings.MEDIA_ROOT + folder)
 
 			now = str(datetime.now().strftime('%Y_%m_%d_%H_%M_%S'))
@@ -175,13 +149,18 @@ def upload_ajax(request, content_type_name, action = None):
 				for chunk in file.chunks():
 					destination.write(chunk)
 
+			if request.POST.get('receipt_id'):
+				receipt = get_object_or_404(PaymentReceipt, pk=request.POST.get('receipt_id'))
+			else:
+				receipt = None
+
 			media = Media(title=title,description=description,tags=tags,file_name=file_name,path=file_path,file_type=file.content_type, fee_id=tax_id, payfee_id=payment_id,
 							file_size=file.size,citizen=citizen,business=business,property=property,billboard=billboard,incomplete_payment=incomplete_payment,
-							tax_type=tax_type,tax_id=tax_id,payment_type=payment_type,payment_id=payment_id,user_id=staff.id)
+							tax_type=tax_type,tax_id=tax_id,payment_type=payment_type,payment_id=payment_id,user_id=staff.id, receipt=receipt)
 			media.save()
 
 			#log
-			LogMapper.createLog(request,object=media,action="add",citizen=citizen,property=property,business=business,user=staff,media_id=media.id,tax_type=tax_type,tax_id=tax_id,payment_type=payment_type,payment_id=payment_id)
+			#LogMapper.createLog(request,object=media,action="add",citizen=citizen,property=property,business=business,user=staff,media_id=media.id,tax_type=tax_type,tax_id=tax_id,payment_type=payment_type,payment_id=payment_id)
 
 			uploaded_files = {'id':media.id,'name':file.name, 'type':file.content_type.split('/')[0] + 'Kb', 'size':file.size,'title':title,'description':description,'tags':tags,'associations':MediaMapper.getMediaAssociations(media)}
 			return HttpResponse(simplejson.dumps(uploaded_files), mimetype='application/json')

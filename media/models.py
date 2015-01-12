@@ -3,6 +3,7 @@ from dev1 import variables
 from citizen.models import Citizen
 from asset.models import *
 from jtax.models import IncompletePayment, Fee, PayFee
+from taxplus.models import PaymentReceipt
 
 
 class MediaManager(models.Manager):
@@ -35,6 +36,7 @@ class Media(models.Model):
 	restored = models.NullBooleanField()
 	payfee = models.ForeignKey(PayFee, null=True, blank=True)
 	fee = models.ForeignKey(Fee, null=True, blank=True)
+	receipt = models.ForeignKey(PaymentReceipt, null=True, blank=True, related_name='media_receipt')
 
 	objects = MediaManager()
 

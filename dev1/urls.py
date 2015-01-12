@@ -20,6 +20,9 @@ urlpatterns = patterns('',
 
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
+
+	url(r'^admin/property/media/(?P<pk>\d+)/$', taxplus_views.property_media, name='property_media'),
+
 	url(r'^admin/tax/', include('jtax.urls')),
 	url(r'^admin/citizen/', include('citizen.urls')),
 	url(r'^admin/contact/', include('contact.urls')),

@@ -4527,16 +4527,7 @@ def displayGenerateMultipayInvoicePage(request, id=None):
 		#only allow pay multiple cleaning fees for 1 business/branch atm (prevent even the case of trying to play cleaning fee for main business & branch at the same time)
 		multipay_receipt = get_object_or_404(MultipayReceipt,id=id,i_status='active')
 
-		payment_relations = multipay_receipt.payment_relations.all()
-		payments = []
-		tax_ids = []
-		if payment_relations:
-			for i in payment_relations:
-				payments.append(i.payfee)
-				tax_ids.append(i.payfee.fee.id)
-		payment = payments[0]
-		tax = payment.fee
-		tax_label = 'Fee'
+		payments = multipay_receipt.receipt_payments.all()
 
 		property = tax.property
 		if property:
