@@ -173,7 +173,8 @@ class PaymentForm(forms.Form):
 
 
 class PayFeesForm(forms.Form):
-	paid_date = forms.DateField(label="Payment date", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+	amount = forms.IntegerField()
+	paid_date = forms.DateField(label="Payment datex", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
 		input_formats=('%d/%m/%Y',),initial=date.today().strftime('%d/%m/%Y'),)
 	citizen_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)

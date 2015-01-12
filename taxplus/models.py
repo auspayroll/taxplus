@@ -1071,11 +1071,11 @@ class Fee(models.Model):
 
 
 	@classmethod
-	def process_payments(cls, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fee_ids=[]):
+	def process_payments(cls, amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fee_ids=[]):
 		assert payment_date <= date.today(), 'Payment cannot be in the future'
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
-		fees = cls.objects.filter(pk__in=fee_ids)
+		fees = cls.objects.filter(pk__in=fee_ids).order_by('due_date')
 
 		entity = None
 		if citizen_id:
@@ -1083,21 +1083,26 @@ class Fee(models.Model):
 		elif business_id:
 			payer_name = Business.objects.get(pk=business_id).name
 
-		pr = PaymentReceipt(amount= 0, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
+		pr = PaymentReceipt(amount= amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
 		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
 		pr.save()
 		total_payment = 0
 		for fee in fees:
 			total_due = fee.total_due
-			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=total_due, receipt_no=bank_receipt,
-				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
-			total_payment += total_due
-			pf.save()
-			fee.adjust_payments()
+			if amount > 0 and total_due > 0:
+				if amount > total_due:
+					pay_amount = total_due
+					amount = amount - total_due
+				else:
+					pay_amount = amount
+					amount = 0
+				pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=pay_amount, receipt_no=bank_receipt, \
+					manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+				pr = pf.receipt
+				pf.save()
+				fee.adjust_payments()
 
-		pr.amount = total_payment
-		pr.save()
 		return pr
 
 
@@ -1179,6 +1184,8 @@ class Fee(models.Model):
 					payment.penalty = balance
 					balance = 0
 
+
+			payment.amount = payment.penalty + payment.interest + payment.principle
 			payment.save()
 
 			self.penalty_paid += payment.penalty
@@ -1195,9 +1202,12 @@ class Fee(models.Model):
 
 		if self.total_due <=0 and self.amount > 0:
 			self.is_paid = True
+		else:
+			self.is_paid = False
 
 		self.submit_date =  timezone.make_aware(datetime.today(), timezone.get_default_timezone())
 		self.save()
+		return balance
 
 
 	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
@@ -1222,7 +1232,8 @@ class Fee(models.Model):
 
 		pf.save()
 
-		self.adjust_payments()
+		balance = self.adjust_payments()
+		return balance
 
 	def __unicode__(self):
 		if self.category.code == 'land_lease':

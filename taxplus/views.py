@@ -461,8 +461,10 @@ def payment_receipt(request, id):
 @login_required
 def paySelectedFees(request):
 	pay_fees = [ int(pk) for pk in request.POST.getlist('pay_fee')]
-	fees = Fee.objects.filter(pk__in=pay_fees)
+	fees = Fee.objects.filter(pk__in=pay_fees).order_by('due_date')
 	total = 0
+	for fee in fees:
+		total += fee.total_due
 	if request.POST:
 		form = PayFeesForm(request.POST)
 
@@ -485,30 +487,19 @@ def paySelectedFees(request):
 			if request.POST.get('process_payment'): #process payment
 				d = form.cleaned_data
 				user = request.session.get('user')
-				payment_receipt = Fee.process_payments(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
+				amount = form.cleaned_data['amount']
+
+				payment_receipt = Fee.process_payments(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
 					payer_name=d.get('payer_name'), sector_receipt=d.get('sector_receipt'),
 					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee_ids=pay_fees)
 				#redirect to receipt
-				payFee = PayFee.objects.filter(receipt=payment_receipt)[0]
-				return HttpResponseRedirect('/admin/tax/tax/generate_invoice/?type=fee&id=%s' % payFee.pk)
+				return HttpResponseRedirect(reverse('tax_receipt', args=(payment_receipt.pk,)))
 
 		else:
 			pass
 	else:
 		initial = {'paid_date':date.today().strftime('%d/%m/%Y')}
 		form = PayFeesForm(initial=initial)
-
-
-	if hasattr(form,'cleaned_data'):
-		paid_date = form.cleaned_data.get('paid_date')
-	else:
-		paid_date = date.today()
-	for fee in fees:
-		penalty, interest = fee.calc_penalty(paid_date)
-		fee.penalty = penalty
-		fee.interest = interest
-		fee.total = fee.remaining_amount + penalty + interest
-		total += fee.total
 
 
 	return TemplateResponse(request, "tax/payfees.html", { 'form':form, 'fees':fees, 'total':total  })

@@ -268,7 +268,7 @@
 				<td>{{ fee.remaining_amount|intcomma }}</td>
 				<td>{{ fee.penalty|intcomma }}</td>
 				<td>{{ fee.interest|intcomma }}</td>
-				<td>{{ fee.total|intcomma }}</td>
+				<td>{{ fee.total_due|intcomma }}</td>
 
 			</tr>
 			{% endfor %}
@@ -277,6 +277,7 @@
 	<div style="margin-top:10px;">
 		<table id="payment_form">
 			{% csrf_token %}
+			<tr><th>Payment Amount</th><td>{{ form.amount }}{{ form.amount.errors }}<span class="confirm">{{ request.POST.amount }}</span></td></tr>
 				<tr><th>Payment Date</th><td>{{ form.paid_date }}{{ form.paid_date.errors }}<span class="confirm">{{ request.POST.paid_date }}</span></td></tr>
 				<tr><th>Payment made by</th><td><div id="select_payer">{{ form.payer_id }}{{ form.payer_id.errors }}{{ form.payer_type }}{{ form.payer_type.errors }}
 					{{ form.payer_name }}{{ form.payer_name.errors }}</div><span class="confirm">{{ payer_name }}</span></td></tr>
