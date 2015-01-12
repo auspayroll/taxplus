@@ -1631,7 +1631,7 @@ class Media(models.Model):
 	tax_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
 	payment_type = models.CharField(max_length = 50, help_text = 'Type of Payment Associated with this Media', null=True, blank = True)
 	payment_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
-	user_id = models.IntegerField(max_length = 10, null=True, blank=True, help_text="")
+	user = models.ForeignKey(PMUser, null=True, blank=True, help_text="")
 	#user_id = models.IntegerField(max_length = 10, help_text="")
 	i_status = models.CharField(max_length = 10, default='active', blank = True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
@@ -1639,6 +1639,7 @@ class Media(models.Model):
 	restored = models.NullBooleanField()
 	payfee = models.ForeignKey(PayFee, null=True, blank=True)
 	fee = models.ForeignKey(Fee, null=True, blank=True)
+	receipt = models.ForeignKey(PaymentReceipt, blank=True, null=True)
 
 	objects = MediaManager()
 
