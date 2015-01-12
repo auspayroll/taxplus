@@ -27,6 +27,12 @@ class PMUser(models.Model):
 	class Meta:
 		db_table = 'auth_pmuser'
 
+	def __unicode__(self):
+		if self.lastname and self.firstname:
+			return '%s %s' % (self.firstname, self.lastname)
+		else:
+			return self.username
+
 
 class Boundary(models.Model):
 	shape_area = models.FloatField(blank=True, null=True)
