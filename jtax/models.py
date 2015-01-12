@@ -840,7 +840,7 @@ class Fee(Tax):
 	due_date = models.DateField(help_text="The date this fee item is due.", null=True, blank=True)
 	is_paid = models.BooleanField(help_text="Whether fee is payed.")
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
-	submit_details = models.CharField(max_length=500, null=True, blank=True)
+	#submit_details = models.CharField(max_length=500, null=True, blank=True)
 	staff_id = models.IntegerField(help_text="The staff who generates this fee item.", null=True, blank=True)
 	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
