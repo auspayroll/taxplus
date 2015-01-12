@@ -825,7 +825,7 @@ class FeeManager(models.Manager):
 
 class Fee(Tax):
 	fee_type = models.CharField(max_length=25, choices=variables.fee_types)
-	name = models.CharField(max_length=50, null=True, blank=True)
+	#name = models.CharField(max_length=50, null=True, blank=True)
 	quantity = models.IntegerField(default=1, null=True, blank=True)
 	#target = models.CharField(max_length=25, null = True, blank=True, help_text="Payer type.")
 	#target_id = models.IntegerField(null=True, blank=True, help_text="Who will pay.")
