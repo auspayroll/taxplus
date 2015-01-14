@@ -384,7 +384,8 @@ def merge_preview(request, pk):
 def property_fees(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	fees = prop.property_fees.filter(status__code='active')
-	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees })
+	payments = PayFee.objects.filter(fee__in=fees)
+	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees, 'payments':payments })
 
 
 @login_required
@@ -428,6 +429,10 @@ def payFee(request, pk=None):
 				fee.process_payment(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id, sector_receipt=d.get('sector_receipt'), \
 					bank_receipt=d.get('bank_receipt'), payment_amount=d.get('amount'), staff_id=user.pk, bank=d.get('bank'), payer_name=payer_name)
 				messages.success(request, "Payment successful")
+				if fee.business_id:
+					balance = fee.business.adjust_payments()
+				elif fee.prop:
+					balance = fee.prop.adjust_payments()
 				if fee.prop_id:
 					return HttpResponseRedirect(reverse('property_fees', args=[fee.prop_id]))
 				elif fee.business_id:
@@ -493,9 +498,15 @@ def paySelectedFees(request):
 				user = request.session.get('user')
 				amount = form.cleaned_data['amount']
 
-				payment_receipt = Fee.process_payments(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
+				payment_receipt = process_payments(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
 					payer_name=d.get('payer_name'), sector_receipt=d.get('sector_receipt'),
-					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee_ids=pay_fees)
+					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee=fees)
+
+				fee = fees[0]
+				if fee.business_id:
+					balance = fee.business.adjust_payments()
+				elif fee.prop:
+					balance = fee.prop.adjust_payments()
 				#redirect to receipt
 				return HttpResponseRedirect(reverse('tax_receipt', args=(payment_receipt.pk,)))
 

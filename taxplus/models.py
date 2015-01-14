@@ -11,6 +11,8 @@ import binascii
 from dateutil import parser
 import os
 from dateutil.relativedelta import relativedelta
+from taxplus.functions import adjust_payments as adjustpayments
+
 
 class PMUser(models.Model):
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
@@ -210,321 +212,6 @@ class BusinessCategory(models.Model):
 
 
 
-class Setting(models.Model):
-	tax_fee_name = models.CharField(max_length = 50, help_text="Tax / Fee Name")
-	setting_name = models.CharField(max_length = 50, help_text="Tax / Fee Setting Name")
-	sub_type = models.CharField(max_length = 250, blank = True, help_text="Tax / Fee Setting Sub Catergories that differentiate the rate / fee")
-	value = models.CharField(max_length = 50, default='',help_text="Setting Value, can be fee/tax rate/date/etc")
-	description = models.TextField(null=True, blank = True, help_text="Description about this payment.")
-	valid_from = models.DateField(help_text='Date this setting to be valid from.')
-	valid_to = models.DateField(help_text='Date this setting get deprecated.', null=True, blank = True)
-	district = models.ForeignKey(District, null=True, blank=True, help_text="")
-	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="")
-	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
-	village = models.ForeignKey(Village, null=True, blank=True, help_text="")
-	i_status = models.CharField(max_length = 10, default='active', blank = True)
-	date_time = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
-
-	class Meta:
-		app_label = 'taxplus'
-		db_table = 'jtax_setting'
-		managed = False
-
-	def __unicode__(self):
-		return "ID:" + str(self.id) + " - " + str(self.tax_fee_name) + " " + str(self.setting_name) + " - " + str(self.sub_type) + "[ " + str(self.value) + " ] (" + self.i_status + ")"
-
-
-
-	@classmethod
-	def calculateLandLeaseFee(cls, date_from, date_to, land_use_type, size, sector=None, cell=None, village=None, *args, **kwargs):
-		if type(date_from) is datetime:
-			date_from = date_from.astimezone(timezone.get_default_timezone()).date()
-
-		if type(date_to) is datetime:
-			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
-
-		size = Decimal(size).quantize(Decimal('.0001'))
-		land_use_types = None
-		if land_use_type in ('Agricultural', 'agricultural', 'agriculture'):
-			land_use_type = 'Agricultural'
-			units = 'hectares'
-			hectares = (size * Decimal('0.0001')).quantize(Decimal('.0001'))
-			if hectares > 35:
-				land_use_types = 'Agricultural(>35 ha)'
-
-			elif hectares >= 2 and hectares <= 35:
-			   land_use_types = 'Agricultural(2-35 ha)'
-
-			elif hectares > 2:
-				land_use_types = ('Agricultural(>2 ha)', 'Agriculture (>2 hectares)')
-
-		elif land_use_type in ('Residential', 'residential'):
-			land_use_types = ('Residential', 'Urban Area')
-
-		elif land_use_type in ('Commericial','Commercial', 'commercial'):
-			land_use_types = ('Commercial', 'Trading Centre', 'Industries')
-
-		elif land_use_type in ('Industrial', 'industrial'):
-			land_use_types = 'Industries'
-
-		elif land_use_type == 'Quarry Purpose':
-			land_use_types = 'Quarries Exploitation'
-
-		settings = Setting.objects.filter(valid_from__lte=date_to).filter(Q(valid_to__gte=date_from) | Q(valid_to__isnull=True)).filter(tax_fee_name='land_lease_fee', sub_type__in=land_use_types).\
-			filter(Q(district=sector.district) | Q(sector=sector) | Q(cell=cell) | Q(sector=sector) | Q(village=village)).\
-			order_by('-village').order_by('-cell').order_by('-sector').order_by('-district').order_by('-valid_from')
-
-		if settings:
-			return float(settings[0].value)
-
-		else:
-			print("NOT FOUND: date from: %s, date to: %s, land_use_types: %s, village: %s, cell: %s, sector: %s" % (date_from, date_to, land_use_types, village, cell, sector))
-			import pdb
-			pdb.set_trace()
-
-
-
-	@classmethod
-	def calculateCleaningFee(cls, period_date, business_type, area_type, sector=None, cell=None, village=None):
-		#calculate due date
-		tax_periods = cls.getTaxPeriods('general_fee', period_date, period_date, sector=sector, cell=cell, village=village)
-		if not tax_periods:
-			raise Exception("No tax settings found for %s, %s, %s, %s" % (period_date, sector, cell, village))
-		for date_from, date_to, period_setting in tax_periods:
-			due_date_day = period_setting.get('monthly_due_date')
-		due_date = period_date + relativedelta(months=1)
-		due_date = date(due_date.year, due_date.month, due_date_day)
-
-		#calculate amount
-		sub_type = "%s-%s" % (area_type, business_type)
-		tax_periods = cls.getTaxPeriods('cleaning_fee', period_date, period_date, sector=sector, cell=cell, village=village)
-		if not tax_periods:
-			raise Exception("No tax settings found for %s, %s, %s, %s" % (period_date, sector, cell, village))
-		if not tax_periods:
-			return None, None
-		for date_from, date_to, period_setting in tax_periods:
-			try:
-				rate = period_setting['fee_matches'][sub_type]
-			except KeyError:
-				rate = None
-		return rate, due_date
-
-
-	@classmethod
-	def get_due_date(cls, tax_fee_name, period_date, sector=None, district=None, *args, **kwargs):
-		current_date = date.today()
-		if tax_fee_name in ('trading_license_tax', 'land_lease_fee'):
-			return date(period_date.year, 12, 31)
-		due_date = cls.getTaxSetting(tax_fee_name, 'due_date', current_date, current_date, sector, district, *args, **kwargs)
-		due_month, due_day = due_date.split('-')
-		return date(period_date.year, int(due_month), int(due_day))
-
-
-	@classmethod
-	def getTaxSetting(cls, tax_fee_name, setting_name, date_from, date_to, sector=None, district=None, *args, **kwargs):
-		"""gets the latest setting for a tax"""
-		periods = cls.getTaxPeriods(tax_fee_name, date_from, date_to, sector, district, *args, **kwargs)
-		if not periods:
-			raise Exception("Could not find setting - %s from %s to %s" % (tax_fee_name, date_from, date_to))
-		return periods[0][2][setting_name]
-
-
-	@classmethod
-	def getFees(cls, district=None, sector=None, cell=None, village=None, *args, **kwargs):
-		"""
-		returns the relevant tax period info as a dictionary
-		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
-		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
-		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
-		The order of precedence s Sector tax values, District tax values then
-		tax values with no associated Sector or District
-		"""
-
-		if district and type(district) is int:
-			district = District.objects.get(pk=district)
-
-		if sector and type(sector) is int:
-			sector = Sector.objects.get(pk=sector)
-
-		if cell and type(cell) is int:
-			cell = Cell.objects.get(pk=cell)
-
-		if village and type(village) is int:
-			village = Village.objects.get(pk=village)
-
-		settings = cls.objects.filter(tax_fee_name='misc_fee', i_status='active')
-
-		if village:
-			settings = settings.filter(Q(village__isnull=True) | Q(village=village))
-			cell = village.cell
-		else:
-			settings = settings.filter(village__isnull=True)
-
-		if cell:
-			settings = settings.filter(Q(cell__isnull=True) | Q(cell=cell))
-			sector = cell.sector
-		else:
-			settings = settings.filter(cell__isnull=True)
-
-		if sector:
-			settings = settings.filter(Q(sector__isnull=True) | Q(sector=sector))
-			district = sector.district
-		else:
-			settings = settings.filter(sector__isnull=True)
-
-		if district:
-			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
-		else:
-			settings = settings.filter(district__isnull=True)
-
-		settings = settings.select_related('district','sector', 'cell', 'village').order_by('-valid_from', '-village', '-cell', '-sector', '-district', 'sub_type')
-
-		fees = {}
-		for setting in settings:
-			setting_region = setting.village or setting.cell or setting.sector or setting.district
-			category = fees.setdefault(setting.setting_name, {})
-			sub_type = category.setdefault(setting.sub_type, { 'value': setting.value, 'description':setting.description, 'valid_from':setting.valid_from, 'region': setting_region })
-			if setting_region == sub_type['region'] and setting.valid_from >= sub_type['valid_from'] and date.today() >= setting.valid_from or setting_region != sub_type['region']:
-				sub_type['value'] = Decimal(setting.value)
-				sub_type['description'] = setting.description
-				sub_type['region'] = setting_region
-				sub_type['pk'] = setting.pk
-
-		return fees
-
-
-	@classmethod
-	def getTaxPeriods(cls, tax_fee_name, date_from, date_to, setting_name=None, sub_type=None, district=None, sector=None, cell=None, village=None, *args, **kwargs):
-		"""
-		returns the relevant tax period info as a dictionary
-		in the format: {(date_from, date_to), { setting_name1: value, setting_name2: value2 }, ...}
-		eg. {((2013,01,01), (2013,04,31)):{ 'tax_rate': 0.1, 'due_date': (2013,05,31), ...}, ... }
-		( (date_from, date_to, {values}), (date_from, date_to, {values}) )
-		The order of precedence s Sector tax values, District tax values then
-		tax values with no associated Sector or District
-		"""
-
-		if district and type(district) is int:
-			district = District.objects.get(pk=district)
-
-		if sector and type(sector) is int:
-			sector = Sector.objects.get(pk=sector)
-
-		if cell and type(cell) is int:
-			cell = Cell.objects.get(pk=cell)
-
-		if village and type(village) is int:
-			village = Village.objects.get(pk=village)
-
-		if type(date_from) is datetime:
-			date_from = date_from.astimezone(timezone.get_default_timezone()).date()
-
-		if type(date_to) is datetime:
-			date_to = date_to.astimezone(timezone.get_default_timezone()).date()
-
-		if type(tax_fee_name) is not list:
-			tax_fee_name = [tax_fee_name]
-
-		settings = cls.objects.filter(tax_fee_name__in=tax_fee_name, valid_from__lte=date_to, i_status='active')
-
-		if setting_name:
-			settings = settings.filter(setting_name=setting_name)
-
-		if sub_type:
-			if not setting_name:
-				raise Exception("You must specify a setting name")
-			if hasattr(sub_type, "__iter__"):
-				settings = settings.filter(sub_type__in=sub_type)
-			else:
-				settings = settings.filter(sub_type=sub_type)
-
-		if village:
-			settings = settings.filter(Q(village__isnull=True) | Q(village=village))
-			cell = village.cell
-		else:
-			settings = settings.filter(village__isnull=True)
-
-		if cell:
-			settings = settings.filter(Q(cell__isnull=True) | Q(cell=cell))
-			sector = cell.sector
-		else:
-			settings = settings.filter(cell__isnull=True)
-
-		if sector:
-			settings = settings.filter(Q(sector__isnull=True) | Q(sector=sector))
-			district = sector.district
-		else:
-			settings = settings.filter(sector__isnull=True)
-
-		if district:
-			settings = settings.filter(Q(district__isnull=True) | Q(district=district))
-		else:
-			settings = settings.filter(district__isnull=True)
-
-		settings = settings.order_by('-valid_from', '-village', '-cell', '-sector', '-district')
-
-		settings = [setting for setting in settings]
-
-		if not settings:
-			return None
-			# raise Exception("No Settings found for tax fee: %s, from %s to %s, setting name:%s, sub type: %s, district: %s, sector: %s, cell: %s, village: %s"  % (tax_fee_name, date_from, date_to, setting_name, sub_type, district, sector, cell, village))
-
-		# set the most recent period
-		#import pdb
-		#pdb.set_trace()
-		valid_from = settings[0].valid_from
-		valid_to = date_to
-
-		periods = {}
-		for setting in settings:
-			region = setting.village or setting.cell or setting.sector or setting.district or None
-			if region:
-				region_name = region.name
-			else:
-				region_name = None
-			# get the next period setting
-			if setting.valid_from < valid_from:
-				valid_to = valid_from - timedelta(days=1)
-				#stop if period is out of range
-				if valid_to < date_from:
-					break;
-
-			# set the setting start range if less than date_from
-			valid_from = setting.valid_from
-			if valid_from < date_from:
-				start_from = date_from
-			else:
-				start_from = valid_from
-
-			period = periods.setdefault((start_from, valid_to), {})
-			try:
-				value = Decimal(setting.value)
-			except:
-				value = setting.value
-
-			period['region'] = region_name
-			if sub_type:
-				if hasattr(sub_type,'__iter__'):
-					period[setting.sub_type] = value
-				else:
-					period['value'] = value
-			elif setting_name:
-				if setting.sub_type:
-					period[setting.sub_type] = value
-				else: #setting_name provided,  no setting.sub_type
-					period['value'] = value
-			else: # no setting name
-				if setting.sub_type:
-					st = period.setdefault(setting.setting_name, {})
-					st[setting.sub_type] = value
-				else:
-					period[setting.setting_name] = value
-
-		periods = [ (dates[0], dates[1], values) for dates, values in periods.iteritems() ]
-		periods.sort(key=lambda x:x[0], reverse=True)
-		return periods
-
-
 
 class Citizen(models.Model):
 	first_name = models.CharField(max_length = 50, help_text = 'First name')
@@ -585,7 +272,7 @@ class Business(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="")
 	village = models.ForeignKey(Village, null=True, blank=True)
-	credit = models.FloatField(default = 0, help_text = 'Credit accumulated for this business.')
+	credit = models.IntegerField(default = 0, help_text = 'Credit accumulated for this business.')
 	accountant_name = models.CharField(max_length = 150, blank = True, null = True)
 	accountant_phone = models.CharField(max_length = 50, blank = True, null = True)
 	accountant_email = models.CharField(max_length = 50, blank = True, null = True)
@@ -627,11 +314,25 @@ class Business(models.Model):
 		self.adjust_payments()
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
-
-
 	def adjust_payments(self):
-		for fee in self.business_fees.filter(status__code='active').order_by('due_date'):
-			fee.adjust_payments()
+		payments = PayFee.objects.filter(fee__business=self, fee__due_date__isnull=False, paid_date__isnull=False)
+		balance = adjustpayments(payments)
+
+
+	def pay_balance(self, balance=None):
+		if not balance:
+			balance = self.credit
+		outstanding_fees = self.business_fees.filter(is_paid=False)
+		if balance > 0 and outstanding_fees:
+			fee_ids=[fee.pk for fee in outstanding_fees]
+			receipt = process_payments(balance, payment_date=date.today(), citizen_id=None, business_id=self.pk,\
+				sector_receipt='CREDIT', payer_name='SYSTEM-CREDIT', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
+			receipt.amount = 0
+			receipt.save()
+			payments = PayFee.objects.filter(fee__business=self).order_by('paid_date')
+			balance = adjustpayments(payments, date_from=date.today())
+			print '--------CREDITED---%s--------' % balance
+		return balance
 
 
 
@@ -689,14 +390,14 @@ class Business(models.Model):
 
 					if not fee.is_paid:
 						fee.calc_amount()
-						fee.adjust_payments()
 					cleaning_month = next_month
+
 
 
 @receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
-	instance.calc_taxes()
+	#instance.calc_taxes()
 
 
 class SubBusiness(models.Model):
@@ -799,10 +500,16 @@ class Property(models.Model):
 	#assets = models.ManyToManyField(Asset, related_name="property_assets")
 	date_created = models.DateTimeField(auto_now_add=True, blank=True)
 	date_modified = models.DateTimeField(auto_now=True, blank=True)
+	credit = models.IntegerField(default = 0, help_text = 'Credit accumulated for this property')
 
 	class Meta:
 		db_table = 'property_property'
 
+
+	def reset_fees(self):
+		fees = self.property_fees.filter(fee_payments__isnull=True).distinct()
+		for fee in fees:
+			fee.reset()
 
 	@property
 	def outstanding_fees(self):
@@ -813,6 +520,37 @@ class Property(models.Model):
 		for ownership in PropertyOwnership.objects.filter(prop=self, date_to__isnull=True):
 			yield ownership.owner
 
+	def adjust_payments(self):
+		self.reset_fees()
+		payments = PayFee.objects.filter(fee__prop=self, fee__due_date__isnull=False, paid_date__isnull=False).order_by('paid_date')
+		if payments:
+			payment = payments[0]
+			payment.bf = 0
+			payment.save()
+			balance = adjustpayments(payments)
+			self.credit = balance
+		else:
+			self.credit = 0
+
+		self.save(update_fields=['credit'])
+		return self.credit
+
+	def pay_balance(self, balance=None):
+		if not balance:
+			balance = self.credit
+
+		outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
+		if balance > 0 and outstanding_fees:
+			receipt = process_payments(balance, payment_date=date.today(), citizen_id=None, business_id=None,\
+				sector_receipt='CREDIT', payer_name='SYSTEM-CREDIT', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
+			receipt.amount = 0
+			receipt.save()
+			payments = PayFee.objects.filter(fee__prop=self).order_by('paid_date')
+			balance = adjustpayments(payments, date_from=date.today())
+			self.credit = balance
+			self.save(update_fields=('credit',))
+			print '--------CREDITED---%s--------' % balance
+		return balance
 
 	def __unicode__(self):
 		if self.street_number and self.street and self.street_type:
@@ -1002,9 +740,7 @@ class PropertyTitle(models.Model):
 					fee.status = active
 					fee.prop_title = self
 					fee.save(update_fields=['date_from', 'date_to', 'status', 'prop_title'])
-					if not fee.is_paid:
-						fee.calc_amount(save=True)
-						fee.adjust_payments()
+					fee.calc_amount(save=True)
 					dup_fees = fees.exclude(pk=fee.pk)
 					dup_fees.update(status=inactive)
 
@@ -1020,7 +756,7 @@ class PropertyTitle(models.Model):
 
 @receiver(post_save, sender=PropertyTitle)
 def after_prop_title_save(sender, instance, created, **kwargs):
-	instance.calc_taxes()
+	#instance.calc_taxes()
 	Ownership.objects.filter(prop_title=instance).update(date_started=instance.date_from, date_ended=instance.date_to)
 
 
@@ -1034,7 +770,7 @@ class Fee(models.Model):
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
 	amount = models.IntegerField(help_text="The amount of fee item.")
 	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
-	remaining_amount = models.IntegerField(default=0) # interest remaining; includes residual interest
+	remaining_amount = models.IntegerField(default=0)
 	penalty = models.IntegerField(default=0) # penalty remaining
 	penalty_paid = models.IntegerField(default=0) # full amount of penalty
 	interest_paid = models.IntegerField(default=0) # full amount of penalty
@@ -1063,42 +799,17 @@ class Fee(models.Model):
 		ordering = ['-due_date', 'pk']
 
 
-
-	@classmethod
-	def process_payments(cls, amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fee_ids=[]):
-		assert payment_date <= date.today(), 'Payment cannot be in the future'
-		active = CategoryChoice.objects.get(category__code='status', code='active')
-		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
-		fees = cls.objects.filter(pk__in=fee_ids).order_by('due_date')
-
-		entity = None
-		if citizen_id:
-			payer_name = Citizen.objects.get(pk=citizen_id).name
-		elif business_id:
-			payer_name = Business.objects.get(pk=business_id).name
-
-		pr = PaymentReceipt(amount= amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
-		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
-
-		pr.save()
-		total_payment = 0
-		for fee in fees:
-			total_due = fee.total_due
-			if amount > 0 and total_due > 0:
-				if amount > total_due:
-					pay_amount = total_due
-					amount = amount - total_due
-				else:
-					pay_amount = amount
-					amount = 0
-				pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=pay_amount, receipt_no=bank_receipt, \
-					manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
-				pr = pf.receipt
-				pf.save()
-				fee.adjust_payments()
-
-		return pr
-
+	def reset(self):
+		"""
+		reset as if no payments
+		"""
+		self.penalty_paid = 0
+		self.interest_paid = 0
+		self.principle_paid = 0
+		self.residual_interest = 0
+		self.is_paid = False
+		self.remaining_amount = self.amount
+		self.save()
 
 	@property
 	def total_due(self, pay_date=date.today()):
@@ -1107,102 +818,6 @@ class Fee(models.Model):
 			return 0
 		else:
 			return total_due
-
-
-	def adjust_payments(self):
-		remaining_amount = self.amount
-		balance = 0
-		self.penalty = 0
-		self.penalty_paid = 0
-		self.interest_paid = 0
-		self.principle_paid = 0
-		penalty = 0
-		self.residual_interest = 0
-
-		for payment in self.fee_payments.filter(status__code='active').order_by('paid_date').order_by('id'):
-			payment.interest = 0
-			payment.penalty = 0
-			payment.principle = 0
-
-			balance = balance + payment.amount
-
-			#calculate amounts owed before payment
-			calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, remaining_amount)
-			if not penalty:
-				penalty = calc_penalty
-			payment.interest_due = calc_interest + self.residual_interest
-			self.penalty = penalty - self.penalty_paid
-			payment.penalty_due = self.penalty
-			payment.principle_due = remaining_amount
-
-			if balance <= remaining_amount:
-				calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, balance)
-				self.residual_interest = self.residual_interest + calc_interest
-				remaining_amount = remaining_amount - balance
-				payment.interest = 0
-				payment.principle = balance
-				balance = 0
-
-			else: # balance > remaining_amount
-				balance = balance - remaining_amount
-				payment.principle = remaining_amount
-
-				if self.residual_interest > 0:
-					if balance > self.residual_interest:
-						balance = balance - self.residual_interest
-						payment.interest = self.residual_interest
-						self.residual_interest = 0
-					else:
-						self.residual_interest = self.residual_interest - balance
-						payment.interest = balance
-						balance = 0
-
-				calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, remaining_amount)
-
-				if balance > calc_interest:
-					balance = balance - calc_interest
-					payment.interest += calc_interest
-				else:
-					self.residual_interest = self.residual_interest + calc_interest
-					balance = 0
-
-				remaining_amount = 0
-
-			#pay penalty
-			if self.penalty > 0 and balance > 0:
-				if balance >= self.penalty:
-					balance = balance - self.penalty
-					payment.penalty = self.penalty
-
-				elif balance > 0:
-					payment.penalty = balance
-					balance = 0
-
-
-			payment.amount = payment.penalty + payment.interest + payment.principle
-			payment.save()
-
-			self.penalty_paid += payment.penalty
-			self.interest_paid += payment.interest
-			self.principle_paid += payment.principle
-
-
-		#bring interest  penalty up to date
-		calc_penalty, calc_interest = self.calc_penalty(date.today(), remaining_amount)
-		if not penalty:
-			penalty = calc_penalty
-		self.penalty = penalty - self.penalty_paid
-		self.interest = calc_interest + self.residual_interest
-
-		if self.total_due <=0 and self.amount > 0:
-			self.is_paid = True
-		else:
-			self.is_paid = False
-
-		self.submit_date =  timezone.make_aware(datetime.today(), timezone.get_default_timezone())
-		self.save()
-		return balance
-
 
 	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
 
@@ -1224,9 +839,15 @@ class Fee(models.Model):
 		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=payment_amount, receipt_no=bank_receipt,
 			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id, note=notes)
 
-		pf.save()
+		pf.receipt = pr
 
-		balance = self.adjust_payments()
+		pf.save()
+		balance = adjustpayments(pr.receipt_payments.all(), payment_date)
+		if balance and self.business_id:
+			balance = self.business.pay_balance(balance)
+		elif balance and self.prop:
+			balance = self.prop.pay_balance(balance)
+
 		return balance
 
 	def __unicode__(self):
@@ -1348,7 +969,7 @@ class Fee(models.Model):
 					if self.prop.land_zone.code == 'residential' and self.prop.village:
 						if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
 							rate = 30
-						elif self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and  self.prop.village.cell.name.lower in ('muyange') and \
+						elif self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and  self.prop.village.cell.name.lower() in ('muyange') and \
 							self.prop.village.cell.village.name.lower() in ('kamuna','mugeyo'):
 							rate = 70
 						else:
@@ -1457,6 +1078,8 @@ class PayFee(models.Model):
 	receipt = models.ForeignKey(PaymentReceipt, related_name="receipt_payments", null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentfee_status", null=True)
 	i_status = models.CharField(max_length = 10, blank = True)
+	bf = models.IntegerField(help_text="The amount of fee item.", default=0)
+	credit = models.IntegerField(help_text="The amount of fee item.", default=0)
 	objects = PayFeeManager()
 	all_objects = models.Manager()
 
@@ -1667,6 +1290,42 @@ class Duplicate(models.Model):
 	class Meta:
 		db_table = 'asset_duplicate'
 		managed = False
+
+
+def process_payments(amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
+	amount = int(amount)
+	assert payment_date <= date.today(), 'Payment cannot be in the future'
+	active = CategoryChoice.objects.get(category__code='status', code='active')
+	inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+	fees = fees.order_by('due_date')
+
+	entity = None
+	if citizen_id:
+		payer_name = Citizen.objects.get(pk=citizen_id).name
+	elif business_id:
+		payer_name = Business.objects.get(pk=business_id).name
+
+	pr = PaymentReceipt(amount= amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
+	sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
+
+	pr.save()
+	total_payment = 0
+
+	for fee in fees:
+		total_due = int(fee.total_due)
+		if amount > 0 and total_due > 0:
+			if amount > total_due:
+				pay_amount = total_due
+				amount = amount - total_due
+			else:
+				pay_amount = amount
+				amount = 0
+			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=pay_amount, receipt_no=bank_receipt, \
+				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
+			pr = pf.receipt
+			pf.save()
+
+	return pr
 
 
 

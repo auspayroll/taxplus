@@ -1,5 +1,5 @@
 {% extends "common/base_design.html" %}
-{% load staticfiles %}
+{% load staticfiles %}{% load humanize %}
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
@@ -48,6 +48,7 @@
 		<div class="menu_panel_item">Usage: <b>{{property.land_zone}}</b> </div>
 		<div class="menu_panel_item">Size: {{property.area}} sqm </div>
 		<div class="menu_panel_item">{{ property.village.cell.sector.district }} district -> {{ property.village.cell.sector }} sector -> {{ property.village.cell }} cell -> {{ property.village }} village</div>
+		<div class="menu_panel_item">Credit: {{property.credit|intcomma}} Rwf </div>
 
 	</div>
 
