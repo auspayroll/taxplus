@@ -1034,6 +1034,7 @@ class Fee(models.Model):
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
 	amount = models.IntegerField(help_text="The amount of fee item.")
 	interest = models.IntegerField(default=0) # interest remaining; includes residual interest
+	remaining_amount = models.IntegerField(default=0) # interest remaining; includes residual interest
 	penalty = models.IntegerField(default=0) # penalty remaining
 	penalty_paid = models.IntegerField(default=0) # full amount of penalty
 	interest_paid = models.IntegerField(default=0) # full amount of penalty
