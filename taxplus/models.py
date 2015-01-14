@@ -1062,13 +1062,6 @@ class Fee(models.Model):
 		db_table = 'jtax_fee'
 		ordering = ['-due_date', 'pk']
 
-	@property
-	def remaining_amount(self):
-		remaining_amount = self.amount - self.principle_paid
-		if remaining_amount < 0:
-			return 0
-		else:
-			return remaining_amount
 
 
 	@classmethod
