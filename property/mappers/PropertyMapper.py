@@ -66,15 +66,12 @@ class PropertyMapper:
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
 	@staticmethod
 	def getPropertyByUPI(upi):
-		info = Common.getInfoFromUPI(upi)
-		if not info:
+		#info = Common.getInfoFromUPI(upi)
+		property = Property.objectsIgnorePermission.filter(upi=upi)
+		if not property:
 			return None
 		else:
-			property = Property.objects.filter(cell__code__exact = info['cell_code'], parcel_id = info['parcel_id'])
-			if not property:
-				return None
-			else:
-				return property[0]
+			return property[0]
 	
 	
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""

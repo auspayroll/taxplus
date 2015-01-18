@@ -378,6 +378,7 @@ class Property(models.Model):
 	land_use_types = models.ManyToManyField(LandUse)
 	lease_type = models.ForeignKey(LandUse, related_name='leased_property', null=True, blank=True, default=None)
 	land_zone = models.ForeignKey(CategoryChoice, related_name="pp_land_zone", null=True, blank=True)
+	upi = models.CharField(max_length=20, null=True, blank=True)
 
 
 	def get_sq_m(self):
