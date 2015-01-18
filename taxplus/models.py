@@ -7,11 +7,11 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from django.db.models import Sum
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 import binascii
 from dateutil import parser
 import os
 from dateutil.relativedelta import relativedelta
-from taxplus.functions import adjust_payments as adjustpayments
 
 
 class PMUser(models.Model):
@@ -239,7 +239,6 @@ class Citizen(models.Model):
 	status_new = models.ForeignKey(CategoryChoice, null=True)
 	entity_id = models.IntegerField(null=True)
 
-
 	class Meta:
 		db_table = 'citizen_citizen'
 
@@ -314,26 +313,39 @@ class Business(models.Model):
 		self.adjust_payments()
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
+	def reset_fees(self):
+		fees = self.property_fees.filter(business_payments__isnull=True).distinct()
+		for fee in fees:
+			fee.reset()
+
+
 	def adjust_payments(self):
-		payments = PayFee.objects.filter(fee__business=self, fee__due_date__isnull=False, paid_date__isnull=False)
-		balance = adjustpayments(payments)
+		pay_fees = PayFee.objects.filter(business=self).order_by('receipt__date_time', 'pk')
+		balance = 0
+		receipt = None
+		for pay_fee in pay_fees:
+			if not receipt or receipt.pk != pay_fee.receipt.pk:
+				pay_fee.receipt.bf = balance
 
-
-	def pay_balance(self, balance=None):
-		if not balance:
-			balance = self.credit
-		outstanding_fees = self.business_fees.filter(is_paid=False)
-		if balance > 0 and outstanding_fees:
-			fee_ids=[fee.pk for fee in outstanding_fees]
-			receipt = process_payments(balance, payment_date=date.today(), citizen_id=None, business_id=self.pk,\
-				sector_receipt='CREDIT', payer_name='SYSTEM-CREDIT', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
-			receipt.amount = 0
+			receipt = pay_fee.receipt
+			balance = pay_fee.fee.pay()
+			receipt.credit = balance
 			receipt.save()
-			payments = PayFee.objects.filter(fee__business=self).order_by('paid_date')
-			balance = adjustpayments(payments, date_from=date.today())
-			print '--------CREDITED---%s--------' % balance
-		return balance
 
+		self.credit = balance
+		self.save()
+
+	def pay_balance(self):
+		outstanding_fees = self.business_fees.filter(is_paid=False).order_by('due_date')
+		if outstanding_fees and self.credit:
+			pr = PaymentReceipt(amount=0, bf=self.credit, paid_date=date.today(), citizen_id=None, business_id=self.pk, payer_name=self.name,
+				sector_receipt='CREDIT', bank_receipt='CREDIT', status=active, i_status='active', user_id=1, bank='CREDIT')
+
+			pr.save()
+
+			for fee in outstanding_fees:
+				self.credit = fee.pay(receipt, self.credit)
+			self.save(update_fields=['credit'])
 
 
 	def calc_taxes(self, now=None, include_only=False):
@@ -521,23 +533,33 @@ class Property(models.Model):
 			yield ownership.owner
 
 	def adjust_payments(self):
-		self.reset_fees()
-		payments = PayFee.objects.filter(fee__prop=self, fee__due_date__isnull=False, paid_date__isnull=False).order_by('paid_date')
-		if payments:
-			payment = payments[0]
-			payment.bf = 0
-			payment.save()
-			balance = adjustpayments(payments)
-			self.credit = balance
-		else:
-			self.credit = 0
+		pay_fees = PayFee.objects.filter(prop=self).order_by('receipt__date_time', 'pk')
+		receipt = None
+		balance = 0
+		for pay_fee in pay_fees:
+			if not receipt or receipt.pk != pay_fee.receipt.pk:
+				pay_fee.receipt.bf = balance
 
-		self.save(update_fields=['credit'])
-		return self.credit
+			receipt = pay_fee.receipt
+			balance = pay_fee.fee.pay()
+			receipt.credit = balance
+			receipt.save()
 
-	def pay_balance(self, balance=None):
-		if not balance:
-			balance = self.credit
+		self.credit = balance
+		self.save()
+
+	def pay_balance(self):
+		outstanding_fees = self.business_fees.filter(is_paid=False)
+		if outstanding_fees and self.credit:
+			pr = PaymentReceipt(amount=0, bf=self.credit, paid_date=date.today(), citizen_id=None, business_id=self.pk, payer_name=self.name,
+				sector_receipt='CREDIT', bank_receipt='CREDIT', status=active, i_status='active', user_id=1, bank='CREDIT')
+
+			pr.save()
+
+			for fee in outstanding_fees:
+				self.credit = fee.pay(receipt, self.credit)
+			self.save(update_fields=['credit'])
+
 
 		outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
 		if balance > 0 and outstanding_fees:
@@ -811,6 +833,7 @@ class Fee(models.Model):
 		self.remaining_amount = self.amount
 		self.save()
 
+
 	@property
 	def total_due(self, pay_date=date.today()):
 		total_due = self.remaining_amount + self.penalty + self.interest
@@ -819,35 +842,124 @@ class Fee(models.Model):
 		else:
 			return total_due
 
-	def process_payment(self, payment_date, sector_receipt, bank_receipt, payment_amount, staff_id, bank, payer_name, citizen_id=None, business_id=None, notes=None):
+	def pay(self, receipt=None, payment_amount=0):
 
+		payments = self.fee_payments.filter(status__code='active').order_by('paid_date', 'id')
+		self.penalty = self.penalty_paid = self.interest_paid = 0 
+		balance = self.principle_paid = self.residual_interest = 0
+		self.remaining_amount = self.amount
 		active = CategoryChoice.objects.get(category__code='status', code='active')
-		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		if receipt:
+			pf = PayFee(citizen_id=receipt.citizen_id, business_id=receipt.business_id, fee=self, amount=0, 
+			receipt_no=receipt.bank_receipt, manual_receipt=receipt.sector_receipt, 
+				bank=receipt.bank, paid_date=receipt.paid_date, fine_amount = 0, receipt=receipt, 
+				status=active, i_status='active', staff_id=receipt.user.pk)
 
-		payment_amount = int(payment_amount)
+			pf.save()
 
-		if citizen_id:
-			payer_name = Citizen.objects.get(pk=citizen_id).name
+		for payment in payments:
+			if not payment.receipt or not payment.paid_date:
+				continue
 
-		elif business_id:
-			payer_name = Business.objects.get(pk=business_id).name
+			payment.bf = balance
 
-		pr = PaymentReceipt(amount= payment_amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id,
-			sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank, payer_name=payer_name, note=notes)
-		pr.save()
+			#calculate amounts owed before payment
+			calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, self.remaining_amount)
+			if not self.penalty:
+				self.penalty = calc_penalty
 
-		pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=self, amount=payment_amount, receipt_no=bank_receipt,
-			manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id, note=notes)
+			payment.interest_due = calc_interest + self.residual_interest
+			self.penalty = self.penalty - self.penalty_paid
+			payment.penalty_due = self.penalty
+			payment.principle_due = self.remaining_amount
 
-		pf.receipt = pr
+			if receipt and payment.receipt.pk == receipt.pk:
+				balance = balance + payment_amount
 
-		pf.save()
-		balance = adjustpayments(pr.receipt_payments.all(), payment_date)
-		if balance and self.business_id:
-			balance = self.business.pay_balance(balance)
-		elif balance and self.prop:
-			balance = self.prop.pay_balance(balance)
+				if balance <= self.remaining_amount:
+					_, calc_interest_balance = self.calc_penalty(payment.paid_date, self.remaining_amount - balance)
+					calc_interest = calc_interest - calc_interest_balance
+					self.residual_interest = self.residual_interest + calc_interest
+					self.remaining_amount = self.remaining_amount - balance
+					payment.interest = 0
+					payment.principle = balance
+					balance = 0
 
+				else: # balance > remaining amount
+					balance = balance - self.remaining_amount
+					payment.principle = self.remaining_amount
+
+					# pay off residual interest
+					if self.residual_interest > 0:
+						if balance > self.residual_interest:
+							balance = balance - self.residual_interest
+							payment.interest = self.residual_interest
+							self.residual_interest = 0
+
+						else:
+							self.residual_interest = self.residual_interest - balance
+							payment.interest = balance
+							balance = 0
+
+					# pay off remaining interest based on self.remaining_amount
+					if balance > calc_interest:
+						balance = balance - calc_interest
+						payment.interest = payment.interest + calc_interest
+
+					else:
+						self.residual_interest = self.residual_interest + (calc_interest - balance)
+						balance = 0
+
+					self.remaining_amount = 0
+
+				#pay off penalty
+				if self.penalty > 0 and balance > 0:
+					if balance >= self.penalty:
+						balance = balance - self.penalty
+						payment.penalty = self.penalty
+
+					elif balance > 0:
+						payment.penalty = balance
+						balance = 0
+
+				payment.amount = payment.penalty + payment.interest + payment.principle
+
+			else: # previous payment
+				balance = balance + payment.amount - payment.interest_due - payment.penalty_due - payment.principle_due
+				if balance < 0:
+					balance = 0
+
+				#remaining amount
+				if payment.principle >= self.remaining_amount:
+					self.remaining_amount = 0
+
+				else:
+					self.remaining_amount -= payment.principle
+
+				#residual interest
+				if payment.interest >= payment.interest_due:
+					self.residual_interest = 0
+
+				elif payment.interest > calc_interest and self.residual_interest > 0:
+					self.residual_interest = payment.interest_due - payment.interest
+
+			payment.credit = balance
+			payment.save()
+			self.penalty_paid += payment.penalty
+			self.interest_paid += payment.interest
+			self.principle_paid += payment.principle
+
+		calc_penalty, calc_interest = self.calc_penalty(date.today(), self.remaining_amount)
+		if not self.penalty:
+		    self.penalty = calc_penalty
+		self.penalty = self.penalty - self.penalty_paid
+		self.interest = calc_interest + self.residual_interest
+		if self.total_due <= 0:
+			self.is_paid = True
+		else:
+			self.is_paid = False
+
+		self.save()
 		return balance
 
 	def __unicode__(self):
@@ -1046,6 +1158,8 @@ class PaymentReceipt(models.Model):
 	payer_name = models.CharField(max_length=100, blank = True, null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentreceipt_status", null=True)
 	payer = models.ForeignKey(Entity, related_name="payments", null=True)
+	bf = models.IntegerField(help_text="The amount of fee item.", default=0)
+	credit = models.IntegerField(help_text="The amount of fee item.", default=0)
 
 	class Meta:
 		db_table = 'jtax_multipayreceipt'
@@ -1292,42 +1406,54 @@ class Duplicate(models.Model):
 		managed = False
 
 
-def process_payments(amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
-	amount = int(amount)
-	assert payment_date <= date.today(), 'Payment cannot be in the future'
-	active = CategoryChoice.objects.get(category__code='status', code='active')
-	inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
-	fees = fees.order_by('due_date')
+def process_payment(payment_amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
+	fee = fees[0]
+	prop_id = None
+	if fee.prop:
+		prop_id = fee.prop.pk
+		credit = fee.prop.credit
 
-	entity = None
+	elif fee.business_id:
+		business = get_object_or_404(Business, pk=business_id)
+		credit = business.credit
+		
+	if business_id:
+		business = get_object_or_404(Business, pk=business_id)
+		payer_name = business.name
 	if citizen_id:
-		payer_name = Citizen.objects.get(pk=citizen_id).name
-	elif business_id:
-		payer_name = Business.objects.get(pk=business_id).name
+		citizen = get_object_or_404(Citizen, pk=citizen_id)
+		payer_name = citizen.name
 
-	pr = PaymentReceipt(amount= amount, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
-	sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
+	active = CategoryChoice.objects.get(category__code='status', code='active')
+	receipt = PaymentReceipt(amount=0, bf=credit, paid_date=payment_date, citizen_id=citizen_id, business_id=business_id, payer_name=payer_name,
+		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
-	pr.save()
-	total_payment = 0
+	receipt.save()
 
+	balance = payment_amount + credit
 	for fee in fees:
-		total_due = int(fee.total_due)
-		if amount > 0 and total_due > 0:
-			if amount > total_due:
-				pay_amount = total_due
-				amount = amount - total_due
-			else:
-				pay_amount = amount
-				amount = 0
-			pf = PayFee(citizen_id=citizen_id, business_id=business_id, fee=fee, amount=pay_amount, receipt_no=bank_receipt, \
-				manual_receipt=sector_receipt, bank=bank, paid_date=payment_date, fine_amount = 0, receipt=pr, status=active, i_status='active', staff_id=staff_id)
-			pr = pf.receipt
-			pf.save()
+		if balance > 0 and not fee.is_paid:
+			balance = fee.pay(receipt, balance)
 
-	return pr
+	outstanding_fees = []
+	if prop_id:
+		outstanding_fees = Fee.objects.filter(business__pk=prop_id, is_paid=False).order_by('due_date')
 
+	elif business_id:
+		outstanding_fees = Fee.objects.filter(prop__pk=business_id, is_paid=False).order_by('due_date')
 
+	for fee in outstanding_fees:
+		if balance > 0:
+			balance = fee.pay(receipt, balance)
 
+	receipt.credit = balance
+	receipt.save()
+	if prop_id:
+		fee.prop.credit = balance
+		fee.prop.save(update_fields=['credit'])
 
+	elif fee.business_id:
+		business.credit = balance
+		business.save(update_fields=['credit'])
 
+	return balance

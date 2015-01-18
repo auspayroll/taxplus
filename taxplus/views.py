@@ -20,6 +20,7 @@ from taxplus.management.commands.generate_invoices import generate_invoice
 from django.forms.models import modelformset_factory
 
 
+
 @login_required
 def leases(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
@@ -399,7 +400,8 @@ def business_fees(request, pk):
 def payFee(request, pk=None):
 	business_id = None
 	citizen_id = None
-	fee = get_object_or_404(Fee, pk=pk)
+	fees = Fee.objects.filter(pk=pk)
+	fee = fees[0]
 	payer_name = ''
 
 	if fee.total_due <= 0:
@@ -426,13 +428,9 @@ def payFee(request, pk=None):
 			else:
 				d = form.cleaned_data
 				user = request.session.get('user')
-				fee.process_payment(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id, sector_receipt=d.get('sector_receipt'), \
-					bank_receipt=d.get('bank_receipt'), payment_amount=d.get('amount'), staff_id=user.pk, bank=d.get('bank'), payer_name=payer_name)
+				process_payment(payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id, sector_receipt=d.get('sector_receipt'), \
+					bank_receipt=d.get('bank_receipt'), payment_amount=d.get('amount'), staff_id=user.pk, bank=d.get('bank'), payer_name=payer_name, fees=fees)
 				messages.success(request, "Payment successful")
-				if fee.business_id:
-					balance = fee.business.adjust_payments()
-				elif fee.prop:
-					balance = fee.prop.adjust_payments()
 				if fee.prop_id:
 					return HttpResponseRedirect(reverse('property_fees', args=[fee.prop_id]))
 				elif fee.business_id:
@@ -481,32 +479,19 @@ def paySelectedFees(request):
 			citizen_id = None
 			business_id = None
 			payer_type = form.cleaned_data.get('payer_type')
-			if payer_type == 'citizen':
-				citizen_id = form.cleaned_data.get('citizen_id')
-				if citizen_id:
-					citizen = Citizen.objects.get(pk=citizen_id)
-				payer_name = form.cleaned_data.get('payer_name')
-
-			elif payer_type == 'business':
-				business_id = form.cleaned_data.get('business_id')
-				if business_id:
-					business = Business.objects.get(pk=business_id)
-				payer_name = form.cleaned_data.get('payer_name')
+			payer_name = form.cleaned_data.get('payer_name')
+			citizen_id = form.cleaned_data.get('citizen_id')
+			business_id = form.cleaned_data.get('business_id')
 
 			if request.POST.get('process_payment'): #process payment
 				d = form.cleaned_data
 				user = request.session.get('user')
 				amount = form.cleaned_data['amount']
 
-				payment_receipt = process_payments(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
+				payment_receipt = process_payment(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
 					payer_name=d.get('payer_name'), sector_receipt=d.get('sector_receipt'),
 					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee=fees)
 
-				fee = fees[0]
-				if fee.business_id:
-					balance = fee.business.adjust_payments()
-				elif fee.prop:
-					balance = fee.prop.adjust_payments()
 				#redirect to receipt
 				return HttpResponseRedirect(reverse('tax_receipt', args=(payment_receipt.pk,)))
 
