@@ -49,7 +49,7 @@ urlpatterns = patterns('',
 	#url(r'^api/', include('api.urls')),
 	url(r'^$','admin.views.login'),
 	url(r'^temppassword/','admin.views.set_temp_password'),
-	url(r'^test/',include('mytest.urls')),
+	#url(r'^test/',include('mytest.urls')),
 )
 
 urlpatterns += patterns('',
