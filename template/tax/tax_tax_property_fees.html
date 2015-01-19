@@ -114,15 +114,20 @@
 
 			    	<td colspan="10" style="border-top:0; padding-top:0; padding-bottom:10px; padding-left:5px; padding-right:0">
 					    	<table id="payment_table">
-					    	<tr><th>Principle Due</th><th>Penalty Due</th><th>Interest Due</th>
-					    		<th>Total Due</th><th><i>B.Forward</i></th><th>Payment Amount</th><th><i>Credit</i></th>
+					    	<tr><th>Principle Due</th>
+					    		<th>Interest Due</th>
+					    		<th>Penalty Due</th>
+					    		<th>Total Due</th>
+					    		<th>B.F</th>
+					    		<th>Payment Amount</th>
+					    		<th>C.F</th>
 					    		<th>Paid on</th><th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
 							{% for payment in payments %}
 								{% if payment.fee.pk = fee.pk %}
 								<tr>
 									<td>{{ payment.principle_due|intcomma }}</td>
-									<td>{{payment.penalty_due|intcomma}}</td>
 									<td>{{payment.interest_due|intcomma}}</td>
+									<td>{{payment.penalty_due|intcomma}}</td>
 									<td>{{ payment.total_due|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
 									<td><b>{{ payment.bf|intcomma }}</b></td>
 									<td><b>{{ payment.amount|intcomma }}</b></td>

@@ -152,7 +152,6 @@ class DistrictStats(Master):
 	no_liquidated = models.IntegerField()
 
 
-
 class Zone(Master):
 	code = models.CharField(max_length=5)
 	name = models.CharField(max_length=50, help_text="Zone name")
@@ -211,8 +210,6 @@ class BusinessCategory(models.Model):
 		return self.name
 
 
-
-
 class Citizen(models.Model):
 	first_name = models.CharField(max_length = 50, help_text = 'First name')
 	last_name = models.CharField(max_length = 50, help_text = 'Last name')
@@ -251,7 +248,6 @@ class Citizen(models.Model):
 
 	def __unicode__(self):
 		return self.name
-
 
 
 class Business(models.Model):
@@ -314,10 +310,9 @@ class Business(models.Model):
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
 	def reset_fees(self):
-		fees = self.property_fees.filter(business_payments__isnull=True).distinct()
+		fees = self.business_fees.filter(business_payments__isnull=True).distinct()
 		for fee in fees:
 			fee.reset()
-
 
 	def adjust_payments(self):
 		pay_fees = PayFee.objects.filter(business=self).order_by('receipt__date_time', 'pk')
@@ -346,7 +341,6 @@ class Business(models.Model):
 			for fee in outstanding_fees:
 				self.credit = fee.pay(receipt, self.credit)
 			self.save(update_fields=['credit'])
-
 
 	def calc_taxes(self, now=None, include_only=False):
 		"""
@@ -467,7 +461,6 @@ class IdentityDocument(models.Model):
 	foreign_identity_number = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity ID.')
 
 
-
 class Property(models.Model):
 	#plot_id = models.CharField(max_length = 50, unique = True, null=True, blank = True, help_text="Each Plot ID identifies a property.")
 	is_leasing = models.BooleanField(default=False, help_text='check whether the property is leased out')
@@ -533,7 +526,7 @@ class Property(models.Model):
 			yield ownership.owner
 
 	def adjust_payments(self):
-		pay_fees = PayFee.objects.filter(prop=self).order_by('receipt__date_time', 'pk')
+		pay_fees = PayFee.objects.filter(fee__prop=self).order_by('receipt__date_time', 'pk')
 		receipt = None
 		balance = 0
 		for pay_fee in pay_fees:
@@ -549,7 +542,7 @@ class Property(models.Model):
 		self.save()
 
 	def pay_balance(self):
-		outstanding_fees = self.business_fees.filter(is_paid=False)
+		outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
 		if outstanding_fees and self.credit:
 			pr = PaymentReceipt(amount=0, bf=self.credit, paid_date=date.today(), citizen_id=None, business_id=self.pk, payer_name=self.name,
 				sector_receipt='CREDIT', bank_receipt='CREDIT', status=active, i_status='active', user_id=1, bank='CREDIT')
@@ -559,20 +552,6 @@ class Property(models.Model):
 			for fee in outstanding_fees:
 				self.credit = fee.pay(receipt, self.credit)
 			self.save(update_fields=['credit'])
-
-
-		outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
-		if balance > 0 and outstanding_fees:
-			receipt = process_payments(balance, payment_date=date.today(), citizen_id=None, business_id=None,\
-				sector_receipt='CREDIT', payer_name='SYSTEM-CREDIT', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
-			receipt.amount = 0
-			receipt.save()
-			payments = PayFee.objects.filter(fee__prop=self).order_by('paid_date')
-			balance = adjustpayments(payments, date_from=date.today())
-			self.credit = balance
-			self.save(update_fields=('credit',))
-			print '--------CREDITED---%s--------' % balance
-		return balance
 
 	def __unicode__(self):
 		if self.street_number and self.street and self.street_type:
@@ -786,6 +765,7 @@ class FeeManager(models.Manager):
 	def get_query_set(self):
 		return super(FeeManager,self).get_query_set().filter(status__code='active')
 
+
 class Fee(models.Model):
 	# new  field
 	category = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'fee_type'}, related_name='fee_type', null=True)
@@ -810,6 +790,8 @@ class Fee(models.Model):
 	prop = models.ForeignKey(Property, null=True, blank=True, related_name='property_fees', db_column='property_id')
 	qty = models.FloatField(default=0)
 	rate = models.FloatField(default=0)
+	interest_charged = models.IntegerField(default=0)
+	penalty = models.IntegerField(default=0)
 	period_from = models.DateTimeField(help_text="The start date of a period that this fee item is for.")
 	period_to = models.DateTimeField(help_text="The end date of a period that this fee item is for.")
 	objects = FeeManager()
@@ -819,7 +801,6 @@ class Fee(models.Model):
 	class Meta:
 		db_table = 'jtax_fee'
 		ordering = ['-due_date', 'pk']
-
 
 	def reset(self):
 		"""
@@ -831,8 +812,10 @@ class Fee(models.Model):
 		self.residual_interest = 0
 		self.is_paid = False
 		self.remaining_amount = self.amount
+		self.penalty_charged, self.interest_charged = self.calc_penalty(date.today(), self.amount)
+		self.penalty = self.penalty_charged
+		self.interest = self.interest_charged
 		self.save()
-
 
 	@property
 	def total_due(self, pay_date=date.today()):
@@ -843,10 +826,13 @@ class Fee(models.Model):
 			return total_due
 
 	def pay(self, receipt=None, payment_amount=0):
-
+		"""
+		process a payment for a Fee
+		all other payments will be re-adjusted according to the Fee paid date.
+		"""
 		payments = self.fee_payments.filter(status__code='active').order_by('paid_date', 'id')
 		self.penalty = self.penalty_paid = self.interest_paid = 0
-		balance = self.principle_paid = self.residual_interest = 0
+		balance = self.principle_paid = self.residual_interest = penalty = self.penalty_charged = self.interest_charged = 0
 		self.remaining_amount = self.amount
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		if receipt:
@@ -857,7 +843,8 @@ class Fee(models.Model):
 
 			pf.save()
 
-
+		#import pdb
+		#pdb.set_trace()
 		for payment in payments:
 			if not payment.receipt or not payment.paid_date:
 				continue
@@ -866,12 +853,12 @@ class Fee(models.Model):
 
 			#calculate amounts owed before payment
 			calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, self.remaining_amount)
-			if not self.penalty:
-				self.penalty = calc_penalty
+			if not self.penalty_charged:
+				self.penalty_charged = calc_penalty
 
-			payment.interest_due = calc_interest + self.residual_interest
-			self.penalty = self.penalty - self.penalty_paid
+			self.penalty = self.penalty_charged - self.penalty_paid
 			payment.penalty_due = self.penalty
+			payment.interest_due = calc_interest + self.residual_interest - self.interest_paid
 			payment.principle_due = self.remaining_amount
 
 			if receipt and payment.receipt.pk == receipt.pk:
@@ -880,7 +867,7 @@ class Fee(models.Model):
 				if balance <= self.remaining_amount:
 					_, calc_interest_balance = self.calc_penalty(payment.paid_date, self.remaining_amount - balance)
 					calc_interest = calc_interest - calc_interest_balance
-					self.residual_interest = self.residual_interest + calc_interest
+					self.residual_interest += calc_interest
 					self.remaining_amount = self.remaining_amount - balance
 					payment.interest = 0
 					payment.principle = balance
@@ -889,27 +876,17 @@ class Fee(models.Model):
 				else: # balance > remaining amount
 					balance = balance - self.remaining_amount
 					payment.principle = self.remaining_amount
+					self.residual_interest += calc_interest #add together interest
 
-					# pay off residual interest
+					# pay off interest
 					if self.residual_interest > 0:
 						if balance > self.residual_interest:
 							balance = balance - self.residual_interest
 							payment.interest = self.residual_interest
-							self.residual_interest = 0
 
 						else:
-							self.residual_interest = self.residual_interest - balance
 							payment.interest = balance
 							balance = 0
-
-					# pay off remaining interest based on self.remaining_amount
-					if balance > calc_interest:
-						balance = balance - calc_interest
-						payment.interest = payment.interest + calc_interest
-
-					else:
-						payment.interest += balance
-						balance = 0
 
 					self.remaining_amount = 0
 
@@ -924,19 +901,16 @@ class Fee(models.Model):
 						balance = 0
 
 			else: # previous payments
-				balance = payment.principle + payment.penalty + payment.interest - payment.interest_due - payment.penalty_due - payment.principle_due
-
+				balance += payment.principle + payment.penalty + payment.interest - payment.interest_due - payment.penalty_due - payment.principle_due
 				#remaining amount
 				if payment.principle >= self.remaining_amount:
+					self.residual_interest += calc_interest
 					self.remaining_amount = 0
 
 				else:
 					self.remaining_amount -= payment.principle
-
-				#residual interest
-				if payment.principle < payment.principle_due:
-					residual_interest = self.calc_penalty(payment.paid_date, payment.principle_due)[1] - self.calc_penalty(payment.paid_date, (payment.principle_due - payment.principle))[1]
-					self.residual_interest += residual_interest
+					interest_on_principle = self.calc_penalty(payment.paid_date, self.remaining_amount)[1] - self.calc_penalty(payment.paid_date, (self.remaining_amount - payment.principle))[1]
+					self.residual_interest += interest_on_principle
 
 			if balance < 0:
 				balance = 0
@@ -948,10 +922,11 @@ class Fee(models.Model):
 			self.principle_paid += payment.principle
 
 		calc_penalty, calc_interest = self.calc_penalty(date.today(), self.remaining_amount)
-		if not self.penalty:
-		    self.penalty = calc_penalty
-		self.penalty = self.penalty - self.penalty_paid
-		self.interest = calc_interest + self.residual_interest
+		if not self.penalty_charged:
+			self.penalty_charged = calc_penalty
+		self.penalty = self.penalty_charged - self.penalty_paid
+		self.interest_charged = calc_interest + self.residual_interest
+		self.interest = self.interest_charged - self.interest_paid
 		if self.total_due <= 0:
 			self.is_paid = True
 		else:
@@ -972,7 +947,6 @@ class Fee(models.Model):
 
 	def get_remaining_amount(self):
 		return self.remaining_amount
-
 
 	@property
 	def addressee(self):
@@ -1107,7 +1081,6 @@ class Fee(models.Model):
 				if self.date_from.month != 1 and self.date_from.day != 1 or self.date_to.month != 12 and self.date_to.day != 31:
 					self.amount = self.amount * ((self.date_to - self.date_from ).days + 1.0) / float( 1 + (date(self.date_to.year,12,31) - date(self.date_from.year,1,1)).days )
 				self.amount = round(self.amount)
-
 
 	def calc_amount(self, save=True):
 		"""
@@ -1270,7 +1243,6 @@ class PropertyOwnership(models.Model):
 		managed = False
 
 
-
 class DebtorsReport(models.Model):
 	as_at = models.DateField(auto_now_add=True)
 	fee_type = models.CharField(max_length=30)
@@ -1318,7 +1290,6 @@ class Log(models.Model):
 		db_table = 'log_log'
 
 
-
 class Rate(models.Model):
 	category = models.ForeignKey(CategoryChoice, related_name='rate_category')
 	sub_category = models.ForeignKey(CategoryChoice, related_name='rate_subcategory')
@@ -1348,7 +1319,6 @@ class RateNotFound(models.Model):
 	cell = models.ForeignKey(Cell, null=True)
 	sector = models.ForeignKey(Sector, null=True)
 	created = models.DateTimeField(auto_now_add=True)
-
 
 
 class MediaManager(models.Manager):
@@ -1403,7 +1373,6 @@ class Duplicate(models.Model):
 		db_table = 'asset_duplicate'
 		managed = False
 
-
 def process_payment(payment_amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
 	fee = fees[0]
 	prop_id = None
@@ -1414,7 +1383,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 	elif fee.business_id:
 		business = get_object_or_404(Business, pk=business_id)
 		credit = business.credit
-		
+
 	if business_id:
 		business = get_object_or_404(Business, pk=business_id)
 		payer_name = business.name
@@ -1435,7 +1404,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 
 	outstanding_fees = []
 	if prop_id:
-		outstanding_fees = Fee.objects.filter(business__pk=prop_id, is_paid=False).order_by('due_date')
+		outstanding_fees = Fee.objects.filter(prop__pk=prop_id, is_paid=False).order_by('due_date')
 
 	elif business_id:
 		outstanding_fees = Fee.objects.filter(prop__pk=business_id, is_paid=False).order_by('due_date')
