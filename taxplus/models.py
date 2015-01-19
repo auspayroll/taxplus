@@ -1381,7 +1381,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		credit = fee.prop.credit
 
 	elif fee.business_id:
-		business = get_object_or_404(Business, pk=business_id)
+		business = get_object_or_404(Business, pk=fee.business_id)
 		credit = business.credit
 
 	if business_id:

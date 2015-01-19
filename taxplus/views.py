@@ -393,7 +393,8 @@ def property_fees(request, pk):
 def business_fees(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	fees = business.business_fees.filter(amount__gt=0)
-	return TemplateResponse(request, 'tax/business_fees.html', { 'business':business, 'fees':fees })
+	payments = PayFee.objects.filter(fee__in=fees)
+	return TemplateResponse(request, 'tax/business_fees_new.html', { 'business':business, 'fees':fees, 'payments':payments  })
 
 
 @login_required
@@ -412,6 +413,7 @@ def payFee(request, pk=None):
 		form = PaymentForm(request.POST, fee=fee)
 
 		if form.is_valid():
+
 			payer_type = form.cleaned_data.get('payer_type')
 			payer_name = form.cleaned_data.get('payer_name')
 			payer = None
