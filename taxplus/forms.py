@@ -150,7 +150,7 @@ class PaymentForm(forms.Form):
 	business_id = forms.IntegerField(widget=forms.HiddenInput(), initial=None, required=False)
 	payer_name = forms.CharField(max_length=200, required=True)
 	payer_id = forms.CharField(required=False)
-	amount = CurrencyField(label="Payment Amount") #  widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'})
+	amount = forms.IntegerField(label="Payment Amount") #  widget=forms.TextInput(attrs={'class':'disabled', 'readonly':'readonly'})
 	sector_receipt = forms.CharField(label="Sector Receipt Number")
 	payer_type = forms.ChoiceField(widget=forms.RadioSelect, label="Payer", required=False, choices=payer_type_choices)
 	bank = forms.ChoiceField(choices=bank_choices)
