@@ -1139,7 +1139,7 @@ class Fee(models.Model):
 
 # Model for Receipt of Multiple Tax/Fee payment
 class PaymentReceipt(models.Model):
-	amount = models.DecimalField(max_digits = 20, decimal_places = 2)
+	amount = models.IntegerField(default=0)
 	#user = models.ForeignKey(PMUser, null=True, blank = True)
 	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
 	fees = models.ManyToManyField(Fee, related_name='fee_receipts', through='PayFee')
