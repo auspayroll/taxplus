@@ -845,17 +845,18 @@ class Fee(models.Model):
 	def pay(self, receipt=None, payment_amount=0):
 
 		payments = self.fee_payments.filter(status__code='active').order_by('paid_date', 'id')
-		self.penalty = self.penalty_paid = self.interest_paid = 0 
+		self.penalty = self.penalty_paid = self.interest_paid = 0
 		balance = self.principle_paid = self.residual_interest = 0
 		self.remaining_amount = self.amount
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		if receipt:
-			pf = PayFee(citizen_id=receipt.citizen_id, business_id=receipt.business_id, fee=self, amount=0, 
-			receipt_no=receipt.bank_receipt, manual_receipt=receipt.sector_receipt, 
-				bank=receipt.bank, paid_date=receipt.paid_date, fine_amount = 0, receipt=receipt, 
+			pf = PayFee(citizen_id=receipt.citizen_id, business_id=receipt.business_id, fee=self, amount=0,
+			receipt_no=receipt.bank_receipt, manual_receipt=receipt.sector_receipt,
+				bank=receipt.bank, paid_date=receipt.paid_date, fine_amount = 0, receipt=receipt,
 				status=active, i_status='active', staff_id=receipt.user.pk)
 
 			pf.save()
+
 
 		for payment in payments:
 			if not payment.receipt or not payment.paid_date:
@@ -907,7 +908,7 @@ class Fee(models.Model):
 						payment.interest = payment.interest + calc_interest
 
 					else:
-						self.residual_interest = self.residual_interest + (calc_interest - balance)
+						payment.interest += balance
 						balance = 0
 
 					self.remaining_amount = 0
@@ -922,12 +923,8 @@ class Fee(models.Model):
 						payment.penalty = balance
 						balance = 0
 
-				payment.amount = payment.penalty + payment.interest + payment.principle
-
-			else: # previous payment
-				balance = balance + payment.amount - payment.interest_due - payment.penalty_due - payment.principle_due
-				if balance < 0:
-					balance = 0
+			else: # previous payments
+				balance = payment.principle + payment.penalty + payment.interest - payment.interest_due - payment.penalty_due - payment.principle_due
 
 				#remaining amount
 				if payment.principle >= self.remaining_amount:
@@ -937,13 +934,14 @@ class Fee(models.Model):
 					self.remaining_amount -= payment.principle
 
 				#residual interest
-				if payment.interest >= payment.interest_due:
-					self.residual_interest = 0
+				if payment.principle < payment.principle_due:
+					residual_interest = self.calc_penalty(payment.paid_date, payment.principle_due)[1] - self.calc_penalty(payment.paid_date, (payment.principle_due - payment.principle))[1]
+					self.residual_interest += residual_interest
 
-				elif payment.interest > calc_interest and self.residual_interest > 0:
-					self.residual_interest = payment.interest_due - payment.interest
-
+			if balance < 0:
+				balance = 0
 			payment.credit = balance
+			payment.amount = payment.principle + payment.interest + payment.penalty
 			payment.save()
 			self.penalty_paid += payment.penalty
 			self.interest_paid += payment.interest
