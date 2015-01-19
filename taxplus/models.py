@@ -1149,7 +1149,7 @@ class PayFee(models.Model):
 	#receipts = models.ManyToManyField(PaymentReceipt, through='MultipayReceiptPaymentRelation', related_name='line_items')
 	bank =  models.CharField(max_length = 100, null=True, blank=True)
 	paid_date = models.DateField()
-	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0,null=True, blank = True)
+	fine_amount = models.IntegerField(default=0, null=True, blank = True)
 	penalty =  models.IntegerField(default=0)
 	interest = models.IntegerField(default=0)
 	principle = models.IntegerField(default=0)
