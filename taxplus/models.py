@@ -1054,7 +1054,7 @@ class Fee(models.Model):
 						if self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and self.prop.village.cell.sector.name.lower() in ('gahanga', 'masaka'):
 							rate = 30
 						elif self.prop.village.cell.sector.district.name.lower() == 'kicukiro' and  self.prop.village.cell.name.lower() in ('muyange') and \
-							self.prop.village.cell.village.name.lower() in ('kamuna','mugeyo'):
+							self.prop.village.cell.name.lower() in ('kamuna','mugeyo'):
 							rate = 70
 						else:
 							rate = 80
