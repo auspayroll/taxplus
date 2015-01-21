@@ -1355,6 +1355,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		if balance > 0 and not fee.is_paid:
 			balance = fee.pay(receipt, balance)
 
+	"""
 	outstanding_fees = []
 	if prop_id:
 		outstanding_fees = Fee.objects.filter(prop__pk=prop_id, is_paid=False).order_by('due_date')
@@ -1365,6 +1366,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 	for fee in outstanding_fees:
 		if balance > 0:
 			balance = fee.pay(receipt, balance)
+	"""
 
 	receipt.credit = balance
 	receipt.save()
