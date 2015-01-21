@@ -306,29 +306,13 @@ class Business(models.Model):
 		businesses.update(i_status='inactive')
 		Media.objects.filter(business__in=businesses).update(business=self)
 		Log.objects.filter(business__in=businesses).update(business=self)
-		self.adjust_payments()
+		#self.adjust_payments()
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
 	def reset_fees(self):
 		fees = self.business_fees.filter(business_payments__isnull=True).distinct()
 		for fee in fees:
 			fee.reset()
-
-	def adjust_payments(self):
-		pay_fees = PayFee.objects.filter(business=self).order_by('receipt__date_time', 'pk')
-		balance = 0
-		receipt = None
-		for pay_fee in pay_fees:
-			if not receipt or receipt.pk != pay_fee.receipt.pk:
-				pay_fee.receipt.bf = balance
-
-			receipt = pay_fee.receipt
-			balance = pay_fee.fee.pay()
-			receipt.credit = balance
-			receipt.save()
-
-		self.credit = balance
-		self.save()
 
 	def pay_balance(self):
 		if self.credit > 0:
@@ -522,22 +506,6 @@ class Property(models.Model):
 	def owners(self):
 		for ownership in PropertyOwnership.objects.filter(prop=self, date_to__isnull=True):
 			yield ownership.owner
-
-	def adjust_payments(self):
-		pay_fees = PayFee.objects.filter(fee__prop=self).order_by('receipt__date_time', 'pk')
-		receipt = None
-		balance = 0
-		for pay_fee in pay_fees:
-			if not receipt or receipt.pk != pay_fee.receipt.pk:
-				pay_fee.receipt.bf = balance
-
-			receipt = pay_fee.receipt
-			balance = pay_fee.fee.pay()
-			receipt.credit = balance
-			receipt.save()
-
-		self.credit = balance
-		self.save()
 
 	def pay_balance(self):
 		if self.credit > 0:
@@ -826,7 +794,7 @@ class Fee(models.Model):
 		"""
 		payments = self.fee_payments.filter(status__code='active').order_by('paid_date', 'id')
 		self.penalty = self.penalty_paid = self.interest_paid = 0
-		balance = self.principle_paid = self.residual_interest = penalty = self.penalty_charged = self.interest_charged = 0
+		self.principle_paid = self.residual_interest = penalty = self.penalty_charged = self.interest_charged = 0
 		self.remaining_amount = self.amount
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		if receipt:
@@ -839,11 +807,10 @@ class Fee(models.Model):
 
 		#import pdb
 		#pdb.set_trace()
+		balance = payment_amount
 		for payment in payments:
 			if not payment.receipt or not payment.paid_date:
 				continue
-
-			payment.bf = balance
 
 			#calculate amounts owed before payment
 			calc_penalty, calc_interest = self.calc_penalty(payment.paid_date, self.remaining_amount)
@@ -856,60 +823,51 @@ class Fee(models.Model):
 			payment.principle_due = self.remaining_amount
 
 			if receipt and payment.receipt.pk == receipt.pk:
-				balance = balance + payment_amount
+				balance = payment_amount
+			else:
+				balance = payment.amount
 
-				if balance <= self.remaining_amount:
-					_, calc_interest_balance = self.calc_penalty(payment.paid_date, self.remaining_amount - balance)
-					calc_interest = calc_interest - calc_interest_balance
-					self.residual_interest += calc_interest
-					self.remaining_amount = self.remaining_amount - balance
-					payment.interest = 0
-					payment.principle = balance
-					balance = 0
+			if balance <= self.remaining_amount:
+				_, calc_interest_balance = self.calc_penalty(payment.paid_date, self.remaining_amount - balance)
+				calc_interest = calc_interest - calc_interest_balance
+				self.residual_interest += calc_interest
+				self.remaining_amount = self.remaining_amount - balance
+				payment.interest = 0
+				payment.principle = balance
+				balance = 0
 
-				else: # balance > remaining amount
-					balance = balance - self.remaining_amount
-					payment.principle = self.remaining_amount
-					self.residual_interest += calc_interest #add together interest
+			else: # balance > remaining amount
+				balance = balance - self.remaining_amount
+				payment.principle = self.remaining_amount
+				self.residual_interest += calc_interest #add together interest
 
-					# pay off interest
-					if self.residual_interest > 0:
-						if balance > self.residual_interest:
-							balance = balance - self.residual_interest
-							payment.interest = self.residual_interest
-
-						else:
-							payment.interest = balance
-							balance = 0
-
-					self.remaining_amount = 0
-
-				#pay off penalty
-				if self.penalty > 0 and balance > 0:
-					if balance >= self.penalty:
-						balance = balance - self.penalty
-						payment.penalty = self.penalty
-
-					elif balance > 0:
-						payment.penalty = balance
+				# pay off interest
+				if self.residual_interest > 0:
+					if balance > self.residual_interest:
+						balance = balance - self.residual_interest
+						payment.interest = self.residual_interest
+					else:
+						payment.interest = balance
 						balance = 0
 
-			else: # previous payments
-				balance += payment.principle + payment.penalty + payment.interest - payment.interest_due - payment.penalty_due - payment.principle_due
-				#remaining amount
-				if payment.principle >= self.remaining_amount:
-					self.residual_interest += calc_interest
-					self.remaining_amount = 0
+				self.remaining_amount = 0
 
-				else:
-					self.remaining_amount -= payment.principle
-					interest_on_principle = self.calc_penalty(payment.paid_date, self.remaining_amount)[1] - self.calc_penalty(payment.paid_date, (self.remaining_amount - payment.principle))[1]
-					self.residual_interest += interest_on_principle
+			#pay off penalty
+			if self.penalty > 0 and balance > 0:
+				if balance >= self.penalty:
+					balance = balance - self.penalty
+					payment.penalty = self.penalty
+				elif balance > 0:
+					payment.penalty = balance
+					balance = 0
+
+			if receipt and payment.receipt.pk == receipt.pk:
+				payment.amount = payment.principle + payment.interest + payment.penalty
 
 			if balance < 0:
 				balance = 0
+
 			payment.credit = balance
-			payment.amount = payment.principle + payment.interest + payment.penalty
 			payment.save()
 			self.penalty_paid += payment.penalty
 			self.interest_paid += payment.interest
@@ -918,6 +876,7 @@ class Fee(models.Model):
 		calc_penalty, calc_interest = self.calc_penalty(date.today(), self.remaining_amount)
 		if not self.penalty_charged:
 			self.penalty_charged = calc_penalty
+
 		self.penalty = self.penalty_charged - self.penalty_paid
 		self.interest_charged = calc_interest + self.residual_interest
 		self.interest = self.interest_charged - self.interest_paid
