@@ -1067,7 +1067,7 @@ class Fee(models.Model):
 class PaymentReceipt(models.Model):
 	amount = models.IntegerField(default=0)
 	#user = models.ForeignKey(PMUser, null=True, blank = True)
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
 	fees = models.ManyToManyField(Fee, related_name='fee_receipts', through='PayFee')
 	sector_receipt = models.CharField(max_length = 50, null=True, blank=True)
 	bank_receipt = models.CharField(max_length = 50, null=True, blank=True)
@@ -1111,7 +1111,7 @@ class PayFee(models.Model):
 	principle_due = models.IntegerField(default=0)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True, help_text="note about this payment.")
 	receipt = models.ForeignKey(PaymentReceipt, related_name="receipt_payments", null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentfee_status", null=True)
