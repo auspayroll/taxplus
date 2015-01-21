@@ -119,7 +119,6 @@
 					    		<th>Interest Due</th>
 					    		<th>Penalty Due</th>
 					    		<th>Total Due</th>
-					    		<th>B.F</th>
 					    		<th>Payment Amount</th>
 					    		<th>C.F</th>
 					    		<th>Paid on</th><th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
@@ -130,7 +129,6 @@
 									<td>{{payment.interest_due|intcomma}}</td>
 									<td>{{payment.penalty_due|intcomma}}</td>
 									<td>{{ payment.total_due|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
-									<td><b>{{ payment.bf|intcomma }}</b></td>
 									<td><b>{{ payment.amount|intcomma }}</b></td>
 									<td><b>{{ payment.credit|intcomma }}</b></td>
 									<td>{{ payment.paid_date }}</td>
