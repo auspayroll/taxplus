@@ -331,16 +331,14 @@ class Business(models.Model):
 		self.save()
 
 	def pay_balance(self):
-		outstanding_fees = self.business_fees.filter(is_paid=False).order_by('due_date')
-		if outstanding_fees and self.credit:
-			pr = PaymentReceipt(amount=0, bf=self.credit, paid_date=date.today(), citizen_id=None, business_id=self.pk, payer_name=self.name,
-				sector_receipt='CREDIT', bank_receipt='CREDIT', status=active, i_status='active', user_id=1, bank='CREDIT')
+		if self.credit > 0:
+			outstanding_fees = self.business_fees.filter(is_paid=False).order_by('due_date')
+			if outstanding_fees:
+				balance = process_payment(self.credit, payment_date=date.today(), citizen_id=None, business_id=self.pk, \
+					    sector_receipt='CREDIT', payer_name='SYSTEM', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
+				return balance
 
-			pr.save()
-
-			for fee in outstanding_fees:
-				self.credit = fee.pay(receipt, self.credit)
-			self.save(update_fields=['credit'])
+		return 0
 
 	def calc_taxes(self, now=None, include_only=False):
 		"""
@@ -542,16 +540,12 @@ class Property(models.Model):
 		self.save()
 
 	def pay_balance(self):
-		outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
-		if outstanding_fees and self.credit:
-			pr = PaymentReceipt(amount=0, bf=self.credit, paid_date=date.today(), citizen_id=None, business_id=self.pk, payer_name=self.name,
-				sector_receipt='CREDIT', bank_receipt='CREDIT', status=active, i_status='active', user_id=1, bank='CREDIT')
-
-			pr.save()
-
-			for fee in outstanding_fees:
-				self.credit = fee.pay(receipt, self.credit)
-			self.save(update_fields=['credit'])
+		if self.credit > 0:
+			outstanding_fees = self.property_fees.filter(is_paid=False).order_by('due_date')
+			if outstanding_fees:
+				process_payment(self.credit, payment_date=date.today(), citizen_id=None, business_id=None, \
+				    sector_receipt='CREDIT', payer_name='SYSTEM', bank_receipt='CREDIT', bank='CREDIT', staff_id=1, fees=outstanding_fees)
+		return 0
 
 	def __unicode__(self):
 		if self.street_number and self.street and self.street_type:
