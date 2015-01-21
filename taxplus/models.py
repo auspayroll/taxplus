@@ -382,7 +382,7 @@ class Business(models.Model):
 
 
 
-@receiver(post_save, sender=Business)
+#@receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
 	#instance.calc_taxes()
@@ -556,11 +556,14 @@ class Property(models.Model):
 			return 0
 
 
-@receiver(post_save, sender=Property)
+#@receiver(post_save, sender=Property)
 def after_prop_save(sender, instance, created, **kwargs):
+	return
+	"""
 	fees = Fee.objects.filter(prop=instance, is_paid=False)
 	for fee in fees:
 		 fee.calc_amount(save=True)
+	"""
 
 
 class PropertyTitle(models.Model):
@@ -805,8 +808,6 @@ class Fee(models.Model):
 
 			pf.save()
 
-		#import pdb
-		#pdb.set_trace()
 		balance = payment_amount
 		for payment in payments:
 			if not payment.receipt or not payment.paid_date:
