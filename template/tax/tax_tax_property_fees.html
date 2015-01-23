@@ -119,9 +119,15 @@
 					    		<th>Interest Due</th>
 					    		<th>Penalty Due</th>
 					    		<th>Total Due</th>
+					    		<th>B.F.</th>
 					    		<th>Payment Amount</th>
-					    		<th>C.F</th>
-					    		<th>Paid on</th><th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
+					    		<th>Fee Paid</th>
+					    		<th>C.F.</th>
+					    		<th>Paid on</th><th>Paid by</th>
+					    		<th>Bank</th><th>Receipt</th>
+					    		<th>Staff</th>
+					    		<th>Processed</th>
+					    	</tr>
 							{% for payment in payments %}
 								{% if payment.fee.pk = fee.pk %}
 								<tr>
@@ -129,6 +135,8 @@
 									<td>{{payment.interest_due|intcomma}}</td>
 									<td>{{payment.penalty_due|intcomma}}</td>
 									<td>{{ payment.total_due|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
+									<td><b>{{ payment.bf|intcomma }}</b></td>
+									<td>{{ payment.receipt.amount|intcomma }}</td>
 									<td><b>{{ payment.amount|intcomma }}</b></td>
 									<td><b>{{ payment.credit|intcomma }}</b></td>
 									<td>{{ payment.paid_date }}</td>
@@ -136,6 +144,7 @@
 									<td>{{ payment.receipt.bank }}-{{ payment.receipt.bank_receipt }}</td>
 									<td><a href="{% url 'tax_receipt' payment.receipt_id %}">{{ payment.receipt.sector_receipt }}</a></td>
 									<td>{{ payment.receipt.user.username }}</td>
+									<td>{{ payment.receipt.date_time }}</td>
 								</tr>
 								{% endif %}
 							{% endfor %}

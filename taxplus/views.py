@@ -390,12 +390,27 @@ def property_fees(request, pk):
 
 
 @login_required
+def property_payments(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	fees = prop.property_fees.filter(status__code='active')
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees).order_by('date_time')
+	return TemplateResponse(request, 'tax/property_payments.html', { 'property':prop, 'payments':payments })
+
+
+@login_required
 def business_fees(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	fees = business.business_fees.filter(amount__gt=0)
 	payments = PayFee.objects.filter(fee__in=fees)
 	return TemplateResponse(request, 'tax/business_fees_new.html', { 'business':business, 'fees':fees, 'payments':payments  })
 
+
+@login_required
+def business_payments(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	fees = prop.property_fees.filter(status__code='active')
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees).order_by('date_time')
+	return TemplateResponse(request, 'tax/property_payments.html', { 'property':prop, 'payments':payments })
 
 @login_required
 def payFee(request, pk=None):

@@ -16,6 +16,7 @@ urlpatterns = patterns('',
 	url(r'^admin/auth/', include('pmauth.urls')),
 	url(r'^admin/log/', include('log.urls')),
 	url(r'^admin/business_fees/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_fees'),
+	url(r'^admin/business_payments/(?P<pk>\d+)/$', taxplus_views.business_payments, name='business_payments'),
 	url(r'^admin/merge_preview/(?P<pk>\d+)/$', taxplus_views.merge_preview, name='merge_preview'),
 
 
@@ -35,6 +36,7 @@ urlpatterns = patterns('',
 	url(r'^admin/cleaning_debtors/', taxplus_views.cleaning_debtors, name='cleaning_debtors'),
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property_fees'),
+	url(r'^admin/property_payments/(?P<pk>\d+)/$', taxplus_views.property_payments, name='property_payments'),
 	url(r'^admin/property_leases/(?P<pk>\d+)/$', taxplus_views.leases, name='property_leases'),
 	url(r'^admin/edit_lease/(?P<pk>\d+)/$', taxplus_views.edit_lease, name='edit_lease'),
 	url(r'^admin/new_lease/(?P<pk>\d+)/$', taxplus_views.new_lease, name='new_lease'),

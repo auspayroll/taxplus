@@ -1,0 +1,132 @@
+{% extends "common/base_paytax_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+
+<div style="text-align:left; margin-left:30px; margin-top:15px;">
+<style>
+
+#fee_table TH, #fee_table TD{
+	border-right:1pt #e4e4e4 solid;
+}
+
+#fee_table TD, #fee_table TH{
+	text-align: left;
+	padding-left:5px;
+}
+
+#fee_table{
+	margin:0 auto;
+	width:95%;
+	border:1pt #e4e4e4 solid;
+}
+
+#fee_table TR{
+	border-bottom:1pt #cccccc solid;
+}
+
+#payment_table TR{
+	padding-top:7px;
+	background-color:default;
+	padding-left:35px;
+	padding-right:0;
+	padding-bottom:7px;
+
+}
+
+#payment_table{
+	font-style: italic;
+}
+
+#payment_table TH{
+	font-weight:normal;
+	width:100px;
+}
+
+#payment_table{
+	width:70%;
+	border-top:0pt #cccccc solid;
+
+	margin:2px
+}
+
+#pay_fees_form{
+	border:1pt grey solid;
+	background-color:#e4e4e4;
+	margin-top:20px;
+	float:right;
+	margin-right:25px;
+}
+
+#pay_fees_form TH{
+	text-align:left;
+	font-weight: normal;
+	vertical-align: top;
+	padding:8px;
+	min-width:100px;
+}
+
+#pay_fees_form TD{
+	text-align:left;
+	padding:8px;
+}
+
+
+</style>
+
+
+{% if payments %}
+
+
+	<div style="margin-left:20px;margin-right:20px;text-align:center;">
+	<form method="post" action="{% url 'payselectedfees' %}">
+		{% csrf_token %}
+		<table  cellpadding="0" cellspacing="0" id="fee_table">
+			<thead>
+			<tr>
+				<th>B.F. -Brought Forward</th>
+				<th>Amount</th>
+				<th>C.F. -Carried Forward</th>
+				<th>Paid Date</th>
+				<th>Paid by</th>
+				<th>Bank</th>
+				<th>Bank Receipt</th>
+				<th>Sector Receipt</th>
+				<th>Staff</th>
+				<th>Processed</th>
+			</tr>
+			</thead>
+			<tbody>
+
+			{% for receipt in payments %}
+				<tr>
+					<td>{{ receipt.bf|intcomma }}</td>
+					<td>{{ receipt.amount|intcomma }}</td>
+					<td>{{ receipt.credit|intcomma }}</td>
+					<td>{{ receipt.paid_date }}</td>
+					<td>{{ receipt.payer_name }}</td>
+					<td>{{ receipt.bank }}</td>
+					<td>{{ receipt.bank_receipt }}</td>
+					<td><a href="{% url 'tax_receipt' receipt.pk %}">{{ receipt.sector_receipt }}</a></td>
+					<td>{{ receipt.user }}</td>
+					<td>{{ receipt.date_time }}</td>
+					<td><input type="checkbox" name="remove_payment" value="{{ receipt.pk }}"></td>
+				</tr>
+			{% endfor %}
+
+			</tbody>
+		</table>
+
+	<div style="float:right; margin-right:25px">
+		<input type="submit" class="pay_tax_btn" name="submit" value="Remove/Reverse selected Payments" /></div>
+
+	</form>
+	</div>
+    {% else %}
+    	No payments made.
+	{% endif %}
+
+
+</div>
+{% endblock %}
