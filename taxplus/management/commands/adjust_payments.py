@@ -23,28 +23,14 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		errors = []
 
-		for prop in Property.objects.filter(property_fees__fee_payments__isnull=False).distinct():
-			credit = 0
-			for fee in prop.property_fees.filter(fee_payments__isnull=False).distinct():
-				credit += fee.pay()
-
-			prop.credit = credit
-			prop.save(update_fields=['credit'])
-			print prop.upi, credit
-
-
 		for business in Business.objects.filter(business_fees__fee_payments__isnull=False).distinct():
-			credit = 0
-			for fee in business.business_fees.filter(fee_payments__isnull=False).distinct():
-				credit += fee.pay()
-
-			business.credit = credit
-			business.save(update_fields=['credit'])
-			print business, credit
+			 balance = business.adjust_payments()
+			 print business, balance
 
 
-		for receipt in PaymentReceipt.objects.all():
-			receipt.credit = receipt.receipt_payments.aggregate(total=Sum('credit'))['total'] or 0
-			print receipt.credit
-			receipt.save(update_fields=['credit'])
+
+		for p in Property.objects.filter(property_fees__fee_payments__isnull=False, pk=126412).distinct():
+			print 'Adjusting %s ' % p
+			balance = p.adjust_payments()
+			print p, balance
 
