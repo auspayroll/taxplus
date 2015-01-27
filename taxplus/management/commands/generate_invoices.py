@@ -580,7 +580,7 @@ class Command(BaseCommand):
 			filename = os.path.join( dir_name, "%s-%s-%s.pdf" % (village.cell.sector.name, village.cell.name, village.name))
 			p = canvas.Canvas(filename, pagesize=pagesize)
 
-			for title in PropertyTitle.objects.filter(prop__village=village, title_fees__date_from__gte=date(2012,1,1), title_fees__is_paid=False, title_fees__due_date__lt=date.today(), title_fees__status__code='active').distinct().order_by('prop__parcel_id'):
+			for title in PropertyTitle.objects.filter(prop__is_land_lease=True, prop__village=village, title_fees__date_from__gte=date(2012,1,1), title_fees__is_paid=False, title_fees__due_date__lt=date.today(), title_fees__status__code='active').distinct().order_by('prop__parcel_id'):
 				print 'creating invoice %s' % counter
 				generate_invoice(canvas=p, pagesize=pagesize, title=title)
 				counter += 1
