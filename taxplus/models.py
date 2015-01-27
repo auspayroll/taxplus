@@ -947,7 +947,7 @@ class Fee(models.Model):
 		if pay_date <= self.due_date:
 			return (0,0)
 
-		if self.category.code in ('land_lease', 'cleaning'):
+		if self.category.code in ('land_lease', 'cleaning', 'market'):
 			penalty_limit = 10000
 			due_date = self.due_date # end of year due date
 			months_late = (pay_date.year - due_date.year ) * 12 + (pay_date.month - due_date.month)
@@ -972,6 +972,8 @@ class Fee(models.Model):
 				return (penalty_limit, interest)
 			else:
 				return (penalty, interest)
+
+		return 0, 0
 
 	def calc_cleaningFee(self):
 		if self.category.code == 'cleaning' and self.business and self.business.cleaning_category:
