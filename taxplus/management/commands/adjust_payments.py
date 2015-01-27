@@ -23,13 +23,14 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		errors = []
 
+		"""
 		for business in Business.objects.filter(business_fees__fee_payments__isnull=False).distinct():
 			 balance = business.adjust_payments()
 			 print business, balance
+		"""
 
 
-
-		for p in Property.objects.filter(property_fees__fee_payments__isnull=False, pk=126412).distinct():
+		for p in Property.objects.filter(property_fees__fee_payments__isnull=False).distinct():
 			print 'Adjusting %s ' % p
 			balance = p.adjust_payments()
 			print p, balance
