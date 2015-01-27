@@ -110,7 +110,7 @@ def upload_ajax(request, content_type_name, action = None):
 				citizen = Citizen.objects.get(pk=int(request.POST.get('citizen_id')))
 
 			if request.POST.get('property_id'):
-				property = Property.objects.get(pk=int(request.POST.get('property_id')))
+				property = Property.objectsIgnorePermission.get(pk=int(request.POST.get('property_id')))
 
 			if request.POST.get('business_id'):
 				business = Business.objects.get(pk=int(request.POST.get('business_id')))
