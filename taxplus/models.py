@@ -1121,6 +1121,17 @@ class PaymentReceipt(models.Model):
 	class Meta:
 		db_table = 'jtax_multipayreceipt'
 
+	def reverse(self, user=None):
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		self.status = inactive
+		self.save()
+		fees = Fee.objects.filter(fee_payments__pk__in=self.receipt_payments.values_list('pk', flat=True)).distinct()
+		for fee in fees:
+			fee.reset()
+		self.receipt_payments.all().update(status=inactive)
+		Log.objects.create(receipt=self, user = user, message='Payment reversed')
+
+
 class PayFeeManager(models.Manager):
 	def get_query_set(self):
 		return super(PayFeeManager,self).get_query_set().filter(status__code='active')
@@ -1271,6 +1282,8 @@ class Log(models.Model):
 	message = models.TextField(blank=True, null=True)
 	fee = models.ForeignKey(Fee, null=True, blank=True)
 	payfee = models.ForeignKey(PayFee, blank=True, null=True)
+	receipt = models.ForeignKey(PaymentReceipt
+		, blank=True, null=True)
 
 	class Meta:
 		db_table = 'log_log'

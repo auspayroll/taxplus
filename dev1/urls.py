@@ -25,6 +25,8 @@ urlpatterns = patterns('',
 
 	url(r'^admin/property/media/(?P<pk>\d+)/$', taxplus_views.property_media, name='property_media'),
 
+	url(r'^admin/reverse_payments/$', taxplus_views.reverse_payments, name='reverse_payments'),
+
 	url(r'^admin/tax/', include('jtax.urls')),
 	url(r'^admin/citizen/', include('citizen.urls')),
 	url(r'^admin/contact/', include('contact.urls')),

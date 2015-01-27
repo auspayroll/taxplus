@@ -18,6 +18,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, landscape
 from taxplus.management.commands.generate_invoices import generate_invoice
 from django.forms.models import modelformset_factory
+from django.contrib.auth.decorators import user_passes_test
 
 
 
@@ -393,7 +394,7 @@ def property_fees(request, pk):
 def property_payments(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	fees = prop.property_fees.filter(status__code='active')
-	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees).distinct().order_by('date_time')
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees, status__code='active').distinct().order_by('date_time')
 	return TemplateResponse(request, 'tax/property_payments.html', { 'property':prop, 'payments':payments })
 
 
@@ -409,7 +410,7 @@ def business_fees(request, pk):
 def business_payments(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	fees = business.business_fees.filter(status__code='active')
-	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees).distinct().order_by('date_time')
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees, status__code='active').distinct().order_by('date_time')
 	return TemplateResponse(request, 'tax/business_payments.html', { 'business':business, 'payments':payments })
 
 @login_required
@@ -480,6 +481,9 @@ def payment_receipt(request, id):
 
 	media = Media.objects.filter(Q(receipt=receipt) | Q(payfee__receipt=receipt) )
 	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt, 'media':media, 'property': prop, 'business': business})
+
+
+
 
 
 @login_required
@@ -565,6 +569,31 @@ def property_media(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	media = Media.objects.filter(property=prop)
 	return TemplateResponse(request, "tax/tax_tax_property_media.html", { 'property':prop, 'media':media  })
+
+@user_passes_test(lambda u: u.is_superuser)
+def reverse_payments(request):
+	delete_payments = request.POST.getlist('reverse_payment')
+	user = PMUser.objects.get(pk=request.session.get('user').pk)
+	if delete_payments:
+		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		receipts = PaymentReceipt.objects.filter(id__in=delete_payments)
+		for receipt in receipts:
+			receipt.reverse(user=user)
+			messages.success(request, 'Payment of %s reversed' % receipt.amount)
+	business_id = request.POST.get('business_id')
+	prop_id = request.POST.get('property_id')
+	if business_id:
+		business = get_object_or_404(Business, pk=business_id)
+		business.adjust_payments()
+	if prop_id:
+		prop = get_object_or_404(Property, pk=prop_id)
+		prop.adjust_payments()
+
+	return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+
+
 
 
 
