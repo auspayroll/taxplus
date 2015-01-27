@@ -104,7 +104,7 @@
 					<td>{{fee.interest|intcomma}}</td>
 					<td>{{fee.total_due|intcomma}} {% if fee.is_paid %}<span style='color:green; font-weight:bold;'> -PAID</span>{% endif %}</td>
 					<td>{{fee.due_date}}</td>
-					<td>{% if not fee.is_paid %}<a href="{% url 'payfee' fee.pk %}" class="my_button">pay</a>{% endif %}</td>
+					<td>{% if not fee.is_paid %}<a href="{% url 'payfee' fee.pk %}" class="my_button">pay</a> <input type="checkbox" name="pay_fee" value="{{ fee.pk }}" >{% endif %}</td>
 				</tr>
 
 				<tr  style="background-color:#e4e4e4;">
@@ -116,6 +116,7 @@
 					    		<th>Interest Due</th>
 					    		<th>Penalty Due</th>
 					    		<th>Total Due</th>
+					    		<th>B.F</th>
 					    		<th>Payment Amount</th>
 					    		<th>C.F</th>
 					    		<th>Paid on</th><th>Paid by</th><th>Bank</th><th>Receipt</th><th>Staff</th></tr>
@@ -126,8 +127,9 @@
 									<td>{{payment.interest_due|intcomma}}</td>
 									<td>{{payment.penalty_due|intcomma}}</td>
 									<td>{{ payment.total_due|intcomma }}<!-- payment.pk={{ payment.pk }}--></td>
+									<td>{{ payment.bf|intcomma }}</td>
 									<td><b>{{ payment.amount|intcomma }}</b></td>
-									<td><b>{{ payment.credit|intcomma }}</b></td>
+									<td>{{ payment.credit|intcomma }}</td>
 									<td>{{ payment.paid_date }}</td>
 									<td><a>{{ payment.receipt.payer_name }}</a></td>
 									<td>{{ payment.receipt.bank }}-{{ payment.receipt.bank_receipt }}</td>
@@ -149,9 +151,9 @@
 
 
 
-	<!--<div style="float:right; margin-right:25px">
+	<div style="float:right; margin-right:25px">
 		<input type="hidden" name="paid_date" value="{% now 'd/m/Y' %}">
-		<input type="submit" class="pay_tax_btn" name="submit" value="Pay Selected Fees" /></div>-->
+		<input type="submit" class="pay_tax_btn" name="submit" value="Pay Selected Fees" /></div>
 
 	</form>
 	</div>

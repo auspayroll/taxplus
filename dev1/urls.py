@@ -10,6 +10,7 @@ urlpatterns = patterns('',
 
 	url(r'^il/(?P<key>\w+)/$', taxplus_views.mobile_invoice_landing, name='mobile_invoice_landing'),
 	url(r'^i/(?P<key>\w+)/$', taxplus_views.mobile_invoice, name='mobile_invoice'),
+	url(r'^admin/tax/tax/business/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_default'),
 	url(r'^admin/tax/tax/property/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property_default'),
 
 	url(r'^admin/property/', include('property.urls')),

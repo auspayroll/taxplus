@@ -92,7 +92,6 @@
 				<th>Interest</th>
 				<th>Total Due Rwf</th>
 				<th>Due by</th>
-				<th>EPAY</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -105,9 +104,8 @@
 					<td>{{fee.interest|intcomma}}</td>
 					<td>{{fee.total_due|intcomma}} {% if fee.is_paid %}<span style='color:green; font-weight:bold;'> -PAID</span>{% endif %}</td>
 					<td>{{fee.due_date}}</td>
-					<td>{{fee.prop_title.epay}}</td>
 					<td>{% if not fee.is_paid and fee.prop_title.pk %}<a href="{% url 'property_invoice' fee.prop_title.pk %}">PDF Invoice</a>{% endif %}</td>
-					<td>{% if not fee.is_paid %}<a href="{% url 'paylandlease' fee.pk %}" class="my_button">pay</a>{% endif %}</td>
+					<td>{% if not fee.is_paid %}<a href="{% url 'paylandlease' fee.pk %}" class="my_button">pay</a>  <input type="checkbox" name="pay_fee" value="{{ fee.pk }}" >{% endif %}</td>
 				</tr>
 
 				<tr  style="background-color:#e4e4e4;">
@@ -161,9 +159,9 @@
 
 
 
-	<!--<div style="float:right; margin-right:25px">
+	<div style="float:right; margin-right:25px">
 		<input type="hidden" name="paid_date" value="{% now 'd/m/Y' %}">
-		<input type="submit" class="pay_tax_btn" name="submit" value="Pay Selected Fees" /></div>-->
+		<input type="submit" class="pay_tax_btn" name="submit" value="Pay Selected Fees" /></div>
 
 	</form>
 	</div>

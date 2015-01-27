@@ -449,9 +449,9 @@ def payFee(request, pk=None):
 					bank_receipt=d.get('bank_receipt'), payment_amount=d.get('amount'), staff_id=user.pk, bank=d.get('bank'), payer_name=payer_name, fees=fees)
 				messages.success(request, "Payment successful")
 				if fee.prop_id:
-					return HttpResponseRedirect(reverse('property_fees', args=[fee.prop_id]))
+					return HttpResponseRedirect(reverse('property_payments', args=[fee.prop_id]))
 				elif fee.business_id:
-					return HttpResponseRedirect(reverse('business_fees', args=[fee.business_id]))
+					return HttpResponseRedirect(reverse('business_payments', args=[fee.business_id]))
 
 		else:
 			pass
@@ -505,12 +505,17 @@ def paySelectedFees(request):
 				user = request.session.get('user')
 				amount = form.cleaned_data['amount']
 
-				payment_receipt = process_payment(amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
+				payment_receipt = process_payment(payment_amount = amount, payment_date=d.get('paid_date'), citizen_id=citizen_id, business_id=business_id,
 					payer_name=d.get('payer_name'), sector_receipt=d.get('sector_receipt'),
-					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fee=fees)
+					bank_receipt=d.get('bank_receipt'), bank=d.get('bank'), staff_id=user.pk, fees=fees)
 
-				#redirect to receipt
-				return HttpResponseRedirect(reverse('tax_receipt', args=(payment_receipt.pk,)))
+				fee = fees[0]
+				messages.success(request, "Payment successful")
+				#redirect to payments screen
+				if fee.prop:
+					return HttpResponseRedirect(reverse('property_payments', args=[fee.prop.pk]))
+				elif fee.business_id:
+					return HttpResponseRedirect(reverse('business_payments', args=[fee.business_id]))
 
 		else:
 			pass
