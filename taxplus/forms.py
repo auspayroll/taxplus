@@ -8,12 +8,28 @@ from common.fields import CurrencyField, CurrencyInput
 from datetime import date, datetime
 from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle
 import math
+from django.core.exceptions import ValidationError
+import re
+
+
+
+def validate_phone(value):
+    if not re.match( r'^07\d{8}$', value, re.M|re.I):
+        raise ValidationError(u'%s is not a valid phone number' % value)
 
 
 include_field_choices = [('Fines', 'Fines'),('Receipt','Sector Receipt'),
 		('Bank','Bank'),('Bank Receipt','Bank Receipt'),('User','User'),('Timestamp','Timestamp'),('Total Fee Amount','Total Fee Amount'),
 		('Remaining Fee Amount','Remaining Fee Amount'), ('Cell','Cell'), ('Village','Village')]
 
+
+
+
+class PhoneField(forms.CharField):
+	def __init__(self, *args, **kwargs):
+		kwargs['validators'] = [validate_phone]
+		kwargs['help_text'] = "valid phone number format: 07 followed by eight digits"
+		super(PhoneField, self).__init__(*args, **kwargs )
 
 
 class TitleForm(forms.ModelForm):
@@ -98,12 +114,14 @@ class SearchForm(forms.Form):
 		if district:
 			self.fields['sector'].queryset = Sector.objects.filter(district=district)
 
-		cleaned_data = super(SearchForm, self).clean()
 		sector = cleaned_data.get("sector")
 		if sector:
 			self.fields['cell'].queryset = Cell.objects.filter(sector=sector)
 
-		cleaned_data = super(SearchForm, self).clean()
+		cell = cleaned_data.get("cell")
+		if cell:
+			self.fields['village'].queryset = Village.objects.filter(cell=cell)
+
 		return cleaned_data
 
 
@@ -186,6 +204,69 @@ class PayFeesForm(forms.Form):
 
 	def __init__(self, *args, **kwargs):
 		super(PayFeesForm, self).__init__(*args, **kwargs)
+
+
+class BusinessForm(forms.ModelForm):
+	class Meta:
+		model = Business
+		fields = ['name', 'tin', 'cleaning_category', 'vat_register', 'date_started', 'phone1', 'phone2', 'email', 'address', 'po_box', 'accountant_name', 'accountant_phone', 'accountant_email']
+
+	date_started = forms.DateField(label="Date started", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',),initial=date.today().strftime('%d/%m/%Y'),)
+
+	phone1 = PhoneField()
+	phone2 = PhoneField(required=False)
+	accountant_phone = PhoneField(required=False)
+
+
+class BusinessFormRegion(forms.ModelForm):
+	class Meta:
+		model = Business
+		fields = ['sector', 'cell', 'village']
+
+	district = forms.ModelChoiceField(queryset = District.objects.all().order_by('name'), error_messages={'required':'District is required'})
+	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), error_messages={'required':'Sector is required'})
+	cell = forms.ModelChoiceField(queryset = Cell.objects.none(), error_messages={'required':'Cell is required'})
+	village = forms.ModelChoiceField(queryset = Village.objects.none(), error_messages={'required':'Village is required'})
+
+	def __init__(self, *args, **kwargs):
+		super(BusinessFormRegion, self).__init__(*args, **kwargs)
+		self.fields.keyOrder = ['district', 'sector', 'cell', 'village']
+		self.fields['district'].queryset = District.objects.all().order_by('name')
+		if args:
+			district = args[0].get('district')
+			if district:
+				try:
+					district_id = int(district)
+				except:
+					pass
+				else:
+					self.fields['sector'].queryset = Sector.objects.filter(district__pk=district_id)
+
+			sector = args[0].get('sector')
+			if sector:
+				try:
+					sector_id = int(sector)
+				except:
+					pass
+				else:
+					self.fields['cell'].queryset = Cell.objects.filter(sector__pk=sector_id)
+
+			cell = args[0].get('cell')
+			if cell:
+				try:
+					cell_id = int(cell)
+				except:
+					pass
+				else:
+					self.fields['village'].queryset = Village.objects.filter(cell__pk=cell_id)
+
+		elif self.instance.village:
+			self.fields['village'].queryset = Village.objects.filter(cell=self.instance.village.cell)
+			self.fields['cell'].queryset = Cell.objects.filter(sector=self.instance.village.cell.sector)
+			self.fields['sector'].queryset = Sector.objects.filter(district=self.instance.village.cell.sector.district)
+			self.initial['district'] = self.instance.village.cell.sector.district
+
 
 
 

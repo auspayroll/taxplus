@@ -55,7 +55,8 @@
 
 	</div>
 
-	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="/admin/tax/tax/business/{{business.id}}/edit_business/">Edit</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'business_update' business.pk %}">Edit</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'business_update_region' business.pk %}">Region</a></div>
 	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="/admin/tax/tax/business/{{business.id}}/owners/">Owners</a></div>
 	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'business_fees' business.id %}">Fees</a></div>
 	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'business_payments' business.pk %}">Payments</a></div>

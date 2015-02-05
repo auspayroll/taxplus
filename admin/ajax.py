@@ -66,54 +66,23 @@ def getPaymentSubcategory(request):
 
 def getObjectsByParentId(request):
 	if request.method == 'GET':
-		GET = request.GET
-		object_type = GET['object_type']
-		object_id = GET['object_id']
-		if object_type and object_id:
-			result = {}
-			objects_json = []
-			if object_id:
-				try:
-					if(object_type=='province'):
-						province = Province.objects.get(pk = object_id)
-						districts = District.objects.filter(province = province)
-						for district in districts:
-							object_json = {}
-							object_json['key'] = district.id
-							object_json['value'] = district.name
-							objects_json.append(object_json)
-					if(object_type=='district'):
-						district = District.objects.get(pk = object_id)
-						sectors = Sector.objects.filter(district = district)
-						for sector in sectors:
-							object_json = {}
-							object_json['key'] = sector.id
-							object_json['value'] = sector.name
-							objects_json.append(object_json)
-					if(object_type=='sector'):
-						try:
-							sector = Sector.objects.get(pk = object_id)
-							cells = Cell.objects.filter(sector = sector)
-							for cell in cells:
-								object_json = {}
-								object_json['key'] = cell.id
-								object_json['value'] = cell.name
-								objects_json.append(object_json)
-						except Exception as e:
-							return HttpResponse('', mimetype="application/json")
-					if(object_type=='cell'):
-						cell  = Cell.objects.get(pk = object_id)
-						villages = Village.objects.filter(cell = cell)
-						for village in villages:
-							object_json = {}
-							object_json['key'] = village.id
-							object_json['value'] = village.name
-							objects_json.append(object_json)
-				except Exception:
-					objects_json = []
-			result['objects'] = objects_json
-			return HttpResponse(json.dumps(result), mimetype="application/json")
-		return HttpResponse(json.dumps({'objects':[]}), mimetype="application/json")
+		object_type = request.GET['object_type']
+		object_id = int(request.GET['object_id'])
+		result = []
+		if object_id:
+			if(object_type=='province'):
+				result = [ [ d.pk, d.name ] for d in District.objects.filter(province__pk = object_id).order_by('name')]
+
+			elif(object_type=='district'):
+				result = [ [sector.pk, sector.name ] for sector in Sector.objects.filter(district__pk = object_id).order_by('name')]
+
+			elif(object_type=='sector'):
+				result = [ [ cell.pk, cell.name ] for cell in Cell.objects.filter(sector__pk = object_id).order_by('name')]
+
+			elif(object_type=='cell'):
+				result = [ [village.pk, village.name] for village in Village.objects.filter(cell__pk = object_id).order_by('name') ]
+
+		return HttpResponse(json.dumps(result), mimetype="application/json")
 
 
 def getPropertySector(request):

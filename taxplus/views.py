@@ -4,7 +4,7 @@ from jtax.models import PayFee, Fee
 from property.models import District, Sector, Cell
 from datetime import date
 import json
-from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion
 from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
@@ -565,6 +565,7 @@ def mobile_invoice_landing(request, key):
 	return render_to_response('common/mobile_invoice.html', {'title':title, 'key':key})
 
 
+@login_required
 def property_media(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	media = Media.objects.filter(property=prop)
@@ -590,6 +591,49 @@ def reverse_payments(request):
 		prop.adjust_payments()
 
 	return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+@login_required
+def business_update(request, pk):
+	business = get_object_or_404(Business, pk=pk)
+	if request.method == 'POST':
+		form = BusinessForm(request.POST, instance=business)
+		if form.is_valid():
+			form.save()
+			business.reset_fees()
+			business.calc_taxes()
+			business.adjust_payments()
+			#add a log message
+			messages.success(request, "Update successful")
+			return HttpResponseRedirect(reverse('business_update', args=[business.pk]))
+		else:
+			messages.error(request, "there was a form error")
+	else:
+		form = BusinessForm(instance=business)
+
+	return TemplateResponse(request, "tax/update_business.html", { 'business':business, 'form':form })
+
+
+@login_required
+def business_update_region(request, pk):
+	business = get_object_or_404(Business, pk=pk)
+	if request.method == 'POST':
+		form = BusinessFormRegion(request.POST, instance=business)
+		if form.is_valid():
+			form.save()
+			business.calc_taxes()
+			business.reset_fees()
+			business.adjust_payments()
+			#add a log message
+			messages.success(request, "Update successful")
+			return HttpResponseRedirect(reverse('business_update_region', args=[business.pk]))
+		else:
+			messages.error(request, "there was a form error")
+	else:
+		form = BusinessFormRegion(instance=business)
+
+	return TemplateResponse(request, "tax/update_business.html", { 'business':business, 'form':form })
+
 
 
 

@@ -310,7 +310,7 @@ class Business(models.Model):
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
 	def reset_fees(self):
-		fees = self.business_fees.filter(business_payments__isnull=True).distinct()
+		fees = self.business_fees.filter(fee_payments__isnull=True).distinct()
 		for fee in fees:
 			fee.reset()
 
@@ -339,61 +339,65 @@ class Business(models.Model):
 
 		return 0
 
-	def calc_taxes(self, now=None, include_only=False):
+	def calc_taxes(self, from_date=None, include_only=False):
 		"""
-		generate business taxes & fees(Cleaning Fee)
+		generate cleaning fees: if now is specified, calculate from the current year
+		all fees that are not paid will be re-calculated
 		"""
-		if self.i_status != 'active':
-			return None
-
-		if not now:
-			now = timezone.make_aware(datetime.now(), timezone.get_default_timezone())
-		else:
-			if type(now) is datetime and not now.tzinfo:
-				now = timezone.make_aware(now, timezone.get_default_timezone())
-			elif type(now) is date:
-				now = timezone.make_aware(datetime.combine(now, datetime.min.time()), timezone.get_default_timezone())
-		current_year = str(now.year)
-		year_start = period_from = timezone.make_aware(parser.parse("%s-01-01 00:00:00" % current_year), timezone.get_default_timezone())
-		year_end = timezone.make_aware(parser.parse("%s-12-31 23:59:59" % current_year), timezone.get_default_timezone())
-		year_start_date = date_from = date(now.year, 1,1)
-
-		if now.month >=10:
-			year_end_date = date(now.year + 1, 12, 31)
-		else:
-			year_end_date =  yed = date(now.year, 12, 31)
-
 		cleaning = CategoryChoice.objects.get(category__code='fee_type', code='cleaning')
 		active = CategoryChoice.objects.get(category__code='status', code='active')
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
+		if self.i_status != 'active':
+			Fee.objects.filter(category=cleaning, business=self, is_paid=False).update(status=inactive)
+			return None
+
+		if from_date:
+			year_start_date = from_date
+			if self.date_started and self.date_started > year_start_date:
+				year_start_date = self.date_started
+		else:
+			year_start_date = self.date_started or from_date
+
+		if date.today().month >=10:
+			year_end_date = date(date.today().year + 1, 12, 31)
+		else:
+			year_end_date = date(date.today().year, 12, 31)
+
+		if self.closed_date and self.closed_date < year_end_date:
+			year_end_date  = self.closed_date
+
 		if not include_only or 'cleaning' in include_only:
-			#if there is no Cleaning fee for this business in the current year, add monthly Cleaning fee, also exclude the business with no cleaning_fee_amount (No premise)
-			if self.cleaning_category is not None:
-				if self.date_started and self.date_started > year_start_date:
-					cleaning_month = date(self.date_started.year, self.date_started.month, 1)
-				else:
-					cleaning_month = year_start_date
+			if self.cleaning_category:
+				cleaning_month = year_start_date
 
 				while cleaning_month <= year_end_date:
 					next_month = cleaning_month + relativedelta(months=1)
+					next_month = date(next_month.year, next_month.month, 1) # 1st of next month
 					end_month = next_month - timedelta(days=1)
-					month_from = timezone.make_aware(datetime.combine(cleaning_month, datetime.min.time()), timezone.get_default_timezone())
-					month_to = timezone.make_aware(datetime.combine(end_month, datetime.min.time()), timezone.get_default_timezone())
 
-					try:
-						fee = Fee.all_objects.get(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month)
-
-					except Fee.DoesNotExist:
-						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=now, period_from=month_from, period_to=month_to)
-
-					except Fee.MultipleObjectsReturned:
-						fees = Fee.all_objects.filter(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month).order_by('date_from')
+					fees = Fee.all_objects.filter(category=cleaning, business=self, date_to__gte=cleaning_month, date_from__lte=end_month)
+					if fees:
 						fee = fees[0]
+						fee.status = active
+						fee.date_from = cleaning_month
+						fee.date_to = end_month
+						fee.save()
+						print 'fee updated'
 						fees.exclude(id=fee.pk).update(status=inactive)
+
+					else:
+						print 'fee created'
+						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=datetime.now())
 
 					if not fee.is_paid:
 						fee.calc_amount()
 					cleaning_month = next_month
+
+				#inactive all outside of the range
+				Fee.objects.filter(business=self, category=cleaning).filter(Q(date_from__gt=year_end_date) | Q(date_from__lt=(self.date_started or year_start_date))).update(status=inactive)
+
+			else:
+				Fee.objects.filter(category=cleaning, business=self, is_paid=False).update(status=inactive)
 
 
 
@@ -849,6 +853,7 @@ class Fee(models.Model):
 				payment.bf = bf
 			else:
 				balance = payment.amount + payment.bf
+
 			payment.penalty_due = self.penalty
 			payment.interest_due = calc_interest + self.residual_interest - self.interest_paid
 			payment.principle_due = self.remaining_amount
@@ -1091,9 +1096,12 @@ class Fee(models.Model):
 				self.status = CategoryChoice.objects.get(category__code='status', code='inactive')
 				self.save()
 
-			elif self.amount and self.pk:
+			elif self.amount:
 				self.status = CategoryChoice.objects.get(category__code='status', code='active')
 				self.save()
+
+			else: # not self.amount and not self.pk, don't save
+				pass
 
 
 # Model for Receipt of Multiple Tax/Fee payment
@@ -1407,8 +1415,6 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 			status=active, i_status='active', staff_id=receipt.user.pk)
 
 		pf.save()
-		#import pdb
-		#pdb.set_trace()
 		balance = fee.pay(receipt=receipt, pay_fee=pf, payment_amount=balance, bf=bf)
 		bf = 0
 
