@@ -1,0 +1,35 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% block mainbody %}
+
+<H3>Messages for batch {{ batch }}</h3>
+<div>
+	<a href="{% url 'new_business_message_batch' %}">New Business Message Batch</a></td>
+</div>
+<div>
+	<table class="tablesorter">
+		<tr><th>Message</th>
+			<th>Phone #</th>
+			<th>Citizen Id</th>
+			<th>Sent on</th>
+		</tr>
+		{% for b in batch.batch_messages.all %}
+			<tr>
+				<td>{{ b.message }}</td>
+				<td>{{ b.phone|default:'-' }}</td>
+				<td>{{ b.citizen_id|default:'-' }}</td>
+				<td>{{ b.sent|default:'-' }}</td>
+			</tr>
+		{% endfor %}
+	</table>
+</div>
+
+{% endblock %}

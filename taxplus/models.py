@@ -281,6 +281,8 @@ class Business(models.Model):
 	#business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
 	#business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
 	entity_id = models.IntegerField(null=True)
+	total_over_due = models.IntegerField()
+	as_at = models.DateField(null=True)
 
 	class Meta:
 		db_table = 'asset_business'
@@ -1379,6 +1381,78 @@ class Duplicate(models.Model):
 	class Meta:
 		db_table = 'asset_duplicate'
 		managed = False
+
+
+class MessageBatch(models.Model):
+	date_time = models.DateTimeField(auto_now_add=True)
+	message = models.CharField(max_length=200)
+	exported = models.DateTimeField(null=True)
+	sent = models.DateTimeField(null=True)
+	district = models.ForeignKey(District, null=True)
+	sector = models.ForeignKey(Sector, null=True)
+	cell = models.ForeignKey(Cell, null=True)
+	village = models.ForeignKey(Village, null=True)
+	count = models.IntegerField(default=0)
+	staff = models.ForeignKey(PMUser, null=True)
+
+	class Meta:
+		ordering = ['-date_time']
+
+	def generate_messages(self, limit=None):
+		if not self.message:
+			message = "Business:{name}, UPI:{upi}, Overdue:{overdue}, as at:{as_at}"
+			self.message = message
+
+		businesses = Business.objects.filter(total_over_due__gt=0, phone1__regex=r'^07\d{8}$')
+		if self.village:
+			businesses = businesses.filter(village=self.village)
+		elif self.cell:
+			businesses = businesses.filter(village__cell=self.cell)
+		elif self.sector:
+			businesses = businesses.filter(village__cell__sector=self.sector)
+		elif self.district:
+			businesses = businesses.filter(village__cell__sector__district=self.district)
+
+		if limit:
+			businesses = businesses[:limit]
+
+		businesses = businesses.order_by('name')
+
+		count=businesses.count()
+		self.count = count
+		self.save()
+
+		for b in businesses:
+			sms = Message(message=self.message, business=b, batch=self)
+			sms.message = sms.message.replace('{name}', b.name).\
+			replace('{upi}', "B%s" % b.pk).\
+			replace('{overdue}', '{0:,}'.format(b.total_over_due)).\
+			replace('{as_at}', b.as_at.strftime('%d %B %Y')).\
+			replace('{phone}', b.phone1)
+			sms.phone = b.phone1
+			sms.save()
+			print sms.message
+
+		return count
+
+	@classmethod
+	def generate_property_batch(cls):
+		pass
+
+
+class Message(models.Model):
+	batch = models.ForeignKey(MessageBatch, related_name='batch_messages')
+	business  = models.ForeignKey(Business, null=True)
+	prop = models.ForeignKey(Property, null=True)
+	message = models.CharField(max_length=200)
+	sent = models.DateTimeField(null=True)
+	citizen_id = models.CharField(max_length=30, null=True, blank=True)
+	phone = models.CharField(max_length=30, null=True, blank=True)
+
+	class Meta:
+		ordering = ['pk']
+
+
 
 def process_payment(payment_amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
 	fees = fees.order_by('due_date')

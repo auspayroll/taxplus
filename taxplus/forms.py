@@ -1,16 +1,52 @@
 from django import forms
-from property.models import District, Sector, Cell, Village
 from django.conf import settings
 from datetime import date
-from django.forms.widgets import RadioSelect, CheckboxSelectMultiple
+from django.forms.widgets import RadioSelect, CheckboxSelectMultiple, Textarea
 from dev1 import variables
 from common.fields import CurrencyField, CurrencyInput
 from datetime import date, datetime
-from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle
+from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle, MessageBatch, District, Sector, Cell, Village
 import math
 from django.core.exceptions import ValidationError
 import re
 
+
+class SearchRegion(forms.Form):
+	district = forms.ModelChoiceField(queryset = District.objects.none(), error_messages={'required':'District is required'})
+	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), error_messages={'required':'Sector is required'})
+	cell = forms.ModelChoiceField(required = False, queryset = Cell.objects.none())
+	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())
+
+	def __init__(self, *args, **kwargs):
+		super(SearchRegion, self).__init__(*args, **kwargs)
+		self.fields['district'].queryset = District.objects.all().order_by('name')
+		if args:
+			district = args[0].get('district')
+			if district:
+				try:
+					district_id = int(district)
+				except:
+					pass
+				else:
+					self.fields['sector'].queryset = Sector.objects.filter(district__pk=district_id)
+
+			sector = args[0].get('sector')
+			if sector:
+				try:
+					sector_id = int(sector)
+				except:
+					pass
+				else:
+					self.fields['cell'].queryset = Cell.objects.filter(sector__pk=sector_id)
+
+			cell = args[0].get('cell')
+			if cell:
+				try:
+					cell_id = int(cell)
+				except:
+					pass
+				else:
+					self.fields['village'].queryset = Village.objects.filter(cell__pk=cell_id)
 
 
 def validate_phone(value):
@@ -268,5 +304,9 @@ class BusinessFormRegion(forms.ModelForm):
 			self.initial['district'] = self.instance.village.cell.sector.district
 
 
-
-
+class MessageBatchForm(SearchRegion):
+	message = forms.CharField(widget=Textarea, help_text="You can use the following placeholders: {name}, {overdue}, {upi}, {phone}, {as_at}")
+	district = forms.ModelChoiceField(queryset = District.objects.none(), required=False)
+	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), required=False)
+	cell = forms.ModelChoiceField(required = False, queryset = Cell.objects.none())
+	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())

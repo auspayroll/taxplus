@@ -1,10 +1,10 @@
 from django.template.response import TemplateResponse
 from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
 from jtax.models import PayFee, Fee
-from property.models import District, Sector, Cell
+#from property.models import District, Sector, Cell
 from datetime import date
 import json
-from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm
 from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
@@ -633,6 +633,37 @@ def business_update_region(request, pk):
 		form = BusinessFormRegion(instance=business)
 
 	return TemplateResponse(request, "tax/update_business.html", { 'business':business, 'form':form })
+
+
+@login_required
+def message_batches(request):
+	batches = MessageBatch.objects.all().select_related('district', 'sector', 'cell', 'village')
+	return TemplateResponse(request, "tax/message_batches.html", { 'batches':batches })
+
+
+@login_required
+def new_business_message_batch(request):
+	if request.method == 'POST':
+		form = MessageBatchForm(request.POST)
+		if form.is_valid():
+			batch = MessageBatch.objects.create(message=form.cleaned_data['message'], district=form.cleaned_data['district'], \
+				sector=form.cleaned_data['sector'], cell=form.cleaned_data['cell'], village=form.cleaned_data['village'])
+			batch.generate_messages()
+			messages.success(request, "%s messages created" % batch.count)
+			return HttpResponseRedirect(reverse('message_batches'))
+		else:
+			messages.error(request, "there was a form error")
+	else:
+		form = MessageBatchForm()
+
+	return TemplateResponse(request, "tax/new_message_batch.html", { 'form':form })
+
+
+@login_required
+def batch_messages(request, pk):
+	batch = get_object_or_404(MessageBatch, pk=pk)
+	return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch })
+
 
 
 

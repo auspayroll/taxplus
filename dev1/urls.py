@@ -23,6 +23,10 @@ urlpatterns = patterns('',
 	url(r'^admin/business_payments/(?P<pk>\d+)/$', taxplus_views.business_payments, name='business_payments'),
 	url(r'^admin/merge_preview/(?P<pk>\d+)/$', taxplus_views.merge_preview, name='merge_preview'),
 
+	url(r'^admin/message_batches/$', taxplus_views.message_batches, name='message_batches'),
+	url(r'^admin/new_business_message_batch/$', taxplus_views.new_business_message_batch, name='new_business_message_batch'),
+	url(r'^admin/batch_messages/(?P<pk>\d+)/$', taxplus_views.batch_messages, name='batch_messages'),
+
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
 

@@ -1,0 +1,42 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block css %}
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
+<link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
+<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
+{% endblock %}
+
+{% block mainbody %}
+
+<H3>Message Batches</h3>
+<div>
+	<a href="{% url 'new_business_message_batch' %}">New Business Message Batch</a></td>
+</div>
+<div>
+	<table class="tablesorter">
+		<tr><th>Created</th><th>Message</th>
+			<th>message count</th><th></th><th></th><th>exported on</th>
+			<th>District</th><th>Sector</th><th>Cell</th><th>Village</th>
+			<th>sent on</th><th>Staff</th>
+		</tr>
+		{% for b in batches %}
+			<tr><td>{{ b.date_time }}</td>
+				<td>{{ b.message }}</td>
+				<td>{{ b.count|intcomma }}</td>
+				<td><a href="{% url 'batch_messages' b.pk %}">View</a></td>
+				<td><a href="">CSV</a></td>
+				<td>{{ b.sent|default:'-' }}</td>
+				<td>{{ b.exported|default:'-' }}</td>
+				<td>{{ b.district|default:'-' }}</td>
+				<td>{{ b.sector|default:'-' }}</td>
+				<td>{{ b.cell|default:'-' }}</td>
+				<td>{{ b.village|default:'-' }}</td>
+				<td>{{ b.staff|default:'-' }}</td>
+			</tr>
+		{% endfor %}
+	</table>
+</div>
+
+{% endblock %}

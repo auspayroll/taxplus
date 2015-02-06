@@ -1,0 +1,39 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block css %}
+{{ super }}
+<style type="text/css">
+FORM TABLE TR{
+	border-bottom:1pt #cccccc dotted;
+}
+
+FORM TABLE TD{
+	padding:6px;
+}
+
+FORM TABLE TH, FORM TABLE TD{
+	vertical-align: top;
+}
+
+
+</style>
+<script type="text/javascript"  src="{% static "js/populate_region_dropdowns.js" %}"></script>
+{% endblock %}
+
+{% block mainbody %}
+<h3>New Business Message Batch</h3>
+<div>
+This form will create message batches for all outstanding business fees.
+District, Sector, Cell and Village are optional.
+
+</div>
+<form action="{{ request.build_absolute_uri }}" method="post">
+<table id="search_table">
+	{{ form }}
+</table>
+{% csrf_token %}
+<input type="submit" value="update">
+</form>
+{% endblock %}
