@@ -26,6 +26,7 @@ urlpatterns = patterns('',
 	url(r'^admin/message_batches/$', taxplus_views.message_batches, name='message_batches'),
 	url(r'^admin/new_business_message_batch/$', taxplus_views.new_business_message_batch, name='new_business_message_batch'),
 	url(r'^admin/batch_messages/(?P<pk>\d+)/$', taxplus_views.batch_messages, name='batch_messages'),
+	url(r'^admin/batch_messages_csv/(?P<pk>\d+)/$', taxplus_views.batch_messages, {'csv':True}, name='batch_messages_csv'),
 
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),

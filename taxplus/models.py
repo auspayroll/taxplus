@@ -282,7 +282,25 @@ class Business(models.Model):
 	#business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
 	#business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
 	entity_id = models.IntegerField(null=True)
-	total_over_due = models.IntegerField()
+	over_due_lt_month = models.IntegerField(default=0)
+	over_due_lt_month_interest = models.IntegerField(default=0)
+	over_due_lt_month_penalty = models.IntegerField(default=0)
+	over_due_gt_month = models.IntegerField(default=0)
+	over_due_gt_month_interest = models.IntegerField(default=0)
+	over_due_gt_month_penalty = models.IntegerField(default=0)
+	over_due_gt_3month = models.IntegerField(default=0)
+	over_due_gt_3month_interest = models.IntegerField(default=0)
+	over_due_gt_3month_penalty = models.IntegerField(default=0)
+	over_due_gt_6month = models.IntegerField(default=0)
+	over_due_gt_6month_interest = models.IntegerField(default=0)
+	over_due_gt_6month_penalty = models.IntegerField(default=0)
+	over_due_gt_year = models.IntegerField(default=0)
+	over_due_gt_year_interest = models.IntegerField(default=0)
+	over_due_gt_year_penalty = models.IntegerField(default=0)
+	over_due_interest = models.IntegerField(default=0)
+	over_due_penalty = models.IntegerField(default=0)
+	over_due = models.IntegerField(default=0)
+	total_over_due = models.IntegerField(default=0)
 	as_at = models.DateField(null=True)
 
 	class Meta:
@@ -1396,14 +1414,14 @@ class MessageBatch(models.Model):
 	cell = models.ForeignKey(Cell, null=True)
 	village = models.ForeignKey(Village, null=True)
 	count = models.IntegerField(default=0)
-	staff = models.ForeignKey(PMUser, null=True)
+	staff = models.ForeignKey(User, null=True)
 
 	class Meta:
 		ordering = ['-date_time']
 
 	def generate_messages(self, limit=None):
 		if not self.message:
-			message = "Business:{name}, UPI:{upi}, Overdue:{overdue}, as at:{as_at}"
+			message = "Business:{name}, EPAY:{epay}, Overdue:{overdue}, as at:{as_at}"
 			self.message = message
 
 		businesses = Business.objects.filter(total_over_due__gt=0, phone1__regex=r'^07\d{8}$')
