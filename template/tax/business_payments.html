@@ -101,7 +101,7 @@
 
 			{% for receipt in payments %}
 				<tr>
-					<td>{{ receipt.bf|intcomma }}</td>
+					<td><!--pk={{receipt.pk}}-->{{ receipt.bf|intcomma }}</td>
 					<td>{{ receipt.amount|intcomma }}</td>
 					<td>{{ receipt.credit|intcomma }}</td>
 					<td>{{ receipt.paid_date }}</td>
@@ -119,8 +119,8 @@
 		</table>
 
 {% if request.user.is_superuser %}
+	<input type="hidden" name="business_id" value="{{ business.pk }}" >
 	<div style="float:right; margin-right:25px">
-		<input type="hidden" name="property_id" value="{{ property.pk }}" >
 		<input type="submit" class="pay_tax_btn" name="submit" value="Remove/Reverse selected Payments" /></div>
 {% endif %}
 
