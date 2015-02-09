@@ -321,9 +321,11 @@ class Business(models.Model):
 		balance = 0
 		receipts = PaymentReceipt.objects.filter(receipt_payments__fee__business_id=self.pk, status__code='active').distinct().order_by('date_time')
 		for receipt in receipts:
-			receipt.bf = balance
+			receipt.bf = bf = balance
+			balance = receipt.amount
 			for pay_fee in receipt.receipt_payments.all().order_by('fee__due_date'):
-				balance = pay_fee.fee.pay(receipt=receipt, pay_fee=pay_fee, payment_amount=receipt.amount, bf=receipt.bf)
+				balance = pay_fee.fee.pay(receipt=receipt, pay_fee=pay_fee, payment_amount=balance, bf=bf)
+				bf = 0
 
 			receipt.credit = balance
 			receipt.save()
@@ -385,11 +387,9 @@ class Business(models.Model):
 						fee.date_from = cleaning_month
 						fee.date_to = end_month
 						fee.save()
-						print 'fee updated'
 						fees.exclude(id=fee.pk).update(status=inactive)
 
 					else:
-						print 'fee created'
 						fee = Fee(category=cleaning, business=self, date_from=cleaning_month, date_to=end_month, amount=0, is_paid=False, date_time=datetime.now())
 
 					if not fee.is_paid:
@@ -525,11 +525,11 @@ class Property(models.Model):
 		balance = 0
 		receipts = PaymentReceipt.objects.filter(receipt_payments__fee__prop__pk=self.pk, status__code='active').distinct().order_by('date_time')
 		for receipt in receipts:
-			#import pdb
-			#pdb.set_trace()
-			receipt.bf = balance
+			receipt.bf = bf = balance
+			balance = receipt.amount
 			for pay_fee in receipt.receipt_payments.all().order_by('fee__due_date'):
-				balance = pay_fee.fee.pay(receipt=receipt, pay_fee=pay_fee, payment_amount=receipt.amount, bf=receipt.bf)
+				balance = pay_fee.fee.pay(receipt=receipt, pay_fee=pay_fee, payment_amount=balance, bf=bf)
+				bf = 0
 
 			receipt.credit = balance
 			receipt.save()
