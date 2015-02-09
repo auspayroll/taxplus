@@ -972,7 +972,7 @@ class Fee(models.Model):
 		if not pay_date:
 			pay_date = date.today()
 
-		if pay_date <= self.due_date:
+		if not self.due_date or pay_date <= self.due_date:
 			return (0,0)
 
 		if self.category.code in ('land_lease', 'cleaning', 'market'):
