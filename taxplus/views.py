@@ -385,6 +385,7 @@ def merge_preview(request, pk):
 @login_required
 def property_fees(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
+	fees = prop.property_fees.filter(status__code='active')
 	payments = PayFee.objects.filter(fee__prop=prop, receipt__status__code='active')
 	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees, 'payments':payments })
 
@@ -399,6 +400,7 @@ def property_payments(request, pk):
 @login_required
 def business_fees(request, pk):
 	business = get_object_or_404(Business, pk=pk)
+	fees = prop.business_fees.filter(status__code='active')
 	payments = PayFee.objects.filter(fee__business=business, receipt__status__code='active')
 	return TemplateResponse(request, 'tax/business_fees_new.html', { 'business':business, 'fees':fees, 'payments':payments  })
 
