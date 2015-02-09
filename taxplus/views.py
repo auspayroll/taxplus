@@ -21,6 +21,39 @@ from django.forms.models import modelformset_factory
 from django.contrib.auth.decorators import user_passes_test
 
 
+def csv_data(rows, values_list, filename, preamble=None):
+	response = HttpResponse(content_type='text/csv')
+	response['Content-Disposition'] = 'attachment; filename="%s"' % filename
+	writer = csv.writer(response)
+	rows = rows.values_list(*values_list)
+	if preamble:
+		for k, v in preamble.iteritems():
+			writer.writerow([k,v])
+		writer.writerow([])
+
+	writer.writerow(values_list)
+	for r in rows:
+		row = []
+		for item in r:
+			if isinstance(item, datetime):
+				item = item.strftime('%d/%m/%Y %H:%M')
+
+			elif isinstance(item, date):
+				item = item.strftime('%d/%m/%Y')
+
+			if isinstance(item, basestring):
+				row.append(item.encode('utf-8'))
+
+			elif item is None:
+				row.append('')
+
+			else:
+				row.append(item)
+
+		writer.writerow(row)
+
+	return response
+
 
 @login_required
 def leases(request, pk):
@@ -645,7 +678,7 @@ def new_business_message_batch(request):
 		form = MessageBatchForm(request.POST)
 		if form.is_valid():
 			batch = MessageBatch.objects.create(message=form.cleaned_data['message'], district=form.cleaned_data['district'], \
-				sector=form.cleaned_data['sector'], cell=form.cleaned_data['cell'], village=form.cleaned_data['village'])
+				sector=form.cleaned_data['sector'], cell=form.cleaned_data['cell'], village=form.cleaned_data['village'], staff=request.user)
 			batch.generate_messages()
 			messages.success(request, "%s messages created" % batch.count)
 			return HttpResponseRedirect(reverse('message_batches'))
@@ -658,10 +691,15 @@ def new_business_message_batch(request):
 
 
 @login_required
-def batch_messages(request, pk):
+def batch_messages(request, pk, csv=None):
 	batch = get_object_or_404(MessageBatch, pk=pk)
-	return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch })
-
+	if csv:
+		messages = batch.batch_messages.all()
+		batch.exported = datetime.now()
+		batch.save()
+		return csv_data(messages, values_list=('message','phone','business__name'), filename='messages.csv', preamble=None)
+	else:
+		return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch })
 
 
 

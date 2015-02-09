@@ -17,22 +17,23 @@
 <div>
 	<table class="tablesorter">
 		<tr><th>Created</th><th>Message</th>
-			<th>message count</th><th></th><th></th><th>exported on</th>
+			<th>message count</th><th></th><th></th>
 			<th>District</th><th>Sector</th><th>Cell</th><th>Village</th>
-			<th>sent on</th><th>Staff</th>
+			<th>exported</th>
+			<th>sent</th><th>Staff</th>
 		</tr>
 		{% for b in batches %}
 			<tr><td>{{ b.date_time }}</td>
 				<td>{{ b.message }}</td>
 				<td>{{ b.count|intcomma }}</td>
-				<td><a href="{% url 'batch_messages' b.pk %}">View</a></td>
-				<td><a href="">CSV</a></td>
-				<td>{{ b.sent|default:'-' }}</td>
-				<td>{{ b.exported|default:'-' }}</td>
+				<td><a href="{% url 'batch_messages' b.pk %}">View Messages</a></td>
+				<td><a href="{% url 'batch_messages_csv' b.pk %}">Download CSV</a></td>
 				<td>{{ b.district|default:'-' }}</td>
 				<td>{{ b.sector|default:'-' }}</td>
 				<td>{{ b.cell|default:'-' }}</td>
 				<td>{{ b.village|default:'-' }}</td>
+				<td>{{ b.exported|default:'-' }}</td>
+				<td>{{ b.sent|default:'-' }}</td>
 				<td>{{ b.staff|default:'-' }}</td>
 			</tr>
 		{% endfor %}

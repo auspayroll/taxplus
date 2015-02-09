@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.gis.db import models as gis_models
+from django.contrib.auth.models import User
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -1427,13 +1428,15 @@ class MessageBatch(models.Model):
 		for b in businesses:
 			sms = Message(message=self.message, business=b, batch=self)
 			sms.message = sms.message.replace('{name}', b.name).\
-			replace('{upi}', "B%s" % b.pk).\
-			replace('{overdue}', '{0:,}'.format(b.total_over_due)).\
+			replace('{epay}', "B%s" % b.pk).\
+			replace('{overdue}', '{0:,}'.format(b.over_due)).\
+			replace('{interest}', '{0:,}'.format(b.over_due_interest)).\
+			replace('{penalty}', '{0:,}'.format(b.over_due_penalty)).\
+			replace('{total}', '{0:,}'.format(b.total_over_due)).\
 			replace('{as_at}', b.as_at.strftime('%d %B %Y')).\
 			replace('{phone}', b.phone1)
 			sms.phone = b.phone1
 			sms.save()
-			print sms.message
 
 		return count
 

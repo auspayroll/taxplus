@@ -16,13 +16,15 @@
 </div>
 <div>
 	<table class="tablesorter">
-		<tr><th>Message</th>
+		<tr>
+			<th>Business</th>
+			<th>Message</th>
 			<th>Phone #</th>
-			<th>Citizen Id</th>
 			<th>Sent on</th>
 		</tr>
 		{% for b in batch.batch_messages.all %}
 			<tr>
+				<td>{{ b.business.name }}</td>
 				<td>{{ b.message }}</td>
 				<td>{{ b.phone|default:'-' }}</td>
 				<td>{{ b.citizen_id|default:'-' }}</td>
