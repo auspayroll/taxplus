@@ -34,4 +34,6 @@ class Command(BaseCommand):
 			print 'Adjusting %s ' % p
 			balance = p.adjust_payments()
 
+		print 'adjust payments completed'
+
 
