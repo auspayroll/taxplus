@@ -312,7 +312,8 @@ class Business(models.Model):
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
 	def reset_fees(self):
-		fees = self.business_fees.filter(fee_payments__isnull=True).distinct()
+		active_receipts = PaymentReceipt.objects.filter(receipt_payments__fee__business=self, status__code='active')
+		fees = Fee.objects.filter(business=self).exclude(fee_payments__receipt__in=active_receipts)
 		for fee in fees:
 			fee.reset()
 
@@ -515,7 +516,8 @@ class Property(models.Model):
 
 
 	def reset_fees(self):
-		fees = self.property_fees.filter(fee_payments__isnull=True).distinct()
+		active_receipts = PaymentReceipt.objects.filter(receipt_payments__fee__prop=self, status__code='active')
+		fees = Fee.objects.filter(business=self).exclude(fee_payments__receipt__in=active_receipts)
 		for fee in fees:
 			fee.reset()
 
