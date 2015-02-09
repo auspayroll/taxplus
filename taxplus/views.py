@@ -409,8 +409,7 @@ def business_fees(request, pk):
 @login_required
 def business_payments(request, pk):
 	business = get_object_or_404(Business, pk=pk)
-	fees = business.business_fees.filter(status__code='active')
-	payments = PaymentReceipt.objects.filter(receipt_payments__fee__in=fees, status__code='active').distinct().order_by('date_time')
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__business=business, status__code='active').distinct().order_by('date_time')
 	return TemplateResponse(request, 'tax/business_payments.html', { 'business':business, 'payments':payments })
 
 @login_required
