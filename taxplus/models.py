@@ -1439,7 +1439,8 @@ class MessageBatch(models.Model):
 			message = "Citizen:{name}, EPAY:{epay}, Overdue:{overdue}, as at:{as_at}"
 			self.message = message
 
-		ownerships = Ownership.objects.filter(asset_property__isnull=False, asset_property__total_over_due__gt=0, owner_citizen__isnull=False, owner_citizen__citizen_id__regex=r'^\d{16}$')
+		ownerships = Ownership.objects.filter(asset_property__isnull=False, asset_property__total_over_due__gt=0, owner_citizen__isnull=False, owner_citizen__citizen_id__regex=r'^\d{16}$').\
+			select_related('asset_property', 'owner_citizen')
 		if self.village:
 			ownerships = ownerships.filter(asset_property__village=self.village)
 		elif self.cell:

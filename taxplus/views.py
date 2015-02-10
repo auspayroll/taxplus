@@ -668,7 +668,7 @@ def business_update_region(request, pk):
 
 @login_required
 def message_batches(request):
-	batches = MessageBatch.objects.all().select_related('district', 'sector', 'cell', 'village')
+	batches = MessageBatch.objects.all().select_related('district', 'sector', 'cell', 'village', 'staff')
 	return TemplateResponse(request, "tax/message_batches.html", { 'batches':batches })
 
 
