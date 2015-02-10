@@ -678,7 +678,8 @@ def new_business_message_batch(request):
 		form = MessageBatchForm(request.POST)
 		if form.is_valid():
 			batch = MessageBatch.objects.create(message=form.cleaned_data['message'], district=form.cleaned_data['district'], \
-				sector=form.cleaned_data['sector'], cell=form.cleaned_data['cell'], village=form.cleaned_data['village'], staff=request.user)
+				sector=form.cleaned_data['sector'], cell=form.cleaned_data['cell'], \
+				village=form.cleaned_data['village'], staff=request.user, message_type=form.cleaned_data['message_type'])
 			batch.generate_messages()
 			messages.success(request, "%s messages created" % batch.count)
 			return HttpResponseRedirect(reverse('message_batches'))
@@ -693,13 +694,17 @@ def new_business_message_batch(request):
 @login_required
 def batch_messages(request, pk, csv=None):
 	batch = get_object_or_404(MessageBatch, pk=pk)
+	messages = batch.batch_messages.all().select_related('citizen', 'business')
 	if csv:
-		messages = batch.batch_messages.all()
 		batch.exported = datetime.now()
 		batch.save()
-		return csv_data(messages, values_list=('message','phone','business__name'), filename='messages.csv', preamble=None)
+		if batch.message_type == 1:
+			return csv_data(messages, values_list=('message','phone','business__name'), filename='messages.csv', preamble=None)
+		else:
+			return csv_data(messages, values_list=('citizen__first_name',\
+				'citizen__middle_name', 'citizen__last_name', 'citizen__citizen_id', 'message', 'phone'), filename='messages.csv', preamble=None)
 	else:
-		return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch })
+		return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch, 'batch_messages':messages })
 
 
 

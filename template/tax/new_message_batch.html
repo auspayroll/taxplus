@@ -2,15 +2,24 @@
 {% load staticfiles %}
 {% load humanize %}{% load simple_tags %}
 
+{% block crumbbody %}
+	<a href="{% url 'message_batches' %}">Message Batches</a> > <a href="{% url 'new_business_message_batch' %}">New Batch</a>
+{% endblock %}
+
 {% block css %}
 {{ super }}
 <style type="text/css">
+
+FORM TABLE{
+	background:#e4e4e4;
+}
+
 FORM TABLE TR{
 	border-bottom:1pt #cccccc dotted;
 }
 
-FORM TABLE TD{
-	padding:6px;
+FORM TABLE TD, FORM TABLE TH{
+	padding:8px;
 }
 
 FORM TABLE TH, FORM TABLE TD{
@@ -23,17 +32,32 @@ FORM TABLE TH, FORM TABLE TD{
 {% endblock %}
 
 {% block mainbody %}
-<h3>New Business Message Batch</h3>
+<h3>New Message Batch</h3>
 <div>
-This form will create message batches for all outstanding business fees.
-District, Sector, Cell and Village are optional.
+This form will create message batches for all outstanding fees for Businesses or Properties.<br/>
+District, Sector, Cell and Village are optional but they are recommended to keep the size of
+the message batches small.
 
 </div>
 <form action="{{ request.build_absolute_uri }}" method="post">
 <table id="search_table">
 	{{ form }}
 </table>
+
 {% csrf_token %}
 <input type="submit" value="Create Message Batch">
 </form>
+<div style="">
+You can use the following placeholders in the message:
+<table border="1">
+	<tr><td>{name}</td><td>Business Name (or citizen name for property batches)</td></tr></tr>
+	<tr><td>{overdue}</td><td>The fee amount overdue</td></tr></tr>
+	<tr><td>{interest}</td><td>Interest owed</td></tr></tr>
+	<tr><td>{penalty}</td><td>Penalty owed</td></tr></tr>
+	<tr><td>{total}</td><td>Total owed (overdue + interest + penalty)</td></tr></tr>
+	<tr><td>{as_at}</td><td>Date at which amounts are owed</td></tr></tr>
+	<tr><td>{epay}</td><td>EPAY number</td></tr></tr>
+</table>
+
+</div>
 {% endblock %}

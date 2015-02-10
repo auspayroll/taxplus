@@ -529,6 +529,11 @@ class Property(models.Model):
 	date_created = models.DateTimeField(auto_now_add=True, blank=True)
 	date_modified = models.DateTimeField(auto_now=True, blank=True)
 	credit = models.IntegerField(default = 0, help_text = 'Credit accumulated for this property')
+	over_due = models.IntegerField(default=0)
+	over_due_interest = models.IntegerField(default=0)
+	over_due_penalty = models.IntegerField(default=0)
+	total_over_due = models.IntegerField(default=0)
+	as_at = models.DateTimeField(null=True)
 
 	class Meta:
 		db_table = 'property_property'
@@ -1414,12 +1419,61 @@ class MessageBatch(models.Model):
 	cell = models.ForeignKey(Cell, null=True)
 	village = models.ForeignKey(Village, null=True)
 	count = models.IntegerField(default=0)
+	message_type = models.IntegerField(default=1)
 	staff = models.ForeignKey(User, null=True)
 
 	class Meta:
 		ordering = ['-date_time']
 
+	def __unicode__(self):
+		return 'Batch %s' % self.pk
+
 	def generate_messages(self, limit=None):
+		if self.message_type == 1:
+			return self.generate_business_messages(limit=limit)
+		elif self.message_type == 2:
+			return self.generate_property_messages(limit=limit)
+
+	def generate_property_messages(self, limit=None):
+		if not self.message:
+			message = "Citizen:{name}, EPAY:{epay}, Overdue:{overdue}, as at:{as_at}"
+			self.message = message
+
+		ownerships = Ownership.objects.filter(asset_property__isnull=False, asset_property__total_over_due__gt=0, owner_citizen__isnull=False, owner_citizen__citizen_id__regex=r'^\d{16}$')
+		if self.village:
+			ownerships = ownerships.filter(asset_property__village=self.village)
+		elif self.cell:
+			ownerships = ownerships.filter(asset_property__village__cell=self.cell)
+		elif self.sector:
+			ownerships = ownerships.filter(asset_property__village__cell__sector=self.sector)
+		elif self.district:
+			ownerships = ownerships.filter(asset_property__village__cell__sector__district=self.district)
+
+		if limit:
+			ownerships = ownerships[:limit]
+
+		ownerships = ownerships.order_by('asset_property__upi')
+		count=ownerships.count()
+		self.count = count
+		self.save()
+
+		for ownership in ownerships:
+			sms = Message(message=self.message, prop=ownership.asset_property, prop_title=ownership.prop_title, citizen=ownership.owner_citizen, batch=self)
+			sms.message = sms.message.replace('{name}', ownership.owner_citizen.name).\
+			replace('{epay}', "B%s" % ownership.prop_title.epay).\
+			replace('{overdue}', '{0:,}'.format(ownership.asset_property.over_due)).\
+			replace('{interest}', '{0:,}'.format(ownership.asset_property.over_due_interest)).\
+			replace('{penalty}', '{0:,}'.format(ownership.asset_property.over_due_penalty)).\
+			replace('{total}', '{0:,}'.format(ownership.asset_property.total_over_due)).\
+			replace('{as_at}', ownership.asset_property.as_at.strftime('%d %B %Y'))
+			sms.phone = ownership.owner_citizen.phone_1
+			sms.save()
+
+		return count
+
+
+
+	def generate_business_messages(self, limit=None):
 		if not self.message:
 			message = "Business:{name}, EPAY:{epay}, Overdue:{overdue}, as at:{as_at}"
 			self.message = message
@@ -1451,25 +1505,21 @@ class MessageBatch(models.Model):
 			replace('{interest}', '{0:,}'.format(b.over_due_interest)).\
 			replace('{penalty}', '{0:,}'.format(b.over_due_penalty)).\
 			replace('{total}', '{0:,}'.format(b.total_over_due)).\
-			replace('{as_at}', b.as_at.strftime('%d %B %Y')).\
-			replace('{phone}', b.phone1)
+			replace('{as_at}', b.as_at.strftime('%d %B %Y'))
 			sms.phone = b.phone1
 			sms.save()
 
 		return count
-
-	@classmethod
-	def generate_property_batch(cls):
-		pass
 
 
 class Message(models.Model):
 	batch = models.ForeignKey(MessageBatch, related_name='batch_messages')
 	business  = models.ForeignKey(Business, null=True)
 	prop = models.ForeignKey(Property, null=True)
+	prop_title = models.ForeignKey(PropertyTitle, null=True)
+	citizen = models.ForeignKey(Citizen, null=True)
 	message = models.CharField(max_length=200)
 	sent = models.DateTimeField(null=True)
-	citizen_id = models.CharField(max_length=30, null=True, blank=True)
 	phone = models.CharField(max_length=30, null=True, blank=True)
 
 	class Meta:

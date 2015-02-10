@@ -2,6 +2,11 @@
 {% load staticfiles %}
 {% load humanize %}{% load simple_tags %}
 
+{% block crumbbody %}
+	<a href="{% url 'message_batches' %}">Message Batches</a> > Messages
+
+{% endblock %}
+
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
@@ -10,28 +15,52 @@
 
 {% block mainbody %}
 
-<H3>Messages for batch {{ batch }}</h3>
+<H3>Messages for {{ batch }}</h3>
 <div>
-	<a href="{% url 'new_business_message_batch' %}">New Business Message Batch</a></td>
+	<a href="{% url 'new_business_message_batch' %}">New Message Batch</a> | <a href="{% url 'batch_messages_csv' batch.pk %}">Download CSV</a>
 </div>
-<div>
-	<table class="tablesorter">
-		<tr>
-			<th>Business</th>
-			<th>Message</th>
-			<th>Phone #</th>
-			<th>Sent on</th>
-		</tr>
-		{% for b in batch.batch_messages.all %}
+
+{% if batch.message_type = 1%}
+	<div>
+		<table class="tablesorter">
 			<tr>
-				<td>{{ b.business.name }}</td>
-				<td>{{ b.message }}</td>
-				<td>{{ b.phone|default:'-' }}</td>
-				<td>{{ b.citizen_id|default:'-' }}</td>
-				<td>{{ b.sent|default:'-' }}</td>
+				<th>Business</th>
+				<th>Message</th>
+				<th>Phone #</th>
+				<th>Sent on</th>
 			</tr>
-		{% endfor %}
-	</table>
-</div>
+			{% for b in batch_messages %}
+				<tr>
+					<td>{{ b.business.name }}</td>
+					<td>{{ b.message }}</td>
+					<td>{{ b.phone|default:'-' }}</td>
+					<td>{{ b.citizen_id|default:'-' }}</td>
+					<td>{{ b.sent|default:'-' }}</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+{% else %}
+	<div>
+		<table class="tablesorter">
+			<tr>
+				<th>Citizen</th>
+				<th>Citizen Id</th>
+				<th>Message</th>
+				<th>Phone #</th>
+				<th>Sent on</th>
+			</tr>
+			{% for b in batch_messages %}
+				<tr>
+					<td>{{ b.citizen.name }}</td>
+					<td>{{ b.citizen.citizen_id|default:'-' }}</td>
+					<td>{{ b.message }}</td>
+					<td>{{ b.phone|default:'-' }}</td>
+					<td>{{ b.sent|default:'-' }}</td>
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+{% endif %}
 
 {% endblock %}

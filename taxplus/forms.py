@@ -305,7 +305,8 @@ class BusinessFormRegion(forms.ModelForm):
 
 
 class MessageBatchForm(SearchRegion):
-	message = forms.CharField(widget=Textarea, help_text="You can use the following placeholders: {name}, {overdue}, {epay}, {phone}, {as_at}")
+	message = forms.CharField(widget=Textarea, help_text="You can use the following placeholders: {name}, {overdue}, {penalty}, {interest}, {total}, {epay}, {as_at}")
+	message_type = forms.TypedChoiceField(choices=[(1,'For Business'),(2,'For Property')], coerce=int)
 	district = forms.ModelChoiceField(queryset = District.objects.none(), required=False)
 	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), required=False)
 	cell = forms.ModelChoiceField(required = False, queryset = Cell.objects.none())

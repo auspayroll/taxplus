@@ -2,6 +2,10 @@
 {% load staticfiles %}
 {% load humanize %}{% load simple_tags %}
 
+{% block crumbbody %}
+	<a href="{% url 'message_batches' %}">Message Batches</a>
+{% endblock %}
+
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/property.css" %}" />
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
@@ -12,11 +16,14 @@
 
 <H3>Message Batches</h3>
 <div>
-	<a href="{% url 'new_business_message_batch' %}">New Business Message Batch</a></td>
+	<a href="{% url 'new_business_message_batch' %}">New Message Batch</a></td>
 </div>
 <div>
 	<table class="tablesorter">
-		<tr><th>Created</th><th>Message</th>
+		<tr><th>Created</th>
+			<th>Batch#</th>
+			<th>Type</th>
+			<th>Message</th>
 			<th>message count</th><th></th><th></th>
 			<th>District</th><th>Sector</th><th>Cell</th><th>Village</th>
 			<th>exported</th>
@@ -24,6 +31,8 @@
 		</tr>
 		{% for b in batches %}
 			<tr><td>{{ b.date_time }}</td>
+				<td>{{ b.pk }}</td>
+				<td>{%if b.message_type = 2%}Property{% else %}Business{% endif %}</td>
 				<td>{{ b.message }}</td>
 				<td>{{ b.count|intcomma }}</td>
 				<td><a href="{% url 'batch_messages' b.pk %}">View Messages</a></td>
