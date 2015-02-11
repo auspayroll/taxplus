@@ -820,6 +820,7 @@ class Fee(models.Model):
 	qty = models.FloatField(default=0)
 	rate = models.FloatField(default=0)
 	interest_charged = models.IntegerField(default=0)
+	penalty_charged = models.IntegerField(default=0)
 	penalty = models.IntegerField(default=0)
 	period_from = models.DateTimeField(help_text="The start date of a period that this fee item is for.")
 	period_to = models.DateTimeField(help_text="The end date of a period that this fee item is for.")
@@ -841,8 +842,7 @@ class Fee(models.Model):
 		self.residual_interest = 0
 		self.is_paid = False
 		self.remaining_amount = self.amount
-		self.penalty_charged, self.interest_charged = self.calc_penalty(date.today(), self.amount)
-		self.penalty = self.penalty_charged
+		self.penalty, self.interest_charged = self.calc_penalty(date.today(), self.amount)
 		self.interest = self.interest_charged
 		self.save()
 
@@ -937,6 +937,11 @@ class Fee(models.Model):
 			self.principle_paid += payment.principle
 
 		pay_fee.save()
+		self.save()
+		self.update_interest_penalty()
+		return pay_fee.credit
+
+	def update_interest_penalty(self):
 		calc_penalty, calc_interest = self.calc_penalty(date.today(), self.remaining_amount)
 		if not self.penalty_charged:
 			self.penalty_charged = calc_penalty
@@ -950,7 +955,8 @@ class Fee(models.Model):
 			self.is_paid = False
 
 		self.save()
-		return pay_fee.credit
+		return self.interest, self.penalty
+
 
 	def __unicode__(self):
 		if self.category.code == 'land_lease':
@@ -1463,6 +1469,7 @@ class MessageBatch(models.Model):
 			sms.message = sms.message.replace('{name}', ownership.owner_citizen.name).\
 			replace('{epay}', "B%s" % ownership.prop_title.epay).\
 			replace('{overdue}', '{0:,}'.format(ownership.asset_property.over_due)).\
+			replace('{upi}', '{0:,}'.format(ownership.asset_property.upi)).\
 			replace('{interest}', '{0:,}'.format(ownership.asset_property.over_due_interest)).\
 			replace('{penalty}', '{0:,}'.format(ownership.asset_property.over_due_penalty)).\
 			replace('{total}', '{0:,}'.format(ownership.asset_property.total_over_due)).\
