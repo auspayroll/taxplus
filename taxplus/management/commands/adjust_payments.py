@@ -21,9 +21,6 @@ class Command(BaseCommand):
 	name= 'Convert land use types'
 
 	def handle(self, *args, **options):
-		for fee in Fee.all_objects.filter(fee_payments__isnull=True).distinct():
-			fee.reset()
-
 		for business in Business.objects.filter(business_fees__fee_payments__isnull=False).distinct().order_by('name'):
 			print business
 			business.reset_fees()
