@@ -936,9 +936,12 @@ class Fee(models.Model):
 			self.interest_paid += payment.interest
 			self.principle_paid += payment.principle
 
-		pay_fee.save()
+		if self.total_due <= 0:
+			self.is_paid = True
+		else:
+			self.is_paid = False
 		self.save()
-		self.update_interest_penalty()
+		pay_fee.save()
 		return pay_fee.credit
 
 	def update_interest_penalty(self):
@@ -949,10 +952,6 @@ class Fee(models.Model):
 		self.penalty = self.penalty_charged - self.penalty_paid
 		self.interest_charged = calc_interest + self.residual_interest
 		self.interest = self.interest_charged - self.interest_paid
-		if self.total_due <= 0:
-			self.is_paid = True
-		else:
-			self.is_paid = False
 
 		self.save()
 		return self.interest, self.penalty
@@ -1572,19 +1571,6 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		pf.save()
 		balance = fee.pay(receipt=receipt, pay_fee=pf, payment_amount=balance, bf=bf)
 		bf = 0
-
-	"""
-	outstanding_fees = []
-	if prop_id:
-		outstanding_fees = Fee.objects.filter(prop__pk=prop_id, is_paid=False).order_by('due_date')
-
-	elif business_id:
-		outstanding_fees = Fee.objects.filter(prop__pk=business_id, is_paid=False).order_by('due_date')
-
-	for fee in outstanding_fees:
-		if balance > 0:
-			balance = fee.pay(receipt, balance)
-	"""
 
 	receipt.credit = balance
 	receipt.save()
