@@ -1416,7 +1416,7 @@ class Duplicate(models.Model):
 
 class MessageBatch(models.Model):
 	date_time = models.DateTimeField(auto_now_add=True)
-	message = models.CharField(max_length=200)
+	message = models.TextField()
 	exported = models.DateTimeField(null=True)
 	sent = models.DateTimeField(null=True)
 	district = models.ForeignKey(District, null=True)
@@ -1525,7 +1525,7 @@ class Message(models.Model):
 	prop = models.ForeignKey(Property, null=True)
 	prop_title = models.ForeignKey(PropertyTitle, null=True)
 	citizen = models.ForeignKey(Citizen, null=True)
-	message = models.CharField(max_length=200)
+	message = models.TextField()
 	sent = models.DateTimeField(null=True)
 	phone = models.CharField(max_length=30, null=True, blank=True)
 
