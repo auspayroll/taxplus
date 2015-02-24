@@ -19,6 +19,8 @@ urlpatterns = patterns('',
 	url(r'^admin/business_fees/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_fees'),
 	url(r'^admin/business_update/(?P<pk>\d+)/$', taxplus_views.business_update, name='business_update'),
 	url(r'^admin/asset/business/change_business/(?P<pk>\d+)/$', taxplus_views.business_update, name='change_business_deprecated'),
+	url(r'^admin/tax/tax/business/(?P<pk>\d+)/edit_business/$', taxplus_views.business_update, name='change_business_deprecated2'),
+
 	url(r'^admin/business_update_region/(?P<pk>\d+)/$', taxplus_views.business_update_region, name='business_update_region'),
 	url(r'^admin/business_payments/(?P<pk>\d+)/$', taxplus_views.business_payments, name='business_payments'),
 	url(r'^admin/merge_preview/(?P<pk>\d+)/$', taxplus_views.merge_preview, name='merge_preview'),
