@@ -1,0 +1,74 @@
+{% extends "common/base_design.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block crumbbody %}
+	Payment Search
+{% endblock %}
+
+{% block css %}
+{{ super }}
+<style type="text/css">
+
+FORM TABLE{
+	background:#e4e4e4;
+}
+
+FORM TABLE TR{
+	border-bottom:1pt #cccccc dotted;
+}
+
+FORM TABLE TD, FORM TABLE TH{
+	padding:8px;
+}
+
+FORM TABLE TH, FORM TABLE TD{
+	vertical-align: top;
+}
+
+
+</style>
+<script type="text/javascript"  src="{% static "js/populate_region_dropdowns.js" %}"></script>
+{% endblock %}
+
+{% block mainbody %}
+<h3>Payment Search</h3>
+
+<form action="{{ request.build_absolute_uri }}" method="post">
+<table id="search_table">
+	{{ form }}
+</table>
+
+{% csrf_token %}
+<input type="submit" value="Search Payments">
+</form>
+
+{% if request.POST %}
+<div>
+	<table class="tablesorter">
+		<tr><th>Processed</th>
+			<th>Amount</th>
+			<th>Sector Receipt</th>
+			<th>Bank</th>
+			<th>Bank Receipt</th>
+			<th>Staff</th>
+		</tr>
+		{% for b in payments %}
+			<tr><td>{{ b.date_time }}</td>
+				<td>{{ b.amount|intcomma }}</td>
+				<td>{{ b.sector_receipt }}</td>
+				<td>{{ b.bank }}</td>
+				<td>{{ b.bank_receipt }}</td>
+				<td>{{ b.user }}</td>
+				<td><a href="{% url 'to_fee_from_payment_search' b.pk %}">View</a></td>
+			</tr>
+			{% empty %}
+			<tr><td colspan="6">No Payments Found</td></tr>
+
+		{% endfor %}
+
+	</table>
+</div>
+{% endif %}
+
+{% endblock %}

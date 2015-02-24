@@ -4,7 +4,7 @@ from jtax.models import PayFee, Fee
 #from property.models import District, Sector, Cell
 from datetime import date
 import json
-from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
 from django.db.models import Q, Sum
 import csv
 from django.http import HttpResponse
@@ -705,6 +705,39 @@ def batch_messages(request, pk, csv=None):
 				'citizen__middle_name', 'citizen__last_name', 'citizen__citizen_id', 'message', 'phone'), filename='messages.csv', preamble=None)
 	else:
 		return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch, 'batch_messages':messages })
+
+
+@login_required
+def payment_search(request):
+
+	if request.method == 'POST':
+		form = PaymentSearchForm(request.POST)
+		if form.is_valid():
+			receipts = PaymentReceipt.objects.filter(Q(bank_receipt__icontains=form.cleaned_data.get('search_string')) | Q(sector_receipt__icontains=form.cleaned_data.get('search_string')))
+			if form.cleaned_data.get('date_from'):
+				receipts  = receipts.filter(date_time__gte=form.cleaned_data.get('date_from'))
+
+			if form.cleaned_data.get('date_to'):
+				receipts  = receipts.filter(date_time__lte=form.cleaned_data.get('date_to'))
+
+			return TemplateResponse(request, "tax/payment_search.html", { 'form':form, 'payments':receipts })
+		else:
+			messages.error(request, "there was a form error")
+	else:
+		form = PaymentSearchForm()
+
+	return TemplateResponse(request, "tax/payment_search.html", { 'form':form })
+
+
+@login_required
+def to_fee_from_payment_search(request, pk):
+	receipt = get_object_or_404(PaymentReceipt, pk=pk)
+	payments = receipt.receipt_payments.all()
+	fee = payments[0].fee
+	if fee.prop_id:
+		return HttpResponseRedirect(reverse('property_payments', args=[fee.prop_id]))
+	elif fee.business_id:
+		return HttpResponseRedirect(reverse('business_payments', args=[fee.business_id]))
 
 
 

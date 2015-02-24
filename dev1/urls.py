@@ -28,6 +28,9 @@ urlpatterns = patterns('',
 	url(r'^admin/batch_messages/(?P<pk>\d+)/$', taxplus_views.batch_messages, name='batch_messages'),
 	url(r'^admin/batch_messages_csv/(?P<pk>\d+)/$', taxplus_views.batch_messages, {'csv':True}, name='batch_messages_csv'),
 
+	url(r'^admin/tax/tax/payment_search/$', taxplus_views.payment_search, name='search_payments'),
+	url(r'^admin/to_fee_from_payment_search/(?P<pk>\d+)/$', taxplus_views.to_fee_from_payment_search, name='to_fee_from_payment_search'),
+
 
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
 

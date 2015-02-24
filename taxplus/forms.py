@@ -11,6 +11,14 @@ from django.core.exceptions import ValidationError
 import re
 
 
+class PaymentSearchForm(forms.Form):
+	search_string = forms.CharField(min_length=3, max_length=20, required=True, label="Sector or Bank receipt")
+	date_from = forms.DateField(label="Date range (optional) between ", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',), required=False)
+	date_to = forms.DateField(label="and..", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',), required=False)
+
+
 class SearchRegion(forms.Form):
 	district = forms.ModelChoiceField(queryset = District.objects.none(), error_messages={'required':'District is required'})
 	sector = forms.ModelChoiceField(queryset = Sector.objects.none(), error_messages={'required':'Sector is required'})
