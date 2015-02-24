@@ -7,7 +7,7 @@ import json
 from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
 from django.db.models import Q, Sum
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from dateutil.relativedelta import relativedelta
 from taxplus.models import *
 from django.contrib.auth.decorators import login_required
@@ -622,6 +622,11 @@ def reverse_payments(request):
 		prop.adjust_payments()
 
 	return HttpResponseRedirect(request.META['HTTP_REFERER'])
+
+
+def payment_reverse(request): #deprecated payments reverse from jtax
+	raise Http404
+
 
 
 @login_required

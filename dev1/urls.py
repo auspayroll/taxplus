@@ -39,6 +39,8 @@ urlpatterns = patterns('',
 	url(r'^admin/property/media/(?P<pk>\d+)/$', taxplus_views.property_media, name='property_media'),
 
 	url(r'^admin/reverse_payments/$', taxplus_views.reverse_payments, name='reverse_payments'),
+	url(r'^admin/tax/tax/payment_reverse/$', taxplus_views.payment_reverse, name='reverse_payments_redirect_deprecated'),
+
 
 	url(r'^admin/tax/', include('jtax.urls')),
 	url(r'^admin/citizen/', include('citizen.urls')),
