@@ -504,6 +504,7 @@ class Property(models.Model):
 	village = models.ForeignKey(Village, null=True, blank = True,help_text = "The village that this property resides in.")
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="The sector that this property belongs to.")
 	boundary = models.OneToOneField(Boundary, null=True, help_text="The boundary of property")
+	plot_boundary = models.ForeignKey(PlotBoundary, null=True, help_text="The boundary of property")
 	upi = models.CharField(max_length=20, null=True, blank=True)
 
 	size_sqm = models.FloatField(blank = True, null = True)
