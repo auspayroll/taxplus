@@ -32,6 +32,8 @@
 	var map = new ol.Map({layers:[osmLayer, vector_layer], view:view, target:'map'});
 
 	map.getView().fitExtent(geojson.getExtent(), map.getSize());
+	current_zoom = view.getZoom()
+	view.setZoom(current_zoom - 1);
 </script>
 
 {% endblock %}
