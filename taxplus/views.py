@@ -424,6 +424,11 @@ def property_fees(request, pk):
 
 
 @login_required
+def property_map(request, pk):
+	prop = get_object_or_404(Property, pk=pk)
+	return TemplateResponse(request, 'tax/property_details.html', { 'property':prop, })
+
+@login_required
 def property_payments(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	payments = PaymentReceipt.objects.filter(receipt_payments__fee__prop=prop, status__code='active').distinct().order_by('date_time')

@@ -33,8 +33,8 @@ urlpatterns = patterns('',
 	url(r'^admin/tax/tax/payment_search/$', taxplus_views.payment_search, name='search_payments'),
 	url(r'^admin/to_fee_from_payment_search/(?P<pk>\d+)/$', taxplus_views.to_fee_from_payment_search, name='to_fee_from_payment_search'),
 
-
 	url(r'^admin/property_fees/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
+	url(r'^admin/tax/tax/property/(?P<pk>\d+)/map/$', taxplus_views.property_map, name='property_map'),
 
 	url(r'^admin/property/media/(?P<pk>\d+)/$', taxplus_views.property_media, name='property_media'),
 

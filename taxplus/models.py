@@ -48,6 +48,16 @@ class Boundary(models.Model):
 	class Meta:
 		db_table = 'property_boundary'
 
+
+class PlotBoundary(models.Model):
+	gid = models.IntegerField(primary_key=True)
+	cell_code = models.CharField(max_length=8)
+	polygon = gis_models.MultiPolygonField(srid=3857, db_column='the_geom')
+	parcel_id = models.IntegerField()
+
+	class Meta:
+		db_table = 'converted'
+
 class Category(models.Model):
 	code = models.CharField(max_length=50, primary_key=True)
 	name = models.CharField(max_length=50)

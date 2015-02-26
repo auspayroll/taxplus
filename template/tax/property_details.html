@@ -1,0 +1,37 @@
+{% extends "common/base_paytax_property.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+{% block rightpanel %}
+<style>
+	.map{
+		height: 500px;
+		width: 100%;
+		background-color:#b5d0d0;
+	}
+</style>
+<link rel="stylesheet", href="{% static 'ol3/css/ol.css' %}" type="text/css" />
+<div id="map" class="map"></div>
+<script src="{% static 'ol3/js/ol-debug.js' %}"></script>
+<script>
+	var boundary = JSON.parse('{{ property.plot_boundary.polygon.geojson|safe }}');
+
+	data = {
+	      "type": "Feature",
+	      "properties": {},
+	      "geometry": boundary
+	};
+
+	var geojson = new ol.source.GeoJSON({object:data, projection:'EPSG:3857'});
+	var osmLayer = new ol.layer.Tile({source: new ol.source.OSM()});
+	//var center = ol.proj.transform([-1.81185, 52.44314], 'EPSG:4326', 'EPSG:3857');
+	var extent = geojson.getExtent();
+	var center = ol.extent.getCenter(extent);
+	var view = new ol.View({source:geojson});
+	var vector_layer = new ol.layer.Vector({source:geojson});
+	var map = new ol.Map({layers:[osmLayer, vector_layer], view:view, target:'map'});
+
+	map.getView().fitExtent(geojson.getExtent(), map.getSize());
+</script>
+
+{% endblock %}
