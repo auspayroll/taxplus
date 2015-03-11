@@ -28,4 +28,4 @@
 
 	) sums on region.village_id = sums.village_id 
 	order by region.sector, region.cell, region.village
-) To '/home/admin1/landlease_sector_dump.csv' With CSV HEADER;
+) To '/home/admin1/landlease_village_dump.csv' With CSV HEADER;
