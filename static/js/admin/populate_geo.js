@@ -1,4 +1,15 @@
  $(document).ready(function(){
+ 	/*
+ 	var regions;
+	$.ajax({
+	  dataType: "json",
+	  url: "{% static 'region.json' %}",
+	  success: function(data){
+	  	regions = JSON.parse(data);
+	  	alert(regions);
+	  }
+	});
+ 	*/
 
 	/* initialize form */
 	var init_district_val = $("#search_table #id_pay_district").val();
