@@ -2,17 +2,17 @@ from django.contrib.auth.models import User, check_password
 from pmauth.models import PMUser
 
 class CustomLoginBackend(object):
-	def authenticate(self, username=None, password=None):
+	def authenticate(self, username=None, password=None, check_password=True):
 		try:
 			user = User.objects.get(username=username)
 
 		except User.DoesNotExist:
 			try:
-				pm_user = PMUser.find.get(email=username)
+				pm_user = PMUser.objects.get(email=username)
 
 			except PMUser.DoesNotExist:
 				try:
-					pm_user = PMUser.find.get(username=username)
+					pm_user = PMUser.objects.get(username=username)
 				except PMUser.DoesNotExist:
 					return None
 			else:
@@ -27,12 +27,14 @@ class CustomLoginBackend(object):
 				user.password = pm_user.password
 				user.save()
 
-		if user.check_password(password):
-			return user
+		if check_password:
+			if user.check_password(password):
+				return user
 
+			else:
+				return None
 		else:
-			return None
-
+			return user
 
 	def get_user(self, user_id):
 		try:
