@@ -31,20 +31,13 @@ class LoggedModel(models.Model):
 			log = Log.objects.create()
 		content_type = ContentType.objects.get_for_model(self)
 
-		if not self.pk: # create operation
-			saved = super(LoggedModel, self).save(*args, **kwargs)
-			log_relation = LogRelation.objects.create(content_type=content_type, object_id=self.pk, log=log, crud=1)
-			return saved
-
-		else: #update operation
+		if self.pk: #update operation
 			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log)
 			try:
 				db_object = self.__class__.objects.get(pk=self.pk)
 			except self.__class__.DoesNotExist:
-				log_relation.crud = 1
-				log_relation.save()
+				pass
 			else:
-				log_relation.crud = 3
 				updated_fields = []
 				excluded_fields = ['updated', 'date_updated', 'created', 'date_created', 'update', 'submit_date']
 				db_dict = dict([(field.name, getattr(db_object,field.name)) for field in db_object._meta.fields if field.name not in excluded_fields])
@@ -58,7 +51,7 @@ class LoggedModel(models.Model):
 					log_relation.new_object = json.dumps(json.loads(serializers.serialize("json", [self], fields=updated_fields, use_natural_keys=True))[0]['fields'])
 					log_relation.save()
 
-			return super(LoggedModel, self).save(*args, **kwargs)
+		return super(LoggedModel, self).save(*args, **kwargs)
 
 class PMUser(models.Model):
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
@@ -1207,7 +1200,7 @@ class Fee(LoggedModel):
 				pass
 
 # Model for Receipt of Multiple Tax/Fee payment
-class PaymentReceipt(LoggedModel):
+class PaymentReceipt(models.Model):
 	amount = models.IntegerField(default=0)
 	#user = models.ForeignKey(PMUser, null=True, blank = True)
 	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
@@ -1374,7 +1367,7 @@ class LogOld(models.Model):
 	#user_id = models.IntegerField(null=True, blank=True)
 	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	citizen = models.ForeignKey(Citizen, null=True, blank=True)
-	property = models.ForeignKey(Property, null=True, blank=True)
+	prop = models.ForeignKey(Property, null=True, blank=True, db_column='property_id')
 	business = models.ForeignKey(Business, null = True, blank = True)
 	tids = models.CharField(max_length = 200, null=True, blank = True)
 	tax_type = models.CharField(max_length = 50, null=True, blank = True)
@@ -1395,6 +1388,7 @@ class LogOld(models.Model):
 
 	class Meta:
 		db_table = 'log_log'
+		managed = False
 
 
 class Rate(models.Model):
@@ -1429,7 +1423,7 @@ class MediaManager(models.Manager):
 	def get_query_set(self):
 		return super(MediaManager,self).get_query_set().exclude(restored=False, missing=1)
 
-class Media(LoggedModel):
+class Media(models.Model):
 	tags = models.CharField(max_length = 150, help_text = 'Tags for the Media', null=True, blank = True)
 	title = models.CharField(max_length = 150, null=True, blank = True, help_text = 'Display name of the media')
 	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')

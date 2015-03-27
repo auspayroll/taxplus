@@ -109,27 +109,13 @@ class Log(models.Model):
 	request_type = models.CharField(blank=True, null=True, max_length=1)
 	request_path = models.TextField(blank=True, null=True)
 	request_remote	= models.TextField(blank=True, null=True)
-	content_type = models.ForeignKey(ContentType, null=True)
-	object_id = models.PositiveIntegerField(null=True)
-	content_object = generic.GenericForeignKey('content_type', 'object_id')
-	content_type2 = models.ForeignKey(ContentType, null=True, related_name="sub_logs")
-	object_id2 = models.PositiveIntegerField(null=True)
-	content_object = generic.GenericForeignKey('content_type', 'object_id')
-
 
 	class Meta:
 		db_table = 'log_log'
 		app_label = 'taxplus'
 
 	def __unicode__(self):
-		if self.message:
-			return self.message
-
-		elif self.crud == 1: #created
-			return "%s created" % self.content_object
-
-		elif self.crud == 2: #update
-			return "%s updated:" % self.whats_changed
+		return self.message or self.request_path
 
 	@classmethod
 	def log(cls, target=None, target2=None, message=None):
@@ -139,24 +125,34 @@ class Log(models.Model):
 
 		log.message  = message
 		if target:
-			log.content_type = content_type = ContentType.objects.get_for_model(target)
-			log.object_id = target.pk
+			content_type = ContentType.objects.get_for_model(target)
+			LogTag.objects.create(log=log, content_type=content_type, object_id=target.pk)
 
 		if target2:
-			log.content_type2 = content_type = ContentType.objects.get_for_model(target2)
-			log.object_id2 = target2.pk
+			content_type = ContentType.objects.get_for_model(target2)
+			LogTag.objects.create(log=log, content_type=content_type, object_id=target2.pk)
 
 		log.save()
 		return log
+
+
+class LogTag(models.Model):
+	content_type = models.ForeignKey(ContentType, null=True)
+	object_id = models.PositiveIntegerField(null=True)
+	content_object = generic.GenericForeignKey('content_type', 'object_id')
+	log = models.ForeignKey(Log, related_name='log_tags')
+
+	class Meta:
+		db_table = 'taxplus_logtag'
+		app_label = 'taxplus'
 
 class LogRelation(models.Model):
 	content_type = models.ForeignKey(ContentType, null=True)
 	object_id = models.PositiveIntegerField(null=True)
 	content_object = generic.GenericForeignKey('content_type', 'object_id')
-	log = models.ForeignKey(Log, related_name='log_objects')
+	log = models.ForeignKey(Log, related_name='log_updates')
 	old_object = models.TextField(null=True)
 	new_object = models.TextField(null=True)
-	crud = models.PositiveSmallIntegerField(blank=True, default=2)
 
 	class Meta:
 		db_table = 'taxplus_logrelation'
