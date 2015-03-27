@@ -1,19 +1,64 @@
-from django.db import models
-from django.contrib.gis.db import models as gis_models
+from datetime import date, datetime, timedelta
+from dateutil import parser
+from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+from dev1.ThreadLocal import Log, LogRelation
 from django.contrib.auth.models import User
+from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.gis.db import models as gis_models
+from django.db import models
 from django.db.models import Q
+from django.db.models import Sum
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from datetime import date, datetime, timedelta
-from decimal import Decimal
-from django.db.models import Sum
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+from django.core import serializers
+import ast
 import binascii
-from dateutil import parser
+import json
 import os
-from dateutil.relativedelta import relativedelta
+from dev1.ThreadLocal import get_current_request_log, Log
 
+class LoggedModel(models.Model):
+	class Meta:
+		abstract = True
+
+	def save(self, *args, **kwargs):
+		log = get_current_request_log()
+		if not log:
+			log = Log.objects.create()
+		content_type = ContentType.objects.get_for_model(self)
+
+		if not self.pk: # create operation
+			saved = super(LoggedModel, self).save(*args, **kwargs)
+			log_relation = LogRelation.objects.create(content_type=content_type, object_id=self.pk, log=log, crud=1)
+			return saved
+
+		else: #update operation
+			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log)
+			try:
+				db_object = self.__class__.objects.get(pk=self.pk)
+			except self.__class__.DoesNotExist:
+				log_relation.crud = 1
+				log_relation.save()
+			else:
+				log_relation.crud = 3
+				updated_fields = []
+				excluded_fields = ['updated', 'date_updated', 'created', 'date_created', 'update', 'submit_date']
+				db_dict = dict([(field.name, getattr(db_object,field.name)) for field in db_object._meta.fields if field.name not in excluded_fields])
+				updated_dict = dict([(field.name, getattr(self,field.name)) for field in self._meta.fields if field.name not in excluded_fields])
+				for k,v in updated_dict.items():
+					if db_dict.get(k) != updated_dict.get(k):
+						updated_fields.append(k)
+
+				if updated_fields: #serialize old and new objects (using natural keys) if there are updated fields
+					log_relation.old_object = json.dumps(json.loads(serializers.serialize("json", [db_object], fields=updated_fields, use_natural_keys=True))[0]['fields'])
+					log_relation.new_object = json.dumps(json.loads(serializers.serialize("json", [self], fields=updated_fields, use_natural_keys=True))[0]['fields'])
+					log_relation.save()
+
+			return super(LoggedModel, self).save(*args, **kwargs)
 
 class PMUser(models.Model):
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
@@ -36,7 +81,6 @@ class PMUser(models.Model):
 		else:
 			return self.username
 
-
 class Boundary(models.Model):
 	shape_area = models.FloatField(blank=True, null=True)
 	polygon_imported = gis_models.PolygonField(srid=3857, blank=True, null= True)
@@ -47,7 +91,6 @@ class Boundary(models.Model):
 
 	class Meta:
 		db_table = 'property_boundary'
-
 
 class PlotBoundary(models.Model):
 	gid = models.IntegerField(primary_key=True)
@@ -65,15 +108,16 @@ class Category(models.Model):
 	def __unicode__(self):
 		return self.name;
 
-
 class CategoryChoice(models.Model):
 	code = models.CharField(max_length=50)
 	name = models.CharField(max_length=55)
 	category = models.ForeignKey(Category)
 
 	def __unicode__(self):
-		return self.name;
+		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class Master(models.Model):
 	class Meta:
@@ -82,7 +126,6 @@ class Master(models.Model):
 	created = models.DateTimeField(auto_now_add=True, blank=True)
 	modified = models.DateTimeField(auto_now_add=True, auto_now=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'status'})
-
 
 class Province(models.Model):
 	name = models.CharField(max_length=100, help_text="Province name.")
@@ -94,7 +137,6 @@ class Province(models.Model):
 
 	def __unicode__(self):
 		return self.name;
-
 
 class District(models.Model):
 	name = models.CharField(max_length=100, help_text="District name.")
@@ -109,6 +151,8 @@ class District(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class Council(models.Model):
 	name = models.CharField(max_length=100, help_text="Council name.")
@@ -121,6 +165,8 @@ class Council(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class Sector(models.Model):
 	name = models.CharField(max_length=100, help_text="Sector name.")
@@ -130,7 +176,6 @@ class Sector(models.Model):
 	boundary = models.OneToOneField(Boundary, related_name='sector_boundary', null=True, blank=True, help_text="The boundary of sector.")
 	alias = models.TextField(null=True)
 
-
 	class Meta:
 		ordering = ['name', 'district__name']
 		db_table = 'property_sector'
@@ -138,6 +183,8 @@ class Sector(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class SectorStats(Master):
 	sector = models.ForeignKey(Sector)
@@ -150,7 +197,6 @@ class SectorStats(Master):
 	no_leased = models.IntegerField()
 	no_liquidated = models.IntegerField()
 
-
 class DistrictStats(Master):
 	district = models.ForeignKey(District)
 	period_start = models.DateField()
@@ -162,11 +208,9 @@ class DistrictStats(Master):
 	no_leased = models.IntegerField()
 	no_liquidated = models.IntegerField()
 
-
 class Zone(Master):
 	code = models.CharField(max_length=5)
 	name = models.CharField(max_length=50, help_text="Zone name")
-
 
 class Cell(models.Model):
 	name = models.CharField(max_length=100, help_text="Cell name.")
@@ -183,6 +227,8 @@ class Cell(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class Village(models.Model):
 	name = models.CharField(max_length=100, help_text="Village name.")
@@ -198,6 +244,8 @@ class Village(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class CleaningCategory(models.Model):
 	name = models.CharField(max_length=50)
@@ -209,6 +257,8 @@ class CleaningCategory(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
 class BusinessCategory(models.Model):
 	name = models.CharField(max_length=100)
@@ -220,8 +270,10 @@ class BusinessCategory(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	def natural_key(self):
+		return self.name
 
-class Citizen(models.Model):
+class Citizen(LoggedModel):
 	first_name = models.CharField(max_length = 50, help_text = 'First name')
 	last_name = models.CharField(max_length = 50, help_text = 'Last name')
 	middle_name = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Middle name')
@@ -250,6 +302,9 @@ class Citizen(models.Model):
 	class Meta:
 		db_table = 'citizen_citizen'
 
+	def natural_key(self):
+		return "%s %s DOB:%s CID:%s" % (self.first_name, self.last_name, self.date_of_birth, self.citizen_id)
+
 	@property
 	def name(self):
 		if self.middle_name and self.middle_name!='' and self.middle_name !='null':
@@ -260,8 +315,7 @@ class Citizen(models.Model):
 	def __unicode__(self):
 		return self.name
 
-
-class Business(models.Model):
+class Business(LoggedModel):
 	pm_tin = models.CharField(max_length=50,help_text='Propertymode TIN', blank = True)
 	name = models.CharField(max_length=100,help_text='Business Name')
 	tin = models.CharField(max_length=50, help_text='TIN RRA',null=True,  blank = True)
@@ -316,13 +370,19 @@ class Business(models.Model):
 	class Meta:
 		db_table = 'asset_business'
 
+	def natural_key(self):
+		return "%s (ph:%s, District:%s, Sector:%s, Cell:%s, Village:%s)" % (self.name, self.phone1, self.cell.sector.district, self.cell.sector, self.cell, self.village)
 
 	def __unicode__(self):
 		return self.name
 
 	@property
 	def owners(self):
-		return Citizen.objects.filter(citizen_businessowners__date_to__isnull=True, citizen_businessowners__business=self)
+		for ownership in Ownership.objects.filter(asset_business=self, date_ended__isnull=True):
+			if ownership.owner_business:
+				yield ownership.owner_busines
+			elif owernship.owner_citizen:
+				yield ownership.owner_citizen
 
 	def merge(self, businesses):
 		for fee in Fee.objects.filter(business__in=businesses, fee_payments__isnull=False).distinct():
@@ -336,7 +396,6 @@ class Business(models.Model):
 
 		businesses.update(i_status='inactive')
 		Media.objects.filter(business__in=businesses).update(business=self)
-		Log.objects.filter(business__in=businesses).update(business=self)
 		self.adjust_payments()
 		BusinessOwnership.objects.filter(business__in=businesses).exclude(citizen__in=self.owners).update(business=self)
 
@@ -431,14 +490,12 @@ class Business(models.Model):
 			else:
 				Fee.objects.filter(category=cleaning, business=self, is_paid=False).update(status=inactive)
 
-
-
 #@receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
 	#instance.calc_taxes()
 
-
+# deprecated
 class SubBusiness(models.Model):
 	branch = models.CharField(max_length=100,help_text='Branch Name')
 	sector = models.ForeignKey(Sector, null=True, blank=True, help_text="The sector where this branch is located.")
@@ -454,7 +511,7 @@ class SubBusiness(models.Model):
 	class Meta:
 		db_table = 'asset_subbusiness'
 
-
+#deprecated
 class Entity(models.Model):
 	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
 	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
@@ -487,14 +544,12 @@ class Entity(models.Model):
 		elif self.business:
 			return self.business.name
 
-
 class IdentityDocument(models.Model):
 	entity = models.ForeignKey(Entity)
 	foreign_identity_type = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity type. For example: passport.')
 	foreign_identity_number = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity ID.')
 
-
-class Property(models.Model):
+class Property(LoggedModel):
 	#plot_id = models.CharField(max_length = 50, unique = True, null=True, blank = True, help_text="Each Plot ID identifies a property.")
 	is_leasing = models.BooleanField(default=False, help_text='check whether the property is leased out')
 	is_land_lease = models.BooleanField(default=False, help_text='check whether the property is land lease applicable')
@@ -549,6 +604,8 @@ class Property(models.Model):
 	class Meta:
 		db_table = 'property_property'
 
+	def natural_key(self):
+		return self.upi
 
 	def reset_fees(self):
 		active_receipts = PaymentReceipt.objects.filter(receipt_payments__fee__prop=self, status__code='active')
@@ -579,8 +636,11 @@ class Property(models.Model):
 
 	@property
 	def owners(self):
-		for ownership in PropertyOwnership.objects.filter(prop=self, date_to__isnull=True):
-			yield ownership.owner
+		for ownership in Ownership.objects.filter(asset_property=self, date_ended__isnull=True):
+			if ownership.owner_business:
+				yield ownership.owner_busines
+			elif ownership.owner_citizen:
+				yield ownership.owner_citizen
 
 	def pay_balance(self):
 		if self.credit > 0:
@@ -630,7 +690,6 @@ class Property(models.Model):
 		else:
 			return 0
 
-
 #@receiver(post_save, sender=Property)
 def after_prop_save(sender, instance, created, **kwargs):
 	return
@@ -640,13 +699,12 @@ def after_prop_save(sender, instance, created, **kwargs):
 		 fee.calc_amount(save=True)
 	"""
 
-
-class PropertyTitle(models.Model):
+class PropertyTitle(LoggedModel):
 	prop = models.ForeignKey(Property, related_name='property_title')
 	date_from = models.DateField(null=True, blank=True)
 	date_to = models.DateField(null=True, blank=True)
 	land_lease_issue_date = models.DateField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', )
+	status = models.ForeignKey(CategoryChoice, related_name='property_title_status', blank=True)
 	first_name = models.CharField(max_length = 50, help_text = 'First name', null=True, blank=True)
 	last_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
 	middle_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
@@ -654,6 +712,9 @@ class PropertyTitle(models.Model):
 	modified = models.DateTimeField(auto_now=True, null=True)
 	imported = models.DateTimeField(null=True)
 	hash_key = models.CharField(max_length=50)
+
+	def natural_key(self):
+		return "Property %s: from %s to %s" % (self.prop.upi, self.date_from, self.date_to)
 
 	def __unicode__(self):
 		name = "%s %s - " % (self.prop, self.date_from.strftime('%d/%m/%Y'))
@@ -800,13 +861,11 @@ def after_prop_title_save(sender, instance, created, **kwargs):
 	#instance.calc_taxes()
 	Ownership.objects.filter(prop_title=instance).update(date_started=instance.date_from, date_ended=instance.date_to)
 
-
 class FeeManager(models.Manager):
 	def get_query_set(self):
 		return super(FeeManager,self).get_query_set().filter(status__code='active')
 
-
-class Fee(models.Model):
+class Fee(LoggedModel):
 	# new  field
 	category = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'fee_type'}, related_name='fee_type', null=True)
 	status = models.ForeignKey(CategoryChoice, limit_choices_to={'category__code':'status'}, related_name='fee_status', null=True)
@@ -1147,9 +1206,8 @@ class Fee(models.Model):
 			else: # not self.amount and not self.pk, don't save
 				pass
 
-
 # Model for Receipt of Multiple Tax/Fee payment
-class PaymentReceipt(models.Model):
+class PaymentReceipt(LoggedModel):
 	amount = models.IntegerField(default=0)
 	#user = models.ForeignKey(PMUser, null=True, blank = True)
 	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
@@ -1181,8 +1239,7 @@ class PaymentReceipt(models.Model):
 		for fee in fees:
 			fee.reset()
 		self.receipt_payments.all().update(status=inactive)
-		Log.objects.create(receipt=self, user = user, message='Payment reversed')
-
+		Log.log(message='Payment reversed', target=self)
 
 class PayFeeManager(models.Manager):
 	def get_query_set(self):
@@ -1240,8 +1297,7 @@ class MultipayReceiptPaymentRelation(models.Model):
 		db_table ="jtax_multipayreceiptpaymentrelation"
 """
 
-
-class Ownership(models.Model):
+class Ownership(LoggedModel):
 	owner_citizen = models.ForeignKey(Citizen,null=True,blank=True, related_name="assets")
 	owner_business = models.ForeignKey(Business,null=True,blank=True, related_name="assets")
 	asset_business = models.ForeignKey(Business,null=True,blank=True, related_name="related_name1")
@@ -1256,7 +1312,7 @@ class Ownership(models.Model):
 	class Meta:
 		db_table = 'asset_ownership'
 
-
+# deprecated
 class BusinessOwnership(models.Model):
 	citizen = models.ForeignKey(Citizen,null=True,blank=True, db_column='owner_citizen_id', related_name="citizen_businessowners")
 	business = models.ForeignKey(Business,null=True,blank=True, db_column='asset_business_id', related_name="business_ownership")
@@ -1271,6 +1327,7 @@ class BusinessOwnership(models.Model):
 		managed = False
 
 
+# deprecated
 class PropertyOwnership(models.Model):
 	prop = models.ForeignKey(Property, related_name='property_ownership', db_column='asset_property_id')
 	prop_title = models.ForeignKey(PropertyTitle, null=True, related_name='title_ownership')
@@ -1291,11 +1348,9 @@ class PropertyOwnership(models.Model):
 		db_table = 'asset_ownership'
 		managed = False
 
-
 class DebtorsReport(models.Model):
 	as_at = models.DateField(auto_now_add=True)
 	fee_type = models.CharField(max_length=30)
-
 
 class DebtorsReportLine(models.Model):
 	report = models.ForeignKey(DebtorsReport)
@@ -1310,11 +1365,12 @@ class DebtorsReportLine(models.Model):
 	total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 
-class Log(models.Model):
+class LogOld(models.Model):
 	"""
 	keep log for each action taken by user.
 	"""
 	transaction_id = models.IntegerField(null = True, blank = True)
+	staff = models.ForeignKey(User, help_text="",blank = True, null=True, related_name="staff_logs2")
 	#user_id = models.IntegerField(null=True, blank=True)
 	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
 	citizen = models.ForeignKey(Citizen, null=True, blank=True)
@@ -1354,11 +1410,9 @@ class Rate(models.Model):
 	def __unicode__(self):
 		return "category:%s period:%s-%s village:%s cell:%s sector:%s rate:%s" % (self.category, self.date_from, self.date_to, self.village, self.cell, self.sector, self.amount)
 
-
 	def get_landlease(self, land_use, dait, village):
 		land_lease = CategoryChoice.objects.get(category__code='fee_type', code='land_lease')
 		return self.objects.get(date_from__lte=date, date_to__gte=dait, village=village, land_use=land_use, category=land_use)
-
 
 class RateNotFound(models.Model):
 	fee = models.ForeignKey(Fee, null=True)
@@ -1371,13 +1425,11 @@ class RateNotFound(models.Model):
 	sector = models.ForeignKey(Sector, null=True)
 	created = models.DateTimeField(auto_now_add=True)
 
-
 class MediaManager(models.Manager):
 	def get_query_set(self):
 		return super(MediaManager,self).get_query_set().exclude(restored=False, missing=1)
 
-
-class Media(models.Model):
+class Media(LoggedModel):
 	tags = models.CharField(max_length = 150, help_text = 'Tags for the Media', null=True, blank = True)
 	title = models.CharField(max_length = 150, null=True, blank = True, help_text = 'Display name of the media')
 	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')
@@ -1387,7 +1439,7 @@ class Media(models.Model):
 	file_size = models.CharField(max_length = 50)
 	citizen = models.ForeignKey(Citizen,  null=True, blank=True)
 	business = models.ForeignKey(Business,  null=True, blank=True)
-	property = models.ForeignKey(Property,  null=True, blank=True)
+	prop = models.ForeignKey(Property,  null=True, blank=True, db_column='property_id')
 	tax_type = models.CharField(max_length = 50,  help_text = 'Type of Tax/Fee Associated with this Media', null=True, blank = True)
 	tax_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
 	payment_type = models.CharField(max_length = 50, help_text = 'Type of Payment Associated with this Media', null=True, blank = True)
@@ -1411,7 +1463,6 @@ class Media(models.Model):
 	def __unicode__(self):
 		return str(self.file_name) + " " + str(self.title)
 
-
 class Duplicate(models.Model):
 	business1 = models.ForeignKey(Business, related_name='duplicates')
 	business2 = models.ForeignKey(Business, related_name='duplicate2')
@@ -1423,7 +1474,6 @@ class Duplicate(models.Model):
 	class Meta:
 		db_table = 'asset_duplicate'
 		managed = False
-
 
 class MessageBatch(models.Model):
 	date_time = models.DateTimeField(auto_now_add=True)
@@ -1489,8 +1539,6 @@ class MessageBatch(models.Model):
 
 		return count
 
-
-
 	def generate_business_messages(self, limit=None):
 		if not self.message:
 			message = "Business:{name}, EPAY:{epay}, Overdue:{overdue}, as at:{as_at}"
@@ -1529,7 +1577,6 @@ class MessageBatch(models.Model):
 
 		return count
 
-
 class Message(models.Model):
 	batch = models.ForeignKey(MessageBatch, related_name='batch_messages')
 	business  = models.ForeignKey(Business, null=True)
@@ -1542,8 +1589,6 @@ class Message(models.Model):
 
 	class Meta:
 		ordering = ['pk']
-
-
 
 def process_payment(payment_amount, payment_date, citizen_id, business_id, sector_receipt, payer_name, bank_receipt, bank, staff_id, fees):
 	fees = fees.order_by('due_date')
@@ -1569,6 +1614,7 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
 	receipt.save()
+	Log.log(message='process payment', target=(fee.prop or fee.business), target2=receipt)
 
 	bf = credit
 	balance  = receipt.amount

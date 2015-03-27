@@ -1,25 +1,25 @@
-from django.template.response import TemplateResponse
-from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
-from jtax.models import PayFee, Fee
 #from property.models import District, Sector, Cell
 from datetime import date
-import json
-from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
-from django.db.models import Q, Sum
-import csv
-from django.http import HttpResponse, Http404
 from dateutil.relativedelta import relativedelta
-from taxplus.models import *
-from django.contrib.auth.decorators import login_required
-from taxplus.forms import PaymentForm, PayFeesForm, TitleForm
 from django.contrib import messages
-from django.core.urlresolvers import reverse
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, landscape
-from taxplus.management.commands.generate_invoices import generate_invoice
-from django.forms.models import modelformset_factory
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-
+from django.core.urlresolvers import reverse
+from django.db.models import Q, Sum
+from django.forms.models import modelformset_factory
+from django.http import HttpResponse, Http404
+from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
+from django.template.response import TemplateResponse
+from jtax.models import PayFee, Fee
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.pdfgen import canvas
+from taxplus.forms import PaymentForm, PayFeesForm, TitleForm
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
+from taxplus.management.commands.generate_invoices import generate_invoice
+from taxplus.models import *
+from dev1.ThreadLocal import Log
+import csv
+import json
 
 def csv_data(rows, values_list, filename, preamble=None):
 	response = HttpResponse(content_type='text/csv')
@@ -58,6 +58,7 @@ def csv_data(rows, values_list, filename, preamble=None):
 @login_required
 def leases(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
+	Log.log(target=prop, message="view leases")
 	#TitleFormSet = modelformset_factory(PropertyTitle, form=TitleForm, extra=0)
 	titles = PropertyTitle.objects.filter(prop=prop).order_by('-date_from')
 	"""
@@ -79,6 +80,7 @@ def leases(request, pk):
 	return TemplateResponse(request, 'tax/property_leases.html', { 'property':prop, 'titles':titles })
 
 
+@login_required
 def edit_lease(request, pk):
 	lease = get_object_or_404(PropertyTitle, pk=pk)
 	if request.method == 'POST':
@@ -103,6 +105,7 @@ def edit_lease(request, pk):
 				form = TitleForm(instance=lease)
 
 		if request.POST.get('remove_leasers'):
+				Log.log(message='remove leasers', target=lease.prop, target2=lease)
 				delete_ownership = request.POST.getlist('ownership_id')
 				if delete_ownership:
 					Ownership.objects.filter(id__in=delete_ownership).delete()
@@ -111,17 +114,18 @@ def edit_lease(request, pk):
 			form = TitleForm(request.POST, instance=lease)
 			if form.is_valid():
 				form.save()
+				Log.log('lease updated', target2=lease, target=lease.prop)
 				lease.calc_taxes()
-				user = PMUser.objects.get(pk=request.session.get('user').pk)
-				Log.objects.create(property=lease.prop, user = user, message='Property Title %s updated. Date from: %s, Date to %s' % (lease.pk, lease.date_from, lease.date_to))
 				messages.success(request, 'Land lease updated')
 				return HttpResponseRedirect(reverse('property_leases', args=[lease.prop.pk]))
 	else:
+		Log.log(message='view lease to edit', target=lease.prop, target2=lease)
 		form = TitleForm(instance=lease)
 
 	return TemplateResponse(request, 'tax/property_lease.html', { 'property':lease.prop, 'lease':lease, 'form':form})
 
 
+@login_required
 def new_lease(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	if request.method == 'POST':
@@ -133,11 +137,11 @@ def new_lease(request, pk):
 			lease.set_hash_key()
 			lease.save()
 			lease.calc_taxes()
-			user = PMUser.objects.get(pk=request.session.get('user').pk)
-			Log.objects.create(property=lease.prop, user = user, message='Property Title %s updated from: %s to %s' % (lease.pk, lease.date_from, lease.date_to))
+			Log.log(message='Lease created', target=prop, target2=lease)
 			messages.success(request, 'Land lease created')
 			return HttpResponseRedirect(reverse('edit_lease', args=[lease.pk]))
 	else:
+		Log.log(message='New Lease Form', target=prop)
 		form = TitleForm()
 
 	return TemplateResponse(request, 'tax/new_lease.html', { 'property':prop, 'form':form})
@@ -152,7 +156,7 @@ def merge_business(request):
 		if form.is_valid():
 			business = form.save()
 			business.merge(businesses)
-
+			Log.log(message="Business merge", target=business)
 			success_message = 'Business merged successfully. <a href="%s">%s</a> ' % (reverse('business_fees', args=[business.pk]), business)
 			messages.success(request, success_message)
 			Duplicate.objects.filter(business1=business, business2__in=businesses).update(status=0)
@@ -405,48 +409,50 @@ def cleaning_debtors(request):
 @login_required
 def duplicates(request):
 	businesses =  Business.objects.filter(duplicates__isnull=False, duplicates__status=1).distinct()
+	Log.log(message='view duplicates')
 	return TemplateResponse(request, 'asset/business/duplicates.html', { 'businesses':businesses })
-
 
 @login_required
 def merge_preview(request, pk):
 	business = get_object_or_404(Business,pk=pk)
 	duplicates = Duplicate.objects.filter(business1=business)
+	Log.log(message='merge preview', target=business)
 	return TemplateResponse(request, 'asset/business/merge_preview.html', { 'business':business, 'duplicates':duplicates })
-
 
 @login_required
 def property_fees(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	fees = prop.property_fees.filter(status__code='active')
 	payments = PayFee.objects.filter(fee__prop=prop, receipt__status__code='active')
+	Log.log(target=prop, message='view fees')
 	return TemplateResponse(request, 'tax/tax_tax_property_fees.html', { 'property':prop, 'fees':fees, 'payments':payments })
-
 
 @login_required
 def property_map(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
+	Log.log(target=prop, message='view map')
 	return TemplateResponse(request, 'tax/property_details.html', { 'property':prop, })
 
 @login_required
 def property_payments(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
+	Log.log(target=prop, message='view payments')
 	payments = PaymentReceipt.objects.filter(receipt_payments__fee__prop=prop, status__code='active').distinct().order_by('date_time')
 	return TemplateResponse(request, 'tax/property_payments.html', { 'property':prop, 'payments':payments })
-
 
 @login_required
 def business_fees(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	fees = business.business_fees.filter(status__code='active')
+	Log.log(target=business, message='view fees')
 	payments = PayFee.objects.filter(fee__business=business, receipt__status__code='active')
 	return TemplateResponse(request, 'tax/business_fees_new.html', { 'business':business, 'fees':fees, 'payments':payments  })
-
 
 @login_required
 def business_payments(request, pk):
 	business = get_object_or_404(Business, pk=pk)
 	payments = PaymentReceipt.objects.filter(receipt_payments__fee__business=business, status__code='active').distinct().order_by('date_time')
+	Log.log(target=business, message='view payments')
 	return TemplateResponse(request, 'tax/business_payments.html', { 'business':business, 'payments':payments })
 
 @login_required
@@ -500,8 +506,6 @@ def payFee(request, pk=None):
 	return TemplateResponse(request, "tax/pay_fee.html", { 'form':form, 'property':fee.prop,
 		'tax':fee, 'payer_name':payer_name })
 
-
-
 @login_required
 def payment_receipt(request, id):
 	receipt = get_object_or_404(PaymentReceipt, pk=id)
@@ -515,12 +519,9 @@ def payment_receipt(request, id):
 		if business:
 			break;
 
+	Log.log(message='view receipt', target=(business or property), target2=receipt)
 	media = Media.objects.filter(Q(receipt=receipt) | Q(payfee__receipt=receipt) )
 	return TemplateResponse(request, 'tax/tax_tax_invoice_multipay.html', {'receipt':receipt, 'media':media, 'property': prop, 'business': business})
-
-
-
-
 
 @login_required
 def paySelectedFees(request):
@@ -573,6 +574,7 @@ def property_invoice(request, pk):
 	response['Content-Disposition'] = 'attachment; filename="invoice.pdf"'
 	p = canvas.Canvas(response, pagesize=A4)
 	generate_invoice(canvas=p, pagesize=A4, title=title)
+	Log.log(message='view invoice', target=title.prop, target2=title)
 	return response
 
 
@@ -590,7 +592,6 @@ def mobile_invoice(request, key):
 	title = get_object_or_404(PropertyTitle, pk=pk, hash_key=hash_key)
 	return property_invoice(request, title.pk)
 
-
 def mobile_invoice_landing(request, key):
 	try:
 		pk, hash_key = key.split('_')
@@ -600,11 +601,11 @@ def mobile_invoice_landing(request, key):
 	title = get_object_or_404(PropertyTitle, pk=pk, hash_key=hash_key)
 	return render_to_response('common/mobile_invoice.html', {'title':title, 'key':key})
 
-
 @login_required
 def property_media(request, pk):
 	prop = get_object_or_404(Property, pk=pk)
 	media = Media.objects.filter(property=prop)
+	Log.log(message='view media', target=prop)
 	return TemplateResponse(request, "tax/tax_tax_property_media.html", { 'property':prop, 'media':media  })
 
 @user_passes_test(lambda u: u.is_superuser)
@@ -628,11 +629,8 @@ def reverse_payments(request):
 
 	return HttpResponseRedirect(request.META['HTTP_REFERER'])
 
-
 def payment_reverse(request): #deprecated payments reverse from jtax
 	raise Http404
-
-
 
 @login_required
 def business_update(request, pk):
@@ -645,6 +643,7 @@ def business_update(request, pk):
 			business.calc_taxes()
 			business.adjust_payments()
 			#add a log message
+			Log.log(message='business updated', target=business)
 			messages.success(request, "Update successful")
 			return HttpResponseRedirect(reverse('business_update', args=[business.pk]))
 		else:
@@ -653,7 +652,6 @@ def business_update(request, pk):
 		form = BusinessForm(instance=business)
 
 	return TemplateResponse(request, "tax/update_business.html", { 'business':business, 'form':form })
-
 
 @login_required
 def business_update_region(request, pk):
@@ -675,12 +673,11 @@ def business_update_region(request, pk):
 
 	return TemplateResponse(request, "tax/update_business.html", { 'business':business, 'form':form })
 
-
 @login_required
 def message_batches(request):
 	batches = MessageBatch.objects.all().select_related('district', 'sector', 'cell', 'village', 'staff')
+	Log.log(message='view message batches')
 	return TemplateResponse(request, "tax/message_batches.html", { 'batches':batches })
-
 
 @login_required
 def new_business_message_batch(request):
@@ -700,7 +697,6 @@ def new_business_message_batch(request):
 
 	return TemplateResponse(request, "tax/new_message_batch.html", { 'form':form })
 
-
 @login_required
 def batch_messages(request, pk, csv=None):
 	batch = get_object_or_404(MessageBatch, pk=pk)
@@ -716,10 +712,8 @@ def batch_messages(request, pk, csv=None):
 	else:
 		return TemplateResponse(request, "tax/batch_messages.html", { 'batch':batch, 'batch_messages':messages })
 
-
 @login_required
 def payment_search(request):
-
 	if request.method == 'POST':
 		form = PaymentSearchForm(request.POST)
 		if form.is_valid():
@@ -730,6 +724,7 @@ def payment_search(request):
 			if form.cleaned_data.get('date_to'):
 				receipts  = receipts.filter(date_time__lte=form.cleaned_data.get('date_to'))
 
+			Log.log(message='Payment search')
 			return TemplateResponse(request, "tax/payment_search.html", { 'form':form, 'payments':receipts })
 		else:
 			messages.error(request, "there was a form error")
@@ -737,7 +732,6 @@ def payment_search(request):
 		form = PaymentSearchForm()
 
 	return TemplateResponse(request, "tax/payment_search.html", { 'form':form })
-
 
 @login_required
 def to_fee_from_payment_search(request, pk):

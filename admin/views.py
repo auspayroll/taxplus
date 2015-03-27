@@ -12,6 +12,7 @@ from pmauth.login import *
 from django.contrib.auth import authenticate as auth_authenticate, login as auth_login, logout as auth_logout
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
+from taxplus.models import Log
 
 def set_temp_password(request):
 	stringok='Generate your password, please check it from your email!\n'\
@@ -26,7 +27,6 @@ def set_temp_password(request):
 	else:
 # 		return HttpResponse(stringerror)
 		return render_to_response('admin/temp_password.html', {'errorMessage':'generate password error. please contact the web administrator'}, context_instance=RequestContext(request))
-
 
 def login(request):
 	"""
@@ -47,12 +47,12 @@ def login(request):
 					errorMessage="Your account has been disabled"
 
 				elif (pm_user is not None and user is not None):
-					#import pdb
-					#pdb.set_trace()
 					request.session['user'] = pm_user
 					auth_login(request, user)
+					log = Log.log(message='login')
+					log.staff = user
+					log.save(update_fields=['staff'])
 					content_types = pm_user.getContentTypesWithWeight()
-					LogMapper.createLog(request,action="login")
 					next = request.POST.get('next')
 					if next:
 						return HttpResponseRedirect(next)
@@ -60,15 +60,16 @@ def login(request):
 						return HttpResponseRedirect(reverse('admin_home'))
 				else:
 					errorMessage="Incorrect username and password"
+					Log.log(message='failed login')
 			except ValidationError, e:
 					errorMessage= e.messages[0]
+					Log.log(message="failed login - %s" % errorMessage)
 		else:
 			errorMessage=form.errors
 		return render_to_response('admin/login.html', {'form':form,'errorMessage':errorMessage, 'username':username}, context_instance=RequestContext(request))
 
 	form = LoginForm()
 	return render_to_response('admin/login.html', {'form': form}, context_instance=RequestContext(request))
-
 
 @login_required
 def admin(request):
@@ -77,7 +78,6 @@ def admin(request):
 	return render_to_response('admin/admin.html', {\
 					 'content_types':content_types,},
 					  context_instance=RequestContext(request))
-
 
 def logout(request):
 	# logout and clear session
@@ -88,7 +88,7 @@ def logout(request):
 	for key in request.session.keys():
 		del request.session[key]
 	auth.logout(request)
-
+	Log.log(message='logout')
 	return HttpResponseRedirect(reverse('login'))
 
 def construction(request):
