@@ -121,20 +121,21 @@ class Log(models.Model):
 	def log(cls, target=None, target2=None, message=None):
 		log = get_current_request_log()
 		if not log:
-			log = Log()
+			log = Log.objects.create()
 
 		log.message  = message
+
 		if target:
 			content_type = ContentType.objects.get_for_model(target)
-			LogTag.objects.create(log=log, content_type=content_type, object_id=target.pk)
+			LogRelation.objects.create(log=log, content_type=content_type, object_id=target.pk, crud=2)
 
 		if target2:
 			content_type = ContentType.objects.get_for_model(target2)
-			LogTag.objects.create(log=log, content_type=content_type, object_id=target2.pk)
+			LogRelation.objects.create(log=log, content_type=content_type, object_id=target2.pk, crud=2)
+
 
 		log.save()
 		return log
-
 
 class LogTag(models.Model):
 	content_type = models.ForeignKey(ContentType, null=True)
@@ -153,6 +154,7 @@ class LogRelation(models.Model):
 	log = models.ForeignKey(Log, related_name='log_updates')
 	old_object = models.TextField(null=True)
 	new_object = models.TextField(null=True)
+	crud = models.PositiveIntegerField(null=True)
 
 	class Meta:
 		db_table = 'taxplus_logrelation'

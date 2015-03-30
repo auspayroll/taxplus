@@ -9,6 +9,9 @@ from asset.models import Business, SubBusiness
 from citizen.models import Citizen
 from pmauth.models import PMUser
 from dev1 import variables
+from taxplus.management.commands.convert_logging import convert_old_log
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Log(models.Model):
 	"""
@@ -124,6 +127,10 @@ class Log(models.Model):
 		cursor.execute(sql)
 		transaction.commit_unless_managed()
 		return True
+
+@receiver(post_save, sender=Log)
+def after_business_save(sender, instance, created, **kwargs):
+	convert_old_log(log=instance.pk)
 
 
 

@@ -32,7 +32,7 @@ class LoggedModel(models.Model):
 		content_type = ContentType.objects.get_for_model(self)
 
 		if self.pk: #update operation
-			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log)
+			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log, crud=3)
 			try:
 				db_object = self.__class__.objects.get(pk=self.pk)
 			except self.__class__.DoesNotExist:
@@ -50,6 +50,28 @@ class LoggedModel(models.Model):
 					log_relation.old_object = json.dumps(json.loads(serializers.serialize("json", [db_object], fields=updated_fields, use_natural_keys=True))[0]['fields'])
 					log_relation.new_object = json.dumps(json.loads(serializers.serialize("json", [self], fields=updated_fields, use_natural_keys=True))[0]['fields'])
 					log_relation.save()
+					if not log.message:
+						log.message = "%s updated" % self
+						log.save()
+
+					if hasattr(self,'tags'):
+						for tag in self.tags:
+							ct = ContentType.objects.get_for_model(tag)
+							LogRelation.objects.create(content_type=ct, object_id=tag.pk, log=log, crud=2)
+
+		else:
+			saved = super(LoggedModel, self).save(*args, **kwargs)
+			if not log.message:
+				log.message  = "%s created" % self
+				log.save()
+			LogRelation.objects.create(content_type, object_id=self.pk, log=log, crud=1)
+			if hasattr(self,'tags'):
+				for tag in self.tags:
+					ct = ContentType.objects.get_for_model(tag)
+					LogRelation.objects.create(content_type=ct, object_id=tag.pk, log=log, crud=2)
+			return saved
+
+
 
 		return super(LoggedModel, self).save(*args, **kwargs)
 
@@ -723,6 +745,11 @@ class PropertyTitle(LoggedModel):
 			PropertyTitle.objects.filter(pk=self.pk).update(hash_key=hash_key)
 
 	@property
+	def tags(self):
+		tags = [prop]
+
+
+	@property
 	def owners(self):
 		for ownership in self.title_ownership.all():
 			owner = ownership.citizen or ownership.business
@@ -1200,7 +1227,7 @@ class Fee(LoggedModel):
 				pass
 
 # Model for Receipt of Multiple Tax/Fee payment
-class PaymentReceipt(models.Model):
+class PaymentReceipt(LoggedModel):
 	amount = models.IntegerField(default=0)
 	#user = models.ForeignKey(PMUser, null=True, blank = True)
 	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
@@ -1223,6 +1250,28 @@ class PaymentReceipt(models.Model):
 
 	class Meta:
 		db_table = 'jtax_multipayreceipt'
+
+
+	@property
+	def tags(self):
+		t = []
+		for payfee in self.receipt_payments.all():
+			fee = payfee.fee
+			if fee.business_id and fee.business not in t:
+				t.append(payfee.fee.business)
+			elif fee.prop and fee.prop not in t:
+				t.append(fee.prop)
+			if fee.citizen and fee.citizen not in t:
+				t.append(fee.citizen)
+
+			if self.citizen_id and self.citizen not in t:
+				t.append(self.citizen)
+
+			if self.business_id and self.business not in t:
+				t.append(self.business)
+
+		return t
+
 
 	def reverse(self, user=None):
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
@@ -1304,6 +1353,19 @@ class Ownership(LoggedModel):
 
 	class Meta:
 		db_table = 'asset_ownership'
+
+	@property
+	def tags(self):
+		tags = []
+		if self.owner_citizen:
+			tags.append(self.owner_citizen)
+		if self.owner_business:
+			tags.append(self.owner_business)
+		if self.asset_business:
+			tags.append(self.asset_business)
+		if self.asset_property:
+			tags.append(self.asset_property)
+		return tags
 
 # deprecated
 class BusinessOwnership(models.Model):
@@ -1423,7 +1485,7 @@ class MediaManager(models.Manager):
 	def get_query_set(self):
 		return super(MediaManager,self).get_query_set().exclude(restored=False, missing=1)
 
-class Media(models.Model):
+class Media(LoggedModel):
 	tags = models.CharField(max_length = 150, help_text = 'Tags for the Media', null=True, blank = True)
 	title = models.CharField(max_length = 150, null=True, blank = True, help_text = 'Display name of the media')
 	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')
@@ -1449,6 +1511,20 @@ class Media(models.Model):
 	receipt = models.ForeignKey(PaymentReceipt, blank=True, null=True)
 
 	objects = MediaManager()
+
+	@property
+	def tags(self):
+		tags = []
+		if self.business:
+			tags.append(self.business)
+
+		if self.prop:
+			tags.append(self.prop)
+
+		if self.citizen:
+			tags.append(self.citizen)
+
+		return tags
 
 	class Meta:
 		db_table = 'media_media'
@@ -1608,7 +1684,6 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		sector_receipt=sector_receipt, bank_receipt=bank_receipt, status=active, i_status='active', user_id=staff_id, bank=bank)
 
 	receipt.save()
-	Log.log(message='process payment', target=(fee.prop or fee.business), target2=receipt)
 
 	bf = credit
 	balance  = receipt.amount
