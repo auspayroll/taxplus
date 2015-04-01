@@ -17,7 +17,6 @@ from taxplus.forms import PaymentForm, PayFeesForm, TitleForm
 from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
 from taxplus.management.commands.generate_invoices import generate_invoice
 from taxplus.models import *
-from dev1.ThreadLocal import Log
 import csv
 import json
 
@@ -114,7 +113,7 @@ def edit_lease(request, pk):
 			form = TitleForm(request.POST, instance=lease)
 			if form.is_valid():
 				form.save()
-				Log.log('lease updated', target2=lease, target=lease.prop)
+				Log.log(message='lease updated', target2=lease, target=lease.prop)
 				lease.calc_taxes()
 				messages.success(request, 'Land lease updated')
 				return HttpResponseRedirect(reverse('property_leases', args=[lease.prop.pk]))
@@ -742,6 +741,18 @@ def to_fee_from_payment_search(request, pk):
 		return HttpResponseRedirect(reverse('property_payments', args=[fee.prop_id]))
 	elif fee.business_id:
 		return HttpResponseRedirect(reverse('business_payments', args=[fee.business_id]))
+
+@login_required
+def change_log(request):
+	logs = LogRelation.objects.all().select_related('log', 'log__staff', 'content_type').prefetch_related('log__citizen', 'log__prop', 'log__business').order_by('-log__id')[:51]
+	return TemplateResponse(request, "tax/change_log.html", {'logs':logs})
+
+@login_required
+def request_log(request, changes_only=False):
+	logs = Log.objects.all().select_related('staff').prefetch_related('citizen', 'prop', 'business').order_by('-id')[:101]
+	return TemplateResponse(request, "tax/request_log.html", { 'logs':logs })
+
+
 
 
 

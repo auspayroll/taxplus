@@ -73,11 +73,11 @@ def get_current_user():
 				return user
 	return None
 
-
 class ThreadLocalMiddleware(object):
 	""" Simple middleware that adds the request object in thread local storage."""
 
 	def process_request(self, request):
+		from taxplus.models import Log
 		log = Log(request_path=request.path)
 		log.request_remote=request.META.get('REMOTE_ADDR')
 		log.request_type={'GET':'G', 'POST':'P'}.get(request.method)
@@ -87,97 +87,3 @@ class ThreadLocalMiddleware(object):
 		_thread_locals.log = log
 		_thread_locals.request = request
 
-class Log(models.Model):
-	"""
-	keep log for each action taken by user.
-	"""
-	transaction_id = models.IntegerField(null = True, blank = True)
-	#user_id = models.IntegerField(null=True, blank=True)
-	staff = models.ForeignKey(User, help_text="",blank = True, null=True, related_name="staff_logs")
-	tids = models.CharField(max_length = 200, null=True, blank = True)
-	tax_type = models.CharField(max_length = 50, null=True, blank = True)
-	tax_id = models.CharField(max_length = 50, null=True, blank = True)
-	payment_type = models.CharField(max_length = 50, null=True, blank = True)
-	payment_id = models.CharField(max_length = 50, null=True, blank = True)
-	media_id = models.CharField(max_length = 50, null=True, blank = True)
-	username = models.CharField(max_length=10, null=True, blank=True)
-	table = models.CharField(blank=True, null=True, max_length=100)
-	date_time = models.DateTimeField(auto_now_add=True)
-	old_data = models.CharField(blank=True, null=True, max_length=1000)
-	new_data = models.CharField(blank=True, null=True, max_length=1000)
-	message = models.TextField(blank=True, null=True)
-	request_type = models.CharField(blank=True, null=True, max_length=1)
-	request_path = models.TextField(blank=True, null=True)
-	request_remote	= models.TextField(blank=True, null=True)
-
-	class Meta:
-		db_table = 'log_log'
-		app_label = 'taxplus'
-
-	def __unicode__(self):
-		return self.message or self.request_path
-
-	@classmethod
-	def log(cls, target=None, target2=None, message=None):
-		log = get_current_request_log()
-		if not log:
-			log = Log.objects.create()
-
-		log.message  = message
-
-		if target:
-			content_type = ContentType.objects.get_for_model(target)
-			LogRelation.objects.create(log=log, content_type=content_type, object_id=target.pk, crud=2)
-
-		if target2:
-			content_type = ContentType.objects.get_for_model(target2)
-			LogRelation.objects.create(log=log, content_type=content_type, object_id=target2.pk, crud=2)
-
-
-		log.save()
-		return log
-
-class LogTag(models.Model):
-	content_type = models.ForeignKey(ContentType, null=True)
-	object_id = models.PositiveIntegerField(null=True)
-	content_object = generic.GenericForeignKey('content_type', 'object_id')
-	log = models.ForeignKey(Log, related_name='log_tags')
-
-	class Meta:
-		db_table = 'taxplus_logtag'
-		app_label = 'taxplus'
-
-class LogRelation(models.Model):
-	content_type = models.ForeignKey(ContentType, null=True)
-	object_id = models.PositiveIntegerField(null=True)
-	content_object = generic.GenericForeignKey('content_type', 'object_id')
-	log = models.ForeignKey(Log, related_name='log_updates')
-	old_object = models.TextField(null=True)
-	new_object = models.TextField(null=True)
-	crud = models.PositiveIntegerField(null=True)
-
-	class Meta:
-		db_table = 'taxplus_logrelation'
-		app_label = 'taxplus'
-
-	@property
-	def whats_changed(self):
-		"""
-		return a dictionary of whats changed in the format
-		{'field_name':(old_value, new_value), ...}
-		"""
-		try:
-			old_data = json.loads(self.old_object)
-		except ValueError:
-			old_data = ast.literal_eval(self.old_object)
-
-		try:
-			new_data = json.loads(self.new_object)
-		except ValueError:
-			new_data = ast.literal_eval(self.new_object)
-
-		changed = {}
-		for k,v in new_data.items():
-			changed[k] = (v, old_data.get(k))
-
-		return changed

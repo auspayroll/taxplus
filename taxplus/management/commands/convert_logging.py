@@ -1,9 +1,8 @@
 from django.core.management.base import BaseCommand, CommandError
-from taxplus.models import LogOld, Property, Citizen, Business
+from taxplus.models import Property, Citizen, Business, Log, LogRelation, Media
 from datetime import date
 from django import db
 from dev1.loginBackend import CustomLoginBackend
-from dev1.ThreadLocal import LogRelation, LogTag
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 import ast
@@ -12,9 +11,8 @@ import json
 backend = CustomLoginBackend()
 
 def convert_old_log(log):
-
 	if type(log) is int:
-		log = LogOld.objects.get(pk=log)
+		log = Log.objects.get(pk=log)
 
 	#-----update staff user
 	if log.user and not log.staff:
@@ -22,52 +20,76 @@ def convert_old_log(log):
 		log.save(update_fields=['staff'])
 
 	#--------tag
-	if not log.old_data and not log.new_data:
-		if log.prop:
-			ct = ContentType.objects.get_for_model(log.prop)
-			LogRelation.objects.create(content_type=ct, object_id=log.prop.pk, log_id=log.pk, crud=2)
+	tags = []
+	if log.media_id:
+		try:
+			media = Media.objects.get(pk=str(log.media_id))
+		except:
+			pass
+		else:
+			for tag in media.tags:
+				tags.append(tag)
+			ct = ContentType.objects.get_for_model(media)
+			log.modified_objects = True
+			log.save(update_fields=['modified_objects'])
+			LogRelation.objects.create(content_type=ct, object_id=media.pk, log_id=log.pk, crud=1)
 
-		if log.business_id:
-			ct = ContentType.objects.get_for_model(log.business)
-			LogRelation.objects.create(content_type=ct, object_id=log.business_id, log_id=log.pk, crud=2)
+	elif log.payfee_id:
+		receipt = log.payfee.receipt
+		for tag in receipt.tags:
+			tags.append(tag)
+		ct = ContentType.objects.get_for_model(receipt)
+		log.modified_objects = True
+		log.save(update_fields=['modified_objects'])
+		LogRelation.objects.create(content_type=ct, object_id=receipt.pk, log_id=log.pk, crud=1)
 
-		if log.citizen_id:
-			ct = ContentType.objects.get_for_model(log.citizen)
-			LogRelation.objects.create(content_type=ct, object_id=log.citizen_id, log_id=log.pk, crud=2)
+	elif log.receipt_id:
+		for tag in log.receipt.tags:
+			tags.append(tag)
+		ct = ContentType.objects.get_for_model(log.receipt)
+		if 'reversed' in log.message:
+			crud = 3
+		else:
+			crud = 1
+		log.modified_objects = True
+		log.save(update_fields=['modified_objects'])
+		LogRelation.objects.create(content_type=ct, object_id=log.receipt.pk, log_id=log.pk, crud=crud)
 
-		if log.media_id:
-			try:
-				media = Media.objects.get(pk=str(log.media_id))
-			except:
-				pass
-			else:
-				ct = ContentType.objects.get_for_model(log.media)
-				LogRelation.objects.create(content_type=ct, object_id=log.media.pk, log_id=log.pk, crud=1)
-				for tag in log.media.tags:
-					ct = ContentType.objects.get_for_model(tag)
-					LogRelation.objects.create(content_type=ct, object_id=tag.pk, log_id=log.pk, crud=2)
+	if log.fee_id:
+		try:
+			fee = Fee.objects.get(pk=str(log.fee_id))
+		except:
+			pass
+		else:
+			for tag in fee.tags:
+				tags.append(tag)
 
-		if log.fee_id:
-			ct = ContentType.objects.get_for_model(log.fee)
-			LogRelation.objects.create(content_type=ct, object_id=log.fee_id, log_id=log.pk, crud=2)
+	if not tags and not log.business_id and not log.citizen_id and not log.prop and log.table == "jtax_fee" and log.tax_id is not None:
+		try:
+			fee = Fee.objects.get(pk=int(log.tax_id))
+		except:
+			pass
+		else:
+			for tag in fee.tags:
+				tags.append(tag)
 
-		if log.payfee_id:
-			receipt = log.payfee.receipt
-			ct = ContentType.objects.get_for_model(receipt)
-			LogRelation.objects.create(content_type=ct, object_id=receipt.pk, log_id=log.pk, crud=1)
-			for tag in receipt.tags:
-				ct = ContentType.objects.get_for_model(receipt)
-				LogRelation.objects.create(content_type=ct, object_id=tag.pk, log_id=log.pk, crud=2)
+	for tag in tags:
+		if type(tag) is Business and not log.business:
+			log.business= tag
 
-		elif log.receipt_id:
-			ct = ContentType.objects.get_for_model(log.receipt)
-			LogRelation.objects.create(content_type=ct, object_id=log.receipt_id	, log_id=log.pk, crud=1)
-			for tag in log.receipt.tags:
-				ct = ContentType.objects.get_for_model(tag)
-				LogRelation.objects.create(content_type=ct, object_id=tag.pk, log_id=log.pk, crud=2)
+		if type(tag) is Property and not log.prop:
+			log.prop = tag
+
+		if type(tag) is Citizen and not log.citizen:
+			log.citizen = tag
+
+	if tags:
+		log.save(update_fields=['prop', 'citizen', 'business'])
 
 	#--------------change log
 	if log.old_data or log.new_data:
+		log.modified_objects = True
+		log.save(update_fields=['modified_objects'])
 		model = None
 		object_id = None
 		if log.table == 'property_property' and log.prop:
@@ -85,39 +107,33 @@ def convert_old_log(log):
 		if model and object_id:
 			try:
 				model.objects.get(pk=object_id)
-				ct = ContentType.objects.get_for_model(model)
-				if log.old_data:
-					try:
-						log.old_data = ast.literal_eval(log.old_data)
-					except ValueError:
-						log.old_data = {}
-				else:
-					log.old_data = {}
-
-				if log.new_data:
-					try:
-						log.new_data = ast.literal_eval(log.new_data)
-					except ValueError:
-						log.new_data = {}
-				else:
-					log.new_data = {}
-
-				for k,v in log.new_data.items():
-					if v == log.old_data.get(k):
-						del(log.new_data[k])
-						del(log.old_data[k])
-
-				old_data = json.dumps(log.old_data)
-				new_data = json.dumps(log.new_data)
-
-				LogRelation.objects.create(content_type=ct, object_id=object_id, old_object=old_data, new_object=new_data, log_id=log.id, crud=3)
-
-			except AttributeError:
-				import pdb
-				pdb.set_trace()
-
 			except model.DoesNotExist:
-				pass
+				return
+			ct = ContentType.objects.get_for_model(model)
+			if log.old_data:
+				try:
+					log.old_data = ast.literal_eval(log.old_data)
+				except ValueError:
+					log.old_data = {}
+			else:
+				log.old_data = {}
+
+			if log.new_data:
+				try:
+					log.new_data = ast.literal_eval(log.new_data)
+				except ValueError:
+					log.new_data = {}
+			else:
+				log.new_data = {}
+
+			for k,v in log.new_data.items():
+				if v == log.old_data.get(k):
+					del(log.new_data[k])
+					del(log.old_data[k])
+
+			old_data = json.dumps(log.old_data)
+			new_data = json.dumps(log.new_data)
+			LogRelation.objects.create(content_type=ct, object_id=object_id, old_object=old_data, new_object=new_data, log_id=log.id, crud=3)
 
 class Command(BaseCommand):
 	#fixed_asset/rental_income/trading_license/cleaning_fee/market_fee/land_lease_fee
@@ -132,10 +148,23 @@ class Command(BaseCommand):
 	def handle(self, *args, **options):
 		#table_map = dict([ (ct.model_class()._meta.db_table, ct.model_class() ) for ct in ContentType.objects.all() if ct.model_class()])
 
-		for log in LogOld.objects.all().select_related('user'):
-			try:
-				convert_old_log(log)
-			except:
-				raise Exception('Error in log %s' % log)
-			else:
+		#create missing media logs
+		last_media_log = Log.objects.filter(media_id__isnull=False).order_by('-id')[0]
+		ct = ContentType.objects.get_for_model(last_media_log)
+		first_media_log = None
+		for media in Media.objects.filter(id__gt=int(last_media_log.media_id)):
+			staff = backend.authenticate(username=last_media_log.user.email, check_password=False)
+			log = Log.objects.create(user=last_media_log.user, staff=staff, media_id=media.pk, citizen=media.citizen, business=media.business, prop=media.prop, date_time=media.date_created, modified_objects=True, message="New Media %s" % media)
+			if not first_media_log:
+				first_media_log = log
+			log.date_time = media.date_created
+			LogRelation.objects.create(log=log, object_id=media.pk, content_type=ct, crud=1)
+			print "New for created for %s" % media
+
+		for log in Log.objects.all().select_related('user'):
 				print log.message or log.pk
+				try:
+					convert_old_log(log)
+				except:
+					print "Problem with log %s" % log.pk
+					break

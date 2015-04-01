@@ -2,7 +2,6 @@ from datetime import date, datetime, timedelta
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-from dev1.ThreadLocal import Log, LogRelation
 from django.contrib.auth.models import User
 from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
@@ -19,7 +18,7 @@ import ast
 import binascii
 import json
 import os
-from dev1.ThreadLocal import get_current_request_log, Log
+from dev1.ThreadLocal import get_current_request_log
 
 class LoggedModel(models.Model):
 	class Meta:
@@ -30,6 +29,14 @@ class LoggedModel(models.Model):
 		if not log:
 			log = Log.objects.create()
 		content_type = ContentType.objects.get_for_model(self)
+		if type(self) is Property:
+			log.prop = self
+
+		elif type(self) is Business:
+			log.business = self
+
+		elif type(self) is Citizen:
+			log.citizen = self
 
 		if self.pk: #update operation
 			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log, crud=3)
@@ -50,28 +57,40 @@ class LoggedModel(models.Model):
 					log_relation.old_object = json.dumps(json.loads(serializers.serialize("json", [db_object], fields=updated_fields, use_natural_keys=True))[0]['fields'])
 					log_relation.new_object = json.dumps(json.loads(serializers.serialize("json", [self], fields=updated_fields, use_natural_keys=True))[0]['fields'])
 					log_relation.save()
-					if not log.message:
-						log.message = "%s updated" % self
-						log.save()
+					log.message = ((log.message or '') + ("; %s updated" % self)).strip(';')
 
 					if hasattr(self,'tags'):
 						for tag in self.tags:
-							ct = ContentType.objects.get_for_model(tag)
-							LogRelation.objects.create(content_type=ct, object_id=tag.pk, log=log, crud=2)
+							if type(tag) is Property and not log.prop:
+								log.prop = tag
+
+							elif type(tag) is Business and not log.business:
+								log.business = tag
+
+							elif type(tag) is Citizen and not log.citizen:
+								log.citizen = tag
+					log.modified_objects = True
+					log.save()
 
 		else:
 			saved = super(LoggedModel, self).save(*args, **kwargs)
-			if not log.message:
-				log.message  = "%s created" % self
-				log.save()
-			LogRelation.objects.create(content_type, object_id=self.pk, log=log, crud=1)
+			log_relation = LogRelation(content_type=content_type, object_id=self.pk, log=log, crud=1)
+			log.message = ((log.message or '') + ("; %s created" % self)).strip(';')
+
 			if hasattr(self,'tags'):
 				for tag in self.tags:
-					ct = ContentType.objects.get_for_model(tag)
-					LogRelation.objects.create(content_type=ct, object_id=tag.pk, log=log, crud=2)
+					if type(tag) is Property:
+						log.prop = tag
+
+					elif type(tag) is Business and not log.business_id:
+						log.business = tag
+
+					elif type(tag) is Citizen and not log.citizen_id:
+						log.citizen = tag
+
+			log.modified_objects = True
+			log.save()
 			return saved
-
-
 
 		return super(LoggedModel, self).save(*args, **kwargs)
 
@@ -936,6 +955,20 @@ class Fee(LoggedModel):
 		self.interest = self.interest_charged
 		self.save()
 
+
+	@property
+	def tags(self):
+		tags = []
+		if self.citizen_id:
+			tags.append(self.citizen)
+		if self.business_id:
+			tags.append(self.business)
+		if self.business:
+			tags.append(self.business)
+		if self.prop:
+			tags.append(self.prop)
+		return tags
+
 	@property
 	def total_due(self, pay_date=date.today()):
 		total_due = self.remaining_amount + self.penalty + self.interest
@@ -1251,6 +1284,8 @@ class PaymentReceipt(LoggedModel):
 	class Meta:
 		db_table = 'jtax_multipayreceipt'
 
+	def __unicode__(self):
+		return "#%s - %s" % (self.bank_receipt, self.amount)
 
 	@property
 	def tags(self):
@@ -1264,14 +1299,19 @@ class PaymentReceipt(LoggedModel):
 			if fee.citizen and fee.citizen not in t:
 				t.append(fee.citizen)
 
-			if self.citizen_id and self.citizen not in t:
-				t.append(self.citizen)
+			try:
+				if self.citizen_id and self.citizen not in t:
+					t.append(self.citizen)
+			except:
+				pass
 
-			if self.business_id and self.business not in t:
-				t.append(self.business)
+			try:
+				if self.business_id and self.business not in t:
+					t.append(self.business)
+			except:
+				pass
 
 		return t
-
 
 	def reverse(self, user=None):
 		inactive = CategoryChoice.objects.get(category__code='status', code='inactive')
@@ -1419,40 +1459,6 @@ class DebtorsReportLine(models.Model):
 	month_12 = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 	total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
-
-class LogOld(models.Model):
-	"""
-	keep log for each action taken by user.
-	"""
-	transaction_id = models.IntegerField(null = True, blank = True)
-	staff = models.ForeignKey(User, help_text="",blank = True, null=True, related_name="staff_logs2")
-	#user_id = models.IntegerField(null=True, blank=True)
-	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
-	citizen = models.ForeignKey(Citizen, null=True, blank=True)
-	prop = models.ForeignKey(Property, null=True, blank=True, db_column='property_id')
-	business = models.ForeignKey(Business, null = True, blank = True)
-	tids = models.CharField(max_length = 200, null=True, blank = True)
-	tax_type = models.CharField(max_length = 50, null=True, blank = True)
-	tax_id = models.CharField(max_length = 50, null=True, blank = True)
-	payment_type = models.CharField(max_length = 50, null=True, blank = True)
-	payment_id = models.CharField(max_length = 50, null=True, blank = True)
-	media_id = models.CharField(max_length = 50, null=True, blank = True)
-	username = models.CharField(max_length=100)
-	table = models.CharField(blank=True, null=True, max_length=100)
-	date_time = models.DateTimeField(auto_now_add=True)
-	old_data = models.CharField(blank=True, null=True, max_length=1000)
-	new_data = models.CharField(blank=True, null=True, max_length=1000)
-	message = models.TextField(blank=True, null=True)
-	fee = models.ForeignKey(Fee, null=True, blank=True)
-	payfee = models.ForeignKey(PayFee, blank=True, null=True)
-	receipt = models.ForeignKey(PaymentReceipt
-		, blank=True, null=True)
-
-	class Meta:
-		db_table = 'log_log'
-		managed = False
-
-
 class Rate(models.Model):
 	category = models.ForeignKey(CategoryChoice, related_name='rate_category')
 	sub_category = models.ForeignKey(CategoryChoice, related_name='rate_subcategory')
@@ -1495,7 +1501,7 @@ class Media(LoggedModel):
 	file_size = models.CharField(max_length = 50)
 	citizen = models.ForeignKey(Citizen,  null=True, blank=True)
 	business = models.ForeignKey(Business,  null=True, blank=True)
-	prop = models.ForeignKey(Property,  null=True, blank=True, db_column='property_id')
+	prop = models.ForeignKey(Property, null=True, blank=True, db_column='property_id')
 	tax_type = models.CharField(max_length = 50,  help_text = 'Type of Tax/Fee Associated with this Media', null=True, blank = True)
 	tax_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
 	payment_type = models.CharField(max_length = 50, help_text = 'Type of Payment Associated with this Media', null=True, blank = True)
@@ -1515,14 +1521,41 @@ class Media(LoggedModel):
 	@property
 	def tags(self):
 		tags = []
-		if self.business:
-			tags.append(self.business)
+		try:
+			if self.business:
+				tags.append(self.business)
+		except:
+			pass
 
-		if self.prop:
-			tags.append(self.prop)
+		try:
+			if self.prop:
+				tags.append(self.prop)
+		except:
+			pass
 
-		if self.citizen:
-			tags.append(self.citizen)
+		try:
+			if self.citizen:
+				tags.append(self.citizen)
+		except:
+			pass
+
+		if self.payfee and not self.fee:
+			self.fee = self.payfee.fee
+
+		if self.receipt and not self.fee:
+			receipt_payments = self.receipt.receipt_payments.all()
+			if receipt_payments:
+				self.fee = receipt_payments[0].fee
+
+		if self.fee:
+			if self.fee.business and self.fee.business not in tags:
+				tags.append(self.fee.business)
+
+			if self.fee.citizen and self.fee.citizen not in tags:
+				tags.append(self.fee.citizen)
+
+			if self.fee.prop and self.fee.prop not in tags:
+				tags.append(self.fee.prop)
 
 		return tags
 
@@ -1709,3 +1742,100 @@ def process_payment(payment_amount, payment_date, citizen_id, business_id, secto
 		business.save(update_fields=['credit'])
 
 	return balance
+
+class Log(models.Model):
+	"""
+	keep log for each action taken by user.
+	"""
+	transaction_id = models.IntegerField(null = True, blank = True)
+	user = models.ForeignKey(PMUser, help_text="",blank = True, null=True)
+	staff = models.ForeignKey(User, help_text="",blank = True, null=True, related_name="staff_logs")
+	tids = models.CharField(max_length = 200, null=True, blank = True)
+	tax_type = models.CharField(max_length = 50, null=True, blank = True)
+	tax_id = models.CharField(max_length = 50, null=True, blank = True)
+	payment_type = models.CharField(max_length = 50, null=True, blank = True)
+	payment_id = models.CharField(max_length = 50, null=True, blank = True)
+	media_id = models.CharField(max_length = 50, null=True, blank = True)
+	username = models.CharField(max_length=10, null=True, blank=True)
+	table = models.CharField(blank=True, null=True, max_length=100)
+	date_time = models.DateTimeField(auto_now_add=True)
+	old_data = models.CharField(blank=True, null=True, max_length=1000)
+	new_data = models.CharField(blank=True, null=True, max_length=1000)
+	message = models.TextField(blank=True, null=True)
+	request_type = models.CharField(blank=True, null=True, max_length=1)
+	fee = models.ForeignKey(Fee, null=True, blank=True)
+	request_path = models.TextField(blank=True, null=True)
+	request_remote	= models.TextField(blank=True, null=True)
+	citizen = models.ForeignKey(Citizen, null=True, blank=True)
+	business = models.ForeignKey(Business, null=True, blank=True)
+	prop = models.ForeignKey(Property, db_column='property_id', null=True, blank=True)
+	payfee = models.ForeignKey(PayFee, blank=True, null=True)
+	receipt = models.ForeignKey(PaymentReceipt
+		, blank=True, null=True)
+	modified_objects = models.NullBooleanField()
+
+	class Meta:
+		db_table = 'log_log'
+		app_label = 'taxplus'
+
+	def __unicode__(self):
+		return self.message or self.request_path
+
+	@classmethod
+	def log(cls, target=None, target2=None, targets=None, message=None):
+		log = get_current_request_log()
+		if not log:
+			log = Log.objects.create()
+
+		log.message  = message
+		if target or target2:
+			targets = [target, target2]
+		if targets:
+			for target in targets:
+				if type(target) is Property:
+						log.prop = target
+				elif type(target) is Business:
+					log.business = target
+				elif type(target) is Citizen:
+					log.citizen = target
+		log.save()
+		return log
+
+class LogRelation(models.Model):
+	content_type = models.ForeignKey(ContentType, null=True)
+	object_id = models.PositiveIntegerField(null=True)
+	content_object = generic.GenericForeignKey('content_type', 'object_id')
+	log = models.ForeignKey(Log, related_name='log_updates')
+	old_object = models.TextField(null=True)
+	new_object = models.TextField(null=True)
+	crud = models.PositiveIntegerField(null=True)
+
+	class Meta:
+		db_table = 'taxplus_logrelation'
+		app_label = 'taxplus'
+
+	@property
+	def changes(self):
+		return ", ".join([("%s: '%s' to '%s'" % (k, v[0], v[1])).replace('_',' ') for k,v in self.change_dict.items() ])
+
+	@property
+	def change_dict(self):
+		"""
+		return a dictionary of whats changed in the format
+		{'field_name':(old_value, new_value), ...}
+		"""
+		try:
+			old_data = json.loads(self.old_object)
+		except ValueError:
+			old_data = ast.literal_eval(self.old_object)
+
+		try:
+			new_data = json.loads(self.new_object)
+		except ValueError:
+			new_data = ast.literal_eval(self.new_object)
+
+		changed = {}
+		for k,v in new_data.items():
+			changed[k] = (old_data.get(k), v)
+
+		return changed

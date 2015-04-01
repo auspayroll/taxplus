@@ -1,0 +1,42 @@
+{% extends "tax/request_log.html" %}
+{% load staticfiles %}
+
+
+{% block log_title %}
+CHANGE LOG - <a href="{% url 'request_log' %}">View Request Log</a>
+{% endblock %}
+
+{% block log_table %}
+	<thead>
+		<tr>
+			<th width="80">Log ID</th>
+			<th width="80">Date</th>
+			<th width="120">Staff</th>
+			<th width="115">IP Address</th>
+			<th width="150">Record</th>
+			<th width="150">Related record</th>
+			<th>Operation</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for log in logs %}
+			<tr>
+				<td>{{ log.log.pk }}</td>
+				<td>{{log.log.date_time|date:'d/m/y H:i'}}</td>
+				<td>{{log.log.staff|default:''}}</td>
+				<td>{{log.log.request_remote|default:'-'}}</td>
+				<td>{{ log.content_type.name|capfirst }}: {{ log.content_object }}</td>
+				<td>{% if log.log.business %}Business: <a href="{% url 'business_update' log.log.business.pk|default:0 %}">{{log.log.business }}</a>{% endif %}
+					{% if log.log.citizen %}Citizen: {{log.log.citizen }}{% endif %}
+					{% if log.log.prop %}Property: {{ log.log.prop }}{% endif %}
+				</td>
+				<td class="message">
+				{% if log.crud == 1 %}<b>Created</b>{% endif %}
+				{% if log.crud == 3 %}<b>Updated:</b>
+				{{ log.changes }}
+				{% endif %}
+				<div  style="font-size:smaller">{{log.log.message|default:''|safe|linebreaksbr }}</div></td>
+			</tr>
+		{% endfor %}
+	</tbody>
+{% endblock %}
