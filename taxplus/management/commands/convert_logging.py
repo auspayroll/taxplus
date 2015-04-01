@@ -152,7 +152,7 @@ class Command(BaseCommand):
 		last_media_log = Log.objects.filter(media_id__isnull=False).order_by('-id')[0]
 		ct = ContentType.objects.get_for_model(last_media_log)
 		first_media_log = None
-		for media in Media.objects.filter(id__gt=int(last_media_log.media_id)):
+		for media in Media.objects.filter(id__gt=int(last_media_log.media_id)).order_by('id'):
 			staff = backend.authenticate(username=last_media_log.user.email, check_password=False)
 			log = Log.objects.create(user=last_media_log.user, staff=staff, media_id=media.pk, citizen=media.citizen, business=media.business, prop=media.prop, date_time=media.date_created, modified_objects=True, message="New Media %s" % media)
 			if not first_media_log:
