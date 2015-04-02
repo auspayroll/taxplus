@@ -88,27 +88,27 @@
 			            Page {{ logs.number }} of {{ logs.paginator.num_pages|intcomma }}.
 			            &nbsp;&nbsp;&nbsp;&nbsp;
 			            {% if logs.has_previous %}
-				            <a href="?page=1">first</a>
+				            <a href="?{{ request.GET.urlencode }}&page=1">first</a>
 			            {% else %}
 				            first
 			            {% endif %}
 
 			            &nbsp;&nbsp;
 			            {% if logs.has_previous %}
-				            <a href="?page={{ logs.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.previous_page_number }}">previous</a>
 			            {% else %}
 				            previous
 			            {% endif %}
 
 			            &nbsp;&nbsp;
 			            {% if logs.has_next %}
-				            <a href="?page={{ logs.next_page_number }}&{{ request.GET.urlencode }}">next</a>
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.next_page_number }}">next</a>
 			            {% else %}
 				            next
 			            {% endif %}
 			            &nbsp;&nbsp;
 			            {% if logs.has_next %}
-				            <a href="?page={{ logs.paginator.num_pages }}&{{ request.GET.urlencode }}">last</a>
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.paginator.num_pages }}">last</a>
 			            {% else %}
 				            last
 			            {% endif %}
@@ -149,35 +149,35 @@
 
 				</table>
                 <div style="margin-top:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
-		                <span>
-			                Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
-			                &nbsp;&nbsp;&nbsp;&nbsp;
-			                {% if logs.has_previous %}
-				                <a href="?page=1&{{ request.GET.urlencode }}">first</a>
-			                {% else %}
-				                first
-			                {% endif %}
+		            <span>
+			            Page {{ logs.number }} of {{ logs.paginator.num_pages|intcomma }}.
+			            &nbsp;&nbsp;&nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page=1">first</a>
+			            {% else %}
+				            first
+			            {% endif %}
 
-			                &nbsp;&nbsp;
-			                {% if logs.has_previous %}
-				                <a href="{{ pagination_url }}?page={{ logs.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
-			                {% else %}
-				                previous
-			                {% endif %}
+			            &nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.previous_page_number }}">previous</a>
+			            {% else %}
+				            previous
+			            {% endif %}
 
-			                &nbsp;&nbsp;
-			                {% if logs.has_next %}
-				                <a href="{{ pagination_url }}?page={{ logs.next_page_number }}&{{ request.GET.urlencode }}">next</a>
-			                {% else %}
-				                next
-			                {% endif %}
-			                &nbsp;&nbsp;
-			                {% if logs.has_next %}
-				                <a href="{{ pagination_url }}?page={{ logs.paginator.num_pages }}&{{ request.GET.urlencode }}">last</a>
-			                {% else %}
-				                last
-			                {% endif %}
-		                </span>
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.next_page_number }}">next</a>
+			            {% else %}
+				            next
+			            {% endif %}
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.paginator.num_pages }}">last</a>
+			            {% else %}
+				            last
+			            {% endif %}
+		            </span>
 	                </div>
 			{% else %}
 				No logs found.
