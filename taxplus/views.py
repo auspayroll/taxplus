@@ -4,6 +4,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.urlresolvers import reverse
 from django.db.models import Q, Sum
 from django.forms.models import modelformset_factory
@@ -13,7 +14,7 @@ from django.template.response import TemplateResponse
 from jtax.models import PayFee, Fee
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfgen import canvas
-from taxplus.forms import PaymentForm, PayFeesForm, TitleForm
+from taxplus.forms import PaymentForm, PayFeesForm, TitleForm, LogSearchForm
 from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
 from taxplus.management.commands.generate_invoices import generate_invoice
 from taxplus.models import *
@@ -748,9 +749,56 @@ def change_log(request):
 	return TemplateResponse(request, "tax/change_log.html", {'logs':logs})
 
 @login_required
-def request_log(request, changes_only=False):
-	logs = Log.objects.all().select_related('staff').prefetch_related('citizen', 'prop', 'business').order_by('-id')[:101]
-	return TemplateResponse(request, "tax/request_log.html", { 'logs':logs })
+def request_log(request):
+
+	page = request.GET.get('page')
+	log_list = Log.objects.all()
+	form = LogSearchForm(request.GET)
+	if form.is_valid():
+
+		date_from = form.cleaned_data.get('date_from')
+		if date_from:
+			log_list = log_list.filter(date_time__gte=date_from)
+
+		date_to = form.cleaned_data.get('date_to')
+		if date_to:
+			log_list = log_list.filter(date_time__lte=date_to)
+
+		changes_only = form.cleaned_data.get('changes_only')
+		if changes_only:
+			log_list = log_list.filter(modified_objects=True)
+
+		user_string = form.cleaned_data.get('user')
+		if user_string:
+			log_list = log_list.filter(Q(staff__email__icontains=user_string) | Q(staff__username__icontains=user_string))
+
+		model_type = form.cleaned_data.get('search_for')
+		search_string = form.cleaned_data.get('search_string')
+		if model_type == 'Business':
+			log_list = log_list.filter(business__isnull=False)
+			if search_string:
+				log_list = log_list.filter(Q(business__name__icontains=search_string) | Q(business__tin__icontains=search_string))
+		elif model_type == 'Citizen':
+			log_list = log_list.filter(citizen__isnull=False)
+			if search_string:
+				log_list = log_list.filter(citizen__citizen_id__icontains=search_string)
+		elif model_type == 'Property':
+			if search_string:
+				log_list = log_list.filter(prop__upi__icontains=search_string)
+			log_list = log_list.filter(prop__isnull=False)
+		else:
+			log_list = log_list.filter(message__icontains=search_string)
+
+	log_list = log_list.select_related('staff').prefetch_related('citizen', 'prop', 'business').order_by('-date_time')
+
+	paginator = Paginator(log_list, 100)
+	try:
+		logs = paginator.page(page)
+	except PageNotAnInteger:
+		logs = paginator.page(1)
+	except EmptyPage:
+		logs = paginator.page(paginator.num_pages)
+	return TemplateResponse(request, "tax/request_log.html", { 'logs':logs, 'form':form })
 
 
 
