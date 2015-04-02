@@ -786,7 +786,7 @@ def request_log(request):
 			if search_string:
 				log_list = log_list.filter(prop__upi__icontains=search_string)
 			log_list = log_list.filter(prop__isnull=False)
-		else:
+		elif search_string:
 			log_list = log_list.filter(message__icontains=search_string)
 
 	log_list = log_list.select_related('staff').prefetch_related('citizen', 'prop', 'business').order_by('-date_time')
