@@ -74,7 +74,7 @@ from django.views.decorators.cache import cache_control
 from jtax.shared_functions import *
 from django.views.decorators.csrf import csrf_exempt
 from django.core.context_processors import csrf
-from taxplus.models import Entity, CategoryChoice, PayFee as TP_PayFee, PaymentReceipt as TP_Receipt
+from taxplus.models import CategoryChoice, PayFee as TP_PayFee, PaymentReceipt as TP_Receipt
 from django.contrib.auth.decorators import login_required
 
 @login_required
