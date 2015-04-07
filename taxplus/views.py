@@ -642,8 +642,6 @@ def business_update(request, pk):
 			business.reset_fees()
 			business.calc_taxes()
 			business.adjust_payments()
-			#add a log message
-			Log.log(message='business updated', target=business)
 			messages.success(request, "Update successful")
 			return HttpResponseRedirect(reverse('business_update', args=[business.pk]))
 		else:
@@ -750,7 +748,6 @@ def change_log(request):
 
 @login_required
 def request_log(request):
-
 	page = request.GET.get('page')
 	log_list = Log.objects.all()
 	form = LogSearchForm(request.GET)
