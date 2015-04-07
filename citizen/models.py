@@ -2,7 +2,7 @@ from django.db import models
 from datetime import datetime
 from dev1.variables import *
 from common.models import Status
-from taxplus.models import Entity, CategoryChoice
+from taxplus.models import CategoryChoice
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 

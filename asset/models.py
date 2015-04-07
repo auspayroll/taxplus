@@ -6,7 +6,7 @@ from property.models import *
 from dateutil.relativedelta import relativedelta
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from taxplus.models import PropertyOwnership, BusinessOwnership, Entity, CategoryChoice, PropertyTitle
+from taxplus.models import PropertyOwnership, BusinessOwnership, CategoryChoice, PropertyTitle
 from citizen.models import Citizen
 
 

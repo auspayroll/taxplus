@@ -545,41 +545,7 @@ class SubBusiness(models.Model):
 	class Meta:
 		db_table = 'asset_subbusiness'
 
-#deprecated
-class Entity(models.Model):
-	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
-	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
-	subbusiness = models.OneToOneField(SubBusiness, null=True, db_column='owner_subbusiness_id')
-
-	class Meta:
-		db_table = 'asset_ownership'
-
-	@property
-	def entity_type(self):
-		if self.citizen:
-			return 'citizen'
-
-		elif self.business:
-			return 'business'
-
-	@property
-	def identifier(self):
-		if self.citizen:
-			return self.citizen.citizen_id
-
-		elif self.business:
-			return self.business.tin
-
-	@property
-	def name(self):
-		if self.citizen:
-			return self.citizen.name
-
-		elif self.business:
-			return self.business.name
-
 class IdentityDocument(models.Model):
-	entity = models.ForeignKey(Entity)
 	foreign_identity_type = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity type. For example: passport.')
 	foreign_identity_number = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity ID.')
 
@@ -1277,7 +1243,6 @@ class PaymentReceipt(LoggedModel):
 	i_status = models.CharField(max_length = 10, default='active', blank = True)
 	payer_name = models.CharField(max_length=100, blank = True, null=True)
 	status = models.ForeignKey(CategoryChoice, related_name="paymentreceipt_status", null=True)
-	payer = models.ForeignKey(Entity, related_name="payments", null=True)
 	bf = models.IntegerField(help_text="The amount of fee item.", default=0)
 	credit = models.IntegerField(help_text="The amount of fee item.", default=0)
 
