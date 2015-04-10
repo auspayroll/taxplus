@@ -1,0 +1,35 @@
+{% extends "common/modal.html" %}
+{% block body %}
+<div>
+	<div class="table">
+		<div>Message: {{ log.message }}</div>
+		<div>Staff: {{ log.staff }}</div>
+		<div>Date/Time: {{ log.date_time }}</div>
+		<div>IP Address: {{ log.request_remote }}</div>
+		<div>Request Path: {{ log.request_path }}</div>
+	</div>
+
+	<table>
+	<tr><th>Record</th><th>Operation</th><th>Field Changes</th>
+	{% for log_update in log.log_updates.all %}
+		<tr><td>{{ log_update.content_type }}: {{ log_update.content_object }}</td>
+			<td>{% if log_update.crud == 3 %}Update{% endif %}{% if log_update.crud == 1 %}Create{% endif %}</td>
+			<td>
+			{% if log_update.crud == 3 %}
+					{% for i,v in log_update.change_dict.items %}
+						<u>{{ i }}</u>: {{ v.0 }} -> {{ v.1|default:'** blank line **' }}<br/>
+					{% endfor %}
+			{% else %}
+				n/a
+			{% endif %}
+			</td>
+		</tr>
+	{% endfor %}
+	</table>
+	<p/>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    </div>
+</div>
+{% endblock %}
+

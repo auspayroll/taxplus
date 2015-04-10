@@ -14,7 +14,7 @@ from django.template.response import TemplateResponse
 from jtax.models import PayFee, Fee
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfgen import canvas
-from taxplus.forms import PaymentForm, PayFeesForm, TitleForm, LogSearchForm
+from taxplus.forms import PaymentForm, PayFeesForm, TitleForm, LogSearchForm, LogSearchFormExtended
 from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
 from taxplus.management.commands.generate_invoices import generate_invoice
 from taxplus.models import *
@@ -747,12 +747,28 @@ def change_log(request):
 	return TemplateResponse(request, "tax/change_log.html", {'logs':logs})
 
 @login_required
-def request_log(request):
+def request_log(request, property_pk=None, business_pk=None):
 	page = request.GET.get('page')
 	log_list = Log.objects.all()
-	form = LogSearchForm(request.GET)
-	if form.is_valid():
+	form = LogSearchFormExtended(request.GET)
+	prefetch_related = ['citizen']
+	template = 'common/root.html'
+	context = { 'form':form }
+	if property_pk:
+		log_list = log_list.filter(prop__pk=property_pk)
+		template = "tax/property_log.html"
+		context['property'] = get_object_or_404(Property, pk=property_pk)
+		context['form'] = LogSearchForm(request.GET)
+		prefetch_related.append('prop')
 
+	if business_pk:
+		log_list = log_list.filter(business__pk=business_pk)
+		template = "tax/business_log.html"
+		context['business'] = get_object_or_404(Business, pk=business_pk)
+		context['form'] = LogSearchForm(request.GET)
+		prefetch_related.append('business')
+
+	if request.GET and form.is_valid():
 		date_from = form.cleaned_data.get('date_from')
 		if date_from:
 			log_list = log_list.filter(date_time__gte=date_from)
@@ -786,8 +802,7 @@ def request_log(request):
 		elif search_string:
 			log_list = log_list.filter(message__icontains=search_string)
 
-	log_list = log_list.select_related('staff').prefetch_related('citizen', 'prop', 'business').order_by('-date_time')
-
+	log_list = log_list.select_related('staff').prefetch_related(*prefetch_related).order_by('-date_time')
 	paginator = Paginator(log_list, 100)
 	try:
 		logs = paginator.page(page)
@@ -795,7 +810,17 @@ def request_log(request):
 		logs = paginator.page(1)
 	except EmptyPage:
 		logs = paginator.page(paginator.num_pages)
-	return TemplateResponse(request, "tax/request_log.html", { 'logs':logs, 'form':form })
+	context['logs'] = logs
+	return TemplateResponse(request, template, context)
+
+@login_required
+def log_details(request, pk):
+	log = get_object_or_404(Log, pk=pk)
+	return TemplateResponse(request, "common/log.html", { 'log':log})
+
+
+
+
 
 
 

@@ -11,9 +11,13 @@ urlpatterns = patterns('',
 	url(r'^il/(?P<key>\w+)/$', taxplus_views.mobile_invoice_landing, name='mobile_invoice_landing'),
 	url(r'^i/(?P<key>\w+)/$', taxplus_views.mobile_invoice, name='mobile_invoice'),
 	url(r'^business/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_default'),
+
 	url(r'^property/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property_default'),
+	url(r'^log_details/(?P<pk>\d+)/$', taxplus_views.log_details, name='log_details'),
 	url(r'^admin/tax/tax/property/(?P<pk>\d+)/$', taxplus_views.property_fees, name='redirect_from_search'),
 	url(r'^admin/log/log/$', taxplus_views.request_log, name='request_log'),
+	url(r'^business/(?P<business_pk>\d+)/log/$', taxplus_views.request_log, name='business_log'),
+	url(r'^property/(?P<property_pk>\d+)/log/$', taxplus_views.request_log, name='property_log'),
 	url(r'^log/change/$', taxplus_views.change_log, name='change_log'),
 
 	url(r'^admin/property/', include('property.urls')),

@@ -1,0 +1,152 @@
+{% load staticfiles %}
+{% load humanize %}
+
+<div style="text-align:center">
+	<div style="width:98%; margin:0 auto; text-align:left;">
+		<div class="box">
+			<div class="box_title" >
+				Search Log
+			</div>
+			<div class="content" style="border-bottom:0px;">
+				<form method="GET" style="margin:0px; padding:0px;">
+					{% csrf_token %}
+					<table cellpadding="4" cellspacing="3" >
+						<tr>
+							<td>
+								{{ form }}
+							</td>
+							<td valign="bottom" class="box_title" colspan="2" style="text-align:right; padding-right:10px; border:0pt black solid;"><button type="submit" class="my_button" name="submit_search">Search</button></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+			<div class="box_title">
+				{% block log_title %}
+				REQUEST LOG
+				{% endblock %}
+			</div>
+			<div class="content">
+			{% if logs %}
+                <div style="margin-bottom:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		            <span>
+			            Page {{ logs.number }} of {{ logs.paginator.num_pages|intcomma }}.
+			            &nbsp;&nbsp;&nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page=1">first</a>
+			            {% else %}
+				            first
+			            {% endif %}
+
+			            &nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.previous_page_number }}">previous</a>
+			            {% else %}
+				            previous
+			            {% endif %}
+
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.next_page_number }}">next</a>
+			            {% else %}
+				            next
+			            {% endif %}
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.paginator.num_pages }}">last</a>
+			            {% else %}
+				            last
+			            {% endif %}
+		            </span>
+	            </div>
+				<table cellpadding="0"  cellspacing="0" id="tablesorter" class="tablesorter" style="width:100%">
+					{% block log_table %}
+					<thead>
+						<tr>
+							<th width="80">Log ID</th>
+							<th width="80">Date</th>
+							<th width="120">Staff</th>
+							<th width="115">IP</th>
+							<th width="150">Request Path</th>
+							<th>Related Record</th>
+							<th>Message</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for log in logs %}
+							<tr>
+								<td>{{log.pk}}</td>
+								<td>{{log.date_time|date:'d/m/y H:i'}}</td>
+								<td>{{log.staff|default:''}}</td>
+								<td>{{log.request_remote|default:'-'}}</td>
+								<td>{{log.request_path|default:'-'}}</td>
+								<td>{% if log.business %}Business: <a href="{% url 'business_update' log.business.pk|default:0 %}">{{log.business }}</a>{% endif %}
+									{% if log.prop %}Property: <a href="{% url 'property_default' log.prop.pk|default:0 %}">{{log.prop }}</a>{% endif %}
+									{% if log.citizen %}Citizen: {{ log.citizen }}{% endif %}
+								</td>
+								<td class="message">{{log.message|default:''|safe|linebreaksbr }}
+									{% if log.modified_objects %}
+										<div><a href="#" data-toggle="modal" data-target="#basicModal" data-remote="{% url 'log_details' log.pk %}">View Change Details</a></div>
+									{% endif %}
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+					{% endblock %}
+
+				</table>
+                <div style="margin-top:10px; font-size:14px; padding: 5px; border: 1px solid #c4c4c4;">
+		            <span>
+			            Page {{ logs.number }} of {{ logs.paginator.num_pages|intcomma }}.
+			            &nbsp;&nbsp;&nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page=1">first</a>
+			            {% else %}
+				            first
+			            {% endif %}
+
+			            &nbsp;&nbsp;
+			            {% if logs.has_previous %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.previous_page_number }}">previous</a>
+			            {% else %}
+				            previous
+			            {% endif %}
+
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.next_page_number }}">next</a>
+			            {% else %}
+				            next
+			            {% endif %}
+			            &nbsp;&nbsp;
+			            {% if logs.has_next %}
+				            <a href="?{{ request.GET.urlencode }}&page={{ logs.paginator.num_pages }}">last</a>
+			            {% else %}
+				            last
+			            {% endif %}
+		            </span>
+	                </div>
+			{% else %}
+				No logs found.
+			{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+	            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&amp;times;</button>
+	            <h4 class="modal-title" id="myModalLabel">Taxplus</h4>
+	            </div>
+	            <div class="modal-body">
+	                Loading...Please wait...
+	            </div>
+	            <div class="modal-footer">
+	                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+	            </div>
+        	</div>
+        </div>
+    </div>
+</div>

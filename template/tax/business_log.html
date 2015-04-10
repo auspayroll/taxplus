@@ -1,4 +1,4 @@
-{% extends "common/root.html" %}
+{% extends "common/base_paytax_business.html" %}
 
 {% load breadcrumb %}
 {% block crumbbody %}
@@ -6,9 +6,8 @@
 	{% breadcrumb "Log" "" %}
 {% endblock %}
 
-{% block mainbody %}
+{% block rightpanel %}
 
-{% include "common/_request_log.html" %}
-
+	{% include "common/_request_log.html" %}
 
 {% endblock %}

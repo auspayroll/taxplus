@@ -322,8 +322,6 @@ class MessageBatchForm(SearchRegion):
 	village = forms.ModelChoiceField(required = False, queryset = Village.objects.none())
 
 class LogSearchForm(forms.Form):
-	search_for = forms.ChoiceField(required=False, choices=[(i,i) for i in ('All', 'Property', 'Business', 'Citizen')])
-	search_string = forms.CharField(min_length=3, max_length=20, required=False, label="Search for Busines Name, UPI, TIN or CID:")
 	date_from = forms.DateField(label="Date range (optional) between ", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
 		input_formats=('%d/%m/%Y',), required=False)
 	date_to = forms.DateField(label="and..", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
@@ -331,4 +329,6 @@ class LogSearchForm(forms.Form):
 	user = forms.CharField(min_length=3, required=False, label="Staff User by name or email:")
 	changes_only = forms.TypedChoiceField(required=False, choices=[("", "All Requests"), ("1","Record Changes Only")], coerce=bool, label="Display:")
 
-
+class LogSearchFormExtended(LogSearchForm):
+	search_for = forms.ChoiceField(required=False, choices=[(i,i) for i in ('All', 'Property', 'Business', 'Citizen')])
+	search_string = forms.CharField(min_length=3, max_length=20, required=False, label="Search for Busines Name, UPI, TIN or CID:")
