@@ -23,6 +23,7 @@ FORM TABLE TH, FORM TABLE TD{
 {% endblock %}
 
 {% block rightpanel %}
+<script type="text/javascript"  src="{% static "js/populate_region_dropdowns.js" %}"></script>
 <form action="{{ request.build_absolute_uri }}" method="post">
 <table id="search_table">
 	{{ form }}
