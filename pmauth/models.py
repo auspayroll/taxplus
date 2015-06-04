@@ -19,9 +19,9 @@ FLB_BLOCK_INTERVAL = int( getattr( settings, 'FLB_BLOCK_INTERVAL', 30 ) )
 USER_STATUS='active'
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-##############################################################################################	
+##############################################################################################
 # Module
-############################################################################################## 
+##############################################################################################
 
 class PMModule(models.Model):
 	name = models.CharField(max_length = 50, help_text = 'Module name')
@@ -38,7 +38,7 @@ class PMModule(models.Model):
 
 	def __unicode__(self):
 		return self.name
-	
+
 	@staticmethod
 	def get_module_by_name(self, name):
 		module = PMModule.objects.filter(name__iexact = name)
@@ -46,16 +46,16 @@ class PMModule(models.Model):
 			return None
 		else:
 			return module[0]
-		
+
 	def get_access_link(self):
 		if self.name=='report':
 			return settings.REPORTS_LINK
 		else:
 			return '/admin/' + self.name + '/'
-	
-##############################################################################################	
+
+##############################################################################################
 # ContentType
-##############################################################################################		
+##############################################################################################
 class PMContentType(models.Model):
 	name = models.CharField(max_length = 50, help_text = 'Content type name')
 	image = models.ImageField(upload_to='content_type_images')
@@ -80,7 +80,7 @@ class PMContentType(models.Model):
 			return settings.REPORTS_LINK
 		else:
 			return '/admin/' + self.module.name + '/' + self.name + '/'
- 
+
 	@staticmethod
 	def getContentTypeByName(module_name,content_type_name):
 		content_types = PMContentType.objects.filter(name__iexact = content_type_name, module__name__iexact = module_name)
@@ -88,18 +88,18 @@ class PMContentType(models.Model):
 			return None
 		else:
 			return content_types[0]
-	
+
 	@staticmethod
 	def getContentTypeById(id):
 		return Common.get_object_or_none(PMContentType, id = id)
-		
+
 
 class ActionManager(models.Manager):
 	def get_query_set(self):
 		user = ThreadLocal.get_current_user()
 		if not user:
 			return super(ActionManager,self).get_query_set().none()
-		if user.superuser:
+		if user.is_superuser:
 			return super(ActionManager,self).get_query_set().all().order_by('contenttype__id')
 		else:
 			return super(ActionManager,self).get_query_set().filter(permission__in = user.getPermissions())
@@ -110,7 +110,7 @@ class Action(models.Model):
 	contenttype = models.ForeignKey(PMContentType)
 	objects = ActionManager()
 	find = models.Manager()
-	
+
 	class Meta:
 		app_label  = 'pmauth'
 		db_table = 'auth_action'
@@ -126,10 +126,10 @@ class Action(models.Model):
 			return str(self.name[4:]).capitalize()
 		else:
 			return str(self.name).capitalize()
-	
-##############################################################################################	
+
+##############################################################################################
 # old permission
-##############################################################################################  
+##############################################################################################
 """
 class PMPermission(models.Model):
 	name = models.CharField(max_length = 50, help_text = 'The name of the permission shown to users')
@@ -143,15 +143,15 @@ class PMPermission(models.Model):
 	def get_access_link(self):
 		return '/admin/' + self.contenttype.module.name + '/' + self.contenttype.name + '/' + self.codename + '/'
 """
-	
-##############################################################################################	
+
+##############################################################################################
 # new permission
-##############################################################################################  
+##############################################################################################
 class PMPermissionManager(models.Manager):
 	def get_query_set(self, *args, **kwargs):
 		user = ThreadLocal.get_current_user()
 		if user:
-			if user.superuser:
+			if user.is_superuser:
 				return super(PMPermissionManager,self).get_query_set()
 			else:
 				return super(PMPermissionManager,self).get_query_set().filter(Q(user = user)|Q(group__in = user.groups.all()))
@@ -165,7 +165,7 @@ class PMPermission(models.Model):
 	province = models.ForeignKey(Province,null=True, blank=True,  related_name = 'permission',  help_text = "The province this permission is restricted in.")
 	district = models.ForeignKey(District, null=True, blank=True,  related_name = 'permission',  help_text = "The district this permission is restricted in.")
 	sector = models.ForeignKey(Sector, null=True, blank=True,  related_name = 'permission',  help_text = "The sector this permission is restricted in.")
-	
+
 	from common.models import TaxType
 	tax_types = models.ManyToManyField(TaxType, related_name='permission', blank=True)
 
@@ -173,7 +173,7 @@ class PMPermission(models.Model):
 	find = models.Manager()
 
 	def __unicode__(self):
-		if self.name: 
+		if self.name:
 			return self.name
 		else:
 			return "ID:%s unnamed permissons" % self.id
@@ -181,21 +181,21 @@ class PMPermission(models.Model):
 	class Meta:
 		app_label  = 'pmauth'
 		db_table = 'auth_pmpermission'
-	
-	# cascade delete to clean up 
+
+	# cascade delete to clean up
 	def delete(self):
 		self.actions.all().delete()
 		self.tax_types.all().delete()
 		super(PMPermission, self).delete()
-		
-##############################################################################################	
+
+##############################################################################################
 # Group
-############################################################################################## 
+##############################################################################################
 class PMGroupManager(models.Manager):
 	def get_query_set(self):
 		user = ThreadLocal.get_current_user()
 		if user:
-			if user.superuser:
+			if user.is_superuser:
 				return super(PMGroupManager, self).get_query_set()
 			else:
 				return super(PMGroupManager, self).get_query_set().filter(user = user)
@@ -206,16 +206,16 @@ class PMGroup(models.Model):
 	name = models.CharField(max_length=80, unique=True)
 	permissions= models.ManyToManyField(PMPermission, verbose_name='permissions', related_name='group',  blank=True)
 	i_status = models.CharField(max_length=10, choices=variables.status_choices, default="active", blank = True)
-	
+
 	objects = PMGroupManager()
-	
+
 	class Meta:
 		verbose_name ='group'
 		ordering = ['name']
 		app_label  = 'pmauth'
 		db_table = 'auth_pmgroup'
 		verbose_name_plural ='groups'
-	
+
 	def __unicode__(self):
 		return self.name
 
@@ -240,12 +240,12 @@ class PMGroup(models.Model):
 			modules = []
 			for content_type in content_types:
 				if content_type.module not in modules:
-					modules.append(content_type.module)	
+					modules.append(content_type.module)
 			if len(modules) == 0:
 				 return None
 			else:
 				return modules
-	
+
 	def save(self, *args, **kwargs):
 		"""
 		The status of a group is set to "active" by default
@@ -253,7 +253,7 @@ class PMGroup(models.Model):
 		if not self.i_status:
 			self.i_status = 'active'
 		models.Model.save(self)
- 
+
 	def getLogMessage(self,old_data=None,new_data=None,action=None):
 		"""
 		return tailored log message for different actions taken on this group
@@ -264,7 +264,7 @@ class PMGroup(models.Model):
 			return "delete Group [" + self.__unicode__() + "]"
 		if action == "deactivate":
 			return "deactivate Group [" + self.__unicode__() + "]"
-		if action == "activate":	
+		if action == "activate":
 			return "activate Group [" + self.__unicode__() + "]"
 		if action == "add":
 			return "add Group [" + self.__unicode__() + "]"
@@ -300,23 +300,23 @@ class PMGroup(models.Model):
 				message = "No change made"
 			message = message + " on Group [" + self.__unicode__() + "]"
 			return message
-	
-##############################################################################################	
+
+##############################################################################################
 # User
-##############################################################################################					
+##############################################################################################
 
 class PMUserManager(models.Manager):
 	def get_query_set(self):
 		user = ThreadLocal.get_current_user()
 		if user:
-			if user.superuser:
+			if user.is_superuser:
 				return super(PMUserManager, self).get_query_set().all()
 			else:
 				groups = PMGroup.objects.all()
 				return super(PMUserManager, self).get_query_set().filter(groups__in = groups)
 		else:
 			return super(PMUserManager, self).get_query_set().none()
-		
+
 class PMUser(models.Model):
 	id=models.AutoField(unique=True, primary_key=True)
 	username = models.CharField(max_length=30, help_text='Required. Maximum 30 characters.')
@@ -333,15 +333,15 @@ class PMUser(models.Model):
 	blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of his/her group.')
 	permissions = models.ManyToManyField(PMPermission, verbose_name='user permissions', related_name = 'user', blank=True,help_text='Specific permissions for this user.')
 	active = models.BooleanField(default="active", blank = True)
-	i_status = models.CharField(max_length= 10, choices=variables.status_choices, default="active", blank = True, help_text='Designates whether this user should be treated as active.') 
+	i_status = models.CharField(max_length= 10, choices=variables.status_choices, default="active", blank = True, help_text='Designates whether this user should be treated as active.')
 # 	USERNAME_FIELD = 'username'
-	
+
 	objects = PMUserManager()
 	find = models.Manager()
 	objects1 = find
  	USERNAME_FIELD='email'
  	REQUIRED_FIELDS = []
-	
+
 	class Meta:
 # 		app_label  = 'pmauth'
 		verbose_name = 'user'
@@ -351,6 +351,10 @@ class PMUser(models.Model):
 	def __unicode__(self):
 		return self.username
 
+	@property
+	def is_superuser(self):
+		return self.superuser
+
 	@staticmethod
 	def getUserById(id):
 		user = PMUser.objects.filter(id = id)
@@ -358,7 +362,7 @@ class PMUser(models.Model):
 			return None
 		else:
 			return user[0]
-	
+
 	@staticmethod
 	def getUserByUserName(username):
 		user = PMUser.objects.filter(username__iexact = username)
@@ -367,15 +371,15 @@ class PMUser(models.Model):
 		else:
 			user = user[0]
 		return user
-	
+
 	@staticmethod
 	def getActiveUsers():
 		return PMUser.objects.filter(i_status = 'active')
-	
+
 	@staticmethod
 	def getInactiveUsers():
 		return PMUser.objects.filter(i_status = 'inactive')
-	
+
 	@staticmethod
 	def getUserByEmailAndPassword(email, password):
 		user = PMUser.objects1.filter(email  = email, password = hashlib.md5(password).hexdigest(), i_status = USER_STATUS)
@@ -383,7 +387,7 @@ class PMUser(models.Model):
 			return None
 		else:
 			return user[0]
-	
+
 	@staticmethod
 	def getUserByEmail(email):
 		user = PMUser.objects1.filter(email  = email,i_status = USER_STATUS)
@@ -391,7 +395,7 @@ class PMUser(models.Model):
 			return None
 		else:
 			return user[0]
-		
+
 	@classmethod
 	def validateUser(cls, user):
 		if user is not None:
@@ -405,16 +409,16 @@ class PMUser(models.Model):
 
 	def getFullName(self):
 		return self.firstname.capitalize() + " " + self.lastname.capitalize()
-	
+
 	def getDisplayName(self):
 		return self.username
-	
+
 	def getGroupPermissions(self):
 		return PMPermission.objects.filter(group__in = self.groups.all())
-	
+
 	def getCustomPermissions(self):
 		return PMPermission.objects.filter(user = self)
-	
+
 	def getPermissions(self):
 		if self.superuser:
 			return PMPermission.objects.all()
@@ -427,7 +431,7 @@ class PMUser(models.Model):
 			return TaxType.objects.all()
 		else:
 			return TaxType.objects.filter(permission__in = self.getPermissions()).distinct()
-	
+
 	def has_tax_type(self, tax_type):
 		if self.superuser:
 			return True
@@ -435,7 +439,7 @@ class PMUser(models.Model):
 			tax_types = self.getTaxTypes()
 			if tax_types:
 				return tax_type in tax_types
-	
+
 	def has_tax_type_by_name(self,name):
 		from common.models import TaxType
 		tax_type = TaxType.objects.filter(codename__iexact = name)
@@ -443,19 +447,19 @@ class PMUser(models.Model):
 			return False
 		else:
 			return self.has_tax_type(tax_type[0])
-	
+
 	def getActions(self):
 		if self.superuser:
 			return Action.objects.select_related('contenttype','contenttype__module').all()
 		else:
 			return Action.objects.select_related('contenttype','contenttype__module').filter(permission__in = self.getPermissions())
-	
+
 	def getActionsByContentType(self, content_type):
 		if self.superuser:
 			return Action.objects.select_related('contenttype','contenttype__module').filter(contenttype = content_type)
 		else:
 			return Action.objects.select_related('contenttype','contenttype__module').filter(permission__in = self.getPermissions(),contenttype = content_type).distinct()
-		
+
 
 	def getActionsByContentTypeWithLink(self, content_type):
 		actions = self.getActionsByContentType(content_type)
@@ -466,45 +470,45 @@ class PMUser(models.Model):
 				action.access_link = action.get_access_link()
 				action.display_name = action.getDisplayName()
 			return actions
-	
+
 	def has_action_by_name(self, module_name, content_type_name, action_name):
 		module = Action.objects.filter(codename__iexact = action_name, contenttype__name__iexact = content_type_name, contenttype__module__name__iexact = module_name)
 		if not module:
 			return False
 		else:
 			return True
-	
+
 	def has_action(self, action):
 		actions = Action.objects.filter(permission__in = self.getPermissions())
 		if not actions:
 			return None
 		else:
 			return (action in actions)
-		
+
 	def getGroups(self):
 		return self.groups.filter(i_status = 'active')
-	
+
 	def has_group(self, group):
 		if not self.groups:
 			return False
 		else:
 			return (group in self.getGroups())
-	
+
 	def getProvinces(self):
 		return Province.objects.all()
-	
+
 	def getDistricts(self):
 		return District.objects.all()
-	
+
 	def getSectors(self):
 		return Sector.objects.all()
-		
+
 	def getContentTypes(self):
 		if self.superuser:
 			return PMContentType.objects.select_related('module').all().distinct()
 		else:
 			return PMContentType.objects.filter(action__permission__user=self).select_related('module').distinct()
-	
+
 	def getContentTypesWithLink(self):
 		content_types=self.getContentTypes()
 		ct=[]
@@ -514,22 +518,22 @@ class PMUser(models.Model):
 				ct.append(content_type)
 			ct.sort(key=lambda x:x.name, reverse=False)
 		return ct
-	
-				
+
+
 	def has_content_type(self, content_type):
 		content_types = self.getContentTypes()
 		if not content_types:
 			return False
 		else:
 			return (content_type in content_types)
-		
+
 	def has_content_type_by_name(self, module_name, content_type_name):
 		content_type = PMContentType.getContentTypeByName(module_name, content_type_name)
 		if not content_type:
 			return False
 		else:
 			return True
-	
+
 	def getContentTypesWithWeight(self):
 		content_types=self.getContentTypesWithLink()
 		dict = {}
@@ -538,16 +542,16 @@ class PMUser(models.Model):
 			weight = content_type.module.icon_weight
 			if weight not in weights:
 				weights.append(weight)
-		
+
 		for weight in weights:
 			temp_list = []
 			for content_type in content_types:
 				if weight == content_type.module.icon_weight:
 					temp_list.append(content_type)
 			dict[str(weight)]=temp_list
-		
+
 		return sorted(dict.iteritems(),key=lambda (k,v): (k,v))
-				
+
 	def getModules(self):
 		content_types = self.getContentTypes()
 		if content_types:
@@ -565,14 +569,14 @@ class PMUser(models.Model):
 			return None
 		else:
 			return (module in modules)
-	
+
 	def has_module_by_name(self, module_name):
 		module = PMModule.get_module_by_name(module_name)
 		if module:
 			return True
 		else:
 			return False
-			
+
 	def getAllowedContentTypesByModule(self,module):
 		contenttypes = self.getContentTypes()
 		if contenttypes:
@@ -590,7 +594,7 @@ class PMUser(models.Model):
 		if not self.i_status:
 			self.i_status = 'active'
 		if self.password and len(self.password) < 32:
-			self.password = hashlib.md5(self.password).hexdigest()	
+			self.password = hashlib.md5(self.password).hexdigest()
 		user = super(PMUser,self).save(*args, **kwargs)
 		return user
 
@@ -656,10 +660,10 @@ class PMUser(models.Model):
 							if len(lessFields_display) > 0:
 								if comma_needed:
 									message = message + ','
-								message = message + " associate with groups " +  str(lessFields_display)	   
+								message = message + " associate with groups " +  str(lessFields_display)
 			if message == "":
 				message = "No change made"
-			message = message + " on User [" + self.__unicode__() + "]" 
+			message = message + " on User [" + self.__unicode__() + "]"
 			return message
 
 
@@ -680,8 +684,8 @@ def after_pmuser_save(sender, instance, created, **kwargs):
 	user.password = instance.password
 	user.save()
 
-		
-		
+
+
 class AccessAttempt( models.Model ):
     	loginname = models.CharField('loginname', max_length=255)
 #     	user=models.ForeignKey(PMUser, null=True, unique=True)
@@ -692,33 +696,32 @@ class AccessAttempt( models.Model ):
    	class Meta:
 		db_table = 'auth_accessattempt'
 		ordering = [ '-timestamp' ]
-		
+
 	def too_many_failures( self ):
 		return self.failures >= FLB_MAX_FAILURES
-      	
+
    	def recent_failure( self ):
 		return CommonUtil.pg_utcnow() -self.timestamp < timedelta(minutes=FLB_BLOCK_INTERVAL )
-	
+
 	def hastemppassword(self):
 		if(self.temppasswd==None or self.temppasswd==''):
 			return False
 		else:
 			return True
-   
+
 	def blocked( self ):
 		return self.too_many_failures( ) and self.recent_failure( )
 	blocked.boolean = True
-   
+
 	def __unicode__(self):
 		return u'%s (%d failures until %s): ' % \
 			   ( self.username,self.failures, self.timestamp )
-			   
-	def save(self, *args, **kwargs):
-		models.Model.save(self)	
 
-class UserHistory(models.Model):   		
+	def save(self, *args, **kwargs):
+		models.Model.save(self)
+
+class UserHistory(models.Model):
 	email=models.CharField('email', max_length=255)
 	password=models.CharField('password', max_length=225)
 	timestamp = models.DateTimeField( 'Last failed attempt', null=True,auto_now=True )
-	
-	
+

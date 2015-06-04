@@ -5,7 +5,7 @@ from django.forms.widgets import RadioSelect, CheckboxSelectMultiple, Textarea
 from dev1 import variables
 from common.fields import CurrencyField, CurrencyInput
 from datetime import date, datetime
-from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle, MessageBatch, District, Sector, Cell, Village
+from taxplus.models import Business, Sector, Cell, Village, BusinessCategory, CleaningCategory, PropertyTitle, MessageBatch, District, Sector, Cell, Village, Citizen
 import math
 from django.core.exceptions import ValidationError
 import re
@@ -332,3 +332,24 @@ class LogSearchForm(forms.Form):
 class LogSearchFormExtended(LogSearchForm):
 	search_for = forms.ChoiceField(required=False, choices=[(i,i) for i in ('All', 'Property', 'Business', 'Citizen')])
 	search_string = forms.CharField(min_length=3, max_length=20, required=False, label="Search for Busines Name, UPI, TIN or CID:")
+
+class CitizenUpdate(forms.ModelForm):
+	class Meta:
+		model = Citizen
+		fields = ['citizen_id', 'foreign_identity_type', 'foreign_identity_number', 'first_name', 'last_name', 'gender', 'date_of_birth', 'year_of_birth']
+
+	date_of_birth = forms.DateField(label="Date of birth", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',), required=False)
+
+	gender = forms.ChoiceField(required=False, choices=[(i,i) for i in ("Male", "Female")], widget=RadioSelect)
+
+class CitizenContact(forms.ModelForm):
+	class Meta:
+		model = Citizen
+		fields = ['address', 'po_box', 'phone_1', 'phone_2', 'email', 'contact_details_confirmed',]
+
+ 	contact_details_confirmed = forms.DateField(label="Contact details confirmed on", widget=forms.DateInput(format = '%d/%m/%Y',attrs={'class' : 'date_picker'}), \
+		input_formats=('%d/%m/%Y',), required=False)
+
+ 	phone_1 = PhoneField(required=False)
+ 	phone_2 = PhoneField(required=False)

@@ -1,0 +1,14 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+
+{% block rightpanel %}
+<form action="{{ request.build_absolute_uri }}" method="post">
+<table id="search_table">
+	{{ form }}
+</table>
+{% csrf_token %}
+<input type="submit" value="update">
+</form>
+{% endblock %}

@@ -1,4 +1,4 @@
-from django.shortcuts import render_to_response, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response, HttpResponse, HttpResponseRedirect, get_object_or_404
 from django.template import RequestContext
 from django.http import Http404
 from pmauth.forms.forms import LoginForm
@@ -13,6 +13,7 @@ from django.contrib.auth import authenticate as auth_authenticate, login as auth
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 from taxplus.models import Log
+from django.db.models import Q
 
 def set_temp_password(request):
 	stringok='Generate your password, please check it from your email!\n'\
@@ -40,13 +41,15 @@ def login(request):
 			username = form.cleaned_data['username']
 			password = form.cleaned_data['password']
 			try:
-				pm_user = login_attempt(username, password)
 				user = auth_authenticate(username=username, password=password)
-
-				if user is not None and not user.is_active:
+				if user and not user.is_active:
 					errorMessage="Your account has been disabled"
 
-				elif (pm_user is not None and user is not None):
+				elif user:
+					try:
+						pm_user = PMUser.find.get(Q(email=user.username) | 	Q(username=user.email))
+					except PMUser.DoesNotExist:
+						raise Http404
 					request.session['user'] = pm_user
 					auth_login(request, user)
 					log = Log.log(message='login')

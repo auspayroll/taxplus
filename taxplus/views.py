@@ -15,7 +15,8 @@ from jtax.models import PayFee, Fee
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfgen import canvas
 from taxplus.forms import PaymentForm, PayFeesForm, TitleForm, LogSearchForm, LogSearchFormExtended
-from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, MessageBatchForm, PaymentSearchForm
+from taxplus.forms import SearchForm, DebtorsForm, MergeBusinessForm, BusinessForm, BusinessFormRegion, \
+	MessageBatchForm, PaymentSearchForm, CitizenUpdate, CitizenContact
 from taxplus.management.commands.generate_invoices import generate_invoice
 from taxplus.models import *
 import csv
@@ -818,7 +819,52 @@ def log_details(request, pk):
 	log = get_object_or_404(Log, pk=pk)
 	return TemplateResponse(request, "common/log.html", { 'log':log})
 
+@login_required
+def citizen_update(request, pk):
+	citizen = get_object_or_404(Citizen, pk=pk)
+	if request.POST:
+		form = CitizenUpdate(request.POST, instance=citizen)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Citizen %s update successfully' % citizen)
+			return HttpResponseRedirect(reverse('citizen_update', args=[pk]))
+	else:
+		form = CitizenUpdate(instance=citizen)
+	return TemplateResponse(request, "tax/citizen_update.html", { 'citizen':citizen, 'form':form})
 
+@login_required
+def citizen_contact(request, pk):
+	citizen = get_object_or_404(Citizen, pk=pk)
+	if request.POST:
+		form = CitizenContact(request.POST, instance=citizen)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Citizen %s update successfully' % citizen)
+			return HttpResponseRedirect(reverse('citizen_contact', args=[pk]))
+	else:
+		form = CitizenContact(instance=citizen)
+	return TemplateResponse(request, "tax/citizen_update.html", { 'citizen':citizen, 'form':form})
+
+
+@login_required
+def citizen_fees(request, pk):
+	citizen = get_object_or_404(Citizen, pk=pk)
+	fees = citizen.citizen_fees.filter(status__code='active')
+	Log.log(target=citizen, message='view citizen fees')
+	payments = PayFee.objects.filter(fee__business=business, receipt__status__code='active')
+	return TemplateResponse(request, 'tax/business_fees_new.html', { 'business':business, 'fees':fees, 'payments':payments  })
+
+@login_required
+def citizen_payments(request, pk):
+	business = get_object_or_404(Business, pk=pk)
+	payments = PaymentReceipt.objects.filter(receipt_payments__fee__business=business, status__code='active').distinct().order_by('date_time')
+	Log.log(target=business, message='view citizen payments')
+	return TemplateResponse(request, 'tax/business_payments.html', { 'business':business, 'payments':payments })
+
+@login_required
+def citizen_assets(request, pk):
+	citizen = get_object_or_404(Citizen, pk=pk)
+	return TemplateResponse(request, 'tax/citizen_assets.html', { 'citizen':citizen })
 
 
 

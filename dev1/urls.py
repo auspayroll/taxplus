@@ -25,6 +25,7 @@ urlpatterns = patterns('',
 	url(r'^admin/log/', include('log.urls')),
 	url(r'^admin/business_fees/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_fees'),
 	url(r'^admin/tax/tax/business/(?P<pk>\d+)/$', taxplus_views.business_fees, name='business_fees_deprecated'),
+	url(r'^admin/business/(?P<pk>\d+)/$', taxplus_views.business_update, name='business'),
 	url(r'^admin/business_update/(?P<pk>\d+)/$', taxplus_views.business_update, name='business_update'),
 	url(r'^admin/asset/business/change_business/(?P<pk>\d+)/$', taxplus_views.business_update, name='change_business_deprecated'),
 	url(r'^admin/tax/tax/business/(?P<pk>\d+)/edit_business/$', taxplus_views.business_update, name='change_business_deprecated2'),
@@ -32,6 +33,12 @@ urlpatterns = patterns('',
 	url(r'^business/(?P<pk>\d+)/update_region/$', taxplus_views.business_update_region, name='business_update_region'),
 	url(r'^business/(?P<pk>\d+)/payments/$', taxplus_views.business_payments, name='business_payments'),
 	url(r'^admin/merge_preview/(?P<pk>\d+)/$', taxplus_views.merge_preview, name='merge_preview'),
+
+
+	url(r'^citizen/(?P<pk>\d+)/$', taxplus_views.citizen_update, name='citizen'),
+	url(r'^citizen/(?P<pk>\d+)/update/$', taxplus_views.citizen_update, name='citizen_update'),
+	url(r'^citizen/(?P<pk>\d+)/contact/$', taxplus_views.citizen_contact, name='citizen_contact'),
+	url(r'^citizen/(?P<pk>\d+)/assets/$', taxplus_views.citizen_assets, name='citizen_assets'),
 
 	url(r'^admin/message_batches/$', taxplus_views.message_batches, name='message_batches'),
 	url(r'^admin/new_business_message_batch/$', taxplus_views.new_business_message_batch, name='new_business_message_batch'),
@@ -41,6 +48,7 @@ urlpatterns = patterns('',
 	url(r'^payment/search/$', taxplus_views.payment_search, name='search_payments'),
 	url(r'^admin/to_fee_from_payment_search/(?P<pk>\d+)/$', taxplus_views.to_fee_from_payment_search, name='to_fee_from_payment_search'),
 
+	url(r'^property/(?P<pk>\d+)/$', taxplus_views.property_fees, name='property'),
 	url(r'^property/(?P<pk>\d+)/fees/$', taxplus_views.property_fees, name='property_fees_link'),
 	url(r'^property/(?P<pk>\d+)/map/$', taxplus_views.property_map, name='property_map'),
 
@@ -78,6 +86,8 @@ urlpatterns = patterns('',
 	url(r'^$','admin.views.login'),
 	url(r'^temppassword/','admin.views.set_temp_password'),
 	#url(r'^test/',include('mytest.urls')),
+	# url('^test/$', login_required(TemplateView.as_view(template_name='test.html')), name='test'),
+	url('^test/$', TemplateView.as_view(template_name='test.html'), name='test'),
 )
 
 urlpatterns += patterns('',

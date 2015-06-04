@@ -1,14 +1,13 @@
-{% extends "common/base_design.html" %}
+{% extends "common/root.html" %}
 {% load staticfiles %}
 {% load humanize %}{% load simple_tags %}
 {% block css %}
 <link rel="stylesheet" type="text/css" href="{% static "css/admin/log.css" %}" />
-<link href='http://fonts.googleapis.com/css?family=Jockey+One' rel='stylesheet' type='text/css'>
 {% endblock %}
 
 {% load breadcrumb %}
 {% block crumbbody %}
-	{% breadcrumb "Home" "/admin/" %} 
+	{% breadcrumb "Home" "/admin/" %}
 	{% breadcrumb "Tax" "/admin/tax/tax/"  %}
 	{% breadcrumb "Verify target"  "/admin/tax/tax/verify_target/" %}
 	{% breadcrumb "Citizen" %}
@@ -60,6 +59,36 @@
     }
 </style>
 
+
+<div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; ">
+	<div class="menu_panel">
+		<div class="menu_panel_item">UPI:<b>{{ property.upi }}</b></div>
+		<div class="menu_panel_item">Usage: <b>{{property.land_zone}}</b> </div>
+		<div class="menu_panel_item">Size: {{property.area}} sqm </div>
+		<div class="menu_panel_item">{{ property.village.cell.sector.district }} district -> {{ property.village.cell.sector }} sector -> {{ property.village.cell }} cell -> {{ property.village }} village</div>
+		<div class="menu_panel_item">Credit: {{property.credit|intcomma}} Rwf </div>
+
+	</div>
+
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_leases' property.pk %}">Leases</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'new_lease' property.pk %}">New Lease</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_fees' property.pk %}">Fees</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_payments' property.pk %}">Payments</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_media' property.pk %}">Media</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_map' property.pk %}">Map</a></div>
+	<div class="menu_panel menu_panel_item" style="width:100px;"><a href="{% url 'property_log' property.pk %}">Log</a></div>
+
+	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
+		<tr>
+			<td valign="top" style="padding-top:20px; padding-bottom:20px; background:white; padding-left:30px;">
+				{% block rightpanel %}
+				{% endblock %}
+			</td>
+		</tr>
+	</table>
+</div>
+
+
 <div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; margin:20px 10px 10px 10px; box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1); ">
 	<table width="100%" height="100%" cellpadding="0" cellspacing="0"  style="padding-bottom:5px;">
 		<tr>
@@ -70,10 +99,10 @@
 							<tr>
 								<td align="left">Citizen Info</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/edit_citizen/">Edit</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
-					<div class="info">						
+					<div class="info">
 						<table cellpadding="2" cellspacing="0" >
 							<tr>
 								<td width="100"><strong>Citizen ID:</strong></td>
@@ -98,7 +127,7 @@
 							<tr>
 								<td><strong>E-mail:</strong></td>
 								<td>{{citizen.email}}</td>
-							</tr>	
+							</tr>
 						</table>
 					</div>
 
@@ -107,7 +136,7 @@
 							<tr>
 								<td align="left">Taxes</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/taxes/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 
@@ -116,7 +145,7 @@
 							<tr>
 								<td align="left">Fees</td>
 								<td align="right"><span class="edit"><a href="{% url 'misc_fee_citizen' citizen.id %}">Add</a></span> | <span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/fees/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<!--
@@ -125,7 +154,7 @@
 							<tr>
 								<td align="left">Miscellaneous Fees</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/miscellaneous_fees/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					-->
@@ -134,7 +163,7 @@
 							<tr>
 								<td align="left">History</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/history/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<div class="custom_title">
@@ -142,7 +171,7 @@
 							<tr>
 								<td align="left">Attached Media</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/media/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 					<div class="custom_title">
@@ -150,14 +179,12 @@
 							<tr>
 								<td align="left">Logs</td>
 								<td align="right"><span class="edit"><a href="/admin/tax/tax/citizen/{{citizen.id}}/logs/">View</a></span></td>
-							</tr>					
+							</tr>
 						</table>
 					</div>
 				</div>
 			</td>
 			<td valign="top" style="padding-top:20px; padding-bottom:20px;background:white; padding-left:25px;">
-				{% block rightpanel %}
-				{% endblock %}
 			</td>
 		</tr>
 	</table>

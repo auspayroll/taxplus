@@ -15,29 +15,6 @@
 
 
 {% block mainbody %}
-<style type="text/css">
-	.custom_title{font-size:16px; line-height:25px; text-align:left;border-bottom:1px solid #cccccc; margin-top:20px; margin-bottom:20px;}
-	.edit{color:#0060AC; font-size:14px;}
-	.info{line-height:20px; font-size:13px; color:#5a5a5a;}
-	.info table{text-align:left; margin-top:10px;}
-	.edit a:link,  .edit a:active, .edit a:visited{text-decoration:none; color:#0060AC;}
-
-	.menu_panel_item{
-		float:left;
-		padding:4px;
-		text-align:center;
-		margin:auto;
-		margin-left:20px;
-	}
-
-	.menu_panel{
-		padding:10px;
-		font-size:14px;
-		color:grey;
-		overflow: hidden;
-	}
-
-</style>
 <div style="-webkit-border-radius: 5px;-moz-border-radius: 5px;border-radius: 5px; margin-top:20px; border: 1px solid #cccccc; ">
 	<div class="menu_panel">
 		<div class="menu_panel_item">UPI:<b>{{ property.upi }}</b></div>
@@ -64,8 +41,5 @@
 			</td>
 		</tr>
 	</table>
-</div>
-<div style="display:none" id="points">
-	{{points}}
 </div>
 {% endblock %}

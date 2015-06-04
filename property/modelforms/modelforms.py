@@ -14,25 +14,25 @@ class PropertyCreationForm(forms.Form):
 	"""
 	Consider the boundary of a property as a polygon, then boundary textfield stores the coordinators of polygon vertices
 	"""
-	
+
 	boundary = forms.CharField(widget=forms.Textarea)
-	
+
 	district_choices = [('','----------')]
 	district = forms.ChoiceField(required = False, choices = district_choices)
 
 	sector_choices = [('','----------')]
 	sector = forms.ChoiceField(required = False, choices = sector_choices)
-	
+
 	cell_choices = [('','----------')]
 	cell = forms.ChoiceField(required = False, choices = cell_choices)
-	
+
 	village_choices = [('','----------')]
 	village = forms.ChoiceField(required = False, choices = village_choices)
-	
+
 	parcel_id = forms.IntegerField()
 	is_leasing = forms.BooleanField(required = False)
-	
-	
+
+
 	def __init__(self, *args, **kw):
 		super(PropertyCreationForm, self).__init__(*args, **kw)
 		initial = kw.get('initial', {})
@@ -55,7 +55,7 @@ class PropertyCreationForm(forms.Form):
 			kw['initial']['sector'] = initial['sector'].id
 		if 'cell' in initial and initial['cell']:
 			kw['initial']['cell'] = initial['cell'].id
-	
+
 	def save(self,request):
 		# create polygan
 		plist=[]
@@ -76,7 +76,7 @@ class PropertyCreationForm(forms.Form):
 		property.plot_id = getNextPlotId()
 		property.save()
 		new_data = model_to_dict(property)
-		LogMapper.createLog(request,object=property,action="add")		
+		LogMapper.createLog(request,object=property,action="add")
 		return property
 
 
@@ -84,21 +84,21 @@ class CouncilCreationForm(ModelForm):
 	"""
 	Consider the boundary of a district as a polygon, then boundary textfield stores the coordinators of polygon vertices
 	"""
-		
+
 	boundary = forms.CharField(widget=forms.Textarea)
 	class Meta:
 		model = Council
 		fields = ("name","address",)
-		
+
 
 class SectorCreationForm(ModelForm):
 	"""
 	Consider the boundary of a district as a polygon, then boundary textfield stores the coordinators of polygon vertices
 	"""
 	#councils = [(c.id, c.name) for c in CouncilMapper.getAllCouncils()]
-	boundary = forms.CharField(widget=forms.Textarea) 
+	boundary = forms.CharField(widget=forms.Textarea)
 	district = forms.ChoiceField(widget = forms.Select(),required = True, choices = ())
-	#council = forms.ChoiceField(widget = forms.Select(),required = True, choices = councils)  
+	#council = forms.ChoiceField(widget = forms.Select(),required = True, choices = councils)
 	class Meta:
 		model = Sector
 		fields = ("name","council")
@@ -108,7 +108,7 @@ class SectorCreationForm(ModelForm):
 		self.fields['districts'] = forms.ChoiceField(widget = forms.Select(),required = True, choices = districts)
 		councils = None
 		user = request.session.get('user')
-		if user.superuser:
+		if user.is_superuser:
 			councils = [(c.id, c.name) for c in CouncilMapper.getAllCouncils()]
 		else:
 			councils = [(user.council.id, user.council.name)]
@@ -141,7 +141,7 @@ class DistrictCreationForm(ModelForm):
 		district.i_status="active"
 		district.save()
 		new_data = model_to_dict(district)
-		LogMapper.createLog(request,object=district,action="add")		
+		LogMapper.createLog(request,object=district,action="add")
 		return district
 
 

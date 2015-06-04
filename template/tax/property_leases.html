@@ -92,7 +92,7 @@
 			<tbody>
 			{% for title in titles %}
 				<tr>
-					<td><a>{% autoescape off %}{% for owner in title.owners|join:'<br/>' %}{{ owner }}{% endfor %}{% endautoescape %}</a><!-- {{ fee.pk }} --></td>
+					<td>{% for owner in title.owners %}<a href="{% url owner.link owner.pk %}">{{ owner }}</a><br/>{% endfor %}<!-- {{ fee.pk }} --></td>
 					<td>{{title.epay}}</td>
 					<td>{{ title.date_from }}</td>
 					<td>{{title.date_to|default:'active'}}</td>

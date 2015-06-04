@@ -1,0 +1,14 @@
+{% extends "common/base_citizen.html" %}
+{% load staticfiles %}
+{% load humanize %}{% load simple_tags %}
+
+
+{% block rightpanel %}
+
+<table class="tablesorter">
+	{% for asset in citizen.current_assets %}
+		<tr><td><a href="{% url asset.link asset.pk %}">{{ asset }}</a></td></tr>
+	{% endfor %}
+</table>
+
+{% endblock %}

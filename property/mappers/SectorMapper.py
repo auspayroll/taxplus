@@ -3,19 +3,19 @@ from property.models import Sector
 from django.db.models.query import QuerySet
 
 
-class SectorMapper:	
-		  
+class SectorMapper:
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get all Sectors
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getAllSectors():
 		return Sector.objects.all()
-	
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sector by id
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorById(id):
 		sector = Sector.objects.filter(id = id)
@@ -23,26 +23,26 @@ class SectorMapper:
 			return None
 		else:
 			return sector[0]
-		
-	
+
+
 	@staticmethod
 	def getById(id):
 		return SectorMapper.getSectorById(id)
-	
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sector by code
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorByCode(code):
 		sector = Sector.objects.filter(code_iexact = code)
 		if not sector:
 			return None
 		else:
-			return sector[0]		
+			return sector[0]
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sector by name
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorByName(name):
 		sector = Sector.objects.filter(name__iexact = name)
@@ -50,20 +50,20 @@ class SectorMapper:
 			return None
 		else:
 			return sector[0]
-	
-	
-	
+
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sectors by district name
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorsByDistrictName(name):
 		return Sector.objects.filter(district__name = name)
-		
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sectors by district name and sector name
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorsByDistrictAndName(districtName, sectorName):
 		return Sector.objects.filter(district__name__iexact = districtName, name__iexact = sectorName)
@@ -71,7 +71,7 @@ class SectorMapper:
 
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sectors by district name and sector name
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorByDistrictNameAndSectorName(districtName, sectorName):
 		sector = Sector.objects.filter(district__name__iexact = districtName, name__iexact = sectorName)
@@ -79,32 +79,32 @@ class SectorMapper:
 			return None
 		else:
 			return sector[0]
-	
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Sectors by council name
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorsByCouncilName(name):
 		return Sector.objects.filter(council__name = name)
-		   
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	search Sector by keyword
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def searchSectorsByKeyword(request, keyword):
 		user = request.session.get("user")
-		if user.superuser:
+		if user.is_superuser:
 			return Sector.objects.filter(name__icontains=keyword)
 		else:
 			council = user.council
 			return Sector.objects.filter(name__icontains=keyword).filter(council = council)
-	
-   
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	get geodata of Sector
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getSectorGeoData(sectors):
 		data = {}
@@ -114,12 +114,12 @@ class SectorMapper:
 		elif type(sectors) == QuerySet:
 			for sector in sectors:
 				sectors_new.append(sector)
-		else: 
+		else:
 			sectors_new.append(sectors)
-				
+
 		sectors = []
-	
-		# return json  
+
+		# return json
 		for sector in sectors_new:
 			points_json = []
 			sector_json = {}
@@ -139,10 +139,9 @@ class SectorMapper:
 				points_json.append(point_json)
 			sector_json['points']=points_json
 			sector_json['name']=sector.name
-			sectors.append(sector_json)		   
+			sectors.append(sector_json)
 		data['sectors'] = sectors
 		return simplejson.dumps(data)
-	
-	
-	
-	
+
+
+

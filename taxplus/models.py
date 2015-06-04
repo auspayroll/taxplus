@@ -349,6 +349,19 @@ class Citizen(LoggedModel):
 	def __unicode__(self):
 		return self.name
 
+	@property
+	def current_assets(self):
+		ownerships = Ownership.objects.filter(owner_citizen=self, date_ended__isnull=True)
+		for ownership in ownerships:
+			if ownership.asset_property:
+				yield ownership.asset_property
+			if ownership.asset_business:
+				yield ownership.asset_business
+
+	@property
+	def link(self):
+		return 'citizen'
+
 class Business(LoggedModel):
 	pm_tin = models.CharField(max_length=50,help_text='Propertymode TIN', blank = True)
 	name = models.CharField(max_length=100,help_text='Business Name')
@@ -465,6 +478,10 @@ class Business(LoggedModel):
 				return balance
 
 		return 0
+
+	@property
+	def link(self):
+		return 'business'
 
 	def calc_taxes(self, from_date=None, include_only=False):
 		"""
@@ -689,6 +706,11 @@ class Property(LoggedModel):
 
 		else:
 			return 0
+
+	@property
+	def link(self):
+		"""returns url link name"""
+		return 'property'
 
 #@receiver(post_save, sender=Property)
 def after_prop_save(sender, instance, created, **kwargs):
