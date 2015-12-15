@@ -1,0 +1,28 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>{{ group }} Collectors</h1>
+<form method="post">
+<table border="1">
+<tr>
+	<th>Username</th>
+	<th>Name</th>
+	<th>Registration No</th>
+	<th>Email</th>
+	<th>Unprocessed</th>
+	<th>Processed</th>
+
+</tr>
+{% for c in collectors %}
+<tr>
+	<td><a href="{% url 'collector' c.pk %}">{{ c.user.username }}</a></td>
+	<td>{{ c.user.get_full_name }}</td>
+	<td>{{ c.registration_no }}</td>
+	<td>{{ c.user.email }}</td>
+	<td>{{ c.unprocessed }}</td>
+	<td>{{ c.processed }}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

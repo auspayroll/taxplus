@@ -1,0 +1,27 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>Collection Groups</h1>
+<form method="post">
+<table border="1">
+<tr><th>Group</th>
+<th>Unprocessed</th><th>Processed</th>
+<th>Collectors</th>
+</tr>
+{% for group in groups %}
+<tr><td><a href="{% url 'edit_group' group.pk %}">{{ group.name }}</a></td>
+	<td>{% if group.unprocessed > 0 %}<a href="{% url 'group_epays' group.pk 2 %}">{{ group.unprocessed }}</a>{% else %}-{% endif %}</td>
+	<td>{% if group.processed > 0 %}<a href="{% url 'group_epays' group.pk 1 %}">{{ group.processed }}</a>{% else %}-{% endif %}</td>
+	<td>
+		{% if group.no_collectors %}
+		<a href="{% url 'collectors' group.pk %}">{{ group.no_collectors }}</a>
+		{% else %}
+		-
+		{% endif %}
+
+	</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

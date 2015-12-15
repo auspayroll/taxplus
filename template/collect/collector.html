@@ -1,0 +1,15 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>Collector</h1>
+<form method="post">
+<table>
+	<tr><th>Username</th><td>{{ collector.user.username }}</td></tr>
+	<tr><th>Full Name</th><td>{{ collector.user.get_full_name }}</td></tr>
+	<tr><th>Email</th><td>{{ collector.user.email }}</td></tr>
+{{ form }}
+{% csrf_token %}
+</table>
+<input type="submit" name="submit" value="Reset Password"> <input type="submit" name="submit" value="Update">
+</form>
+{% endblock %}

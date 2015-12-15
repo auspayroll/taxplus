@@ -1,0 +1,25 @@
+<div>
+ <a href="{% url 'add_collection_group' %}">Add Collection Group</a> | <a href="{% url 'groups' %}">Collection Groups</a> <br/>
+ <a href="{% url 'register' %}">Register Collector</a><br/>
+ <a href="{% url 'add_epay' %}">Generate EPays</a> | <a href="{% url 'logs' %}">Epay log</a><br/>
+ <a href="{% url 'index' %}">READ ME</a> | <a href="/admin/logout/">Logout</a>
+</div>
+<div>
+<!--
+<form method="get">
+<input type="text" name="search_text"> <select name="search_for"><option>EPAY</option><option>Collector</option></select> <input type="submit" value="Search">
+</form>
+-->
+</div>
+{% if messages %}
+<ul class="messages">
+    {% for message in messages %}
+    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<hr/>
+{% block main %}
+
+
+{% endblock %}

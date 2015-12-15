@@ -17,7 +17,7 @@ urlpatterns = patterns('',
     url(r'^ajax/search_property_field/$','admin.ajax.search_property_field'),
     url(r'^ajax/search_property_by_fields/$','admin.ajax.search_property_by_fields'),
 	url(r'^ajax/search_properties_for_printing/$','admin.ajax.search_properties_for_printing'),
-	
+
     url(r'^ajax/search_business/$','admin.ajax.search_business'),
     url(r'^ajax/search_citizen_clean/$','admin.ajax.search_citizen_clean'),
     url(r'^ajax/search_property_by_plot_id/$','admin.ajax.search_property_by_plot_id'),
@@ -34,6 +34,6 @@ urlpatterns = patterns('',
     url(r'^ajax/getPaymentAmount/$','admin.ajax.getPaymentAmount'),
     url(r'^logout/$','admin.views.logout'),
     url(r'^temppassword/','admin.views.set_temp_password'),
-    url(r'^$','admin.views.admin', name='admin_home'),
+    url(r'^$','collect.views.index', name='admin_home'),
     url(r'^login/$','admin.views.login', name='login'),
 )

@@ -266,7 +266,8 @@ class Sector(models.Model):
 		return self.name + ' ('+ self.district.name+')'
 	def __unicode__(self):
 		#return self.name + ' ('+ self.district.name+')'
-		return self.name
+		return "%s / %s" % (self.name, self.district.name)
+
 	def getLogMessage(self,old_data=None,new_data=None,action=None):
 		"""
 		return tailored log message for different actions taken on this district

@@ -1,4 +1,6 @@
 from django import forms
+from django.forms import ModelForm
+from collect.models import CollectionGroup, Collector
 from django.conf import settings
 from datetime import date
 from django.forms.widgets import RadioSelect, CheckboxSelectMultiple, Textarea
@@ -11,10 +13,46 @@ from django.core.exceptions import ValidationError
 import re
 from django.contrib.auth.models import User
 
+
+class RegistrationForm(forms.Form):
+	first_name = forms.CharField(max_length=40, required=False)
+	last_name = forms.CharField(max_length=40)
+	email = forms.EmailField(required=False)
+	registration_number = forms.CharField(max_length=30, required=False)
+	collection_group = forms.ModelChoiceField(queryset=CollectionGroup.objects.all())
+
+	def clean_email(self):
+
+		email = self.cleaned_data['email']
+		if email:
+			exists = User.objects.filter(email=email)
+			if exists:
+				raise forms.ValidationError("Email %s already taken" % email)
+
+		return email
+
+class CollectorForm(forms.ModelForm):
+	class Meta:
+		model = Collector
+		fields = ['collection_group', 'registration_no']
+
+	first_name = forms.CharField(max_length=40)
+	last_name = forms.CharField(max_length=40)
+	active = forms.BooleanField(required=False)
+	collection_group = forms.ModelChoiceField(queryset=CollectionGroup.objects.all())
+
+
+class CollectionGroupForm(forms.ModelForm):
+	class Meta:
+		model = CollectionGroup
+		fields = ['name',]
+
+
 class EpayForm(forms.Form):
-	number = forms.IntegerField(min_value=1, max_value=1000, label="Number of Forms")
-	collectors = forms.ModelMultipleChoiceField(required=False, widget=CheckboxSelectMultiple, queryset=User.objects.all())
-	
+	number = forms.IntegerField(min_value=1, max_value=1000, label="Amount to generate")
+	collection_group = forms.ModelChoiceField(queryset=CollectionGroup.objects.filter(collectors__isnull=False).distinct().order_by('name'))
+	sector = forms.ModelChoiceField(queryset=Sector.objects.all().order_by('name'))
+
 """
 class PaymentSearchForm(forms.Form):
 	search_string = forms.CharField(min_length=3, max_length=20, required=True, label="Sector or Bank receipt")

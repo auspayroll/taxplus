@@ -1,12 +1,12 @@
 {% extends "collect/main.html" %}
 
 {% block main %}
-<h1>Generate EPAYS</h1>
+<h1>Collection Group</h1>
 <form method="post">
 <table>
-{{ epayform }}
-</table>
+{{ form }}
 {% csrf_token %}
-<input type="submit" value="Create EPAYS">
+</table>
+<input type="submit" value="Save">
 </form>
 {% endblock %}
