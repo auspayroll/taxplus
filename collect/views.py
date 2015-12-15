@@ -22,8 +22,8 @@ from djqscsv import render_to_csv_response
 
 
 def epay_batch_csv(request, pk):
-  qs = Epay.objects.filter(batch__pk=pk).values('alt', 'batch__pk', 'batch__sector__name', 'batch__sector__code', 'collector__user__first_name', 'collector__user__last_name', 'collector__registration_no', 'collector__collection_group__name')
-  return render_to_csv_response(qs, field_header_map={'alt':'epay', 'collector__user__first_name': 'collector_first_name', 'batch__sector__name':'sector', 'batch__pk':'batch_no', 'batch__sector__code':'sector_code',
+  qs = Epay.objects.filter(batch__pk=pk).values('alt', 'batch__pk', 'batch__sector__name', 'batch__sector__code', 'batch__sector__district__name', 'collector__user__first_name', 'collector__user__last_name', 'collector__registration_no', 'collector__collection_group__name')
+  return render_to_csv_response(qs, field_header_map={'alt':'epay', 'collector__user__first_name': 'collector_first_name', 'batch__sector__name':'sector', 'batch__sector__district__name':'district', 'batch__pk':'batch_no', 'batch__sector__code':'sector_code',
   	'collector__user__last_name':'collector_last_name', 'collector__registration_no':'collector_registration', 'collector__collection_group__name':'collector_group'})
 
 

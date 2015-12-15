@@ -18,7 +18,7 @@ class RegistrationForm(forms.Form):
 	first_name = forms.CharField(max_length=40, required=False)
 	last_name = forms.CharField(max_length=40)
 	email = forms.EmailField(required=False)
-	registration_number = forms.CharField(max_length=30, required=False)
+	registration_no = forms.CharField(max_length=30, required=False)
 	collection_group = forms.ModelChoiceField(queryset=CollectionGroup.objects.all())
 
 	def clean_email(self):
