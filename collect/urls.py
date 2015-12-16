@@ -13,4 +13,5 @@ urlpatterns = patterns('',
 	url(r'^logs/$','collect.views.logs', name='logs'),
 	url(r'^epay_batch_csv/(?P<pk>\d+)/$','collect.views.epay_batch_csv', name='epay_batch_csv'),
 	url(r'^epay_batch/(?P<pk>\d+)/$','collect.views.epay_batch', name='epay_batch'),
+	url(r'^businessSchedule/$','collect.views.businessSchedule', name='business_schedule'),
 )

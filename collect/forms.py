@@ -14,6 +14,10 @@ import re
 from django.contrib.auth.models import User
 
 
+class BusinessForm(forms.Form):
+	sector = forms.ModelChoiceField(queryset=Sector.objects.all().order_by('name'))
+	format = forms.ChoiceField(choices=[(i,i) for i in ('html','csv')])
+
 class RegistrationForm(forms.Form):
 	first_name = forms.CharField(max_length=40, required=False)
 	last_name = forms.CharField(max_length=40)

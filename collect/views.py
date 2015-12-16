@@ -1,4 +1,4 @@
-from taxplus.models import Sector
+from taxplus.models import Sector, Business
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -12,13 +12,30 @@ from django.http import HttpResponse, Http404
 from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
 from django.template.response import TemplateResponse
 from collect.models import Epay, CollectionGroup, Collector, Epay, EpayBatch
-from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm
+from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 import csv
 import json
 from random import randint
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from djqscsv import render_to_csv_response
+
+
+def businessSchedule(request):
+	if request.method == 'POST':
+		form = BusinessForm(request.POST)
+		if form.is_valid():
+			b = Business.objects.filter(sector=form.cleaned_data.get('sector'))
+			if form.cleaned_data.get('format') == 'csv':
+				b = b.values('name', 'phone1', 'phone2', 'address', 'cell__name', 'village__name', 'cleaning_category__name')
+				return render_to_csv_response(b)
+
+	else:
+		form = BusinessForm()
+		b = Business.objects.none()
+	return TemplateResponse(request, 'collect/businessSchedule.html', { 'form':form, 'b':b})
+
+
 
 
 def epay_batch_csv(request, pk):

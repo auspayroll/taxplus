@@ -541,6 +541,17 @@ class Business(LoggedModel):
 			else:
 				Fee.objects.filter(category=cleaning, business=self, is_paid=False).update(status=inactive)
 
+	@property
+	def cleaningFee(self):
+		if self.cleaning_category:
+			if self.cleaning_category_id in range(1,7):
+				return 10000
+			elif self.cleaning_category_id ==7:
+				return 5000
+			elif self.cleaning_category_id ==8:
+				return 3000
+		return 0
+
 #@receiver(post_save, sender=Business)
 def after_business_save(sender, instance, created, **kwargs):
 	business = instance
