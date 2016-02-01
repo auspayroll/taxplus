@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User, check_password
+from django.contrib.auth.models import User 
 from pmauth.models import PMUser
 
 class CustomLoginBackend(object):

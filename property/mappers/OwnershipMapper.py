@@ -1,4 +1,5 @@
-from django.utils import simplejson
+#from django.utils import simplejson
+import json as simplejson
 from property.models import Property
 from asset.models import Ownership
 from property.mappers.PropertyMapper import PropertyMapper

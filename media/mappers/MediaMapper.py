@@ -1,4 +1,5 @@
-from django.utils import simplejson
+#from django.utils import simplejson
+import json as simplejson
 from media.models import *
 from django.forms.models import model_to_dict
 from citizen.models import Citizen

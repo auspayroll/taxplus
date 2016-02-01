@@ -1,7 +1,8 @@
 from pmauth.models import PMPermission,PMContentType,PMModule,PMUser,PMGroup
 from citizen.models import Citizen
 from django.http import HttpResponse
-from django.utils import simplejson
+#from django.utils import simplejson
+import json as simplejson
 from jtax.models import DeclaredValue
 from property.models import Property, Boundary, Sector, District, Council
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon

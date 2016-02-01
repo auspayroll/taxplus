@@ -1,4 +1,3 @@
-from django.db.models.loading import get_model
 from django.forms import ModelForm
 from django import forms
 from asset.models import *
@@ -9,7 +8,7 @@ from log.models import Log
 from log.mappers.LogMapper import LogMapper
 import simplejson 
 import datetime
-from django.forms.util import ErrorList
+#from django.forms.util import ErrorList
 from dev1 import settings
 from annoying.functions import get_object_or_None
 from property.mappers.PropertyMapper import PropertyMapper

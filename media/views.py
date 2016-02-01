@@ -17,7 +17,8 @@ from asset.models import Business
 from property.models import Property
 from citizen.models import Citizen
 from admin.views import login
-from django.utils import simplejson
+#from django.utils import simplejson
+import json as simplejson
 from media.mappers.MediaMapper import MediaMapper
 from django.contrib.auth.decorators import login_required
 

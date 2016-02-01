@@ -1,7 +1,8 @@
 from pmauth.models import PMPermission,PMContentType,PMModule,PMUser,PMGroup
 from citizen.models import Citizen
 from django.http import HttpResponse
-from django.utils import simplejson
+#from django.utils import simplejson
+import json as simplejson
 from jtax.models import DeclaredValue
 from property.models import *
 from django.contrib.gis.geos import Point, GEOSGeometry, Polygon
@@ -28,7 +29,8 @@ from property.functions import *
 from asset.models import *
 import json
 from django.db.models import Q
-from django.db.models.loading import get_model
+# from django.db.models.loading import get_model
+from django.apps import apps as django_apps
 from jtax.models import  Setting
 from admin.Common import Common
 
@@ -993,7 +995,7 @@ def search_asset_by_name(request,modelName):
 		GET = request.GET
 		if GET.has_key('term'):
 			keyword = GET['term'].lower().strip()
-			list = get_model('asset',modelName).objects.filter(name__icontains=keyword).order_by('name')[:20]
+			list = django_apps.get_model('asset',modelName).objects.filter(name__icontains=keyword).order_by('name')[:20]
 			for i in list:
 				record = { 'id': i.id, 'value': i.name}
 				result.append(record)

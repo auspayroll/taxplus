@@ -3,7 +3,6 @@ from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.contrib.auth.models import User
-from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.db import models

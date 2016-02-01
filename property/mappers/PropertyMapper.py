@@ -1,4 +1,4 @@
-from django.utils import simplejson
+import json
 from property.models import *
 from asset.models import Ownership
 from django.db.models.query import QuerySet

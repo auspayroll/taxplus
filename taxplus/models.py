@@ -3,7 +3,7 @@ from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from django.contrib.auth.models import User
-from django.contrib.contenttypes import generic
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.db import models
@@ -1802,7 +1802,7 @@ class Log(models.Model):
 class LogRelation(models.Model):
 	content_type = models.ForeignKey(ContentType, null=True)
 	object_id = models.PositiveIntegerField(null=True)
-	content_object = generic.GenericForeignKey('content_type', 'object_id')
+	content_object = GenericForeignKey('content_type', 'object_id')
 	log = models.ForeignKey(Log, related_name='log_updates')
 	old_object = models.TextField(null=True)
 	new_object = models.TextField(null=True)

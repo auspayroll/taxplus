@@ -3,7 +3,6 @@ from taxplus.models import Property, Citizen, Business, Log, LogRelation, Media
 from datetime import date
 from django import db
 from dev1.loginBackend import CustomLoginBackend
-from django.contrib.contenttypes import generic
 from django.contrib.contenttypes.models import ContentType
 import ast
 import json
