@@ -22,18 +22,20 @@ from djqscsv import render_to_csv_response
 
 
 def businessSchedule(request):
+	count = 0
 	if request.method == 'POST':
 		form = BusinessForm(request.POST)
 		if form.is_valid():
 			b = Business.objects.filter(sector=form.cleaned_data.get('sector'))
+			count = b.count()
 			if form.cleaned_data.get('format') == 'csv':
-				b = b.values('name', 'phone1', 'phone2', 'address', 'cell__name', 'village__name', 'cleaning_category__name')
+				b = b.values('name', 'phone1', 'phone2', 'tin', 'address', 'cell__name', 'village__name', 'cleaning_category__name')
 				return render_to_csv_response(b)
 
 	else:
 		form = BusinessForm()
 		b = Business.objects.none()
-	return TemplateResponse(request, 'collect/businessSchedule.html', { 'form':form, 'b':b})
+	return TemplateResponse(request, 'collect/businessSchedule.html', { 'form':form, 'b':b, 'count': count})
 
 
 

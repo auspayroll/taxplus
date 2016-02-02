@@ -7,6 +7,10 @@
 	{{ form }} <input type="submit" name="Submit">
 	{% csrf_token %}
 
+<div>
+{% if count %}Businesses: {{ count}}{% endif %}
+</div>
+
 {% if b %}
 	<table border="1">
 	<tr>

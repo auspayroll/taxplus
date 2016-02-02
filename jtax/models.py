@@ -57,7 +57,7 @@ class IncompletePayment(models.Model):
 	email = models.EmailField(max_length = 100, null = True, blank=True, verbose_name = 'Email')
 	note = models.TextField(null = True, blank=True, verbose_name = 'Reasons for incomplete payment')
 	user = models.ForeignKey(PMUser, null=True, blank = True)
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	objects = IncompletePaymentManager()
 	objectsIgnorePermission = models.Manager()
@@ -109,7 +109,7 @@ class DeclaredValue(models.Model):
 	agriculture_amount = models.BigIntegerField(help_text='Agricultural declared value', null=True, blank=True, default=0)
 	amount = models.BigIntegerField(help_text='This is the amount The Declared Value is been Made for.')
 	currency = models.CharField(max_length=4,choices=variables.currency_types,help_text='This is the Currencey the Amount has been specified in.')
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
 	#staff_id = models.IntegerField(help_text='This is the Id of the Staff Member that Added the Declared Value for the Property.')
 	user = models.ForeignKey(PMUser, null=True, blank = True)
 	accepted = models.CharField(max_length=20,choices=variables.declare_value_statuses,help_text='This is whether the declare Value has been Accepted, rejected, or needs review.')
@@ -137,7 +137,7 @@ class DeclaredValueNotes(models.Model):
 	citizen = models.ForeignKey(Citizen, null=True, blank=True, help_text='The citizen who adds this note')
 	user = models.ForeignKey(PMUser, null=True, blank = True, help_text='The staff who adds this note.')
 	note = models.TextField(help_text='This is the Note that is been left for the Declared Value')
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Note was added to the Declared Value in the system.',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Note was added to the Declared Value in the system.',auto_now_add=True)
 
 class DeclaredValueMedia(models.Model):
 	"""
@@ -150,7 +150,7 @@ class DeclaredValueMedia(models.Model):
 	file_type = models.CharField(max_length = 50)
 	file_size = models.CharField(max_length = 50)
 	user = models.ForeignKey(PMUser, null=True, blank = True, help_text='The staff who adds this note.')
-	date_time = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True)
 
 	def __unicode__(self):
 		return str(self.file_name)
@@ -165,7 +165,7 @@ class AssignedValue(models.Model):
 	"""
 	plot_id = models.IntegerField()
 	amount = models.BigIntegerField(help_text='This is the Offical Property Price')
-	date_time = models.DateTimeField(help_text='This is the Date and time that the record for this assigned value was created',auto_now=True,auto_now_add=True)
+	date_time = models.DateTimeField(help_text='This is the Date and time that the record for this assigned value was created', auto_now_add=True)
 	currency = models.CharField(max_length=4,choices=variables.currency_types,help_text='this is the Currencey that the assigned Value Amount is in')
 	staff_id = models.IntegerField(help_text='This is the System Staff id of the staff member that entered the assigned value into the system.')
 	citizen_id = models.CharField(max_length=50,help_text='This is the ID of the Citizen That Provided the Delcared Value that was accepted')
@@ -518,7 +518,7 @@ class LandRentalTaxNotes(models.Model):
 	land_rental_tax = models.ForeignKey('LandRentalTax')
 	staff_id = models.IntegerField(help_text='This is the Id of the Staff Member that created the note.')
 	note = models.TextField(help_text='This is the Note for the LandRental Tax Record Itself.')
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Note Was Created',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Note Was Created',auto_now_add=True)
 
 class LandRentalTaxMedia(models.Model):
 	land_rental_tax = models.ForeignKey('LandRentalTax')
@@ -612,7 +612,7 @@ class ChallengePropertyTaxItem(models.Model):
 	property_tax_item = models.ForeignKey(PropertyTaxItem)
 	citizen_id = models.IntegerField(help_text="The person who pay this tax item.")
 	staff_id = models.IntegerField(help_text="The government staff who accepts the payment.")
-	period_from = models.DateTimeField(help_text="The date from which this tax item is challenged.",auto_now_add=True,auto_now=True)
+	period_from = models.DateTimeField(help_text="The date from which this tax item is challenged.",auto_now_add=True)
 	period_to = models.DateTimeField(help_text="The date till which this tax item is challenged.")
 
 class ChallengePropertyTaxItemNote(models.Model):
@@ -625,12 +625,12 @@ class ChallengePropertyTaxItemMedia(models.Model):
 	mediatype = models.CharField(max_length=4,choices=variables.media_types,help_text='This is the type of media the file is')
 	mediafile = models.FileField(help_text='This is the location of the file on the file system.',upload_to='tmp')
 	staffid = models.IntegerField(help_text='The ID of the Staff Member who uploaded the file')
-	mediadatetime = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True,auto_now=True)
+	mediadatetime = models.DateTimeField(help_text='This is the date and time the file was uploaded',auto_now_add=True)
 
 class ReviewPropertyTaxItem(models.Model):
 	challengepropertytaxitemid = models.ForeignKey(ChallengePropertyTaxItem)
 	staffid = models.IntegerField(help_text="The government staff who review the challenge.")
-	reviewdate = models.DateTimeField(help_text="The date when this tax item is reviewd.",auto_now_add=True,auto_now=True)
+	reviewdate = models.DateTimeField(help_text="The date when this tax item is reviewd.",auto_now_add=True)
 	note = models.CharField(max_length=255, help_text="review result.")
 
 """
@@ -700,7 +700,7 @@ class RentalIncomeTaxNotes(Tax):
 	rental_income_tax = models.ForeignKey('rentalIncomeTax')
 	staff_id = models.IntegerField(help_text='This is the Id of the Staff Member that created the note.')
 	note = models.TextField(help_text='This is the Note for the LandRental Tax Record Itself.')
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Note Was Created',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Note Was Created',auto_now_add=True)
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 
@@ -842,7 +842,7 @@ class Fee(Tax):
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
 	#submit_details = models.CharField(max_length=500, null=True, blank=True)
 	staff_id = models.IntegerField(help_text="The staff who generates this fee item.", null=True, blank=True)
-	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
+	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	business = models.ForeignKey(Business, null=True, blank=True, related_name='business_fees')
 	subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
@@ -960,7 +960,7 @@ class MiscellaneousFee(models.Model):
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
 	submit_details = models.CharField(max_length=500, null=True, blank=True)
 	staff_id = models.IntegerField(help_text="The staff who generates this fee item.", null=True, blank=True)
-	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	business = models.ForeignKey(Business, null=True, blank=True)
 	subbusiness = models.ForeignKey(SubBusiness,null=True, blank=True)
@@ -988,7 +988,7 @@ class PayRentalIncomeTax(models.Model):
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True,  help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 
@@ -1012,7 +1012,7 @@ class PayTradingLicenseTax(models.Model):
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True,  help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	def __unicode__(self):
@@ -1036,7 +1036,7 @@ class PayFee(models.Model):
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0,null=True, blank = True)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	receipt_id = models.IntegerField(null=True)
@@ -1064,7 +1064,7 @@ class PayFixedAssetTax(models.Model):
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True, help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	def __unicode__(self):
@@ -1086,7 +1086,7 @@ class PayMiscellaneousFee(models.Model):
 	fine_amount = models.DecimalField(max_digits = 20, decimal_places = 2, default=0,null=True, blank = True)
 	fine_description = models.TextField(null=True, blank = True)
 	manual_receipt = models.CharField(max_length = 50)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 
@@ -1104,7 +1104,7 @@ class PendingPayment(models.Model):
 	reason = models.CharField(max_length = 250)
 	note = models.TextField(null=True, blank = True,   help_text="note about this payment.")
 	user = models.ForeignKey(PMUser, null=True, blank = True)
-	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this payment is entered into the system.",auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 
 	def __unicode__(self):
@@ -1141,7 +1141,7 @@ class CleaningSchedule(models.Model):
 	amount =  models.DecimalField(decimal_places=0, max_digits=9)
 	due_date = models.DateField(null=True, blank=True)
 	business_category = models.ForeignKey(BusinessCategory)
-	modified = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
+	modified = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True)
 
 
 class Setting(models.Model):
@@ -1158,7 +1158,7 @@ class Setting(models.Model):
 	cell = models.ForeignKey(Cell, null=True, blank=True, help_text="")
 	village = models.ForeignKey(Village, null=True, blank=True, help_text="")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
-	date_time = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this setting is entered into the system.",auto_now_add=True)
 
 	def __unicode__(self):
 		return "ID:" + str(self.id) + " - " + str(self.tax_fee_name) + " " + str(self.setting_name) + " - " + str(self.sub_type) + "[ " + str(self.value) + " ] (" + self.i_status + ")"
@@ -1610,7 +1610,7 @@ class Setting(models.Model):
 class MultipayReceipt(models.Model):
 	amount = models.DecimalField(max_digits = 20, decimal_places = 2)
 	user = models.ForeignKey(PMUser, null=True, blank = True)
-	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text='This is the Date and Time the Entry has been entered into the database.',auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 
 

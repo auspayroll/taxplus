@@ -161,7 +161,7 @@ class PMPermissionManager(models.Manager):
 
 class PMPermission(models.Model):
 	name = models.CharField(max_length=80, unique=True, null=True)
-	actions = models.ManyToManyField(Action, verbose_name='actions', related_name = 'permission',  null=True, blank=True, help_text = "The action this permission allows.")
+	actions = models.ManyToManyField(Action, verbose_name='actions', related_name = 'permission', blank=True, help_text = "The action this permission allows.")
 	province = models.ForeignKey(Province,null=True, blank=True,  related_name = 'permission',  help_text = "The province this permission is restricted in.")
 	district = models.ForeignKey(District, null=True, blank=True,  related_name = 'permission',  help_text = "The district this permission is restricted in.")
 	sector = models.ForeignKey(Sector, null=True, blank=True,  related_name = 'permission',  help_text = "The sector this permission is restricted in.")

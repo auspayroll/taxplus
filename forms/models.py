@@ -4,10 +4,10 @@ import os.path
 
 class Form(models.Model):
 	title = models.CharField(max_length = 150, null=True, blank = True, help_text = 'Display name of the form')
-	language = models.CharField(max_length = 25, choices =variables.languages, default="English", help_text="Language of the form")	
+	language = models.CharField(max_length = 25, choices =variables.languages, default="English", help_text="Language of the form")
 	description = models.TextField(null=True, blank = True, help_text = 'Notes/Reminder')
-	path = models.CharField(max_length = 255)	
-	user_id = models.IntegerField(max_length = 10, help_text="") 
+	path = models.CharField(max_length = 255)
+	user_id = models.IntegerField(help_text="")
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
 	def __unicode__(self):
@@ -15,7 +15,7 @@ class Form(models.Model):
 	def getLogMessage(self,old_data=None,new_data=None, action=None):
 		return getLogMessage(self,old_data,new_data, action)
 	def getFileName(self):
-		return os.path.basename(self.path) 
+		return os.path.basename(self.path)
 
 #General functions used in many models
 def getLogMessage(self,old_data=None,new_data=None, action=None):
@@ -38,7 +38,7 @@ def getLogMessage(self,old_data=None,new_data=None, action=None):
 						message = message + ","
 					count = count + 1
 					if type(value) is not list:
-						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"       
+						message = message + " change "+key + " from '"+ str(value) + "' to '"+str(new_data[key])+"'"
 		if message == "":
 			message = "No change made"
 		message = message + " on " + self.__class__.__name__ + " [" + self.__unicode__() + "]"

@@ -6,7 +6,7 @@ from citizen.models import Citizen
 from django.forms import model_to_dict
 from log.models import Log
 from log.mappers.LogMapper import LogMapper
-import simplejson 
+import json as simplejson
 import datetime
 #from django.forms.util import ErrorList
 from dev1 import settings
@@ -24,7 +24,7 @@ class AssetModelForm(ModelForm):
 
 	def __init__(self, *args, **kwargs):
 		#overwrite init to set up ownership for assets form
-		
+
 		initial = kwargs.get('initial', {})
 		if 'id' in initial:
 			asset_type = self.Meta.model.__name__.lower();
@@ -100,7 +100,7 @@ class AssetModelForm(ModelForm):
 			#deactive any existing ownerships of this asset that has been removed
 			if deleteIds:
 				old_ownerships.filter(id__in=deleteIds).update(date_ended=datetime.date.today(),i_status='inactive')
-				
+
 
 			#add in new ownerships, ignore the one in the keepIds list
 			for i in owners:
@@ -127,9 +127,9 @@ class AssetModelForm(ModelForm):
 						ownership.asset_vehicle = asset
 
 					ownership.save()
-					
+
 			if actions:
-				LogMapper.createLog(request,action="change", message= ','.join(actions) + " for " + asset_type.title() + " " + str(asset) )	   
+				LogMapper.createLog(request,action="change", message= ','.join(actions) + " for " + asset_type.title() + " " + str(asset) )
 		return asset
 
 class BusinessForm(AssetModelForm):
@@ -142,7 +142,7 @@ class BusinessForm(AssetModelForm):
 
 	district_choices = [('','----------')]
 	district = forms.ChoiceField(required = False, choices = district_choices)
-	
+
 	class Meta(AssetModelForm.Meta):
 		model = Business
 		fields = ['name', 'tin', 'date_started', 'address', 'phone1', 'phone2', 'email', 'po_box', 'vat_register',

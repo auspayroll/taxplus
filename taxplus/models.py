@@ -158,7 +158,7 @@ class Master(models.Model):
 		abstract = True
 
 	created = models.DateTimeField(auto_now_add=True, blank=True)
-	modified = models.DateTimeField(auto_now_add=True, auto_now=True, blank=True)
+	modified = models.DateTimeField(auto_now_add=True, blank=True)
 	status = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'status'})
 
 class Province(models.Model):
@@ -741,7 +741,7 @@ class PropertyTitle(LoggedModel):
 	first_name = models.CharField(max_length = 50, help_text = 'First name', null=True, blank=True)
 	last_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
 	middle_name = models.CharField(max_length = 50, help_text = 'Last name', null=True, blank=True)
-	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True)
+	created = models.DateTimeField(auto_now_add=True, null=True)
 	modified = models.DateTimeField(auto_now=True, null=True)
 	imported = models.DateTimeField(null=True)
 	hash_key = models.CharField(max_length=50)
@@ -919,7 +919,7 @@ class Fee(LoggedModel):
 	due_date = models.DateField(help_text="The date this fee item is due.", null=True, blank=True)
 	is_paid = models.BooleanField(help_text="Whether fee is payed.")
 	submit_date = models.DateTimeField(help_text="The date this fee item is submited.", null=True, blank=True)
-	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True, auto_now=True)
+	date_time = models.DateTimeField(help_text="The date this fee item is generated.",auto_now_add=True)
 	business = models.ForeignKey(Business, null=True, related_name='business_fees')
 	citizen = models.ForeignKey(Citizen, null=True, related_name='citizen_fees')
 	subbusiness = models.ForeignKey(SubBusiness, null=True)
@@ -1413,7 +1413,7 @@ class BusinessOwnership(models.Model):
 	date_to = models.DateField(null=True, blank=True, db_column='date_ended')
 	status = models.ForeignKey(CategoryChoice, related_name='business_ownership_status', )
 	stake = models.FloatField(null=True, blank=True, db_column='share')
-	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True, db_column='date_created')
+	created = models.DateTimeField(auto_now_add=True, null=True, db_column='date_created')
 
 	class Meta:
 		db_table = 'asset_ownership'
@@ -1428,7 +1428,7 @@ class PropertyOwnership(models.Model):
 	date_to = models.DateField(null=True, blank=True, db_column='date_ended')
 	status = models.ForeignKey(CategoryChoice, related_name='property_ownership_status', )
 	stake = models.FloatField(null=True, blank=True, db_column='share')
-	created = models.DateTimeField(auto_now_add=True, auto_now=True, null=True, db_column='date_created')
+	created = models.DateTimeField(auto_now_add=True, null=True, db_column='date_created')
 	business = models.OneToOneField(Business, null=True, db_column='owner_business_id')
 	citizen = models.OneToOneField(Citizen, null=True, db_column='owner_citizen_id')
 
@@ -1501,9 +1501,9 @@ class Media(LoggedModel):
 	business = models.ForeignKey(Business,  null=True, blank=True)
 	prop = models.ForeignKey(Property, null=True, blank=True, db_column='property_id')
 	tax_type = models.CharField(max_length = 50,  help_text = 'Type of Tax/Fee Associated with this Media', null=True, blank = True)
-	tax_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
+	tax_id = models.IntegerField(help_text="", null=True, blank = True)
 	payment_type = models.CharField(max_length = 50, help_text = 'Type of Payment Associated with this Media', null=True, blank = True)
-	payment_id = models.IntegerField(max_length = 50, help_text="", null=True, blank = True)
+	payment_id = models.IntegerField(help_text="", null=True, blank = True)
 	user = models.ForeignKey(PMUser, null=True, blank=True, help_text="")
 	#user_id = models.IntegerField(max_length = 10, help_text="")
 	i_status = models.CharField(max_length = 10, default='active', blank = True)

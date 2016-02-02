@@ -143,7 +143,7 @@ class CronLog(models.Model):
 	description = models.CharField(max_length=2000,null=True, blank=True)
 	started = models.DateTimeField()
 	finished = models.DateTimeField(null=True, blank=True)
-	date_time = models.DateTimeField(help_text="The date when this cronjob record is generated.",auto_now_add=True,auto_now=True)
+	date_time = models.DateTimeField(help_text="The date when this cronjob record is generated.",auto_now_add=True)
 	i_status = models.CharField(max_length = 10, choices = variables.status_choices, default='active', blank = True)
 
 	def __unicode__(self):
