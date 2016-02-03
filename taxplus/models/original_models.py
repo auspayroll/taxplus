@@ -115,6 +115,8 @@ class PMUser(models.Model):
 		else:
 			return self.username
 
+
+
 class Boundary(models.Model):
 	shape_area = models.FloatField(blank=True, null=True)
 	polygon_imported = gis_models.PolygonField(srid=3857, blank=True, null= True)
