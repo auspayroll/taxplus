@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand, CommandError 
+from django.core.management.base import BaseCommand, CommandError
 from datetime import date, datetime, time, timedelta
 from taxplus.models import Category, CategoryChoice, Fee
 import dateutil.parser
@@ -25,9 +25,9 @@ category_choices = {
 
 	'status':(('active', 'active'), ('inactive','inactive'), ('pending','pending')),
 
-	'fee_type':(('land_lease', 'land lease'),('cleaning', 'cleaning')),
+	'fee_type':(('land_lease', 'land lease'),('cleaning', 'cleaning'), ('quarry', 'quarry'), ('cemetary', 'cemetary'), ('market', 'market')),
 
-	'land_use':(('rural', 'Rural'),('urban', 'Urban'), ('forestry', 'Forestry'), 
+	'land_use':(('rural', 'Rural'),('urban', 'Urban'), ('forestry', 'Forestry'),
 		('quarry', 'Quarry Purpose'), ('industrial', 'Industrial'), ('residential', 'Residential'), ('cultural', 'Cultural (other)'),
 		('cultural_np', 'Cultural (non profit)'), ('commercial', 'Commercial'), ('agricultural', 'Agricultural')),
 
@@ -46,7 +46,7 @@ class Command(BaseCommand):
 
 	"""
 	name= 'Convert tax dates'
-	
+
 	def handle(self, *args, **options):
 		for code, name in categories:
 			category, created = Category.objects.get_or_create(code=code, defaults=dict(name=name))
@@ -58,7 +58,7 @@ class Command(BaseCommand):
 		for key, choices in category_choices.items():
 			for code, name in choices:
 				categorychoice, created = CategoryChoice.objects.get_or_create(category__code=key, code=code, defaults=dict(name=name, category_id=key))
-				
+
 				if not created:
 					categorychoice.name = name
 					categorychoice.save()
