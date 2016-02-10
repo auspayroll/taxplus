@@ -24,7 +24,7 @@ class LoggedModel(models.Model):
 	class Meta:
 		abstract = True
 
-	def save(self, *args, **kwargs):
+	def save_deprecated(self, *args, **kwargs):
 		log = get_current_request_log()
 		if not log:
 			log = Log.objects.create()
@@ -325,7 +325,7 @@ class Citizen(LoggedModel):
 	gender = models.CharField(max_length = 50, help_text = 'Gender')
 	foreign_identity_type = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity type. For example: passport.')
 	foreign_identity_number = models.CharField(max_length = 50, blank = True, null = True, help_text = 'Foreign identity ID.')
-	status_id = models.IntegerField(null=True)
+	status_id = models.IntegerField(null=True, default=1)
 	deactivate_reason = models.CharField(max_length = 50, blank=False, default=1, null = True)
 	note = models.TextField(null=True, blank=True)
 	photo = models.ImageField(upload_to='citizenphotos', blank = True, null = True, help_text='Photo of The Citizen')
@@ -416,6 +416,8 @@ class Business(LoggedModel):
 	over_due = models.IntegerField(default=0)
 	total_over_due = models.IntegerField(default=0)
 	as_at = models.DateField(null=True)
+	location = gis_models.PointField(blank =True, null=True)
+	objects = gis_models.GeoManager()
 
 	class Meta:
 		db_table = 'asset_business'
@@ -682,24 +684,7 @@ class Property(LoggedModel):
 		return 0
 
 	def __unicode__(self):
-		if self.street_number and self.street and self.street_type:
-			name = "%s %s" % (self.street, self.street_type)
-			if self.street_number:
-				name = "%s %s" % (self.street_number, name)
-
-		elif self.parcel_id:
-			name = "parcel id: %s" % self.parcel_id
-
-		if self.village:
-			name += ", %s village" % self.village
-
-		elif self.cell:
-			name += ", %s cell" % self.cell
-
-		elif self.sector:
-			name += ", %s sector, %s district" % (self.sector, self.sector.district)
-
-		return name
+		return 'Property '+self.upi or ''
 
 
 	def get_upi(self):
@@ -725,6 +710,41 @@ class Property(LoggedModel):
 	def link(self):
 		"""returns url link name"""
 		return 'property'
+
+
+	@classmethod
+	def find_by_upi(cls, upi):
+		try:
+			province, district, sector, cell, parcel = upi.split('/')
+		except ValueError:
+			return None
+		else:
+			cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
+			try:
+				cell =  Cell.objects.get(code=cell_code)
+				return cls.objects.get(cell=cell,parcel_id=parcel)
+			except:
+				return None
+
+	def save(self, *args, **kwargs):
+		upi = None
+		if hasattr(self,'upi'):
+			upi = self.upi
+		elif 'upi' in kwargs:
+			upi = kwargs.pop('upi')
+
+		if upi:
+			province, district, sector, cell, parcel = upi.split('/')
+			cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
+			self.cell =  Cell.objects.get(code=cell_code)
+			self.sector = cell.sector
+			self.parcel_id = int(parcel)
+
+		return super(Property, self).save(*args, **kwargs)
+
+
+
+
 
 #@receiver(post_save, sender=Property)
 def after_prop_save(sender, instance, created, **kwargs):

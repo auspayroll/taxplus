@@ -1,0 +1,13 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+<h1>{{heading}}</h1>
+<form method="post">
+<table>
+	{{ form.errors }}
+{{ form }}
+{% csrf_token %}
+</table>
+<input type="submit" value="Submit">
+</form>
+{% endblock %}

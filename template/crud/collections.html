@@ -1,0 +1,32 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h2>Fee Collections</h2>
+	<a href="{% url 'new_fee_collection' account.pk %}">New Fee Collection</a>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>id</th>
+		<th>Period</th>
+		<th>Fee</th>
+		<th>Location</th>
+		<th>No. collections</th>
+		<th>Amount</th>
+		<th>User</th>
+
+	</tr>
+	{% for c in collections %}
+	<tr>
+		<td>{{c.pk}}</td>
+		<td>{{ c.fee.from_date }} - {{ c.fee.to_date|default:'active' }}</td>
+		<td>{{ c.fee }}</td>
+		<td>{{ c.fee.utility.location.coords }}</td>
+		<td>{{ c.fee.quantity|default:'-' }}</td>
+		<td>{{ c.amount }}</td>
+		<td>{{ c.user }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+

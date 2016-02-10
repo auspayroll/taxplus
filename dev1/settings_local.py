@@ -27,6 +27,8 @@ COLOR_TAX = "#FFC0CB"
 #### This variable is for javascript ###
 DATE_FORMAT = "dd/mm/yy"
 
+
+
 #### This variable is for modelform datefield ###
 DATE_INPUT_FORMATS = ('%d/%m/%Y', '%b. %d, %Y', '%b %d %Y', '%b. %d %Y', '%B %d %Y', '%d %B %Y', '%d %b %Y')
 DATE_INPUT_FORMAT = '%d/%m/%Y'

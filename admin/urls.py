@@ -34,6 +34,6 @@ urlpatterns = patterns('',
     url(r'^ajax/getPaymentAmount/$','admin.ajax.getPaymentAmount'),
     url(r'^logout/$','admin.views.logout'),
     url(r'^temppassword/','admin.views.set_temp_password'),
-    url(r'^$','collect.views.index', name='admin_home'),
+    url(r'^$','crud.views.index', name='admin_home'),
     url(r'^login/$','admin.views.login', name='login'),
 )

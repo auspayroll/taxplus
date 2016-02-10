@@ -1,0 +1,25 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h2>Account notes</h2>
+	<a href="{% url 'new_account_note' account.pk %}">New Account Note</a>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>id</th>
+		<th>User</th>
+		<th>Note</th>
+		<th>Created on</th>
+	</tr>
+	{% for n in notes %}
+	<tr>
+		<td>{{n.pk}}</td>
+		<td>{{n.created_on}}</td>
+		<td width="60%">{{n.text}}</td>
+		<td>{{n.user}}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+

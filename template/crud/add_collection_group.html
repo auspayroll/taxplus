@@ -1,0 +1,12 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>Collection Group</h1>
+<form method="post">
+<table>
+{{ form }}
+{% csrf_token %}
+</table>
+<input type="submit" value="Save">
+</form>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>EPAY Log</h1>
+<form method="post">
+<table border="1">
+<tr>
+	<th>Batch #</th>
+	<th>Created on</th><th>Creator</th>
+	<th>Collection Group</th>
+	<th>Sector</th>
+	<th>#created</th></tr>
+{% for log in logs %}
+<tr>
+	<td>{{ log.pk }}</td>
+	<td>{{ log.created }}</td>
+	<td>{{ log.creator }}</td>
+	<td>
+		{% if log.collection_group %}
+			<a href="{% url 'edit_group' log.collection_group.pk %}">{{ log.collection_group }}</a>
+		{% else %}
+		-
+		{% endif %}
+	</td>
+	<td>
+		{{ log.sector }}
+	</td>
+	<td><a href="{% url 'epay_batch' log.pk %}">{{ log.amount }}</a></td>
+	<td><a href="{% url 'epay_batch_csv' log.pk %}">Download CSV</a></td>
+</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h1>Recent Accounts</h1>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>Account Number</th>
+		<th>Name</th>
+		<th>Type</th>
+		<th>Date Started</th>
+		<th>Total Due</th>
+	</tr>
+	{% for a in accounts %}
+	<tr>
+		<td>{{ a.pk }}</td>
+		<td><a href="{% url 'account' a.pk %}">{{ a.name }}</a></td>
+		<td>{{ a.holder_type|capfirst }}</td>
+		<td>{{ a.start_date }}</td>
+		<td>{{ a.total_due }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}

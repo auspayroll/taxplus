@@ -1,0 +1,21 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h2>Account Holders</h2>
+
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>id</th>
+		<th></th>
+	</tr>
+	{% for h in holders %}
+	<tr>
+		<td>{{h.pk}}</td>
+		<td>{{h.holder}}
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+

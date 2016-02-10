@@ -1,0 +1,22 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h1>Account Contacts</h1>
+	<a href="{% url 'new_contact' account.pk %}">New Contact</a>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>Name</th>
+		<th>Phone</th>
+		<th>Email</th>
+	</tr>
+	{% for c in contacts %}
+		<tr>
+			<td><a href="">{{ c }}</a></td>
+			<td>{{ c.phone }}</td>
+			<td>{{ c.email }}</td>
+		</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}

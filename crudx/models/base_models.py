@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from original_models import Boundary, Media, Citizen, Fee
+from taxplus.models import Boundary, Media, Citizen, Fee
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.db import models as gis_models
 from django.contrib.auth.models import User
@@ -92,6 +92,9 @@ class Account(models.Model):
 	utility_type = models.ForeignKey(ContentType, null=True, related_name='utility_accounts')
 	utility_id = models.PositiveIntegerField(null=True)
 	utility = GenericForeignKey('utility_type', 'utility_id')
+	fee_type = models.ForeignKey(ContentType, null=True, related_name='fee_accounts')
+	fee_id = models.PositiveIntegerField(null=True)
+	fee = GenericForeignKey('fee_type', 'fee_id')
 	comments = models.TextField(null=True)
 	contacts = models.ManyToManyField(Contact)
 	media = models.ManyToManyField(Media)
@@ -124,6 +127,9 @@ class AccountFee(models.Model):
 	Manual fee entries for accounts, used for if `Generate Fees Manually`
 	selected in fee register
 	"""
+
+	class Meta:
+		abstract = True
 	account = models.ForeignKey(Account)
 	fee_type = models.ForeignKey(FeeRegister, null=True) # used to auto gen fees
 	from_date = models.DateField(null=True)
@@ -137,7 +143,7 @@ class AccountFee(models.Model):
 	penalty_total = models.FloatField(default=0)
 	penalty_paid = models.FloatField(default=0)
 	due_date = models.DateField(null=True) #manual entry only
-	behaviour = models.PositiveSmallIntegerField(default=1, choices=[(1,'Generate Fees Manually'),(2,'Automatically generate fees each period')])
+	auto = models.BooleanField(default=False)
 	period = models.PositiveSmallIntegerField(null=True, choices=[(12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
 
 	@property
@@ -155,6 +161,31 @@ class AccountFee(models.Model):
 	@property
 	def total_due(self):
 		return self.principle_due + self.interest_due + self.penalty_due
+
+
+class MarketFee(AccountFee):
+	class Meta:
+		verbose_name = 'Market Fee'
+
+class LandLeaseFee(AccountFee):
+	class Meta:
+		verbose_name = 'Land Lease Fee'
+
+class QuarryFee(AccountFee):
+	class Meta:
+		verbose_name = 'Quarry Fee'
+
+class CleaningFee(AccountFee):
+	class Meta:
+		verbose_name = 'Cleaning Fee'
+
+class TowerFee(AccountFee):
+	class Meta:
+		verbose_name = 'Phone Tower Fee'
+
+class CemeteryFee(AccountFee):
+	class Meta:
+		verbose_name = 'Cemetery Fee'
 
 
 class AccountPayment(models.Model):

@@ -1,0 +1,26 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+<h2>Account Payments</h2>
+<a href="{% url 'new_payment' account.pk %}">New Payment</a>
+<form method="post">
+<table border="1">
+<tr>
+	<th>id</th>
+	<th>Date</th>
+	<th>Amount</th>
+	<th>Receipt no.s</th>
+	<th>Staff</th>
+</tr>
+{% for p in payments %}
+	<tr>
+		<td>{{ p.pk }}</td>
+		<td>{{ p.payment_date }}</td>
+		<td>{{ p.amount }}</td>
+		<td>{{ p.receipt_no }}</td>
+		<td>{{ p.user}}</td>
+	</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

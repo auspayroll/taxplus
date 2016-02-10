@@ -1,0 +1,15 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h1>Add New Fee</h1>
+	<h2>Select Fee Type</h2>
+
+	<div>
+		<ul>
+	{% for ft in fee_types %}
+		<li><a href="{# url 'edit_group' group.pk #}">{{ ft }}</a></li>
+	{% endfor %}
+		</ul>
+</div>
+
+{% endblock %}
