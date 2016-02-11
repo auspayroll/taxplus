@@ -746,6 +746,7 @@ class Property(LoggedModel):
 
 
 
+
 #@receiver(post_save, sender=Property)
 def after_prop_save(sender, instance, created, **kwargs):
 	return

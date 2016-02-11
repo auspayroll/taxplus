@@ -9,8 +9,6 @@
 		<th>id</th>
 		<th>Period</th>
 		<th>Fee</th>
-		<th>Utility</th>
-		<th>Location</th>
 		<th>rate</th>
 		<th>qty</th>
 		<th>total</th>
@@ -23,8 +21,6 @@
 		<td>{{f.pk}}</td>
 		<td>{{ f.from_date }} - {{ f.to_date|default:'active' }}</td>
 		<td>{{ f.fee_type }}</td>
-		<td>{{ f.utility }}</td>
-		<td>{{ f.utility.location.coords }}</td>
 		<td>{{ r.rate|default:'-' }}</td>
 		<td>{{ f.quantity|default:'-' }}</td>
 		<td>{{ f.amount }}</td>

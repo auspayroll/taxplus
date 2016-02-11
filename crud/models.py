@@ -32,13 +32,17 @@ def degress_to_meters(geometry):
 
 
 class Utility(models.Model):
+	name = models.CharField(null=True, max_length=30)
 	identifier = models.TextField(null=True, max_length=30)
 	location = gis_models.PointField(srid=4326, blank=True, null= True)
 	utility_type = models.ForeignKey(CategoryChoice)
 	objects = gis_models.GeoManager()
 
+	class Meta:
+		unique_together = ('identifier', 'utility_type')
+
 	def __unicode__(self):
-		return "%s - ID:%s" % (self.utility_type, self.identifier)
+		return "%s - ID:%s, GPS:%s" % ((self.name or self.utility_type), self.identifier, self.location)
 
 
 class LandPlot(models.Model):
@@ -71,6 +75,10 @@ class Account(models.Model):
 	penalty_total = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	penalty_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	account_no = models.CharField(max_length=30, null=True)
+	utility_type = models.ForeignKey(ContentType, null=True)
+	utility_id = models.PositiveIntegerField(null=True)
+	utility = GenericForeignKey('utility_type', 'utility_id')
+	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 
 	@property
 	def principle_due(self):
@@ -129,9 +137,6 @@ class AccountFee(models.Model):
 	auto = models.BooleanField(default=False)
 	period = models.PositiveSmallIntegerField(null=True, default=0,
 		choices=[(0,'Once only'), (12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
-	utility_type = models.ForeignKey(ContentType, null=True)
-	utility_id = models.PositiveIntegerField(null=True)
-	utility = GenericForeignKey('utility_type', 'utility_id')
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 	is_paid = models.BooleanField(default=False)
 

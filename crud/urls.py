@@ -8,7 +8,6 @@ urlpatterns = patterns('',
 	url(r'^account/(?P<pk>\d+)/$','crud.views.account', name='account'),
 
 	url(r'^recent_accounts/$','crud.views.recent_accounts', name='recent_accounts'),
-	url(r'^new_account_fee/(?P<pk>\d+)/$','crud.views.new_account_fee', name='new_account_fee'),
 	url(r'^new_account_utility/(?P<pk>\d+)/$','crud.views.new_account_utility', name='new_account_utility'),
 
 	#contacts
@@ -23,8 +22,12 @@ urlpatterns = patterns('',
 	url(r'^account/(?P<pk>\d+)/media/new/$','crud.views.new_media', name='new_media'),
 	url(r'^account/(?P<pk>\d+)/media/$','crud.views.account_media', name='account_media'),
 
+	#utilities
+		url(r'^utilities/$','crud.views.utilities', name='utilities'),
+	url(r'^utilities/(?P<utility_type>\w+)/$','crud.views.utilities', name='utilities_type'),
+
 	#fees
-	url(r'^account/(?P<pk>\d+)/fee/new/$','crud.views.new_media', name='new_fee'),
+	url(r'^new_account_fee/(?P<pk>\d+)/$','crud.views.new_account_fee', name='new_account_fee'),
 	url(r'^account/(?P<pk>\d+)/fees/$','crud.views.account_fees', name='account_fees'),
 
 	url(r'^account/(?P<pk>\d+)/fee_collection/new/$','crud.views.new_fee_collection', name='new_fee_collection'),
@@ -35,6 +38,8 @@ urlpatterns = patterns('',
 
 	url(r'^account/(?P<pk>\d+)/note/new/$','crud.views.new_account_note', name='new_account_note'),
 	url(r'^account/(?P<pk>\d+)/notes/$','crud.views.account_notes', name='account_notes'),
+
+	url(r'^account/(?P<pk>\d+)/utility/add/$','crud.views.add_account_utility', name='add_account_utility'),
 
 
 	url(r'^add_epay/$','collect.views.addEpay', name='add_epay'),

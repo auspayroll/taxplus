@@ -1,7 +1,7 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from collect.models import Epay, CollectionGroup, Collector, Epay, EpayBatch
-from crud.forms import CitizenForm, BusinessForm, NewFeeForm, NewPaymentForm, ContactForm, PaymentForm, form_for_model, MediaForm, NewFeeCollectionForm, AccountNoteForm
-from crud.models import Account, Contact, AccountPayment, Media, AccountHolder, AccountFee, AccountNote
+from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, AccountUtilityForm, ContactForm, PaymentForm, form_for_model, MediaForm, NewFeeCollectionForm, AccountNoteForm
+from crud.models import Account, Contact, AccountPayment, Media, AccountHolder, AccountFee, AccountNote, Utility
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -20,7 +20,7 @@ from django.shortcuts import HttpResponseRedirect, render_to_response, get_objec
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response
 from random import randint
-from taxplus.models import Sector, Business, Citizen
+from taxplus.models import Sector, Business, Citizen, CategoryChoice
 import csv
 import json
 
@@ -64,7 +64,7 @@ def new_citizen_account(request):
 			account = Account.objects.create(start_date=form.cleaned_data.get('start_date'), name=citizen.name)
 			AccountHolder.objects.create(account=account, holder=citizen)
 			messages.success(request, 'New Citizen Account created')
-			return HttpResponseRedirect(reverse('account', args=[account.pk]))
+			return HttpResponseRedirect(reverse('add_account_utility', args=[account.pk]))
 	else:
 		form = CitizenForm()
 
@@ -96,7 +96,7 @@ def new_business_account(request):
 			account = Account.objects.create(start_date=form.cleaned_data.get('date_started'), name=business.name)
 			AccountHolder.objects.create(account=account, holder=business)
 			messages.success(request, 'New Business Account created')
-			return HttpResponseRedirect(reverse('account', args=[account.pk]))
+			return HttpResponseRedirect(reverse('add_account_utility', args=[account.pk]))
 	else:
 		form = BusinessForm()
 
@@ -105,23 +105,25 @@ def new_business_account(request):
 
 @login_required
 def account(request, pk):
-	acc = get_object_or_404(Account, pk=pk)
-	fee_form = NewFeeForm()
-	return TemplateResponse(request, 'crud/account.html', {'account':acc, 'fee_form':fee_form})
+	account = get_object_or_404(Account, pk=pk)
+	if not account.utility:
+		return HttpResponseRedirect(reverse('add_account_utility', args=[account.pk]))
+	return TemplateResponse(request, 'crud/account.html', {'account':account})
 
 @login_required
 def new_account_fee(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form= NewFeeForm(request.POST)
+		form= FeeForm(request.POST)
 		if form.is_valid():
-			initial = form.cleaned_data
-			initial['from_date'] = account.start_date
-			utility_form_class = form_for_model(form.cleaned_data.get('fee_type').code)
-			utility_form = utility_form_class(initial=initial, auto=form.cleaned_data.get('auto'),district=form.cleaned_data.get('district'))
-			return TemplateResponse(request, 'crud/new_account_utility.html', {'account':account, 'form':utility_form})
+			account_fee = form.save(commit=False)
+			account_fee.account = account
+			account_fee.user = request.user
+			account_fee.save()
+			messages.success(request, 'New Fee Created')
+			return HttpResponseRedirect(reverse('account_fees', args=[pk]))
 	else:
-		form = NewFeeForm()
+		form = FeeForm()
 
 	return TemplateResponse(request, 'crud/new_fee_account.html', {'account':account, 'form':form})
 
@@ -133,8 +135,7 @@ def new_account_utility(request, pk):
 		form= NewFeeForm(request.POST)
 		if form.is_valid():
 			utility_form_class = form_for_model(form.cleaned_data.get('fee_type').code)
-			form = utility_form_class(request.POST, auto=form.cleaned_data.get('auto'),
-					district=form.cleaned_data.get('district'))
+			form = utility_form_class(request.POST, auto=form.cleaned_data.get('auto'),district=form.cleaned_data.get('district'))
 			if form.is_valid():
 				fee = form.save(commit=False, user=request.user, account=account)
 				fee.account = account
@@ -319,7 +320,46 @@ def account_notes(request,pk):
 	return TemplateResponse(request, 'crud/notes.html', {'account':account, 'notes':notes})
 
 
+@login_required
+def add_account_utility(request, pk):
+	account = get_object_or_404(Account, pk=pk)
+	if request.method == 'POST':
+		form= AccountUtilityForm(request.POST)
+		if form.is_valid():
+			if form.cleaned_data.get('utility_type') == 'property':
+				utility, created = Property.objects.get_or_create(upi=form.cleaned_data.get('identifier') )
+			else:
+				utility, created = Utility.objects.get_or_create(utility_type=form.cleaned_data.get('utility_type'), identifier=form.cleaned_data.get('identifier'))
+			account.utility = utility
+			account.save()
+			messages.success(request, 'New utility added')
+			return HttpResponseRedirect(reverse('account_fees', args=[account.pk]))
+	else:
+		form = AccountUtilityForm()
+
+	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'Add Utility/Site'})
 
 
 
+@login_required
+def utilities(request, utility_type=None):
+	if request.method == 'POST':
+		form= UtilityForm(request.POST)
+		if form.is_valid():
+			utility = form.save()
+			messages.success(request, 'New utility added')
+			return HttpResponseRedirect(reverse('utilities_type',args=[utility.utility_type.code]))
+	else:
+		form = UtilityForm()
+
+	utility_types = CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property')
+
+	if utility_type:
+		utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')
+	else:
+		utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')[:50]
+
+
+	return TemplateResponse(request, 'crud/utilities.html', {'account':account, 'form':form, 'heading':'Utilities/Sites',
+		'utility_types':utility_types, 'utilities':utilities})
 

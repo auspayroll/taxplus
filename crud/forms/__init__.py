@@ -1,17 +1,34 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice
+from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee, Contact, AccountPayment, Media, AccountFee, Utility, AccountNote
 from django.contrib.gis.geos import Point
+from collections import OrderedDict
 
 import html5.forms.widgets as html5_widgets
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.core.validators import RegexValidator
+import re
+
+from django.core.exceptions import ValidationError
+
+def validate_upi(upi):
+	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
+		raise ValidationError('Invalid UPI Format')
+	province, district, sector, cell, parcel = upi.split('/')
+	cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
+	try:
+		Cell.objects.get(code=cell_code)
+	except Cell.DoesNotExist:
+		raise ValidationError('Cell code %s not found' % cell_code)
+
+	return upi
+
 
 fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month'),(4,'Auto generate fees every quarter'),
 (52,'Auto generate fees every week'),(1,'Auto generate fees every year')]
 fee_auto_choices = [('','I will specify the amount'),(1,'Automatically calculate the amount')]
-
 
 
 class ContactForm(forms.ModelForm):
@@ -25,6 +42,38 @@ class PaymentForm(forms.ModelForm):
 		fields = ('payment_date','receipt_no','amount')
 
 	payment_date = forms.DateField(widget=html5_widgets.DateInput)
+
+
+class AccountUtilityForm(forms.Form):
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Utility/Site type')
+	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, UPI etc.")
+
+	def clean_identifier(self):
+		identifier = self.cleaned_data.get('identifier')
+		if self.cleaned_data.get('utility_type').code == 'property':
+			validate_upi(identifier)
+		return identifier
+
+
+class UtilityForm(forms.ModelForm):
+	class Meta:
+		model = Utility
+		fields = ('utility_type', 'identifier', 'name',)
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
+	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry etc.")
+	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
+	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
+	name = forms.CharField(required=False)
+
+	def save(self, *args, **kwargs):
+		utility = super(UtilityForm, self).save(commit=False, *args, **kwargs)
+		lat = self.cleaned_data.get('lat')
+		lon = self.cleaned_data.get('lon')
+		if lat and lon:
+			utility.location = Point(lat, lon)
+		utility.save()
+		return utility
+
 
 
 class NewFeeForm(forms.Form):
@@ -105,7 +154,20 @@ class FormExtra:
 			self.add_error(field_name, e)
 
 
-class FeeForm(forms.ModelForm, FormExtra):
+class FeeForm(forms.ModelForm):
+	class Meta:
+		model = AccountFee
+		fields = ['fee_type',  'period', 'from_date', 'auto', 'amount', 'due_date']
+
+	auto = forms.BooleanField(label="Auto-calculate fee" , help_text="Uncheck to specify amount", required=False)
+	from_date = forms.DateField(widget=html5_widgets.DateInput, label="Start fee on")
+	due_date = forms.DateField(widget=html5_widgets.DateInput)
+	amount = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2)
+
+
+
+
+class FeeFormOld(forms.ModelForm, FormExtra):
 	"""
 	Base Form for all Fee Types
 	"""
@@ -221,7 +283,9 @@ class BusinessForm(forms.ModelForm, FormExtra):
 
 		duplicates = Business.objects.filter(q_objects)
 		if duplicates:
-			self.fields['duplicate'] = forms.ModelChoiceField(label='Select duplicate to merge with', required=False, queryset=duplicates)
+			fields = self.fields
+			self.fields = OrderedDict({'duplicate': forms.ModelChoiceField(label='Select duplicate to merge with', required=False, queryset=duplicates)})
+			self.fields.update(fields)
 			self.field_clean('duplicate')
 			if 'duplicate' not in self.cleaned_data:
 				raise forms.ValidationError("There were possible duplicate records found. Please select one to merge with.")
@@ -267,7 +331,9 @@ class CitizenForm(forms.ModelForm, FormExtra):
 
 		duplicates = Citizen.objects.filter(q_objects)
 		if duplicates:
-			self.fields['duplicate'] = forms.ModelChoiceField(label='Select duplicate to merge with', required=False, queryset=duplicates)
+			fields = self.fields
+			self.fields = OrderedDict({'duplicate': forms.ModelChoiceField(label='Select duplicate to merge with', required=False, queryset=duplicates)})
+			self.fields.update(fields)
 			self.field_clean('duplicate')
 			if 'duplicate' not in self.cleaned_data:
 				raise forms.ValidationError("There were possible duplicate records found. Please select one to merge with.")
