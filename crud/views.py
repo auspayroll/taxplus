@@ -1,7 +1,9 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
-from collect.models import Epay, CollectionGroup, Collector, Epay, EpayBatch
-from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, AccountUtilityForm, ContactForm, PaymentForm, form_for_model, MediaForm, NewFeeCollectionForm, AccountNoteForm
-from crud.models import Account, Contact, AccountPayment, Media, AccountHolder, AccountFee, AccountNote, Utility
+from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
+	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm
+from crud.models import Account, Contact, AccountPayment, Media,\
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -269,21 +271,24 @@ def new_media(request, pk):
 def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form= NewFeeCollectionForm(request.POST)
+		form= CollectionForm(request.POST)
 		if form.is_valid():
-			form.save(account=account, user=request.user)
-			messages.success(request, 'New Fee Collection created')
+			payment = form.save(commit=False)
+			payment.account = account
+			payment.user = request.user
+			payment.save()
+			messages.success(request, 'New Collection created')
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 	else:
-		form = NewFeeCollectionForm()
+		form = CollectionForm()
 
-	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Fee Collection'})
+	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Collection'})
 
 
 @login_required
 def fee_collections(request,pk):
 	account = get_object_or_404(Account, pk=pk)
-	collections = AccountPayment.objects.filter(fee__account=account).order_by('-pk')
+	collections = Collection.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/collections.html', {'account':account, 'collections':collections})
 
 
@@ -340,6 +345,22 @@ def add_account_utility(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'Add Utility/Site'})
 
 
+@login_required
+def update_utility(request, pk):
+	utility = get_object_or_404(Utility, pk=pk)
+	if request.method == 'POST':
+		form= UtilityForm(request.POST, instance=utility)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Utility updated')
+			return HttpResponseRedirect(reverse('utilities_type',args=[utility.utility_type.code]))
+	else:
+		form = UtilityForm(instance=utility)
+
+	return TemplateResponse(request, 'crud/base_form.html', {'account':account, 'form':form, 'heading':'Update Utility/Site'})
+
+
+
 
 @login_required
 def utilities(request, utility_type=None):
@@ -357,7 +378,7 @@ def utilities(request, utility_type=None):
 	if utility_type:
 		utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')
 	else:
-		utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')[:50]
+		utilities = Utility.objects.all().order_by('-pk')[:50]
 
 
 	return TemplateResponse(request, 'crud/utilities.html', {'account':account, 'form':form, 'heading':'Utilities/Sites',

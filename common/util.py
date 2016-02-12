@@ -3,7 +3,7 @@ from dev1 import variables
 from django.core.mail import EmailMultiAlternatives
 
 import urllib2
-import psycopg2
+#import psycopg2
 import string
 import random
 from datetime import datetime

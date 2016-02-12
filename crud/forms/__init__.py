@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell
-from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee, Contact, AccountPayment, Media, AccountFee, Utility, AccountNote
+from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
+ Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
 
@@ -43,6 +44,14 @@ class PaymentForm(forms.ModelForm):
 
 	payment_date = forms.DateField(widget=html5_widgets.DateInput)
 
+
+class CollectionForm(forms.ModelForm):
+	class Meta:
+		model = Collection
+		fields = ('date_from','date_to','receipt_no','amount', 'no_collections')
+
+	date_from = forms.DateField(widget=html5_widgets.DateInput)
+	date_to = forms.DateField(widget=html5_widgets.DateInput)
 
 class AccountUtilityForm(forms.Form):
 	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Utility/Site type')

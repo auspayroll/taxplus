@@ -42,6 +42,8 @@ urlpatterns = patterns('',
 	url(r'^account/(?P<pk>\d+)/utility/add/$','crud.views.add_account_utility', name='add_account_utility'),
 
 
+url(r'^utility/(?P<pk>\d+)/update/$','crud.views.update_utility', name='update_utility'),
+
 	url(r'^add_epay/$','collect.views.addEpay', name='add_epay'),
 	url(r'^add_collection_group/$','collect.views.addCollectionGroup', name='add_collection_group'),
 	url(r'^register/$','collect.views.register', name='register'),

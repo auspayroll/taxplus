@@ -42,7 +42,7 @@ class Utility(models.Model):
 		unique_together = ('identifier', 'utility_type')
 
 	def __unicode__(self):
-		return "%s - ID:%s, GPS:%s" % ((self.name or self.utility_type), self.identifier, self.location)
+		return "%s - ID:%s" % ((self.name or self.utility_type), self.identifier)
 
 
 class LandPlot(models.Model):
@@ -195,17 +195,27 @@ class CemeteryFee(AccountFee):
 		proxy = True
 
 
+class Collection(models.Model):
+	"""
+	Represents a fee collection
+	"""
+	date_from = models.DateField(null=True)
+	date_to = models.DateField()
+	account = models.ForeignKey(Account)
+	deposit = models.ForeignKey(BankDeposit, related_name='deposit_collections', null=True)
+	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+	no_collections = models.PositiveIntegerField(default=1)
+	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
+	user = models.ForeignKey(User)
 
 class AccountPayment(models.Model):
 	"""
 	Represents an individual account payment, as opposed to a collection
 	"""
-	fee = models.ForeignKey(AccountFee, null=True, related_name='fee_payments')
 	payment_date = models.DateField()
 	account = models.ForeignKey(Account)
 	deposit = models.ForeignKey(BankDeposit, related_name='deposit_acccounts', null=True)
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-	no_collections = models.PositiveIntegerField(default=1)
 	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
 

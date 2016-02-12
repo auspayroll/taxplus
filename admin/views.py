@@ -40,35 +40,20 @@ def login(request):
 		if form.is_valid():
 			username = form.cleaned_data['username']
 			password = form.cleaned_data['password']
-			try:
-				user = auth_authenticate(username=username, password=password)
-				if user and not user.is_active:
-					errorMessage="Your account has been disabled"
 
-				elif user:
-					try:
-						pm_user = PMUser.find.get(Q(email=user.username) | 	Q(username=user.email))
-					except PMUser.DoesNotExist:
-						raise Http404
-					request.session['user'] = pm_user
+			user = auth_authenticate(username=username, password=password)
+			if user is not None:
+				if user.is_active:
 					auth_login(request, user)
-					log = Log.log(message='login')
-					log.staff = user
-					log.save(update_fields=['staff'])
-					content_types = pm_user.getContentTypesWithWeight()
 					next = request.POST.get('next')
 					if next:
 						return HttpResponseRedirect(next)
 					else:
 						return HttpResponseRedirect(reverse('admin_home'))
 				else:
-					errorMessage="Incorrect username and password"
-					Log.log(message='failed login')
-			except ValidationError, e:
-					errorMessage= e.messages[0]
-					Log.log(message="failed login - %s" % errorMessage)
-		else:
-			errorMessage=form.errors
+					errorMessage="Your account has been disabled"
+
+
 		return render_to_response('admin/login.html', {'form':form,'errorMessage':errorMessage, 'username':username}, context_instance=RequestContext(request))
 
 	form = LoginForm()

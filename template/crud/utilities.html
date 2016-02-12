@@ -9,7 +9,7 @@
 {{ form }}
 {% csrf_token %}
 </table>
-<input type="submit" value="Submit">
+<input type="submit" value="Add New">
 </form>
 </div>
 <p/>
@@ -20,11 +20,14 @@
 
 </div>
 <p/>
-<div>
+<table border="1">
+<tr><th></th><th>Type</th><th>Location</th></tr>
 {% for u in utilities %}
-	<div>{{ u }}</u>
+	<tr><td><a href="{% url 'update_utility' u.pk %}">{{ u }}</a></td>
+	<td>{{ u.utility_type }}</td>
+	<td>{{ u.location.coords }}</td></tr>
 {% endfor %}
-
+</table>
 </div>
 
 {% endblock %}

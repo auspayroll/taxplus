@@ -26,9 +26,9 @@ category_choices = {
 
 	'status':(('active', 'active'), ('inactive','inactive'), ('pending','pending')),
 
-	'fee_type':(('land_lease', 'land lease'),('cleaning', 'cleaning'), ('quarry', 'quarry'), ('cemetery', 'cemetery'), ('market', 'market')),
+	'fee_type':(('land_lease', 'land lease'),('cleaning', 'cleaning'), ('quarry', 'quarry'), ('cemetery', 'cemetery'), ('market', 'market'), ('tower', 'tower')),
 
-	'utility_type':(('property', 'Property'), ('quarry', 'Quarry'), ('cemetary', 'cemetery'), ('market', 'market')),
+	'utility_type':(('property', 'Property'), ('quarry', 'Quarry'), ('cemetary', 'cemetery'), ('market', 'market'), ('tower', 'tower')),
 
 	'land_use':(('rural', 'Rural'),('urban', 'Urban'), ('forestry', 'Forestry'),
 		('quarry', 'Quarry Purpose'), ('industrial', 'Industrial'), ('residential', 'Residential'), ('cultural', 'Cultural (other)'),
