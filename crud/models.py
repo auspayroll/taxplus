@@ -10,6 +10,7 @@ from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoi
 import copy
 import os
 import re
+from django.core.exceptions import ValidationError
 
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
