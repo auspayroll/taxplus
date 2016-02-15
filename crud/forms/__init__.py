@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell
+from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
  Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection
 from django.contrib.gis.geos import Point
@@ -14,22 +14,25 @@ import re
 
 from django.core.exceptions import ValidationError
 
-def validate_upi(upi):
-	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
-		raise ValidationError('Invalid UPI Format')
-	province, district, sector, cell, parcel = upi.split('/')
-	cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
-	try:
-		Cell.objects.get(code=cell_code)
-	except Cell.DoesNotExist:
-		raise ValidationError('Cell code %s not found' % cell_code)
-
-	return upi
-
 
 fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month'),(4,'Auto generate fees every quarter'),
 (52,'Auto generate fees every week'),(1,'Auto generate fees every year')]
 fee_auto_choices = [('','I will specify the amount'),(1,'Automatically calculate the amount')]
+
+
+class FormExtra(forms.Form):
+	def field_clean(self, field_name):
+		try:
+			field = self.fields.get(field_name)
+			value = field.widget.value_from_datadict(self.data, self.files, self.add_prefix(field_name))
+			if value is None:
+				return None
+			value = field.clean(value)
+			self.cleaned_data[field_name] = value
+			return value
+		except ValidationError as e:
+			self.add_error(field_name, e)
+			return None
 
 
 class ContactForm(forms.ModelForm):
@@ -57,22 +60,59 @@ class AccountUtilityForm(forms.Form):
 	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Utility/Site type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, UPI etc.")
 
-	def clean_identifier(self):
-		identifier = self.cleaned_data.get('identifier')
-		if self.cleaned_data.get('utility_type').code == 'property':
-			validate_upi(identifier)
-		return identifier
 
 
-class UtilityForm(forms.ModelForm):
+class RegionForm(FormExtra):
+	def clean(self, *args, **kwargs):
+		try:
+			self._errors.pop('sector')
+		except KeyError:
+			pass
+
+		try:
+			self._errors.pop('cell')
+		except KeyError:
+			pass
+
+		try:
+			self._errors.pop('village')
+		except KeyError:
+			pass
+
+		district = self.cleaned_data.get('district')
+		self.fields['sector'].queryset = Sector.objects.filter(district=district)
+		sector  = self.field_clean('sector')
+		if sector:
+			self.fields['cell'].queryset = Cell.objects.filter(sector=sector)
+
+		cell = self.field_clean('cell')
+		if cell:
+			self.fields['village'].queryset = Village.objects.filter(cell=cell)
+		village = self.field_clean('village')
+		cleaned_data = super(RegionForm, self).clean(*args, **kwargs)
+		return cleaned_data
+
+
+class UtilityForm(forms.ModelForm, RegionForm):
 	class Meta:
 		model = Utility
-		fields = ('utility_type', 'identifier', 'name',)
+		fields = ('utility_type', 'name', 'identifier', 'upi', 'district', 'sector', 'cell', 'village')
+
 	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
-	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry etc.")
+	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
+	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
+	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=False)
+	cell = forms.ModelChoiceField(queryset=Cell.objects.none(), required=False)
+	village = forms.ModelChoiceField(queryset=Village.objects.none(), required=False)
 	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
 	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
-	name = forms.CharField(required=False)
+	name = forms.CharField(required=False, help_text="Name or description")
+
+
+	def clean(self, *args, **kwargs):
+		RegionForm.clean(self, *args, **kwargs)
+		return super(UtilityForm, self).clean(*args, **kwargs)
+
 
 	def save(self, *args, **kwargs):
 		utility = super(UtilityForm, self).save(commit=False, *args, **kwargs)
@@ -149,18 +189,6 @@ class MediaForm(forms.ModelForm):
 		model = Media
 		fields = ('title','item')
 
-
-class FormExtra:
-	def field_clean(self, field_name):
-		try:
-			field = self.fields.get(field_name)
-			value = field.widget.value_from_datadict(self.data, self.files, self.add_prefix(field_name))
-			if value is None:
-				return
-			value = field.clean(value)
-			self.cleaned_data[field_name] = value
-		except ValidationError as e:
-			self.add_error(field_name, e)
 
 
 class FeeForm(forms.ModelForm):

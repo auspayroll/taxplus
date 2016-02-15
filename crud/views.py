@@ -357,7 +357,7 @@ def update_utility(request, pk):
 	else:
 		form = UtilityForm(instance=utility)
 
-	return TemplateResponse(request, 'crud/base_form.html', {'account':account, 'form':form, 'heading':'Update Utility/Site'})
+	return TemplateResponse(request, 'crud/update_utility.html', {'account':account, 'form':form, 'heading':'Update Utility/Site'})
 
 
 

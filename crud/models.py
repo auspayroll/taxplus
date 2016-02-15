@@ -6,11 +6,22 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.db import models
-from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoice
+from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoice, District, Sector, Cell, Village
 import copy
 import os
+import re
 
+def validate_upi(upi):
+	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
+		raise ValidationError('Invalid UPI Format')
+	province, district, sector, cell, parcel = upi.split('/')
+	cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
+	try:
+		Cell.objects.get(code=cell_code)
+	except Cell.DoesNotExist:
+		raise ValidationError('Cell code %s not found' % cell_code)
 
+	return upi
 
 def get_fee_objects():
 	return [ct.model_class() for ct in ContentType.objects.all() if ct.model_class() and issubclass(ct.model_class(),AccountFee)]
@@ -33,13 +44,19 @@ def degress_to_meters(geometry):
 
 class Utility(models.Model):
 	name = models.CharField(null=True, max_length=30)
-	identifier = models.TextField(null=True, max_length=30)
+	identifier = models.CharField(null=True, max_length=30)
+	upi = models.CharField(null=True, max_length=30, validators=[validate_upi],help_text="eg. 1/03/10/01/655", verbose_name="UPI", blank=True)
 	location = gis_models.PointField(srid=4326, blank=True, null= True)
 	utility_type = models.ForeignKey(CategoryChoice)
+	district = models.ForeignKey(District, null=True)
+	sector = models.ForeignKey(Sector, null=True, blank=True)
+	cell = models.ForeignKey(Cell, null=True, blank=True)
+	village = models.ForeignKey(Village, null=True, blank=True)
 	objects = gis_models.GeoManager()
 
 	class Meta:
 		unique_together = ('identifier', 'utility_type')
+		unique_together = ('identifier', 'upi')
 
 	def __unicode__(self):
 		return "%s - ID:%s" % ((self.name or self.utility_type), self.identifier)
