@@ -9,12 +9,12 @@
 <script src="{% static 'js/load_region_data.js' %}"></script>
 
 
-{% if current_markets %}
+{% if current_accounts %}
 	<h2>Select from available {{ form.cleaned_data.utility_type }} sites in {{ form.cleaned_data.village }} village, <br/>or create a new market location below</h1>
 	<table border="1">
-	<tr><th>Market Location</th><th>UPI</th><th>GPS</th></tr>
-	{% for m in current_markets %}
-		<tr><td>{{ m }}</td><td>{{ m.upi }}</td><td>{{ m.location.coords }}</td><td><a href="{% url 'new_market_account' m.pk %}">Use this market Location</a></td></tr>
+	<tr><th>Account Name</th><th>Site/Utility</th><th>Date Started</th></tr>
+	{% for a in current_accounts %}
+		<tr><td>{{ a }}</td><td>{{ a.utilities.all|join:', ' }}</td><td>{{ a.start_date }}</td><td><a href="{% url 'account' a.pk %}">Use this Account</a></td></tr>
 	{% endfor %}
 	</table>
 {% endif %}

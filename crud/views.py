@@ -108,8 +108,6 @@ def new_business_account(request):
 @login_required
 def account(request, pk):
 	account = get_object_or_404(Account, pk=pk)
-	if not account.utility:
-		return HttpResponseRedirect(reverse('add_account_utility', args=[account.pk]))
 	return TemplateResponse(request, 'crud/account.html', {'account':account})
 
 @login_required
@@ -209,11 +207,11 @@ def new_market(request, utility_type='market'):
 	if request.method == 'POST':
 		form = NewMarketForm(request.POST)
 		if form.is_valid():
-				current_markets = Utility.objects.filter(village=form.cleaned_data.get('village'), utility_type__code=form.cleaned_data.get('utility_type'))
+				current_accounts = Account.objects.filter(utilities__village=form.cleaned_data.get('village'), utilities__utility_type=form.cleaned_data.get('utility_type'))
 				initial_data = form.cleaned_data
 				initial_data['name'] = "%s %s" % (initial_data.get('village'), initial_data.get('utility_type'))
 				form = MarketForm(initial=initial_data)
-				return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s Location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_markets':current_markets})
+				return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s Location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_accounts':current_accounts})
 	else:
 		utility_type  = CategoryChoice.objects.get(category__code='utility_type', code=utility_type)
 		form = NewMarketForm(initial={'utility_type':utility_type})
@@ -228,10 +226,10 @@ def new_market_post(request):
 	if request.method == 'POST':
 		form = MarketForm(request.POST)
 		if form.is_valid():
-				village = form.cleaned_data.get('village')
-				utility = form.save()
-				messages.success(request, 'New Market site Created')
-				return HttpResponseRedirect(reverse('new_market_account', args=[utility.pk]))
+			village = form.cleaned_data.get('village')
+			utility = form.save()
+			messages.success(request, 'New Market site Created')
+			return HttpResponseRedirect(reverse('new_market_account', args=[utility.pk]))
 	else:
 		return HttpResponseRedirect(reverse('new_market'))
 	return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
@@ -243,10 +241,11 @@ def new_market_account(request, pk):
 	if request.method == 'POST':
 		form = MarketAccountForm(request.POST)
 		if form.is_valid():
-				account = Account(name=utility.name, utility=utility, start_date=form.cleaned_data.get('start_date'))
-				account.save()
-				messages.success(request, 'New Market Created')
-				return HttpResponseRedirect(reverse('account', args=[account.pk]))
+			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
+			account.save()
+			account.utilities.add(utility)
+			messages.success(request, 'New Market Created')
+			return HttpResponseRedirect(reverse('account', args=[account.pk]))
 	else:
 		form = MarketAccountForm()
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':utility})

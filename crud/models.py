@@ -93,10 +93,8 @@ class Account(models.Model):
 	penalty_total = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	penalty_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	account_no = models.CharField(max_length=30, null=True)
-	utility_type = models.ForeignKey(ContentType, null=True)
-	utility_id = models.PositiveIntegerField(null=True)
-	utility = GenericForeignKey('utility_type', 'utility_id')
-	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
+	utilities = models.ManyToManyField(Utility)
+
 
 	@property
 	def principle_due(self):
@@ -113,6 +111,9 @@ class Account(models.Model):
 	@property
 	def total_due(self):
 		return self.principle_due + self.interest_due + self.penalty_due
+
+	def __unicode__(self):
+		return self.name
 
 
 
@@ -219,9 +220,10 @@ class Collection(models.Model):
 	"""
 	date_from = models.DateField(null=True)
 	date_to = models.DateField()
-	account = models.ForeignKey(Account)
+	account = models.ForeignKey(Account, null=True)
 	deposit = models.ForeignKey(BankDeposit, related_name='deposit_collections', null=True)
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+	fee_type = models.ForeignKey(CategoryChoice, null=True)
 	no_collections = models.PositiveIntegerField(default=1)
 	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
