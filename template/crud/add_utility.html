@@ -8,11 +8,14 @@
 </script>
 <script src="{% static 'js/load_region_data.js' %}"></script>
 <h1>{{heading}}</h1>
+<div>
 <form method="post">
 <table>
 {{ form }}
 {% csrf_token %}
 </table>
-<input type="submit" value="Submit">
+<input type="submit" value="Add New">
 </form>
+</div>
+
 {% endblock %}

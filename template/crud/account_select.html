@@ -1,0 +1,17 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+<h1> New Account</h1>
+<div>
+<a href="{% url 'new_citizen_account' %}">Add Citizen Account</a> - Add an account with a Citizen as the account holder</a>
+</div>
+<p/>
+<div>
+<a href="{% url 'new_business_account' %}">Add a Business Account</a> - Add an Account with a Business as the account holder
+</div>
+<p/>
+<div>
+<a href="">Add General Account</a> - Just Add an Account without any account holders (Markets etc.)
+</div>
+
+{% endblock %}

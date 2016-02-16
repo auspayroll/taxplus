@@ -211,7 +211,6 @@ class Sector(models.Model):
 	council = models.ForeignKey(Council, null=True, blank=True, help_text="Council the sector belongs to.")
 	boundary = models.OneToOneField(Boundary, related_name='sector_boundary', null=True, blank=True, help_text="The boundary of sector.")
 	alias = models.TextField(null=True)
-	test = models.TextField(null=True)
 
 	class Meta:
 		ordering = ['name', 'district__name']

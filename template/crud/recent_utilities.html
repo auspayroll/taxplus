@@ -7,24 +7,8 @@
 	var village_posted = {{ request.POST.village|default:9|default:'0' }};
 </script>
 <script src="{% static 'js/load_region_data.js' %}"></script>
-<h1>{{heading}}</h1>
+<h1>{{heading|default:'Recent Market Sites'}}</h1>
 <div>
-<form method="post">
-<table>
-{{ form }}
-{% csrf_token %}
-</table>
-<input type="submit" value="Add New">
-</form>
-</div>
-<p/>
-<div>
-{% for t in utility_types %}
-	<a href="{% url 'utilities_type' t.code %}">{{ t.name }}</a>&nbsp;
-{% endfor %}
-
-</div>
-
 <p/>
 <table border="1">
 <tr><th></th>

@@ -1,7 +1,7 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
-	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewMarketForm, MarketForm, MarketAccountForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -167,8 +167,15 @@ def new_account_payment(request, pk):
 
 @login_required
 def recent_accounts(request):
-	accounts = Account.objects.all().order_by('-pk')
+	accounts = Account.objects.all().order_by('-pk')[:50]
 	return TemplateResponse(request, 'crud/accounts.html', {'accounts':accounts})
+
+
+@login_required
+def recent_utilities(request, utility_type):
+	utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')[:50]
+
+	return TemplateResponse(request, 'crud/recent_utilities.html', {'utilities':utilities})
 
 
 @login_required
@@ -190,6 +197,61 @@ def update_account(request, pk):
 		form = BusinessForm()
 
 	return TemplateResponse(request, 'crud/new_account.html', {'form':form})
+
+
+@login_required
+def account_select(request):
+	return TemplateResponse(request, 'crud/account_select.html', {})
+
+
+@login_required
+def new_market(request, utility_type='market'):
+	if request.method == 'POST':
+		form = NewMarketForm(request.POST)
+		if form.is_valid():
+				current_markets = Utility.objects.filter(village=form.cleaned_data.get('village'), utility_type__code=form.cleaned_data.get('utility_type'))
+				initial_data = form.cleaned_data
+				initial_data['name'] = "%s %s" % (initial_data.get('village'), initial_data.get('utility_type'))
+				form = MarketForm(initial=initial_data)
+				return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s Location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_markets':current_markets})
+	else:
+		utility_type  = CategoryChoice.objects.get(category__code='utility_type', code=utility_type)
+		form = NewMarketForm(initial={'utility_type':utility_type})
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new %s' % utility_type })
+
+
+@login_required
+def new_market_post(request):
+	"""
+	add a new market location
+	"""
+	if request.method == 'POST':
+		form = MarketForm(request.POST)
+		if form.is_valid():
+				village = form.cleaned_data.get('village')
+				utility = form.save()
+				messages.success(request, 'New Market site Created')
+				return HttpResponseRedirect(reverse('new_market_account', args=[utility.pk]))
+	else:
+		return HttpResponseRedirect(reverse('new_market'))
+	return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
+
+
+@login_required
+def new_market_account(request, pk):
+	utility = get_object_or_404(Utility, pk=pk)
+	if request.method == 'POST':
+		form = MarketAccountForm(request.POST)
+		if form.is_valid():
+				account = Account(name=utility.name, utility=utility, start_date=form.cleaned_data.get('start_date'))
+				account.save()
+				messages.success(request, 'New Market Created')
+				return HttpResponseRedirect(reverse('account', args=[account.pk]))
+	else:
+		form = MarketAccountForm()
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':utility})
+
+
 
 
 @login_required
@@ -361,7 +423,6 @@ def update_utility(request, pk):
 
 
 
-
 @login_required
 def utilities(request, utility_type=None):
 	if request.method == 'POST':
@@ -373,14 +434,10 @@ def utilities(request, utility_type=None):
 	else:
 		form = UtilityForm()
 
-	utility_types = CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property')
-
 	if utility_type:
 		utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')
 	else:
 		utilities = Utility.objects.all().order_by('-pk')[:50]
 
-
-	return TemplateResponse(request, 'crud/utilities.html', {'account':account, 'form':form, 'heading':'Utilities/Sites',
-		'utility_types':utility_types, 'utilities':utilities})
+	return TemplateResponse(request, 'crud/add_utility.html', {'form':form, 'heading':'Add Utility/Site', })
 

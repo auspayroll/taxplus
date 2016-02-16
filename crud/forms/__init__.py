@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.core.validators import RegexValidator
 import re
+from datetime import date
 
 from django.core.exceptions import ValidationError
 
@@ -63,6 +64,11 @@ class AccountUtilityForm(forms.Form):
 
 
 class RegionForm(FormExtra):
+	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
+	sector = forms.ModelChoiceField(queryset=Sector.objects.none())
+	cell = forms.ModelChoiceField(queryset=Cell.objects.none())
+	village = forms.ModelChoiceField(queryset=Village.objects.none())
+
 	def clean(self, *args, **kwargs):
 		try:
 			self._errors.pop('sector')
@@ -100,13 +106,9 @@ class UtilityForm(forms.ModelForm, RegionForm):
 
 	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
-	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
-	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=False)
-	cell = forms.ModelChoiceField(queryset=Cell.objects.none(), required=False)
-	village = forms.ModelChoiceField(queryset=Village.objects.none(), required=False)
 	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
 	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
-	name = forms.CharField(required=False, help_text="Name or description")
+	name = forms.CharField(help_text="Name or description")
 
 
 	def clean(self, *args, **kwargs):
@@ -122,6 +124,26 @@ class UtilityForm(forms.ModelForm, RegionForm):
 			utility.location = Point(lat, lon)
 		utility.save()
 		return utility
+
+
+class NewMarketForm(RegionForm):
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type', widget=forms.HiddenInput())
+
+
+class MarketForm(UtilityForm):
+	def __init__(self, *args, **kwargs):
+		super(MarketForm, self).__init__(*args, **kwargs)
+		self.fields['utility_type'].widget = forms.HiddenInput()
+		self.fields['district'].widget = forms.HiddenInput()
+		self.fields['identifier'].help_text = 'optional'
+		self.fields['sector'].widget = forms.HiddenInput()
+		self.fields['cell'].widget = forms.HiddenInput()
+		self.fields['village'].widget = forms.HiddenInput()
+		self.fields['identifier'].label = "Market ID"
+
+
+class MarketAccountForm(forms.Form):
+		start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
 
