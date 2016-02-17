@@ -30,7 +30,7 @@ import json
 
 @login_required
 def index(request):
-	return HttpResponseRedirect('districts')
+	return districts(request)
 
 
 @login_required
