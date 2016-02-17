@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
-	url(r'^$','crud.views.index', name='index'),
+	url(r'^$','crud.views.districts', name='index'),
 	url(r'^select_fees/$','crud.views.select_fees', name='select_fees'),
 	url(r'^new_citizen_account/$','crud.views.new_citizen_account', name='new_citizen_account'),
 	url(r'^new_business_account/$','crud.views.new_business_account', name='new_business_account'),
