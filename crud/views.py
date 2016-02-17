@@ -1,7 +1,7 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
-	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewMarketForm, MarketForm, AddUtilityRegionForm
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewLocationForm, LocationForm, AddUtilityRegionForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -203,39 +203,38 @@ def account_select(request):
 
 
 @login_required
-def new_market(request, utility_type='market'):
+def new_location(request):
 	if request.method == 'POST':
-		form = NewMarketForm(request.POST)
+		form = NewLocationForm(request.POST)
 		if form.is_valid():
 				current_accounts = Account.objects.filter(utilities__village=form.cleaned_data.get('village'), utilities__utility_type=form.cleaned_data.get('utility_type'))
 				initial_data = form.cleaned_data
 				initial_data['name'] = "%s %s" % (initial_data.get('village'), initial_data.get('utility_type'))
-				form = MarketForm(initial=initial_data)
-				return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s Location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_accounts':current_accounts})
+				form = LocationForm(initial=initial_data)
+				return TemplateResponse(request, 'crud/new_location.html', {'form':form, 'heading':'Add a new %s location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_accounts':current_accounts})
 	else:
-		utility_type  = CategoryChoice.objects.get(category__code='utility_type', code=utility_type)
-		form = NewMarketForm(initial={'utility_type':utility_type})
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new %s' % utility_type })
+		form = NewLocationForm()
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new Location' })
 
 
 @login_required
-def new_market_post(request):
+def new_location_post(request):
 	"""
-	add a new market location
+	add a new location
 	"""
 	if request.method == 'POST':
-		form = MarketForm(request.POST)
+		form = LocationForm(request.POST)
 		if form.is_valid():
 			village = form.cleaned_data.get('village')
 			utility = form.save()
 			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
 			account.save()
 			account.utilities.add(utility)
-			messages.success(request, 'New Market site created')
+			messages.success(request, 'New Location created')
 			return HttpResponseRedirect(reverse('account', args=[account.pk]))
 	else:
-		return HttpResponseRedirect(reverse('new_market'))
-	return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
+		return HttpResponseRedirect(reverse('new_location'))
+	return TemplateResponse(request, 'crud/new_location.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
 
 
 @login_required

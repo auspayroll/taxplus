@@ -27,10 +27,10 @@ urlpatterns = patterns('',
 
 	url(r'^account/select/$','crud.views.account_select', name='account_select'),
 
-	url(r'^market/new/$','crud.views.new_market', name='new_market'),
-	url(r'^cemetery/new/$','crud.views.new_market',  {'utility_type':'cemetery'}, name='new_cemetery'),
+	url(r'^location/new/$','crud.views.new_location', name='new_location'),
 
-	url(r'^market/new/post/$','crud.views.new_market_post', name='new_market_post'),
+
+	url(r'^location/new/post/$','crud.views.new_location_post', name='new_location_post'),
 
 	#utilities
 	url(r'^utilities/$','crud.views.utilities', name='utilities'),

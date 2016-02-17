@@ -143,11 +143,11 @@ class UtilityForm(forms.ModelForm, RegionForm):
 		return utility
 
 
-class NewMarketForm(RegionForm):
+class NewLocationForm(RegionForm):
 	def __init__(self, *args, **kwargs):
-		super(NewMarketForm, self).__init__(*args, **kwargs)
+		super(NewLocationForm, self).__init__(*args, **kwargs)
 		fields = self.fields
-		self.fields = OrderedDict({'utility_type': forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')})
+		self.fields = OrderedDict({'utility_type': forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code__in=['property','district','sector','cell','village']), label='Location type')})
 		self.fields.update(fields)
 
 class AddUtilityRegionForm(forms.ModelForm):
@@ -171,10 +171,10 @@ class AddUtilityRegionForm(forms.ModelForm):
 			utility.location = Point(lat, lon)
 		return utility
 
-class MarketForm(UtilityForm):
+class LocationForm(UtilityForm):
 	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	def __init__(self, *args, **kwargs):
-		super(MarketForm, self).__init__(*args, **kwargs)
+		super(LocationForm, self).__init__(*args, **kwargs)
 		self.fields['utility_type'].widget = forms.HiddenInput()
 		self.fields['district'].widget = forms.HiddenInput()
 		self.fields['identifier'].help_text = 'optional'

@@ -10,9 +10,9 @@
 
 
 {% if current_accounts %}
-	<h2>Select from available {{ form.cleaned_data.utility_type }} sites in {{ form.cleaned_data.village }} village, <br/>or create a new market location below</h1>
+	<h2>Select from available {{ form.cleaned_data.utility_type }} sites in {{ form.cleaned_data.village }} village, <br/>or create a new location below</h1>
 	<table border="1">
-	<tr><th>Account Name</th><th>Site/Utility</th><th>Date Started</th></tr>
+	<tr><th>Account Name</th><th>Location</th><th>Date Started</th></tr>
 	{% for a in current_accounts %}
 		<tr><td>{{ a }}</td><td>{{ a.utilities.all|join:', ' }}</td><td>{{ a.start_date }}</td><td><a href="{% url 'account' a.pk %}">Use this Account</a></td></tr>
 	{% endfor %}
@@ -21,7 +21,7 @@
 <p/>
 <hr/>
 <h3>{{heading}}</h3>
-<form method="post" action="{% url 'new_market_post' %}">
+<form method="post" action="{% url 'new_location_post' %}">
 <table>
 	{{ form }}
 {% csrf_token %}
