@@ -11,6 +11,7 @@
 	<th>Amount</th>
 	<th>Receipt no.s</th>
 	<th>Staff</th>
+	<th>created</th>
 </tr>
 {% for p in payments %}
 	<tr>
@@ -19,6 +20,7 @@
 		<td>{{ p.amount }}</td>
 		<td>{{ p.receipt_no }}</td>
 		<td>{{ p.user}}</td>
+		<td>{{ p.created}}</td>
 	</tr>
 {% endfor %}
 </table>

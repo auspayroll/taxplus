@@ -1,0 +1,68 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<div>&nbsp;<a href="{% url 'district' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} district</a> &#8594 <a href="{% url 'sector' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} sector</a> &#8594 <a href="{% url 'cell' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} cell</a></div>
+	<h1>{{ village }} village</h1>
+	<div style="overflow:auto;">
+	</div>
+
+	<div>
+		<a href="{% url 'add_village_utility' village.pk %}">Add Utility/Site to {{village}} village</a>
+	</div>
+
+	<div class="help">
+		You can add a utility such as Tower, cemetary or Market Site to this village from the above link. A utility or site is
+		something that is used that has an associated location.
+	</div>
+
+	<hr/>
+	<div class="container">
+	<h3 style="display:inline">Accounts in {{ village }} village</h3>
+	<div class="help">
+		An account is like a bank account but it has some utility or site attached to it. This so that all fees and money collected for a site
+		can be tracked. An account will have a start period and may have an end date. To add a collection or payment, click on the account name,
+		or you can go directly to add a collection by clicking on the 'new collection' link for that account.
+	</div>
+	<p/>
+	<table border="1">
+		<tr><th>Account Name</th><th>Utility/Site</th><th>Period</th>
+		{% for account in accounts %}
+			<tr>
+				<td><a href="{% url 'account' account.pk %}">{{ account }}</a></td>
+				<td>{{ account.utilities.all|join:', ' }}</td>
+				<td>{{ account.start_date }} - {{ account.end_date|default:'Active' }}</td>
+				<td><a href="{% url 'new_fee_collection' account.pk %}">Add Collection</a></td>
+			</tr>
+		{% empty %}
+			<tr><td colspan="5">There are no accounts in this region</td></tr>
+		{% endfor %}
+	</table>
+	</div>
+
+	<hr/>
+	<div class="container">
+	<h3>Recent Collections in {{ village }} village</h3>
+	<div class="help">
+		What is a collection? It is an amount of money collected on a utility account which has no fee in advance, ie there is no fee
+		outstanding but is recorded once the money is collected. <p/>
+
+		What is a payment? A payment is made on a fee created in
+		advance. It will have an outstanding amount, and a due date. The fee outstanding amount is then reduced by the payment amount.
+	</div>
+	<table border="1">
+		<tr><th>Amount</th><th>Fee Type</th><th>No. Collections</th><th>Created</th>
+		{% for rc in recent_collections %}
+			<tr>
+				<td>{{ rc.amount }}</td>
+				<td>{{ rc.fee_type }}</td>
+				<td>{{ rc.no_collections }}</td>
+				<td>{{ rc.created }}</td>
+			</tr>
+		{% empty %}
+			<tr><td colspan="5">There were no collections taken in this region</td></tr>
+		{% endfor %}
+	</table>
+	</div>
+
+
+{% endblock %}

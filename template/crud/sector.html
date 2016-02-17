@@ -1,0 +1,12 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<div><a href="{% url 'district' sector.district.pk %}">{{ sector.district }} district</a></div>
+	<h1>{{ sector }} sector</h1>
+	<div style="overflow:auto;">
+	{% for c in cells %}
+		<div style="float:left; width:100px;"><h4><a href="{% url 'cell' c.pk %}">{{ c }}</a></h4></div>
+	{% endfor %}
+	</div>
+
+{% endblock %}

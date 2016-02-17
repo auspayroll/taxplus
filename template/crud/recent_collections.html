@@ -1,0 +1,37 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h2>Recent Collections</h2>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>id</th>
+		<th>Amount</th>
+		<th>Fee Type</th>
+		<th>No. collections</th>
+		<th>Account</th>
+		<th>Utility/Site</th>
+		<th>Sector</th>
+		<th>Village</th>
+		<th>User</th>
+		<th>Created</th>
+
+	</tr>
+	{% for c in recent_collections %}
+	<tr>
+		<td>{{c.pk}}</td>
+		<td>{{ c.amount }}</td>
+		<td>{{ c.fee_type }}</td>
+		<td>{{ c.no_collections|default:'-' }}</td>
+		<td><a href="{% url 'account' c.account.pk %}">{{ c.account }}</a></td>
+		<td><a href="{% url 'account' c.account.pk %}">{{ c.utility }}</a></td>
+		<td>{% if c.utility.sector %}<a href="{% url 'sector' c.utility.sector.pk %}">{{ c.utility.sector|default:'' }}</a>{% endif %}</td>
+		<td>{% if c.utility.village %}<a href="{% url 'village' c.utility.village.pk %}">{{ c.utility.village|default:'' }}</a>{% endif %}</td>
+		<td>{{ c.user }}</td>
+		<td>{{ c.created }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+

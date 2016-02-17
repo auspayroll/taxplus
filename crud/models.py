@@ -11,6 +11,7 @@ import copy
 import os
 import re
 from django.core.exceptions import ValidationError
+from datetime import date
 
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
@@ -95,7 +96,6 @@ class Account(models.Model):
 	account_no = models.CharField(max_length=30, null=True)
 	utilities = models.ManyToManyField(Utility)
 
-
 	@property
 	def principle_due(self):
 		return self.principle_total - self.principle_paid
@@ -158,6 +158,7 @@ class AccountFee(models.Model):
 		choices=[(0,'Once only'), (12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 	is_paid = models.BooleanField(default=False)
+	utility = models.ForeignKey(Utility, null=True, blank=False)
 
 	@property
 	def principle_due(self):
@@ -223,10 +224,12 @@ class Collection(models.Model):
 	account = models.ForeignKey(Account, null=True)
 	deposit = models.ForeignKey(BankDeposit, related_name='deposit_collections', null=True)
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
-	fee_type = models.ForeignKey(CategoryChoice, null=True)
+	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 	no_collections = models.PositiveIntegerField(default=1)
 	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
+	created = models.DateTimeField(auto_now_add=True, null=True)
+	utility = models.ForeignKey(Utility, null=True, verbose_name='Utility/Site')
 
 class AccountPayment(models.Model):
 	"""
@@ -238,6 +241,7 @@ class AccountPayment(models.Model):
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
+	created = models.DateTimeField(null=True, auto_now_add=True)
 
 class Media(models.Model):
 	account = models.ForeignKey(Account, null=True)

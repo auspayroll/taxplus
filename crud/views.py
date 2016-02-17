@@ -1,7 +1,7 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
-	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewMarketForm, MarketForm, MarketAccountForm
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewMarketForm, MarketForm, AddUtilityRegionForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -22,7 +22,7 @@ from django.shortcuts import HttpResponseRedirect, render_to_response, get_objec
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response
 from random import randint
-from taxplus.models import Sector, Business, Citizen, CategoryChoice
+from taxplus.models import District, Sector, Cell, Village, Business, Citizen, CategoryChoice, Property
 import csv
 import json
 
@@ -30,7 +30,7 @@ import json
 
 @login_required
 def index(request):
-	return TemplateResponse(request, 'crud/readme.html', )
+	return HttpResponseRedirect('districts')
 
 
 @login_required
@@ -228,29 +228,14 @@ def new_market_post(request):
 		if form.is_valid():
 			village = form.cleaned_data.get('village')
 			utility = form.save()
-			messages.success(request, 'New Market site Created')
-			return HttpResponseRedirect(reverse('new_market_account', args=[utility.pk]))
-	else:
-		return HttpResponseRedirect(reverse('new_market'))
-	return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
-
-
-@login_required
-def new_market_account(request, pk):
-	utility = get_object_or_404(Utility, pk=pk)
-	if request.method == 'POST':
-		form = MarketAccountForm(request.POST)
-		if form.is_valid():
 			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
 			account.save()
 			account.utilities.add(utility)
-			messages.success(request, 'New Market Created')
+			messages.success(request, 'New Market site created')
 			return HttpResponseRedirect(reverse('account', args=[account.pk]))
 	else:
-		form = MarketAccountForm()
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':utility})
-
-
+		return HttpResponseRedirect(reverse('new_market'))
+	return TemplateResponse(request, 'crud/new_market.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
 
 
 @login_required
@@ -332,7 +317,7 @@ def new_media(request, pk):
 def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form= CollectionForm(request.POST)
+		form= CollectionForm(request.POST, account=account)
 		if form.is_valid():
 			payment = form.save(commit=False)
 			payment.account = account
@@ -341,7 +326,7 @@ def new_fee_collection(request, pk):
 			messages.success(request, 'New Collection created')
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 	else:
-		form = CollectionForm()
+		form = CollectionForm(account=account)
 
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Collection'})
 
@@ -420,8 +405,6 @@ def update_utility(request, pk):
 
 	return TemplateResponse(request, 'crud/update_utility.html', {'account':account, 'form':form, 'heading':'Update Utility/Site'})
 
-
-
 @login_required
 def utilities(request, utility_type=None):
 	if request.method == 'POST':
@@ -440,3 +423,60 @@ def utilities(request, utility_type=None):
 
 	return TemplateResponse(request, 'crud/add_utility.html', {'form':form, 'heading':'Add Utility/Site', })
 
+@login_required
+def districts(request):
+	districts = District.objects.all().order_by('name')
+	return TemplateResponse(request, 'crud/districts.html', {'districts':districts, })
+
+@login_required
+def district(request, pk):
+	district = get_object_or_404(District, pk=pk)
+	sectors = Sector.objects.filter(district=district)
+	return TemplateResponse(request, 'crud/district.html', {'district':district, 'sectors':sectors, })
+
+@login_required
+def sector(request, pk):
+	sector = get_object_or_404(Sector, pk=pk)
+	cells = Cell.objects.filter(sector=sector)
+	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'cells':cells, })
+
+@login_required
+def cell(request, pk):
+	cell = get_object_or_404(Cell, pk=pk)
+	villages = Village.objects.filter(cell=cell)
+	return TemplateResponse(request, 'crud/cell.html', {'cell':cell, 'villages':villages})
+
+@login_required
+def village(request, pk):
+	village = get_object_or_404(Village, pk=pk)
+	accounts = Account.objects.filter(utilities__village=village).order_by('-id')
+	recent_collections = Collection.objects.filter(account__in=accounts).order_by('-id')[:100]
+	return TemplateResponse(request, 'crud/village.html', {'village':village, 'accounts':accounts, 'recent_collections':recent_collections })
+
+
+@login_required
+def recent_collections(request):
+	recent_collections = Collection.objects.all().order_by('-id')[:100]
+	return TemplateResponse(request, 'crud/recent_collections.html', {'recent_collections':recent_collections })
+
+@login_required
+def add_village_utility(request, pk):
+	village = get_object_or_404(Village, pk=pk)
+	if request.method == 'POST':
+		form= AddUtilityRegionForm(request.POST)
+		if form.is_valid():
+			utility = form.save() #custom form save method has commit= False
+			utility.village = village
+			utility.cell = village.cell
+			utility.sector = village.cell.sector
+			utility.district = village.cell.sector.district
+			utility.save()
+			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
+			account.save()
+			account.utilities.add(utility)
+			messages.success(request, 'New utility added')
+			return HttpResponseRedirect(reverse('village',args=[village.pk]))
+	else:
+		form = AddUtilityRegionForm()
+
+	return TemplateResponse(request, 'crud/village_utility.html', {'village':village, 'form':form, })

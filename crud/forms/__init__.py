@@ -41,26 +41,43 @@ class ContactForm(forms.ModelForm):
 		model = Contact
 		fields = ('first_name','last_name','phone','email')
 
+
 class PaymentForm(forms.ModelForm):
 	class Meta:
 		model = AccountPayment
 		fields = ('payment_date','receipt_no','amount')
 
-	payment_date = forms.DateField(widget=html5_widgets.DateInput)
+	payment_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
+fee_defaults = {'tower':'tower', 'property':'land_lease', 'quarry':'quarry', 'market':'market'}
 class CollectionForm(forms.ModelForm):
 	class Meta:
 		model = Collection
-		fields = ('date_from','date_to','receipt_no','amount', 'no_collections')
+		fields = ('utility', 'fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
 
-	date_from = forms.DateField(widget=html5_widgets.DateInput)
-	date_to = forms.DateField(widget=html5_widgets.DateInput)
+	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+
+	def __init__(self, *args, **kwargs):
+		account = kwargs.pop('account')
+		super(CollectionForm, self).__init__(*args, **kwargs)
+		if account:
+			self.fields['utility'].queryset=account.utilities.all()
+			self.fields['utility'].empty_label = None
+			self.fields['fee_type'].empty_label = None
+			utilities = account.utilities.all()
+			if utilities:
+				default_fee_code = fee_defaults.get(utilities[0].utility_type.code)
+				if default_fee_code:
+					self.fields['fee_type'].initial = CategoryChoice.objects.get(code=default_fee_code, category__code='fee_type')
+		else:
+			self.fields['utility'].queryset=Utility.objects.none()
+
 
 class AccountUtilityForm(forms.Form):
 	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Utility/Site type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, UPI etc.")
-
 
 
 class RegionForm(FormExtra):
@@ -127,10 +144,35 @@ class UtilityForm(forms.ModelForm, RegionForm):
 
 
 class NewMarketForm(RegionForm):
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type', widget=forms.HiddenInput())
+	def __init__(self, *args, **kwargs):
+		super(NewMarketForm, self).__init__(*args, **kwargs)
+		fields = self.fields
+		self.fields = OrderedDict({'utility_type': forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')})
+		self.fields.update(fields)
 
+class AddUtilityRegionForm(forms.ModelForm):
+	class Meta:
+		model = Utility
+		fields = ('utility_type', 'name', 'identifier', 'upi')
+
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
+	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
+	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
+	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
+	name = forms.CharField(help_text="Name or description")
+	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+
+
+	def save(self, *args, **kwargs):
+		utility = super(AddUtilityRegionForm, self).save(commit=False, *args, **kwargs)
+		lat = self.cleaned_data.get('lat')
+		lon = self.cleaned_data.get('lon')
+		if lat and lon:
+			utility.location = Point(lat, lon)
+		return utility
 
 class MarketForm(UtilityForm):
+	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	def __init__(self, *args, **kwargs):
 		super(MarketForm, self).__init__(*args, **kwargs)
 		self.fields['utility_type'].widget = forms.HiddenInput()
@@ -140,10 +182,6 @@ class MarketForm(UtilityForm):
 		self.fields['cell'].widget = forms.HiddenInput()
 		self.fields['village'].widget = forms.HiddenInput()
 		self.fields['identifier'].label = "Market ID"
-
-
-class MarketAccountForm(forms.Form):
-		start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
 
@@ -403,9 +441,9 @@ class CitizenForm(forms.ModelForm, FormExtra):
 class NewPaymentForm(forms.ModelForm):
 	class Meta:
 		model = AccountPayment
-		fields =  ['payment_date', 'amount', 'receipt_no']
+		fields =  ['payment_date', 'amount', 'receipt_no', 'user']
 
-	payment_date = forms.DateField(widget=html5_widgets.DateInput)
+	#payment_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
 

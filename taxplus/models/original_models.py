@@ -217,7 +217,7 @@ class Sector(models.Model):
 		db_table = 'property_sector'
 
 	def __unicode__(self):
-		return "%s / %s" % (self.name, self.district.name.upper())
+		return self.name
 
 	def natural_key(self):
 		return self.name
