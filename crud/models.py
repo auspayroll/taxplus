@@ -226,7 +226,7 @@ class Collection(models.Model):
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 	no_collections = models.PositiveIntegerField(default=1)
-	receipt_no = models.TextField(max_length=30, blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
+	receipt_no = models.TextField(blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	utility = models.ForeignKey(Utility, null=True, verbose_name='Utility/Site')
