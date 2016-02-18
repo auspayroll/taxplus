@@ -7,7 +7,7 @@
 	</div>
 
 	<div>
-		<a href="{% url 'add_village_utility' village.pk %}">Add Utility/Site to {{village}} village</a>
+		<a href="{% url 'add_village_utility' village.pk %}">Add a new Location to {{village}} village</a>
 	</div>
 
 	<div class="help">
@@ -25,7 +25,7 @@
 	</div>
 	<p/>
 	<table border="1">
-		<tr><th>Account Name</th><th>Utility/Site</th><th>Period</th>
+		<tr><th>Account Name</th><th>Location</th><th>Period</th>
 		{% for account in accounts %}
 			<tr>
 				<td><a href="{% url 'account' account.pk %}">{{ account }}</a></td>
@@ -50,12 +50,20 @@
 		advance. It will have an outstanding amount, and a due date. The fee outstanding amount is then reduced by the payment amount.
 	</div>
 	<table border="1">
-		<tr><th>Amount</th><th>Fee Type</th><th>No. Collections</th><th>Created</th>
+		<tr><th>Amount</th>
+			<th>Fee Type</th>
+			<th>No. Collections</th>
+			<th>Account</th>
+			<th>Location</th>
+			<th>Created</th>
+		</tr>
 		{% for rc in recent_collections %}
 			<tr>
 				<td>{{ rc.amount }}</td>
 				<td>{{ rc.fee_type }}</td>
 				<td>{{ rc.no_collections }}</td>
+				<td><a href="{% url 'account' rc.account.pk %}">{{ rc.account }}</a></td>
+				<td>{{ rc.utility }}</td>
 				<td>{{ rc.created }}</td>
 			</tr>
 		{% empty %}

@@ -67,6 +67,7 @@ class CollectionForm(forms.ModelForm):
 			self.fields['utility'].empty_label = None
 			self.fields['fee_type'].empty_label = None
 			utilities = account.utilities.all()
+			#set the default fee type
 			if utilities:
 				default_fee_code = fee_defaults.get(utilities[0].utility_type.code)
 				if default_fee_code:
@@ -75,9 +76,20 @@ class CollectionForm(forms.ModelForm):
 			self.fields['utility'].queryset=Utility.objects.none()
 
 
+regional_fees = {'marriage':'marriage'}
+class RegionalCollectionForm(forms.ModelForm):
+	class Meta:
+		model = Collection
+		fields = ('fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
+
+	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type', code__in=regional_fees))
+
+
 class AccountUtilityForm(forms.Form):
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Utility/Site type')
-	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, UPI etc.")
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Location type')
+	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Unique Identifer")
 
 
 class RegionForm(FormExtra):
@@ -119,13 +131,12 @@ class RegionForm(FormExtra):
 class UtilityForm(forms.ModelForm, RegionForm):
 	class Meta:
 		model = Utility
-		fields = ('utility_type', 'name', 'identifier', 'upi', 'district', 'sector', 'cell', 'village')
+		fields = ('utility_type', 'identifier', 'upi', 'district', 'sector', 'cell', 'village')
 
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code__in=['property','sector','district','cell','village']), label='Location type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
 	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
 	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
-	name = forms.CharField(help_text="Name or description")
 
 
 	def clean(self, *args, **kwargs):
@@ -153,13 +164,12 @@ class NewLocationForm(RegionForm):
 class AddUtilityRegionForm(forms.ModelForm):
 	class Meta:
 		model = Utility
-		fields = ('utility_type', 'name', 'identifier', 'upi')
+		fields = ('utility_type', 'identifier', 'upi')
 
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Utility/Site type')
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Location type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
 	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
 	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
-	name = forms.CharField(help_text="Name or description")
 	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
@@ -181,7 +191,7 @@ class LocationForm(UtilityForm):
 		self.fields['sector'].widget = forms.HiddenInput()
 		self.fields['cell'].widget = forms.HiddenInput()
 		self.fields['village'].widget = forms.HiddenInput()
-		self.fields['identifier'].label = "Market ID"
+		self.fields['identifier'].label = "Unique Identifer"
 
 
 
@@ -260,41 +270,6 @@ class FeeForm(forms.ModelForm):
 	from_date = forms.DateField(widget=html5_widgets.DateInput, label="Start fee on")
 	due_date = forms.DateField(widget=html5_widgets.DateInput)
 	amount = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2)
-
-
-
-
-class FeeFormOld(forms.ModelForm, FormExtra):
-	"""
-	Base Form for all Fee Types
-	"""
-	class Meta:
-		model = AccountFee
-		fields = ['fee_type','auto','from_date', 'period']
-
-	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'),widget=forms.HiddenInput())
-	auto = forms.BooleanField(label="Auto-calculate fee" , help_text="Uncheck to specify amount", required=False,widget=forms.HiddenInput())
-	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'),widget=forms.HiddenInput())
-	from_date = forms.DateField(widget=html5_widgets.DateInput)
-
-	def __init__(self, *args, **kwargs):
-		auto = district = account_start = None
-		if 'auto' in kwargs:
-			auto = kwargs.pop('auto')
-		if 'district' in kwargs:
-			district = kwargs.pop('district')
-		super(FeeForm, self).__init__(*args, **kwargs)
-
-		if not auto:
-			self.fields['amount'] = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2)
-			self.Meta.fields.append('amount')
-			self.fields['due_date'] = forms.DateField(label='Due Date', widget=html5_widgets.DateInput)
-			self.Meta.fields.append('due_date')
-
-		if district and 'sector' in self.fields:
-			self.fields['sector'].queryset = Sector.objects.filter(district=district).order_by('name')
-			self.Meta.fields.append('sector')
-
 
 
 class UtilityFeeForm(FeeForm):

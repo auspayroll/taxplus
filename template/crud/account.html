@@ -7,7 +7,7 @@
 
 <div>
 
-<h3>{{ account.utilities.all|join:', ' }}</h3>
+<h3>{% autoescape off %}{{ account.utility_list|safe }}{% endautoescape %}</h3>
 
 </div>
 <div>

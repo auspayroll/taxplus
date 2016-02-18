@@ -24,6 +24,8 @@ urlpatterns = patterns('',
 	url(r'^account/(?P<pk>\d+)/media/new/$','crud.views.new_media', name='new_media'),
 	url(r'^account/(?P<pk>\d+)/media/$','crud.views.account_media', name='account_media'),
 
+	url(r'^sector/(?P<pk>\d+)/collection/new/$','crud.views.sector_collection', name='sector_collection'),
+
 
 	url(r'^account/select/$','crud.views.account_select', name='account_select'),
 

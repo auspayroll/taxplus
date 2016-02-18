@@ -1,7 +1,7 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
-	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewLocationForm, LocationForm, AddUtilityRegionForm
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewLocationForm, LocationForm, AddUtilityRegionForm, RegionalCollectionForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -22,7 +22,7 @@ from django.shortcuts import HttpResponseRedirect, render_to_response, get_objec
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response
 from random import randint
-from taxplus.models import District, Sector, Cell, Village, Business, Citizen, CategoryChoice, Property
+from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property
 import csv
 import json
 
@@ -227,7 +227,7 @@ def new_location_post(request):
 		if form.is_valid():
 			village = form.cleaned_data.get('village')
 			utility = form.save()
-			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
+			account = Account(name=utility, start_date=form.cleaned_data.get('start_date'))
 			account.save()
 			account.utilities.add(utility)
 			messages.success(request, 'New Location created')
@@ -436,8 +436,9 @@ def district(request, pk):
 @login_required
 def sector(request, pk):
 	sector = get_object_or_404(Sector, pk=pk)
+	recent_collections = Collection.objects.filter(utility__sector=sector).order_by('-id')
 	cells = Cell.objects.filter(sector=sector)
-	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'cells':cells, })
+	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'cells':cells, 'recent_collections':recent_collections})
 
 @login_required
 def cell(request, pk):
@@ -470,7 +471,7 @@ def add_village_utility(request, pk):
 			utility.sector = village.cell.sector
 			utility.district = village.cell.sector.district
 			utility.save()
-			account = Account(name=utility.name, start_date=form.cleaned_data.get('start_date'))
+			account = Account(name=utility, start_date=form.cleaned_data.get('start_date'))
 			account.save()
 			account.utilities.add(utility)
 			messages.success(request, 'New utility added')
@@ -479,3 +480,58 @@ def add_village_utility(request, pk):
 		form = AddUtilityRegionForm()
 
 	return TemplateResponse(request, 'crud/village_utility.html', {'village':village, 'form':form, })
+
+
+
+@login_required
+def sector_collection(request, pk):
+	sector = get_object_or_404(Sector, pk=pk)
+	recent_collections = Collection.objects.filter(utility__sector=sector).order_by('-id')
+	utility_type, created = CategoryChoice.objects.get_or_create(category__code='utility_type', code='sector', defaults=dict(category=Category.objects.get(code='utility_type')))
+	utility, updated = Utility.objects.update_or_create(sector=sector, cell=None, village=None, utility_type=utility_type,
+		defaults=dict(district=sector.district, sector=sector, identifier=sector.code))
+
+	if created:
+		account = Account(start_date=date.today(), name=utility)
+		account.save()
+		account.utilities.add(utility)
+	else:
+		accounts = Account.objects.filter(utilities=utility)
+		if accounts:
+			account = accounts[0]
+		else:
+			account = Account(start_date=date.today(), name=utility)
+			account.save()
+			account.utilities.add(utility)
+
+	if request.method == 'POST':
+		form = RegionalCollectionForm(request.POST)
+		if form.is_valid():
+			collection = form.save(commit=False)
+			collection.account = account
+			collection.utility = utility
+			collection.user = request.user
+			collection.save()
+			messages.success(request, 'New collection added')
+			return HttpResponseRedirect(reverse('sector_collection',args=[sector.pk]))
+	else:
+		form = RegionalCollectionForm()
+
+	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'form':form, 'recent_collections':recent_collections})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

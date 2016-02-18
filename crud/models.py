@@ -12,6 +12,7 @@ import os
 import re
 from django.core.exceptions import ValidationError
 from datetime import date
+from django.core.urlresolvers import reverse
 
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
@@ -45,7 +46,6 @@ def degress_to_meters(geometry):
 
 
 class Utility(models.Model):
-	name = models.CharField(null=True, max_length=30)
 	identifier = models.CharField(null=True, max_length=30)
 	upi = models.CharField(null=True, max_length=30, validators=[validate_upi],help_text="eg. 1/03/10/01/655", verbose_name="UPI", blank=True)
 	location = gis_models.PointField(srid=4326, blank=True, null= True)
@@ -61,7 +61,19 @@ class Utility(models.Model):
 		unique_together = ('identifier', 'upi')
 
 	def __unicode__(self):
-		return "%s - ID:%s" % ((self.name or self.utility_type), self.identifier)
+		s = "%s %s" % (self.utility_type, self.identifier or self.pk)
+		if self.upi:
+			s = "%s %s" % (s, self.upi)
+
+		if self.village:
+			s = "%s, %s village" % (s, self.village)
+
+		elif self.sector:
+			s = "%s, %s sector" % (s, self.sector)
+
+		return s
+
+
 
 
 class LandPlot(models.Model):
@@ -95,6 +107,10 @@ class Account(models.Model):
 	penalty_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	account_no = models.CharField(max_length=30, null=True)
 	utilities = models.ManyToManyField(Utility)
+	district = models.ForeignKey(District, null=True)
+	sector = models.ForeignKey(Sector, null=True, blank=True)
+	cell = models.ForeignKey(Cell, null=True, blank=True)
+	village = models.ForeignKey(Village, null=True, blank=True)
 
 	@property
 	def principle_due(self):
@@ -114,6 +130,28 @@ class Account(models.Model):
 
 	def __unicode__(self):
 		return self.name
+
+
+	def utility_list(self):
+		"""
+		returns utilities as html string
+		"""
+		utilities  = []
+		for u in self.utilities.all():
+			s = ''
+			if u.village:
+				s += ' <a href="'+ reverse('village', args=[u.village.pk]) +'">%s village</a> ' % u.village
+			elif u.cell:
+				s += ' <a href="'+ reverse('cell', args=[u.cell.pk]) +'">%s cell</a> ' % u.cell
+			elif u.sector:
+				s += ' <a href="'+ reverse('sector', args=[u.sector.pk]) +'">%s sector</a> ' % u.sector
+			elif u.district:
+				s += ' <a href="'+ reverse('district', args=[u.district.pk]) +'">%s sector</a> ' % u.district
+
+			s += u.__unicode__()
+			utilities.append(s)
+
+		return '<BR/>'.join(utilities)
 
 
 
@@ -229,7 +267,16 @@ class Collection(models.Model):
 	receipt_no = models.TextField(blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
 	created = models.DateTimeField(auto_now_add=True, null=True)
-	utility = models.ForeignKey(Utility, null=True, verbose_name='Utility/Site')
+	utility = models.ForeignKey(Utility, null=True, verbose_name='Location')
+
+	def save(self, *args, **kwargs):
+		if self.utility:
+			self.district = self.utility.district
+			self.sector =  self.utility.sector
+			self.cell = self.utility.cell
+			self.village = self.utility.village
+		return super(Collection, self).save(*args, **kwargs)
+
 
 class AccountPayment(models.Model):
 	"""

@@ -3,10 +3,61 @@
 {% block main %}
 	<div><a href="{% url 'district' sector.district.pk %}">{{ sector.district }} district</a></div>
 	<h1>{{ sector }} sector</h1>
-	<div style="overflow:auto;">
-	{% for c in cells %}
-		<div style="float:left; width:100px;"><h4><a href="{% url 'cell' c.pk %}">{{ c }}</a></h4></div>
-	{% endfor %}
+
+	{% if cells %}
+		<div style="overflow:auto;">
+			<h3>Cells</h3>
+		{% for c in cells %}
+			<div style="float:left; width:100px;"><h4><a href="{% url 'cell' c.pk %}">{{ c }}</a></h4></div>
+		{% endfor %}
+		</div>
+	{% endif %}
+	<hr/>
+	{% if form %}
+		<div><a href="{% url 'sector' sector.pk %}">Sector Cells</a>
+		<div>
+		<form method="post">
+			<table>
+			{{ form }}
+			{% csrf_token %}
+			</table>
+			<p/>
+			<button>Add {{ sector }} sector Collection</button>
+		</form>
+		</div>
+	{% else %}
+		<div><a href="{% url 'sector_collection' sector.pk %}">Add a new fee collection for this Sector</a>
+		<div class="help">Add these collections for fees that aren't related to any specific location or utility such as a Quarry or Market.
+			For example, Marriage Licence Fee.</div>
+		</div>
+	{% endif %}
+
+	<hr/>
+	<div>
+		<h3>Recent {{ sector }} Collections</h3>
+			<table border="1">
+			<tr>
+				<th>id</th>
+				<th>Amount</th>
+				<th>Fee Type</th>
+				<th>No. collections</th>
+				<th>Village</th>
+				<th>User</th>
+				<th>Created</th>
+
+			</tr>
+			{% for c in recent_collections %}
+			<tr>
+				<td>{{c.pk}}</td>
+				<td>{{ c.amount }}</td>
+				<td>{{ c.fee_type }}</td>
+				<td>{{ c.no_collections|default:'-' }}</td>
+				<td>{% if c.utility.village %}<a href="{% url 'village' c.utility.village.pk %}">{{ c.utility.village }}</a>{% else %}-{% endif %}</td>
+				<td>{{ c.user }}</td>
+				<td>{{ c.created }}</td>
+			</tr>
+			{% endfor %}
+			</table>
 	</div>
 
 {% endblock %}
