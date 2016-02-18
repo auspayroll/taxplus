@@ -3,6 +3,7 @@
 {% block main %}
 	<h1>{{ district }} district</h1>
 	<div style="overflow:auto;">
+		<h3>Sectors</h3>
 	{% for s in sectors %}
 		<div style="float:left; width:100px;"><h4><a href="{% url 'sector' s.pk %}">{{ s }}</a></h4></div>
 	{% endfor %}

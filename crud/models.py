@@ -46,7 +46,7 @@ def degress_to_meters(geometry):
 
 
 class Utility(models.Model):
-	identifier = models.CharField(null=True, max_length=30)
+	identifier = models.CharField(null=True, max_length=90)
 	upi = models.CharField(null=True, max_length=30, validators=[validate_upi],help_text="eg. 1/03/10/01/655", verbose_name="UPI", blank=True)
 	location = gis_models.PointField(srid=4326, blank=True, null= True)
 	utility_type = models.ForeignKey(CategoryChoice)
@@ -61,7 +61,7 @@ class Utility(models.Model):
 		unique_together = ('identifier', 'upi')
 
 	def __unicode__(self):
-		s = "%s %s" % (self.utility_type, self.identifier or self.pk)
+		s = "%s:%s" % (self.utility_type.name.capitalize(), self.identifier or self.pk)
 		if self.upi:
 			s = "%s %s" % (s, self.upi)
 
@@ -95,7 +95,7 @@ class BankDeposit(models.Model):
 
 
 class Account(models.Model):
-	name = models.CharField(max_length=30, null=True)
+	name = models.CharField(max_length=90, null=True)
 	start_date = models.DateField(null=True)
 	end_date = models.DateField(null=True)
 	comments = models.TextField(null=True)
