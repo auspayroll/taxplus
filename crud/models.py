@@ -266,7 +266,7 @@ class Collection(models.Model):
 	no_collections = models.PositiveIntegerField(default=1)
 	receipt_no = models.TextField(blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
-	collector = models.ForeignKey(User, related_name="user_collections", null=True, limit_choices_to={'groups__name':'Collector'})
+	collector = models.ForeignKey(User, related_name="user_collections", null=True, blank=True, limit_choices_to={'groups__name':'Collector'})
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	utility = models.ForeignKey(Utility, null=True, verbose_name='Location')
 

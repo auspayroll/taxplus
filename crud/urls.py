@@ -26,6 +26,7 @@ urlpatterns = patterns('',
 
 	url(r'^sector/(?P<pk>\d+)/collection/new/$','crud.views.sector_collection', name='sector_collection'),
 
+	url(r'^collection/(?P<pk>\d+)/update/$','crud.views.edit_collection', name='edit_collection'),
 
 	url(r'^account/select/$','crud.views.account_select', name='account_select'),
 

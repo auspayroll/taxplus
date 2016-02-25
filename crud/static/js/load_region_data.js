@@ -1,4 +1,5 @@
 
+
  $(document).ready(function(){
 	if(localStorage.getItem("sectors")) {
 	    data = JSON.parse(localStorage.getItem("sectors"));

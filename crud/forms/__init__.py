@@ -68,10 +68,10 @@ class CollectionForm(forms.ModelForm):
 		account = kwargs.pop('account')
 		super(CollectionForm, self).__init__(*args, **kwargs)
 		if account:
-			self.fields['utility'].queryset=account.utilities.all()
+			utilities = account.utilities.all()
+			self.fields['utility'].queryset=utilities
 			self.fields['utility'].empty_label = None
 			self.fields['fee_type'].empty_label = None
-			utilities = account.utilities.all()
 			#set the default fee type
 			if utilities:
 				default_fee_code = fee_defaults.get(utilities[0].utility_type.code)
@@ -80,6 +80,19 @@ class CollectionForm(forms.ModelForm):
 		else:
 			self.fields['utility'].queryset=Utility.objects.none()
 
+
+class CollectionUpdateForm(forms.ModelForm):
+	class Meta:
+		model = Collection
+		fields = ('utility', 'fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
+
+	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+
+	def __init__(self, *args, **kwargs):
+		super(CollectionUpdateForm, self).__init__(*args, **kwargs)
+		self.fields['utility'].queryset=self.instance.account.utilities.all()
+		self.fields['fee_type'].empty_label = None
 
 class RegionalCollectionForm(forms.ModelForm):
 	class Meta:

@@ -3,7 +3,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, AddUtilityRegionForm, \
-	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm
+	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -522,6 +522,19 @@ def sector_collection(request, pk):
 	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'form':form, 'recent_collections':recent_collections})
 
 
+@login_required
+def edit_collection(request, pk):
+	collection = get_object_or_404(Collection, pk=pk)
+	if request.method == 'POST':
+		form= CollectionUpdateForm(request.POST, instance=collection)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Collection update')
+			return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))
+	else:
+		form = CollectionUpdateForm(instance=collection)
+
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Edit Collection', })
 
 @login_required
 def add_account_dates(request, pk):
