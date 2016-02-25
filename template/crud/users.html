@@ -1,0 +1,29 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h1>Users</h1>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>Id</th>
+		<th>Full Name</th>
+		<th>Username</th>
+		<th>Email</th>
+		<th>Groups</th>
+		<th>Is Active</th>
+		<th>Last Login</th>
+	</tr>
+	{% for u in users %}
+	<tr>
+		<td>{{ u.pk }}</td>
+		<td>{{ u.get_full_name }}</td>
+		<td><a href="{% url 'edit_user' u.pk %}">{{ u.username }}</a></td>
+		<td>{{ u.email }}</td>
+		<td>{{ u.groups.all|join:', ' }}</td>
+		<td>{{ u.is_active|yesno }}</td>
+		<td>{{ u.last_login|default:'-' }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}

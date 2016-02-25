@@ -1,0 +1,189 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+<style>
+input, label {
+	display:block;
+}
+
+ul{ padding-top: 5px;}
+
+LI, LI INPUT {
+	display:inline-block;
+}
+.fieldWrapper{
+	float:left;
+	padding-left:6px;
+}
+li{
+	list-style-type: none;
+	padding-right: 6px;
+}
+
+.cb{
+	float:left;
+	clear:both;
+	margin-top:10px;
+}
+
+button{
+	background-color: #ef3d47;
+	color:white;
+	font-weight: bold;
+	padding:6px;
+}
+
+#id_days{ padding-left: 0}
+</style>
+<script>
+
+	function reset_date_widget(){
+		var date_from = new Date($('#id_date_from').val());
+		var date_to = new Date($('#id_date_to').val());
+		$('#multidate_widget').multiDatesPicker('resetDates');
+
+
+		var days = $("#id_days input:checkbox:checked").map(function(){
+		      return parseInt($(this).val());
+		    }).get();
+
+
+		if(!isNaN(date_from) && !isNaN(date_to)){
+			dates = Array();
+			var i = 0;
+			if($('#id_days_0').prop('checked') && $("#id_days input:checkbox:checked").size() < 8){
+				$('#id_days_0').prop('checked', false);
+			}
+			else if($("#id_days input:checkbox:checked").size() == 7){
+				$('#id_days_0').prop('checked', true);
+			}
+			while(date_from <= +date_to){
+				if(days.indexOf(date_from.getDay()) !== -1){
+					dates.push(new Date(date_from));
+				}
+				date_from.setDate(date_from.getDate() + 1);
+			}
+			if(dates.length > 0){
+				$('#multidate_widget').multiDatesPicker('addDates', dates);
+			}
+		}
+	}
+
+
+	$(document).ready(function(){
+		$("#id_days input:checkbox:not(:checked)").prop('checked', true);
+		var today = new Date();
+		var y = today.getFullYear();
+
+		$('#multidate_widget').multiDatesPicker({
+			numberOfMonths: [3,4],
+			defaultDate: y+'-1-1',
+			dateFormat: "yy-m-d",
+			altField: "#id_dates",
+			stepMonths:12
+		});
+
+		$('#id_days').change(function(){
+			reset_date_widget();
+		});
+
+		$('#id_date_from').change(function(){
+			reset_date_widget();
+		});
+
+		$('#id_date_to').change(function(){
+			reset_date_widget();
+		});
+
+		$('#id_days_0').change(function(){
+			if($(this).prop('checked')){
+				$("#id_days input:checkbox:not(:checked)").prop('checked', true);
+			}
+			else{
+				$("#id_days input:checkbox:checked").prop('checked', false);
+			};
+		});
+
+		reset_date_widget();
+	});
+
+</script>
+
+
+<h3>Operating dates</h3>
+
+
+<div class="help">
+	Specify operating dates for a Market, Quarry, etc. These will form the
+	basis of fee collections. If fee collections are entered on a daily basis, select the
+	days below on which they are collected. If they are collected once a week for example, select only a single
+	day in the week for which they are collected.
+</div>
+
+<div style="overflow:hidden; margin-top:20px;">
+
+	<form method="post">
+
+
+		<div class="cb">
+			<div class="fieldWrapper">
+			    {{ form.utility.errors }}
+			    <label for="{{ form.utility.id_for_label }}">Location/Site</label>
+			    {{ form.utility }}
+			    {{ form.utility.help_text }}
+			</div>
+
+			<div class="fieldWrapper">
+			    {{ form.fee_type.errors }}
+			    <label for="{{ form.fee_type.id_for_label }}">Fee</label>
+			    {{ form.fee_type }}
+			    {{ form.fee_type.help_text }}
+			</div>
+		</div>
+
+		<div class="fieldWrapper cb">
+		    {{ form.collector.errors }}
+		    <label for="{{ form.collector.id_for_label }}">Select Collector for these dates</label>
+		    {{ form.collector }}
+		    {{ form.collector.help_text }}
+		</div>
+
+
+	<div class="cb">
+		<div class="fieldWrapper">
+			{{ form.dates.errors }}
+			{{ form.dates }}
+		    {{ form.date_from.errors }}
+		    <label for="{{ form.date_from.id_for_label }}">From:</label>
+		    {{ form.date_from }}
+		</div>
+
+		<div class="fieldWrapper">
+		    {{ form.date_to.errors }}
+		    <label for="{{ form.date_from.id_for_label }}">To:</label>
+		    {{ form.date_to }}
+		</div>
+	</div>
+	<div class="fieldWrapper cb">
+	    {{ form.days.errors }}
+	    {{ form.days }}
+	</div>
+	{% csrf_token %}
+
+
+	<div class="cb">
+		<h3>Review Dates</h3>
+		<div id="multidate_widget"></div>
+	</div>
+
+
+	<div class="cb">
+		<button>Submit these dates - collection records will be greated for each date</button>
+	</div>
+
+</div>
+</form>
+
+
+{% endblock %}
+

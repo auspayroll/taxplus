@@ -1,7 +1,9 @@
 from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, CollectorForm, BusinessForm
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
-	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, NewLocationForm, LocationForm, AddUtilityRegionForm, RegionalCollectionForm
+	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
+	NewLocationForm, LocationForm, AddUtilityRegionForm, \
+	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -9,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.decorators import user_passes_test
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geos import Point
 from django.core.mail import send_mail
@@ -456,7 +458,7 @@ def village(request, pk):
 
 @login_required
 def recent_collections(request):
-	recent_collections = Collection.objects.all().order_by('-id')[:100]
+	recent_collections = Collection.objects.filter(amount__gt=0).order_by('-id')[:100]
 	return TemplateResponse(request, 'crud/recent_collections.html', {'recent_collections':recent_collections })
 
 @login_required
@@ -521,11 +523,94 @@ def sector_collection(request, pk):
 
 
 
+@login_required
+def add_account_dates(request, pk):
+	account = get_object_or_404(Account, pk=pk)
+	if request.method == 'POST':
+		form = AddAccountDates(request.POST, account=account)
+		if form.is_valid():
+			collector = form.cleaned_data.get('collector')
+			fee_type = form.cleaned_data.get('fee_type')
+			utility = form.cleaned_data.get('utility')
+			dates = form.cleaned_data.get('dates')
+			for d in dates:
+				collection = Collection.objects.create(account=account, date_from=d, date_to=d,
+					collector=collector, user=request.user, no_collections=0, fee_type=fee_type, utility=utility)
+			messages.success(request, '%d new collections created' % len(dates))
+			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
+
+	else:
+		form = AddAccountDates(account=account)
+	return TemplateResponse(request, 'crud/add_account_dates.html', {'account':account, 'form':form})
 
 
+@login_required
+def users(request):
+	users = User.objects.all().order_by('first_name')
+	return TemplateResponse(request, 'crud/users.html', {'users':users})
 
 
+@login_required
+def register_user(request):
+	if request.method == 'POST':
+		form = NewUserForm(request.POST)
+		if form.is_valid():
+			email = form.cleaned_data.get('email')
+			password = form.cleaned_data.get('password')
+			username = form.cleaned_data.get('username')
+			user = User.objects.create_user(username, email, password)
+			user.last_name = form.cleaned_data.get('last_name')
+			user.first_name = form.cleaned_data.get('first_name')
+			user.is_active = form.cleaned_data.get('is_active')
+			user.save()
+			groups = form.cleaned_data.get('groups')
+			for g in groups:
+				user.groups.add(g)
+			messages.success(request, 'New user created. Username: %s , Password: %s . Please record this in a safe place.' % (user.username, password))
+			return HttpResponseRedirect(reverse('register_user'))
 
+	else:
+		form = NewUserForm()
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Register New User'})
+
+
+@login_required
+def edit_user(request, pk):
+	user = get_object_or_404(User, pk=pk)
+	if request.method == 'POST':
+		form = UserForm(request.POST, instance=user)
+		if form.is_valid():
+			user = form.save()
+			if form.cleaned_data.get('reset_password'):
+				raw_password = form.cleaned_data.get('raw_password')
+				user.set_password(raw_password)
+				messages.success(request, 'User password reset to %s . Please record this in a safe place.' % raw_password)
+
+			messages.success(request, 'User updated')
+			return HttpResponseRedirect(reverse('users'))
+	else:
+		form = UserForm(instance=user)
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update User'})
+
+
+@login_required
+def edit_location(request, pk):
+	location = get_object_or_404(Utility, pk=pk)
+	if request.method == 'POST':
+		form = UtilityForm(request.POST, instance=location)
+		if form.is_valid():
+			form.save()
+			messages.success(request, 'Location/Site updated')
+			return HttpResponseRedirect(reverse('edit_location', args=[pk]))
+	else:
+		form = UtilityForm(instance=location)
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update Location/Site', 'instance':location})
+
+
+@login_required
+def recent_locations(request):
+	locations = Utility.objects.exclude(utility_type__code__in=['sector', 'district', 'cell', 'village']).order_by('-id')[:100]
+	return TemplateResponse(request, 'crud/locations.html', {'locations':locations})
 
 
 

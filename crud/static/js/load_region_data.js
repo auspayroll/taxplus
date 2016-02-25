@@ -53,6 +53,7 @@
 
 	$("#id_district").change(function(){
 		var district_val = $("#id_district").val();
+		var sector_val = $("#id_sector").val();
 		$("#id_sector").children("option[value!='']").remove();
 		if(district_val !== ''){
 			var sectors = JSON.parse(localStorage.getItem('sectors'));

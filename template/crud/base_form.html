@@ -2,12 +2,26 @@
 {% load static from staticfiles %}
 {% block main %}
 <script>
-	var sector_posted = {{ request.POST.sector|default:'0' }};
-	var cell_posted = {{ request.POST.cell|default:6|default:'0' }};
-	var village_posted = {{ request.POST.village|default:9|default:'0' }};
+	{# need statements here as will fail if pk on None sector, cell, village #}
+	{% if instance and instance.sector %}
+		var sector_posted = {{ request.POST.sector|default:instance.sector.pk|default:'0' }};
+	{% else %}
+		var sector_posted = {{ request.POST.sector|default:'0' }};
+	{% endif %}
+	{% if instance and instance.cell %}
+		var cell_posted = {{ request.POST.cell|default:instance.cell.pk|default:'0' }};
+	{% else %}
+		var cell_posted = {{ request.POST.cell|default:'0' }};
+	{% endif %}
+	{% if instance and instance.village %}
+		var village_posted = {{ request.POST.village|default:instance.village.pk|default:'0' }};
+	{% else %}
+		var village_posted = {{ request.POST.village|default:'0' }};
+	{% endif %}
 </script>
 <script src="{% static 'js/load_region_data.js' %}"></script>
 <h1>{{heading}}</h1>
+<h2>{{ instance }}</h2>
 <form method="post">
 <table>
 {{ form }}

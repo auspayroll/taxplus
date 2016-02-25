@@ -30,9 +30,9 @@ urlpatterns = patterns('',
 	url(r'^account/select/$','crud.views.account_select', name='account_select'),
 
 	url(r'^location/new/$','crud.views.new_location', name='new_location'),
-
-
+	url(r'^location/(?P<pk>\d+)/$','crud.views.edit_location', name='edit_location'),
 	url(r'^location/new/post/$','crud.views.new_location_post', name='new_location_post'),
+	url(r'^locations/recent/$','crud.views.recent_locations', name='recent_locations'),
 
 	#utilities
 	url(r'^utilities/$','crud.views.utilities', name='utilities'),
@@ -52,10 +52,15 @@ urlpatterns = patterns('',
 
 	url(r'^account/(?P<pk>\d+)/note/new/$','crud.views.new_account_note', name='new_account_note'),
 	url(r'^account/(?P<pk>\d+)/notes/$','crud.views.account_notes', name='account_notes'),
+	url(r'^add_account_dates/(?P<pk>\d+)/$','crud.views.add_account_dates', name='add_account_dates'),
 
 	url(r'^account/(?P<pk>\d+)/utility/add/$','crud.views.add_account_utility', name='add_account_utility'),
 
 	url(r'^districts/$','crud.views.districts', name='districts'),
+
+	url(r'^users/$','crud.views.users', name='users'),
+	url(r'^user/register/$','crud.views.register_user', name='register_user'),
+	url(r'^user/(?P<pk>\d+)/$','crud.views.edit_user', name='edit_user'),
 
 	url(r'^district/(?P<pk>\d+)/$','crud.views.district', name='district'),
 	url(r'^sector/(?P<pk>\d+)/$','crud.views.sector', name='sector'),

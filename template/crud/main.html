@@ -23,8 +23,17 @@
         <link rel="stylesheet" href="{% static "css/main.css" %}">
 
         <script src="{% static "js/vendor/modernizr-2.8.3-respond-1.4.2.min.js" %}"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
         <script>window.jQuery || document.write('<script src="{% static 'js/vendor/jquery-1.11.2.js' %}"><\/script>')</script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/multidatepicker.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/prettify.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/lang-css.js' %}"></script>
+
+        <link rel="stylesheet" type="text/css" href="{% static 'css/mdp.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/pepper-ginder-custom.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/prettify.css' %}">
     </head>
     <body>
         <!--[if lt IE 8]>
@@ -65,10 +74,13 @@
        <!--<a href="{% url 'new_citizen_account' %}">New Citizen Account</a>|
        <a href="{% url 'new_business_account' %}">New Business Account</a>|-->
        <a href="{% url 'districts' %}">Districts</a>&nbsp;|
-       <a href="{% url 'new_location' %}">Add a new Location</a>&nbsp;
+       <a href="{% url 'new_location' %}">Add a new Location</a>&nbsp; <a href="{% url 'register_user' %}">Register User</a>&nbsp;
+       <a href="{% url 'users' %}">Users</a>&nbsp;
        <!--<a href="{% url 'recent_utilities' 'market' %}">Recent Market Sites</a><br/>-->
         <!--<a href="{% url 'account_select' %}">New Account</a>|-->
-        <br/><a href="{% url 'recent_accounts' %}">Recent Accounts</a>&nbsp;|<a href="{% url 'recent_collections' %}">Recent Collections</a>&nbsp;|
+        <br/><a href="{% url 'recent_accounts' %}">Recent Accounts</a>&nbsp;|
+        <a href="{% url 'recent_collections' %}">Recent Collections</a>&nbsp;|
+        <a href="{% url 'recent_locations' %}">Recent Locations</a>&nbsp;|
          <!--<a href="{% url 'groups' %}">Search Account</a> <br/>
 
        <a href="{% url 'register' %}">Register Collector</a><br/>

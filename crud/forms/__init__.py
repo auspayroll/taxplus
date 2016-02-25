@@ -5,6 +5,7 @@ from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
  Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
+from django.contrib.auth.models import User, Group
 
 import html5.forms.widgets as html5_widgets
 from django.core.exceptions import ValidationError
@@ -12,6 +13,7 @@ from django.db.models import Q
 from django.core.validators import RegexValidator
 import re
 from datetime import date
+from dateutil import parser
 
 from django.core.exceptions import ValidationError
 
@@ -20,6 +22,9 @@ fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month
 (52,'Auto generate fees every week'),(1,'Auto generate fees every year')]
 fee_auto_choices = [('','I will specify the amount'),(1,'Automatically calculate the amount')]
 
+
+fee_defaults = {'tower':'tower', 'property':'land_lease', 'quarry':'quarry', 'market':'market', 'cemetery':'cemetery', 'sign':'sign'}
+regional_fees = {'marriage':'marriage'}
 
 class FormExtra(forms.Form):
 	def field_clean(self, field_name):
@@ -50,11 +55,11 @@ class PaymentForm(forms.ModelForm):
 	payment_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 
 
-fee_defaults = {'tower':'tower', 'property':'land_lease', 'quarry':'quarry', 'market':'market'}
+
 class CollectionForm(forms.ModelForm):
 	class Meta:
 		model = Collection
-		fields = ('utility', 'fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
+		fields = ('utility', 'fee_type', 'collector', 'date_from','date_to','receipt_no','amount', 'no_collections')
 
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
@@ -76,7 +81,6 @@ class CollectionForm(forms.ModelForm):
 			self.fields['utility'].queryset=Utility.objects.none()
 
 
-regional_fees = {'marriage':'marriage'}
 class RegionalCollectionForm(forms.ModelForm):
 	class Meta:
 		model = Collection
@@ -94,9 +98,9 @@ class AccountUtilityForm(forms.Form):
 
 class RegionForm(FormExtra):
 	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
-	sector = forms.ModelChoiceField(queryset=Sector.objects.none())
-	cell = forms.ModelChoiceField(queryset=Cell.objects.none())
-	village = forms.ModelChoiceField(queryset=Village.objects.none())
+	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=False)
+	cell = forms.ModelChoiceField(queryset=Cell.objects.none(), required=False)
+	village = forms.ModelChoiceField(queryset=Village.objects.none(), required=False)
 
 	def clean(self, *args, **kwargs):
 		try:
@@ -133,10 +137,16 @@ class UtilityForm(forms.ModelForm, RegionForm):
 		model = Utility
 		fields = ('utility_type', 'identifier', 'upi', 'district', 'sector', 'cell', 'village')
 
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code__in=['property','sector','district','cell','village']), label='Location type')
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Location type')
 	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
 	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
 	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
+
+	def __init__(self, *args, **kwargs):
+		super(UtilityForm, self).__init__(*args, **kwargs)
+		if self.instance and self.instance.location:
+			self.fields['lat'].initial = self.instance.location.coords[0]
+			self.fields['lon'].initial = self.instance.location.coords[1]
 
 
 	def clean(self, *args, **kwargs):
@@ -435,3 +445,78 @@ def form_for_model(fee_type):
 		return eval(camelcase(fee_type)+'Form')
 	except:
 		return UtilityFeeForm
+
+
+class AddAccountDates(forms.Form):
+	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text="inclusive")
+	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text='inclusive')
+	days = forms.TypedMultipleChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Monday'),('2','Tuesday'),('3','Wednesday'),('4','Thursday'),('5','Friday'),('6','Saturday'), ('0','Sunday'),], widget=forms.CheckboxSelectMultiple)
+	dates = forms.CharField(widget=forms.HiddenInput())
+	collector = forms.ModelChoiceField(queryset=User.objects.filter(groups__name='Collector'), help_text='allocated collector can be assigned later', required=False)
+	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))
+	utility = forms.ModelChoiceField(queryset=Utility.objects.none())
+
+	def clean_dates(self, *args, **kwargs):
+		dates = self.cleaned_data.get('dates')
+		try:
+			self.cleaned_dates = [ parser.parse(d) for d in dates.split(',')]
+		except:
+			raise forms.ValidationError("There was an invalid date submitted.")
+		else:
+			return self.cleaned_dates
+
+	def __init__(self, *args, **kwargs):
+		account = kwargs.pop('account')
+		super(AddAccountDates, self).__init__(*args, **kwargs)
+		if account:
+			self.fields['utility'].queryset=account.utilities.all()
+			self.fields['utility'].empty_label = None
+			self.fields['fee_type'].empty_label = None
+			utilities = account.utilities.all()
+			#set the default fee type
+			if utilities:
+				default_fee_code = fee_defaults.get(utilities[0].utility_type.code)
+				if default_fee_code:
+					self.fields['fee_type'].initial = CategoryChoice.objects.get(code=default_fee_code, category__code='fee_type')
+		else:
+			self.fields['utility'].queryset=Utility.objects.none()
+
+class UserForm(forms.ModelForm):
+	class Meta:
+		model = User
+		fields = ('first_name', 'last_name', 'is_active', 'groups')
+
+	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
+	reset_password = forms.BooleanField(required=False)
+
+	def clean(self, *args, **kwargs):
+		cd = self.cleaned_data
+		if cd.get('reset_password'):
+			self.cleaned_data['raw_password'] = User.objects.make_random_password()
+		return cd
+
+class NewUserForm(UserForm):
+	first_name = forms.CharField(max_length=30)
+	last_name = forms.CharField(max_length=30)
+	email = forms.EmailField(max_length=30)
+	is_active = forms.BooleanField(initial=True)
+	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
+
+	def clean(self, *args, **kwargs):
+		self.cleaned_data['password'] = User.objects.make_random_password()
+		email = self.cleaned_data.get('email')
+		if not User.objects.filter(email=email):
+			self.cleaned_data['username'] = email
+		else:
+			try:
+				self.cleaned_data['username'] = (form.cleaned_data.get('first_name')[0] + form.cleaned_data.get('last_name'))[:30]
+			except:
+				raise forms.ValidationError("Failed: Duplicate usernames %s" % username)
+
+		return self.cleaned_data
+
+
+
+
+
+
