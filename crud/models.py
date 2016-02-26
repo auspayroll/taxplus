@@ -91,7 +91,7 @@ class LandPlot(models.Model):
 class BankDeposit(models.Model):
 	bank = models.CharField(max_length=30)
 	branch = models.CharField(max_length=30, null=True, blank=True)
-	amount = models.PositiveIntegerField()
+	amount = models.PositiveIntegerField(default=0)
 	bank_receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
 	depositor_name = models.CharField(max_length=50, null=True, blank=True)
 	user = models.ForeignKey(User)

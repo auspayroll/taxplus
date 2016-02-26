@@ -21,12 +21,14 @@
 		{% csrf_token %}
 		</table>
 	</div>
-	<div class="f">
-		<h3>{{ heading2 }}</h3>
-		<table>
-		{{ form2 }}
-		</table>
-	</div>
+	{% if form2 %}
+		<div class="f">
+			<h3>{{ heading2 }}</h3>
+			<table>
+			{{ form2 }}
+			</table>
+		</div>
+	{% endif %}
 
 </div>
 <input type="submit" value="Submit">
