@@ -92,7 +92,7 @@ class BankDeposit(models.Model):
 	bank = models.CharField(max_length=30)
 	branch = models.CharField(max_length=30)
 	amount = models.PositiveIntegerField()
-	receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
+	bank_receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
 	depositor_name = models.CharField(max_length=50, null=True, blank=True)
 	user = models.ForeignKey(User)
 	date_banked = models.DateField()
@@ -285,6 +285,12 @@ class Collection(models.Model):
 
 		return super(Collection, self).save(*args, **kwargs)
 
+	def __unicode__(self):
+		s =  " %s collection on %s" % (self.fee_type, self.date_to)
+		if self.utility:
+			s = "%s for %s" % (s, self.utility)
+		return s
+
 @receiver(post_save, sender=Collection)
 def update_bank_deposit(sender, instance, *args, **kwargs):
    	if instance.deposit:
@@ -307,16 +313,24 @@ class AccountPayment(models.Model):
 class Media(models.Model):
 	account = models.ForeignKey(Account, null=True)
 	created_on = models.DateField(auto_now_add=True)
-	title = models.TextField(max_length=30)
+	title = models.TextField(max_length=30, null=True, blank=True)
 	size = models.PositiveIntegerField(null=True, blank=True)
 	user = models.ForeignKey(User, null=True, blank=True)
 	file_type = models.TextField(max_length=4, null=True, blank=True)
 	item = models.FileField(upload_to='uploads', null=True)
+	record_type = models.ForeignKey(ContentType,null=True)
+	record_id = models.PositiveIntegerField(null=True)
+	record = GenericForeignKey('record_type', 'record_id')
 
 	@property
 	def extension(self):
 		name, extension = os.path.splitext(self.item.name)
 		return extension
+
+	def save(self, *args, **kwargs):
+		if not self.title:
+			self.title = self.item.name
+		return super(Media, self).save(*args, **kwargs)
 
 
 class AccountNote(models.Model):

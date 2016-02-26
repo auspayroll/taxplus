@@ -318,7 +318,7 @@ def new_media(request, pk):
 def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form = CollectionForm(request.POST, account=account)
+		form = CollectionForm(request.POST, request.FILES, account=account)
 		form2 = BankDepositForm(request.POST)
 		if form.is_valid() and form2.is_valid():
 			payment = form.save(commit=False)
@@ -333,6 +333,9 @@ def new_fee_collection(request, pk):
 				messages.success(request, 'New Bank deposit created')
 				payment.deposit = deposit
 			payment.save()
+			uploaded_file = form.cleaned_data.get('file_upload')
+			if uploaded_file:
+				Media.objects.create(account=account, user=request.user, item=uploaded_file, record=payment)
 			messages.success(request, 'New Collection created')
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 	else:
@@ -536,7 +539,7 @@ def sector_collection(request, pk):
 def edit_collection(request, pk):
 	collection = get_object_or_404(Collection, pk=pk)
 	if request.method == 'POST':
-		form= CollectionUpdateForm(request.POST, instance=collection)
+		form= CollectionUpdateForm(request.POST, request.FILES, instance=collection)
 		if collection.deposit:
 			form2 = BankDepositForm(request.POST, instance=collection.deposit)
 		else:
@@ -560,6 +563,9 @@ def edit_collection(request, pk):
 				pass # no deposit record, form is empty, do nothing
 
 			collection.save()
+			uploaded_file = form.cleaned_data.get('file_upload')
+			if uploaded_file:
+				Media.objects.create(account=collection.account, user=request.user, item=uploaded_file, record=collection)
 			messages.success(request, 'Collection update')
 
 			return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))

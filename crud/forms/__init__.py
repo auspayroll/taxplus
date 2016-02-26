@@ -63,6 +63,7 @@ class CollectionForm(forms.ModelForm):
 
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	file_upload = forms.FileField(required=False)
 
 	def __init__(self, *args, **kwargs):
 		account = kwargs.pop('account')
@@ -88,6 +89,7 @@ class CollectionUpdateForm(forms.ModelForm):
 
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	file_upload = forms.FileField(required=False)
 
 	def __init__(self, *args, **kwargs):
 		super(CollectionUpdateForm, self).__init__(*args, **kwargs)
@@ -535,7 +537,7 @@ class NewUserForm(forms.ModelForm):
 class BankDepositForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ['bank', 'branch', 'receipt_no', 'depositor_name', 'date_banked']
+		fields = ['bank', 'branch', 'bank_receipt_no', 'depositor_name', 'date_banked']
 
 	date_banked = forms.DateField(widget=html5_widgets.DateInput)
 
@@ -556,8 +558,8 @@ class BankDepositForm(forms.ModelForm):
 			errors = {}
 			if not_empty and not cd.get('bank'):
 				errors['bank'] = 'Bank Name is required'
-			if not_empty and not cd.get('receipt_no'):
-				errors['receipt_no'] = 'Bank Receipt is required'
+			if not_empty and not cd.get('bank_receipt_no'):
+				errors['bank_receipt_no'] = 'Bank Receipt is required'
 			if not_empty and not cd.get('date_banked'):
 				errors['date_banked'] = 'Date banked is required'
 			if errors:
@@ -566,9 +568,9 @@ class BankDepositForm(forms.ModelForm):
 		return cd
 
 	def save(self, *args, **kwargs):
-		receipt_no = self.cleaned_data.get('receipt_no')
-		if not self.instance.pk and receipt_no:
-			self.instance, created = BankDeposit.objects.update_or_create(receipt_no__iexact=receipt_no, defaults=self.cleaned_data)
+		bank_receipt_no = self.cleaned_data.get('bank_receipt_no')
+		if not self.instance.pk and bank_receipt_no:
+			self.instance, created = BankDeposit.objects.update_or_create(bank_receipt_no__iexact=bank_receipt_no, defaults=self.cleaned_data)
 
 		return super(BankDepositForm, self).save(*args, **kwargs)
 
