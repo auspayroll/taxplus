@@ -570,9 +570,13 @@ class BankDepositForm(forms.ModelForm):
 	def save(self, *args, **kwargs):
 		bank_receipt_no = self.cleaned_data.get('bank_receipt_no')
 		if not self.instance.pk and bank_receipt_no:
-			self.instance, created = BankDeposit.objects.update_or_create(bank_receipt_no__iexact=bank_receipt_no, defaults=self.cleaned_data)
+			try:
+				self.instance = BankDeposit.objects.get(bank_receipt_no__iexact=bank_receipt_no)
+			except BankDeposit.DoesNotExist:
+				pass
 
-		return super(BankDepositForm, self).save(*args, **kwargs)
+		deposit = super(BankDepositForm, self).save(*args, **kwargs)
+		return deposit
 
 
 

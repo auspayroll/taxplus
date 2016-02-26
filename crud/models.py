@@ -94,7 +94,7 @@ class BankDeposit(models.Model):
 	amount = models.PositiveIntegerField(default=0)
 	bank_receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
 	depositor_name = models.CharField(max_length=50, null=True, blank=True)
-	user = models.ForeignKey(User)
+	user = models.ForeignKey(User, null=True)
 	date_banked = models.DateField()
 	created = models.DateTimeField(auto_now_add=True, null=True)
 
