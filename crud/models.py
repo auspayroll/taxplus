@@ -13,6 +13,9 @@ import re
 from django.core.exceptions import ValidationError
 from datetime import date
 from django.core.urlresolvers import reverse
+from django.db.models import Sum
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
 
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
@@ -89,8 +92,11 @@ class BankDeposit(models.Model):
 	bank = models.CharField(max_length=30)
 	branch = models.CharField(max_length=30)
 	amount = models.PositiveIntegerField()
+	receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
+	depositor_name = models.CharField(max_length=50, null=True, blank=True)
 	user = models.ForeignKey(User)
 	date_banked = models.DateField()
+	created = models.DateTimeField(auto_now_add=True, null=True)
 
 
 
@@ -266,7 +272,7 @@ class Collection(models.Model):
 	no_collections = models.PositiveIntegerField(default=1)
 	receipt_no = models.TextField(blank=True, null=True, help_text="seperate multiple receipts with commas") #auto generate receipt number if None, seperate by space if collection
 	user = models.ForeignKey(User)
-	collector = models.ForeignKey(User, related_name="user_collections", null=True, blank=True, limit_choices_to={'groups__name':'Collector'})
+	collector = models.ForeignKey(User, related_name="user_collections", null=True, blank=True) # limit_choices_to={'groups__name':'Collector'}
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	utility = models.ForeignKey(Utility, null=True, verbose_name='Location')
 
@@ -276,7 +282,14 @@ class Collection(models.Model):
 			self.sector =  self.utility.sector
 			self.cell = self.utility.cell
 			self.village = self.utility.village
+
 		return super(Collection, self).save(*args, **kwargs)
+
+@receiver(post_save, sender=Collection)
+def update_bank_deposit(sender, instance, *args, **kwargs):
+   	if instance.deposit:
+		instance.deposit.amount = instance.deposit.deposit_collections.all().aggregate(total=Sum('amount'))['total'] or 0
+		instance.deposit.save()
 
 
 class AccountPayment(models.Model):

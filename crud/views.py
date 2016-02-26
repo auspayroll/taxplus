@@ -3,7 +3,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, AddUtilityRegionForm, \
-	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm
+	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm, BankDepositForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date
@@ -318,18 +318,28 @@ def new_media(request, pk):
 def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form= CollectionForm(request.POST, account=account)
-		if form.is_valid():
+		form = CollectionForm(request.POST, account=account)
+		form2 = BankDepositForm(request.POST)
+		if form.is_valid() and form2.is_valid():
 			payment = form.save(commit=False)
 			payment.account = account
 			payment.user = request.user
+			payment.collector = request.user
+			if form2.not_empty:
+				deposit =  form2.save(commit=False)
+				deposit.amount = payment.amount
+				deposit.user = request.user
+				deposit.save()
+				messages.success(request, 'New Bank deposit created')
+				payment.deposit = deposit
 			payment.save()
 			messages.success(request, 'New Collection created')
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 	else:
 		form = CollectionForm(account=account)
+		form2 = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Collection'})
+	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'form2':form2, 'heading':'New Collection', 'heading2':'Bank Details'})
 
 
 @login_required
@@ -527,14 +537,40 @@ def edit_collection(request, pk):
 	collection = get_object_or_404(Collection, pk=pk)
 	if request.method == 'POST':
 		form= CollectionUpdateForm(request.POST, instance=collection)
-		if form.is_valid():
-			form.save()
+		if collection.deposit:
+			form2 = BankDepositForm(request.POST, instance=collection.deposit)
+		else:
+			form2 = BankDepositForm(request.POST)
+		if form.is_valid() and form2.is_valid():
+			collection = form.save(commit=False)
+			if not collection.deposit and form2.not_empty: #create a new deposit
+				deposit =  form2.save(commit=False)
+				deposit.amount = collection.amount
+				deposit.user = request.user
+				deposit.save()
+				messages.success(request, 'New Bank deposit created')
+				collection.deposit = deposit
+
+			elif collection.deposit and form2.not_empty:
+				form2.save() # collection record and not empty, update as normal
+				messages.success(request, 'New Bank deposit updated')
+			elif collection.deposit and not form2.not_empty:
+				pass # there is deposit record but the form is empty, should be invalid
+			elif not collection.deposit and not form2.not_empty:
+				pass # no deposit record, form is empty, do nothing
+
+			collection.save()
 			messages.success(request, 'Collection update')
+
 			return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))
 	else:
 		form = CollectionUpdateForm(instance=collection)
+		if collection.deposit:
+			form2 = BankDepositForm(instance=collection.deposit)
+		else:
+			form2 = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Edit Collection', })
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'form2':form2, 'heading':'Edit Collection', 'heading2':'Banking Details' })
 
 @login_required
 def add_account_dates(request, pk):

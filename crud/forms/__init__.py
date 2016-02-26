@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
- Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection
+ Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
 from django.contrib.auth.models import User, Group
@@ -59,7 +59,7 @@ class PaymentForm(forms.ModelForm):
 class CollectionForm(forms.ModelForm):
 	class Meta:
 		model = Collection
-		fields = ('utility', 'fee_type', 'collector', 'date_from','date_to','receipt_no','amount', 'no_collections')
+		fields = ('utility', 'fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
 
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
@@ -465,7 +465,7 @@ class AddAccountDates(forms.Form):
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text='inclusive')
 	days = forms.TypedMultipleChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Monday'),('2','Tuesday'),('3','Wednesday'),('4','Thursday'),('5','Friday'),('6','Saturday'), ('0','Sunday'),], widget=forms.CheckboxSelectMultiple)
 	dates = forms.CharField(widget=forms.HiddenInput())
-	collector = forms.ModelChoiceField(queryset=User.objects.filter(groups__name='Collector'), help_text='allocated collector can be assigned later', required=False)
+	collector = forms.ModelChoiceField( help_text='allocated collector can be assigned later', required=False, queryset=User.objects.filter(is_active=True, groups__name='Collector'))
 	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))
 	utility = forms.ModelChoiceField(queryset=Utility.objects.none())
 
@@ -508,25 +508,72 @@ class UserForm(forms.ModelForm):
 			self.cleaned_data['raw_password'] = User.objects.make_random_password()
 		return cd
 
-class NewUserForm(UserForm):
+class NewUserForm(forms.ModelForm):
+	class Meta:
+		model = User
+		fields = ('first_name', 'last_name', 'email', 'is_active', 'groups')
+
 	first_name = forms.CharField(max_length=30)
 	last_name = forms.CharField(max_length=30)
-	email = forms.EmailField(max_length=30)
+	email = forms.EmailField(max_length=30, required=False)
 	is_active = forms.BooleanField(initial=True)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
 
 	def clean(self, *args, **kwargs):
 		self.cleaned_data['password'] = User.objects.make_random_password()
 		email = self.cleaned_data.get('email')
-		if not User.objects.filter(email=email):
+		first_name = self.cleaned_data.get('first_name')
+		last_name = self.cleaned_data.get('last_name')
+		if email and User.objects.filter(email=email).count() ==0:
 			self.cleaned_data['username'] = email
-		else:
-			try:
-				self.cleaned_data['username'] = (form.cleaned_data.get('first_name')[0] + form.cleaned_data.get('last_name'))[:30]
-			except:
-				raise forms.ValidationError("Failed: Duplicate usernames %s" % username)
+		elif first_name and last_name:
+			self.cleaned_data['username'] = (first_name[0] + last_name)[:30]
 
 		return self.cleaned_data
+
+
+class BankDepositForm(forms.ModelForm):
+	class Meta:
+		model = BankDeposit
+		fields = ['bank', 'branch', 'receipt_no', 'depositor_name', 'date_banked']
+
+	date_banked = forms.DateField(widget=html5_widgets.DateInput)
+
+	def __init__(self, *args, **kwargs):
+		super(BankDepositForm, self).__init__(*args, **kwargs)
+		if not self.instance.pk:
+			for k, v in self.fields.items():
+				v.required = False
+
+	@property
+	def not_empty(self):
+		return True in [ bool(i) for i in self.cleaned_data.values()]
+
+	def clean(self, *args, **kwargs):
+		cd = super(BankDepositForm, self).clean(*args, **kwargs)
+		if not self.instance.pk:
+			not_empty = self.not_empty
+			errors = {}
+			if not_empty and not cd.get('bank'):
+				errors['bank'] = 'Bank Name is required'
+			if not_empty and not cd.get('receipt_no'):
+				errors['receipt_no'] = 'Bank Receipt is required'
+			if not_empty and not cd.get('date_banked'):
+				errors['date_banked'] = 'Date banked is required'
+			if errors:
+				raise forms.ValidationError(errors)
+
+		return cd
+
+	def save(self, *args, **kwargs):
+		receipt_no = self.cleaned_data.get('receipt_no')
+		if not self.instance.pk and receipt_no:
+			self.instance, created = BankDeposit.objects.update_or_create(receipt_no__iexact=receipt_no, defaults=self.cleaned_data)
+
+		return super(BankDepositForm, self).save(*args, **kwargs)
+
+
+
 
 
 

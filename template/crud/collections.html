@@ -17,6 +17,7 @@
 		<th>Receipt no.s</th>
 		<th>Amount</th>
 		<th>Collector</th>
+		<th>Bank receipt</th>
 
 	</tr>
 	{% for c in collections %}
@@ -30,6 +31,7 @@
 		<td>{{ c.receipt_no|default:'-' }}</td>
 		<td>{{ c.amount }}</td>
 		<td>{{ c.collector|default:'-' }}</td>
+		<td>{{ c.deposit.receipt_no }}</td>
 		<td><a href="{% url 'edit_collection' c.id %}">Edit</a></td>
 	</tr>
 	{% endfor %}
