@@ -85,11 +85,12 @@ class CollectionForm(forms.ModelForm):
 class CollectionUpdateForm(forms.ModelForm):
 	class Meta:
 		model = Collection
-		fields = ('utility', 'fee_type', 'date_from','date_to','receipt_no','amount', 'no_collections')
+		fields = ('utility', 'fee_type', 'collector', 'date_from','date_to','receipt_no','amount', 'no_collections')
 
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	file_upload = forms.FileField(required=False)
+	collector = forms.ModelChoiceField( help_text='allocated collector can be assigned later', required=False, queryset=User.objects.filter(is_active=True, groups__name='Collector'))
 
 	def __init__(self, *args, **kwargs):
 		super(CollectionUpdateForm, self).__init__(*args, **kwargs)
