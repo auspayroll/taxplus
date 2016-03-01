@@ -216,7 +216,7 @@ def new_location(request):
 				return TemplateResponse(request, 'crud/new_location.html', {'form':form, 'heading':'Add a new %s location in %s village' % ( initial_data.get('utility_type'), initial_data.get('village')), 'current_accounts':current_accounts})
 	else:
 		form = NewLocationForm()
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new Location' })
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new Account' })
 
 
 @login_required
