@@ -162,7 +162,7 @@ class Account(models.Model):
 
 
 class AccountHolder(models.Model):
-	account = models.ForeignKey(Account)
+	account = models.ForeignKey(Account, related_name='holders')
 	holder_type = models.ForeignKey(ContentType)
 	holder_id = models.PositiveIntegerField()
 	holder = GenericForeignKey('holder_type', 'holder_id')

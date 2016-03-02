@@ -588,6 +588,50 @@ class BankDepositForm(forms.ModelForm):
 		return deposit
 
 
+class NewAccountHolderForm(forms.Form):
+	account_holder_type = forms.ModelChoiceField(queryset=ContentType.objects.filter(app_label='taxplus', model__in=['business','citizen']))
+	last_name = forms.CharField(max_length=30, label="Last Name or Business Name")
+	first_name = forms.CharField(max_length=30, required=False)
+	phone = forms.CharField(max_length=30, required=False)
+	phone_2 = forms.CharField(max_length=30, required=False)
+	email = forms.EmailField(max_length=30, required=False)
+	address = forms.CharField(max_length=30, widget=forms.Textarea(), required=False)
+
+
+class DistrictForm(forms.ModelForm):
+	class Meta:
+		model = District
+		fields = ('name', )
+
+
+class SectorForm(forms.ModelForm):
+	class Meta:
+		model = Sector
+		fields = ('name', 'district')
+
+
+class CellForm(forms.ModelForm):
+	class Meta:
+		model = Cell
+		fields = ('name', 'sector')
+
+	def __init__(self, *args, **kwargs):
+		super(CellForm,self).__init__(*args, **kwargs)
+		district = self.instance.sector.district
+		self.fields['sector'].queryset = Sector.objects.filter(district=district)
+
+
+class VillageForm(forms.ModelForm):
+	class Meta:
+		model = Village
+		fields = ('name', 'cell')
+
+
+	def __init__(self, *args, **kwargs):
+		super(VillageForm,self).__init__(*args, **kwargs)
+		sector = self.instance.cell.sector
+		self.fields['cell'].queryset = Cell.objects.filter(sector=sector)
+
 
 
 

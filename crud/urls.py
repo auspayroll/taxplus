@@ -64,12 +64,18 @@ urlpatterns = patterns('',
 	url(r'^user/(?P<pk>\d+)/$',edit_user, name='edit_user'),
 
 	url(r'^district/(?P<pk>\d+)/$',district, name='district'),
+	url(r'^district/(?P<pk>\d+)/update/$',district_update, name='district_update'),
 	url(r'^district/(?P<pk>\d+)/roster/(?P<blocks>-?\d+)/$',district_roster, name='district_roster_block'),
 	url(r'^district/(?P<pk>\d+)/roster/$',district_roster, name='district_roster'),
 
 	url(r'^sector/(?P<pk>\d+)/$',sector, name='sector'),
 	url(r'^cell/(?P<pk>\d+)/$',cell, name='cell'),
 	url(r'^village/(?P<pk>\d+)/$',village, name='village'),
+
+
+	url(r'^sector/(?P<pk>\d+)/update/$',sector_update, name='sector_update'),
+	url(r'^cell/(?P<pk>\d+)/update/$',cell_update, name='cell_update'),
+	url(r'^village/(?P<pk>\d+)/update/$',village_update, name='village_update'),
 
 
 	url(r'^utility/(?P<pk>\d+)/update/$',update_utility, name='update_utility'),

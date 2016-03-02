@@ -3,7 +3,8 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, AddUtilityRegionForm, \
-	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm, BankDepositForm, LoginForm
+	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
+	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
 from datetime import date, timedelta
@@ -30,7 +31,6 @@ import csv
 import json
 import collections
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-
 
 
 def admin_check(user):
@@ -393,7 +393,13 @@ def fee_collections(request,pk):
 def account_holders(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	holders = AccountHolder.objects.filter(account=account).order_by('-pk')
-	return TemplateResponse(request, 'crud/holders.html', {'account':account, 'holders':holders})
+	if request.method == 'POST':
+		form = NewAccountHolder(request.POST)
+		if form.is_valid():
+			pass
+	else:
+		form = NewAccountHolderForm()
+	return TemplateResponse(request, 'crud/holders.html', {'account':account, 'holders':holders, 'form':form})
 
 
 @user_passes_test(admin_check)
@@ -718,8 +724,6 @@ def recent_locations(request):
 
 @user_passes_test(admin_check)
 def district_roster(request, pk, blocks=0):
-	#import pdb
-	#pdb.set_trace()
 	try:
 		blocks = int(blocks)
 	except:
@@ -740,8 +744,59 @@ def district_roster(request, pk, blocks=0):
 
 
 
+@user_passes_test(admin_check)
+def district_update(request, pk):
+	district = get_object_or_404(District, pk=pk)
+	if request.method == 'POST':
+		form = DistrictForm(request.POST, instance=district)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'District has been updated')
+			return HttpResponseRedirect(reverse('district', args=[district.pk]))
+	else:
+		form = DistrictForm(instance=district)
+	return render(request, 'crud/district_update.html', {'form':form, 'district':district})
+
+
+@user_passes_test(admin_check)
+def sector_update(request, pk):
+	sector = get_object_or_404(Sector, pk=pk)
+	if request.method == 'POST':
+		form = SectorForm(request.POST, instance=sector)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'Sector has been updated')
+			return HttpResponseRedirect(reverse('sector', args=[sectors.pk]))
+	else:
+		form = SectorForm(instance=sector)
+	return render(request, 'crud/sector_update.html', {'form':form, 'sector':sector})
+
+
+@user_passes_test(admin_check)
+def cell_update(request, pk):
+	cell = get_object_or_404(Cell, pk=pk)
+	if request.method == 'POST':
+		form = CellForm(request.POST, instance=cell)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'Cell has been updated')
+			return HttpResponseRedirect(reverse('cell', args=[cell.pk]))
+	else:
+		form = CellForm(instance=cell)
+		return render(request, 'crud/cell_update.html', {'form':form, 'cell':cell})
 
 
 
-
+@user_passes_test(admin_check)
+def village_update(request, pk):
+	village = get_object_or_404(Village, pk=pk)
+	if request.method == 'POST':
+		form = VillageForm(request.POST, instance=village)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'Village has been updated')
+			return HttpResponseRedirect(reverse('village', args=[village.pk]))
+	else:
+		form = VillageForm(instance=village)
+		return render(request, 'crud/village_update.html', {'form':form, 'village':village})
 
