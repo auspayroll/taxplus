@@ -3,32 +3,17 @@
 {% block main %}
 	<div><a href="{% url 'district' cell.sector.district.pk %}">{{ cell.sector.district }} district</a> &#8594 <a href="{% url 'sector' cell.sector.district.pk %}">{{ cell.sector.district }} sector</a></div>
 	<h1>{{ cell }} cell</h1>
-	<div style="help">
-		Almost there!
+	<div>
+		<a href="{% url 'cell' cell.pk %}">Villages</a> | <a href="{% url 'cell_update' cell.pk %}">Update Cell</a>
 	</div>
-	<div style="overflow:auto;">
-		<h3>Villages</h3>
-	{% for v in villages %}
-		<div style="float:left; width:100px;"><h4><a href="{% url 'village' v.pk %}">{{ v }}</a></h4></div>
-	{% endfor %}
-	</div>
-	<hr/>
-	<div class="container">
-		<!--
-	<h3>Accounts in {{ cell }} cell</h3>
-	<table border="1">
-		<tr><th>Account Name</th><th>Utility/Site</th><th>Period</th>
-		{% for account in accounts %}
-			<tr>
-				<td><a href="{% url 'account' account.pk %}">{{ account }}</a></td>
-				<td>{{ account.utilities.all|join:', ' }}</td>
-				<td>{{ account.start_date }} - {{ account.end_date|default:'Active' }}</td>
-				<td><a href="{% url 'new_fee_collection' account.pk %}">Add Collection</a></td>
-			</tr>
-		{% empty %}
-			<tr><td colspan="5">There are no accounts in this region</td></tr>
-		{% endfor %}
-	</table>
-	</div>--->
+	<p/>
+	{% block frame %}
+		<div style="overflow:auto;">
+			<h3>Villages</h3>
+			{% for v in villages %}
+				<div style="float:left; width:100px;"><h4><a href="{% url 'village' v.pk %}">{{ v }}</a></h4></div>
+			{% endfor %}
+		</div>
+	{% endblock %}
 
 {% endblock %}

@@ -1,0 +1,12 @@
+{% extends "crud/district.html" %}
+
+{% block frame %}
+	<div>
+	<form method="post">
+	<table>
+	{{ form }}
+		{% csrf_token %}
+	</table>
+	<button>Update</button>
+	</div>
+{% endblock %}
