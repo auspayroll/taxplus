@@ -2,11 +2,14 @@
 
 {% block main %}
 	<h1>{{ district }} district</h1>
+	<div><a href="{% url 'district' district.pk %}">Sectors</a> | <a href="{% url 'district_roster' district.pk %}">Roster</a></div>
 	<div style="overflow:auto;">
+	{% block frame %}
 		<h3>Sectors</h3>
-	{% for s in sectors %}
-		<div style="float:left; width:100px;"><h4><a href="{% url 'sector' s.pk %}">{{ s }}</a></h4></div>
-	{% endfor %}
+		{% for s in sectors %}
+			<div style="float:left; width:100px;"><h4><a href="{% url 'sector' s.pk %}">{{ s }}</a></h4></div>
+		{% endfor %}
+	{% endblock %}
 	</div>
 
 {% endblock %}

@@ -3,14 +3,15 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, AddUtilityRegionForm, \
-	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm, BankDepositForm
+	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm, BankDepositForm, LoginForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection
-from datetime import date
+from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
+from calendar import monthrange
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import user_passes_test, user_passes_test
 from django.contrib.auth.models import User, Group
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.geos import Point
@@ -20,28 +21,64 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q, Sum
 from django.forms.models import modelformset_factory
 from django.http import HttpResponse, Http404
-from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect
+from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response
 from random import randint
 from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property
 import csv
 import json
+import collections
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 
 
 
-@login_required
+def admin_check(user):
+    return (user.groups.filter(name__in=['staff', 'Staff']) or user.is_staff or user.is_superuser)
+
+
+
+def logout(request):
+    auth_logout(request)
+    return HttpResponseRedirect(reverse('index'))
+
+def login(request):
+	if request.method == 'POST':
+		form = LoginForm(request.POST)
+		if form.is_valid():
+			username = request.POST.get('username')
+			password = request.POST.get('password')
+			user = authenticate(username=username, password=password)
+			if user is not None:
+				if user.is_active:
+					auth_login(request, user)
+					if user.groups.filter(name='Staff') or user.is_staff or user.is_superuser:
+						return HttpResponseRedirect(reverse('index'))
+					elif user.groups.filter(name='Collector').exists():
+						return HttpResponseRedirect(reverse('collector_index'))
+					else:
+						messages.error(request, "Invalid Permission")
+				else:
+					messages.error(request, "Account has been disabled")
+			else:
+				messages.error(request, "Invalid login")
+	else:
+		form = LoginForm()
+	return render(request, 'admin/login.html', {'form':form})
+
+
+@user_passes_test(admin_check)
 def index(request):
 	return districts(request)
 
 
-@login_required
+@user_passes_test(admin_check)
 def select_fees(request):
 	return TemplateResponse(request, 'crud/select_fees.html')
 
 
 
-@login_required
+@user_passes_test(admin_check)
 def select_account_holder(request, pk):
 	fee_type = get_object_or_404(ContentType, pk=pk)
 	request.session['fee_type'] = {'id':id, 'name':fee_type.name}
@@ -49,7 +86,7 @@ def select_account_holder(request, pk):
 
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_citizen_account(request):
 	if request.method == 'POST':
 		form= CitizenForm(request.POST)
@@ -75,7 +112,7 @@ def new_citizen_account(request):
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'New Citizen Account'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_business_account(request):
 	if request.method == 'POST':
 		form= BusinessForm(request.POST)
@@ -107,12 +144,12 @@ def new_business_account(request):
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'New Business Account'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	return TemplateResponse(request, 'crud/account.html', {'account':account})
 
-@login_required
+@user_passes_test(admin_check)
 def new_account_fee(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -130,7 +167,7 @@ def new_account_fee(request, pk):
 	return TemplateResponse(request, 'crud/new_fee_account.html', {'account':account, 'form':form})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_account_utility(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == "POST":
@@ -152,7 +189,7 @@ def new_account_utility(request, pk):
 	return TemplateResponse(request, 'crud/new_account_utility.html', {'account':account, 'form':form})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_account_payment(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -165,27 +202,27 @@ def new_account_payment(request, pk):
 
 	return TemplateResponse(request, 'crud/new_fee_account.html', {'account':account, 'form':form})
 
-@login_required
+@user_passes_test(admin_check)
 def recent_accounts(request):
 	accounts = Account.objects.all().order_by('-pk')[:50]
 	return TemplateResponse(request, 'crud/accounts.html', {'accounts':accounts})
 
 
-@login_required
+@user_passes_test(admin_check)
 def recent_utilities(request, utility_type):
 	utilities = Utility.objects.filter(utility_type__code=utility_type).order_by('-pk')[:50]
 
 	return TemplateResponse(request, 'crud/recent_utilities.html', {'utilities':utilities})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_fees(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	fees = AccountFee.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/fees.html', {'account':account, 'fees':fees})
 
 
-@login_required
+@user_passes_test(admin_check)
 def update_account(request, pk):
 	if request.method == 'POST':
 		form= BusinessForm(request.POST)
@@ -199,12 +236,12 @@ def update_account(request, pk):
 	return TemplateResponse(request, 'crud/new_account.html', {'form':form})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_select(request):
 	return TemplateResponse(request, 'crud/account_select.html', {})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_location(request):
 	if request.method == 'POST':
 		form = NewLocationForm(request.POST)
@@ -219,7 +256,7 @@ def new_location(request):
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new Account' })
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_location_post(request):
 	"""
 	add a new location
@@ -239,7 +276,7 @@ def new_location_post(request):
 	return TemplateResponse(request, 'crud/new_location.html', {'form':form, 'heading':'Add a new %s in %s village' % (form.cleaned_data.get('utility_type'), form.cleaned_data.get('village'))})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_contacts(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	contacts = Contact.objects.filter(account=account).order_by('-pk')
@@ -247,7 +284,7 @@ def account_contacts(request,pk):
 	return TemplateResponse(request, 'crud/contacts.html', {'account':account, 'contacts':contacts})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_contact(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -263,7 +300,7 @@ def new_contact(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Contact'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_payments(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	payments = AccountPayment.objects.filter(account=account).order_by('-pk')
@@ -271,7 +308,7 @@ def account_payments(request,pk):
 	return TemplateResponse(request, 'crud/payments.html', {'account':account, 'payments':payments})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_payment(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -289,14 +326,14 @@ def new_payment(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Account Payment'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_media(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	media = Media.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/media.html', {'account':account, 'media':media})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_media(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -314,7 +351,7 @@ def new_media(request, pk):
 	return TemplateResponse(request, 'crud/mediaform.html', {'account':account, 'form':form, 'heading':'New Media'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -345,22 +382,21 @@ def new_fee_collection(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'form2':form2, 'heading':'New Collection', 'heading2':'Bank Details'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def fee_collections(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	collections = Collection.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/collections.html', {'account':account, 'collections':collections})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_holders(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	holders = AccountHolder.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/holders.html', {'account':account, 'holders':holders})
 
 
-
-@login_required
+@user_passes_test(admin_check)
 def new_account_note(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -378,14 +414,14 @@ def new_account_note(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Account Note'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def account_notes(request,pk):
 	account = get_object_or_404(Account, pk=pk)
 	notes = AccountNote.objects.filter(account=account).order_by('-pk')
 	return TemplateResponse(request, 'crud/notes.html', {'account':account, 'notes':notes})
 
 
-@login_required
+@user_passes_test(admin_check)
 def add_account_utility(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
@@ -405,7 +441,7 @@ def add_account_utility(request, pk):
 	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'Add Utility/Site'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def update_utility(request, pk):
 	utility = get_object_or_404(Utility, pk=pk)
 	if request.method == 'POST':
@@ -419,7 +455,8 @@ def update_utility(request, pk):
 
 	return TemplateResponse(request, 'crud/update_utility.html', {'account':account, 'form':form, 'heading':'Update Utility/Site'})
 
-@login_required
+
+@user_passes_test(admin_check)
 def utilities(request, utility_type=None):
 	if request.method == 'POST':
 		form= UtilityForm(request.POST)
@@ -437,31 +474,32 @@ def utilities(request, utility_type=None):
 
 	return TemplateResponse(request, 'crud/add_utility.html', {'form':form, 'heading':'Add Utility/Site', })
 
-@login_required
+
+@user_passes_test(admin_check)
 def districts(request):
 	districts = District.objects.all().order_by('name')
 	return TemplateResponse(request, 'crud/districts.html', {'districts':districts, })
 
-@login_required
+@user_passes_test(admin_check)
 def district(request, pk):
 	district = get_object_or_404(District, pk=pk)
 	sectors = Sector.objects.filter(district=district)
 	return TemplateResponse(request, 'crud/district.html', {'district':district, 'sectors':sectors, })
 
-@login_required
+@user_passes_test(admin_check)
 def sector(request, pk):
 	sector = get_object_or_404(Sector, pk=pk)
 	recent_collections = Collection.objects.filter(utility__sector=sector).order_by('-id')
 	cells = Cell.objects.filter(sector=sector)
 	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'cells':cells, 'recent_collections':recent_collections})
 
-@login_required
+@user_passes_test(admin_check)
 def cell(request, pk):
 	cell = get_object_or_404(Cell, pk=pk)
 	villages = Village.objects.filter(cell=cell)
 	return TemplateResponse(request, 'crud/cell.html', {'cell':cell, 'villages':villages})
 
-@login_required
+@user_passes_test(admin_check)
 def village(request, pk):
 	village = get_object_or_404(Village, pk=pk)
 	accounts = Account.objects.filter(utilities__village=village).order_by('-id')
@@ -469,12 +507,12 @@ def village(request, pk):
 	return TemplateResponse(request, 'crud/village.html', {'village':village, 'accounts':accounts, 'recent_collections':recent_collections })
 
 
-@login_required
+@user_passes_test(admin_check)
 def recent_collections(request):
 	recent_collections = Collection.objects.filter(amount__gt=0).order_by('-id')[:100]
-	return TemplateResponse(request, 'crud/recent_collections.html', {'recent_collections':recent_collections })
+	return TemplateResponse(request, 'collector/recent_collections.html', {'recent_collections':recent_collections })
 
-@login_required
+@user_passes_test(admin_check)
 def add_village_utility(request, pk):
 	village = get_object_or_404(Village, pk=pk)
 	if request.method == 'POST':
@@ -498,7 +536,7 @@ def add_village_utility(request, pk):
 
 
 
-@login_required
+@user_passes_test(admin_check)
 def sector_collection(request, pk):
 	sector = get_object_or_404(Sector, pk=pk)
 	recent_collections = Collection.objects.filter(utility__sector=sector).order_by('-id')
@@ -535,11 +573,11 @@ def sector_collection(request, pk):
 	return TemplateResponse(request, 'crud/sector.html', {'sector':sector, 'form':form, 'recent_collections':recent_collections})
 
 
-@login_required
+@user_passes_test(admin_check)
 def edit_collection(request, pk):
 	collection = get_object_or_404(Collection, pk=pk)
 	if request.method == 'POST':
-		form= CollectionUpdateForm(request.POST, request.FILES, instance=collection)
+		form= CollectionUpdateForm(request.POST, request.FILES, instance=collection, initial={'next':request.GET.get('next')})
 		if collection.deposit:
 			form2 = BankDepositForm(request.POST, instance=collection.deposit)
 		else:
@@ -567,10 +605,13 @@ def edit_collection(request, pk):
 			if uploaded_file:
 				Media.objects.create(account=collection.account, user=request.user, item=uploaded_file, record=collection)
 			messages.success(request, 'Collection update')
-
-			return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))
+			next = form.cleaned_data.get('next')
+			if next:
+				return HttpResponseRedirect(next)
+			else:
+				return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))
 	else:
-		form = CollectionUpdateForm(instance=collection)
+		form = CollectionUpdateForm(instance=collection, initial={'next':request.GET.get('next')})
 		if collection.deposit:
 			form2 = BankDepositForm(instance=collection.deposit)
 		else:
@@ -578,19 +619,25 @@ def edit_collection(request, pk):
 
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'form2':form2, 'heading':'Edit Collection', 'heading2':'Banking Details' })
 
-@login_required
+@user_passes_test(admin_check)
 def add_account_dates(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
 		form = AddAccountDates(request.POST, account=account)
 		if form.is_valid():
+			collections = {}
 			collector = form.cleaned_data.get('collector')
 			fee_type = form.cleaned_data.get('fee_type')
 			utility = form.cleaned_data.get('utility')
 			dates = form.cleaned_data.get('dates')
+			cycle = form.cleaned_data.get('cycle')
 			for d in dates:
-				collection = Collection.objects.create(account=account, date_from=d, date_to=d,
-					collector=collector, user=request.user, no_collections=0, fee_type=fee_type, utility=utility)
+				if cycle == -1: #every day
+					collection = Collection.objects.create(account=account, date_from=d, date_to=d,
+						collector=collector, user=request.user, no_collections=0, fee_type=fee_type, utility=utility)
+				else: # everyweek
+					pass
+
 			messages.success(request, '%d new collections created' % len(dates))
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 
@@ -599,13 +646,13 @@ def add_account_dates(request, pk):
 	return TemplateResponse(request, 'crud/add_account_dates.html', {'account':account, 'form':form})
 
 
-@login_required
+@user_passes_test(admin_check)
 def users(request):
 	users = User.objects.all().order_by('first_name')
 	return TemplateResponse(request, 'crud/users.html', {'users':users})
 
 
-@login_required
+@user_passes_test(admin_check)
 def register_user(request):
 	if request.method == 'POST':
 		form = NewUserForm(request.POST)
@@ -629,7 +676,7 @@ def register_user(request):
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Register New User'})
 
 
-@login_required
+@user_passes_test(admin_check)
 def edit_user(request, pk):
 	user = get_object_or_404(User, pk=pk)
 	if request.method == 'POST':
@@ -639,16 +686,17 @@ def edit_user(request, pk):
 			if form.cleaned_data.get('reset_password'):
 				raw_password = form.cleaned_data.get('raw_password')
 				user.set_password(raw_password)
+				user.save()
 				messages.success(request, 'User password reset to %s . Please record this in a safe place.' % raw_password)
 
 			messages.success(request, 'User updated')
 			return HttpResponseRedirect(reverse('users'))
 	else:
 		form = UserForm(instance=user)
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update User'})
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update User %s' % user.username})
 
 
-@login_required
+@user_passes_test(admin_check)
 def edit_location(request, pk):
 	location = get_object_or_404(Utility, pk=pk)
 	if request.method == 'POST':
@@ -662,11 +710,33 @@ def edit_location(request, pk):
 	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update Location/Site', 'instance':location})
 
 
-@login_required
+@user_passes_test(admin_check)
 def recent_locations(request):
 	locations = Utility.objects.exclude(utility_type__code__in=['sector', 'district', 'cell', 'village']).order_by('-id')[:100]
 	return TemplateResponse(request, 'crud/locations.html', {'locations':locations})
 
+
+@user_passes_test(admin_check)
+def district_roster(request, pk, blocks=0):
+	#import pdb
+	#pdb.set_trace()
+	try:
+		blocks = int(blocks)
+	except:
+		raise Http404
+	block_length = 14 # days
+	district = get_object_or_404(District, pk=pk)
+	#end_of_month = monthrange(date.today().year, date.today().month)[1]
+	start_date = date.today() + timedelta(days=blocks*block_length)
+	next_block = blocks + 1
+	last_block = blocks - 1
+	dates = [start_date + timedelta(days=i) for i in range(14)]
+	collectionz = [ c for c in Collection.objects.filter(date_from__lte=dates[-1], date_to__gte=dates[0]).filter(Q(utility__sector__district=district) | Q(utility__village__cell__sector__district=district) | Q(utility__cell__sector__district=district))]
+	date_dict = collections.OrderedDict()
+	for d in dates:
+		date_dict[d] = [ c for c in collectionz if c.date_to == d ]
+	return TemplateResponse(request, 'crud/roster.html', {'dates':date_dict,
+		'district':district, 'next_block':next_block, 'last_block':last_block, 'heading':'%s district roster' % district})
 
 
 

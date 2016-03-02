@@ -1,0 +1,60 @@
+{% extends "crud/district.html" %}
+
+{% block frame %}
+	<h3>Roster</h3>
+	<style>
+	.missing {
+		background-color:red;
+		padding:2px;
+		color:white;
+		font-weight:bold
+	}
+
+	.ok {
+		background-color:green;
+		color:white;
+		font-weight:bold
+	}
+	</style>
+	<div>
+		<a href="{% url 'district_roster_block' district.pk  last_block %}">Last 2 weeks</a> |
+		<a href="{% url 'district_roster' district.pk %}">Now</a> |
+		<a href="{% url 'district_roster_block' district.pk next_block %}">Next 2 weeks</a>
+	</div>
+	{% for d, collections in dates.items %}
+	<div style="margin-bottom:20px;">
+		<h3>{{ d|date:'l - M d, Y' }}</h3>
+		<table border="1" width="70%">
+			<tr>
+				<th>id</th>
+				<th>Location</th>
+				<th>Fee</th>
+				<th>No. collections</th>
+				<th>Amount</th>
+				<th>Bank Recept.</th>
+				<th>Collector</th>
+			{% for c in collections %}
+				<tr>
+					<td>{{ c.pk }}</td>
+					<td width="15%">{{ c.utility }}</td>
+					<td width="15%">{{ c.fee_type }}</td>
+					<td>{{ c.no_collections }}</td>
+					<td>{{ c.amount }}</td>
+					<td width="15%" {% if c.deposit %}class="ok"{% endif %}>{{ c.deposit.bank_receipt_no|default:'-' }}</td>
+					<td width="15%" {% if not c.collector %}class="missing"{% endif %}>{{ c.collector|default:'No collector assigned' }}</td>
+					<td><a href="{% url 'edit_collection' c.pk %}?next={{ request.path }}">Edit</a></td>
+				</tr>
+			{% empty %}
+				<tr>
+					<td colspan="7">
+						There are no collections scheduled for this day
+					</td>
+
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+	{% endfor %}
+
+{% endblock %}
+

@@ -26,6 +26,12 @@ fee_auto_choices = [('','I will specify the amount'),(1,'Automatically calculate
 fee_defaults = {'tower':'tower', 'property':'land_lease', 'quarry':'quarry', 'market':'market', 'cemetery':'cemetery', 'sign':'sign'}
 regional_fees = {'marriage':'marriage'}
 
+
+class LoginForm(forms.Form):
+	username = forms.CharField()
+	password = forms.CharField(widget=forms.PasswordInput())
+
+
 class FormExtra(forms.Form):
 	def field_clean(self, field_name):
 		try:
@@ -91,6 +97,7 @@ class CollectionUpdateForm(forms.ModelForm):
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	file_upload = forms.FileField(required=False)
 	collector = forms.ModelChoiceField( help_text='allocated collector can be assigned later', required=False, queryset=User.objects.filter(is_active=True, groups__name='Collector'))
+	next = forms.CharField(required=False, widget=forms.HiddenInput())
 
 	def __init__(self, *args, **kwargs):
 		super(CollectionUpdateForm, self).__init__(*args, **kwargs)
@@ -467,6 +474,7 @@ class AddAccountDates(forms.Form):
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text="inclusive")
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text='inclusive')
 	days = forms.TypedMultipleChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Monday'),('2','Tuesday'),('3','Wednesday'),('4','Thursday'),('5','Friday'),('6','Saturday'), ('0','Sunday'),], widget=forms.CheckboxSelectMultiple)
+	cycle = forms.TypedChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Everyweek'),])
 	dates = forms.CharField(widget=forms.HiddenInput())
 	collector = forms.ModelChoiceField( help_text='allocated collector can be assigned later', required=False, queryset=User.objects.filter(is_active=True, groups__name='Collector'))
 	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))
