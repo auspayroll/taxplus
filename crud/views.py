@@ -516,7 +516,7 @@ def village(request, pk):
 @user_passes_test(admin_check)
 def recent_collections(request):
 	recent_collections = Collection.objects.filter(amount__gt=0).order_by('-id')[:100]
-	return TemplateResponse(request, 'collector/recent_collections.html', {'recent_collections':recent_collections })
+	return TemplateResponse(request, 'crud/recent_collections.html', {'recent_collections':recent_collections })
 
 @user_passes_test(admin_check)
 def add_village_utility(request, pk):
