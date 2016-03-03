@@ -41,7 +41,7 @@
 					<td>{{ c.no_collections }}</td>
 					<td>{{ c.amount }}</td>
 					<td width="15%" {% if c.deposit %}class="ok"{% endif %}>{{ c.deposit.bank_receipt_no|default:'-' }}</td>
-					<td width="15%" {% if not c.collector %}class="missing"{% endif %}>{{ c.collector|default:'No collector assigned' }}</td>
+					<td width="15%" {% if not c.collector %}class="missing"{% endif %}>{% if c.collector %}<a href="{% url 'edit_user' c.collector.pk %}">{{ c.collector.get_full_name }}</a>{% else %}No collector assigned{% endif %}{% if c.collector.profile.phone %} <nobr>Ph: {{ c.collector.profile.phone }}</nobr>{% endif %}</td>
 					<td><a href="{% url 'edit_collection' c.pk %}?next={{ request.path }}">Edit</a></td>
 				</tr>
 			{% empty %}

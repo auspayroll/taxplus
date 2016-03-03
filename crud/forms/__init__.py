@@ -508,8 +508,11 @@ class AddAccountDates(forms.Form):
 class UserForm(forms.ModelForm):
 	class Meta:
 		model = User
-		fields = ('first_name', 'last_name', 'is_active', 'groups')
+		fields = ('first_name', 'last_name', 'email', 'is_active', 'groups')
 
+	email = forms.EmailField(max_length=30, required=False)
+	phone = forms.CharField(max_length=40, required=False)
+	registration_no = forms.CharField(max_length=40, required=False)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
 	reset_password = forms.BooleanField(required=False)
 
@@ -527,6 +530,8 @@ class NewUserForm(forms.ModelForm):
 	first_name = forms.CharField(max_length=30)
 	last_name = forms.CharField(max_length=30)
 	email = forms.EmailField(max_length=30, required=False)
+	phone = forms.CharField(max_length=40, required=False)
+	registration_no = forms.CharField(max_length=40, required=False)
 	is_active = forms.BooleanField(initial=True)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
 

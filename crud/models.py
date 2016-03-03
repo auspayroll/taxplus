@@ -339,3 +339,9 @@ class AccountNote(models.Model):
 	user = models.ForeignKey(User, null=True, blank=True)
 	created_on = models.DateField(auto_now_add=True)
 
+
+class Profile(models.Model):
+	user = models.OneToOneField(User, related_name='profile')
+	registration_no = models.CharField(max_length=40)
+	phone = models.CharField(max_length=40)
+

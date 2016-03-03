@@ -5,6 +5,7 @@
 	<table border="1">
 	<tr>
 		<th>id</th>
+		<th>Date</th>
 		<th>Amount</th>
 		<th>Fee Type</th>
 		<th>No. collections</th>
@@ -19,6 +20,7 @@
 	{% for c in recent_collections %}
 	<tr>
 		<td>{{c.pk}}</td>
+		<td>{{ c.date_to|date:'D - M d, Y' }}</td>
 		<td>{{ c.amount }}</td>
 		<td>{{ c.fee_type|capfirst }}</td>
 		<td>{{ c.no_collections|default:'-' }}</td>

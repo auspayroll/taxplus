@@ -6,7 +6,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm
 from crud.models import Account, Contact, AccountPayment, Media,\
-	 AccountHolder, AccountFee, AccountNote, Utility, Collection
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -671,6 +671,7 @@ def register_user(request):
 			user.first_name = form.cleaned_data.get('first_name')
 			user.is_active = form.cleaned_data.get('is_active')
 			user.save()
+			Profile.objects.create(user=user, registration_no=form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
 			groups = form.cleaned_data.get('groups')
 			for g in groups:
 				user.groups.add(g)
@@ -689,6 +690,13 @@ def edit_user(request, pk):
 		form = UserForm(request.POST, instance=user)
 		if form.is_valid():
 			user = form.save()
+			if hasattr(user,'profile'):
+				user.profile.registration_no = form.cleaned_data.get('registration_no')
+				user.profile.phone = form.cleaned_data.get('phone')
+				user.save()
+			else:
+				Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
+
 			if form.cleaned_data.get('reset_password'):
 				raw_password = form.cleaned_data.get('raw_password')
 				user.set_password(raw_password)
