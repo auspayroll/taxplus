@@ -1,7 +1,7 @@
 {% extends "crud/main.html" %}
 
 {% block main %}
-	<div><a href="{% url 'district' cell.sector.district.pk %}">{{ cell.sector.district }} district</a> &#8594 <a href="{% url 'sector' cell.sector.district.pk %}">{{ cell.sector.district }} sector</a></div>
+	<div><a href="{% url 'district' cell.sector.district.pk %}">{{ cell.sector.district }} district</a> &#8594 <a href="{% url 'sector' cell.sector.pk %}">{{ cell.sector }} sector</a></div>
 	<h1>{{ cell }} cell</h1>
 	<div>
 		<a href="{% url 'cell' cell.pk %}">Villages</a> | <a href="{% url 'cell_update' cell.pk %}">Update Cell</a>
