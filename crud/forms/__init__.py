@@ -551,7 +551,7 @@ class NewUserForm(forms.ModelForm):
 class BankDepositForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ['bank', 'branch', 'bank_receipt_no', 'depositor_name', 'date_banked']
+		fields = ['bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked']
 
 	date_banked = forms.DateField(widget=html5_widgets.DateInput)
 

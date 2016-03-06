@@ -97,6 +97,7 @@ class BankDeposit(models.Model):
 	user = models.ForeignKey(User, null=True)
 	date_banked = models.DateField()
 	created = models.DateTimeField(auto_now_add=True, null=True)
+	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
 
 
 
