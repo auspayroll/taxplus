@@ -654,14 +654,14 @@ def add_account_dates(request, pk):
 
 @user_passes_test(admin_check)
 def users(request):
-	users = User.objects.all().order_by('first_name')
+	users = User.objects.all().order_by('-is_active', 'first_name', '-id')
 	return TemplateResponse(request, 'crud/users.html', {'users':users})
 
 
 @user_passes_test(admin_check)
 def register_user(request):
 	if request.method == 'POST':
-		form = NewUserForm(request.POST)
+		form = NewUserForm(request.POST, request.FILES)
 		if form.is_valid():
 			email = form.cleaned_data.get('email')
 			password = form.cleaned_data.get('password')
@@ -671,7 +671,7 @@ def register_user(request):
 			user.first_name = form.cleaned_data.get('first_name')
 			user.is_active = form.cleaned_data.get('is_active')
 			user.save()
-			Profile.objects.create(user=user, registration_no=form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
+			Profile.objects.create(user=user, registration_no=form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'), photo=form.cleaned_data.get('photo'))
 			groups = form.cleaned_data.get('groups')
 			for g in groups:
 				user.groups.add(g)
@@ -680,22 +680,27 @@ def register_user(request):
 
 	else:
 		form = NewUserForm()
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Register New User'})
+	return TemplateResponse(request, 'crud/user_form.html', {'form':form, 'heading':'Register New User'})
 
 
 @user_passes_test(admin_check)
 def edit_user(request, pk):
 	user = get_object_or_404(User, pk=pk)
 	if request.method == 'POST':
-		form = UserForm(request.POST, instance=user)
+		form = UserForm(request.POST, request.FILES, instance=user)
 		if form.is_valid():
 			user = form.save()
 			if hasattr(user,'profile'):
 				user.profile.registration_no = form.cleaned_data.get('registration_no')
 				user.profile.phone = form.cleaned_data.get('phone')
-				user.save()
+				if form.cleaned_data.get('photo'):
+					user.profile.photo = form.cleaned_data.get('photo')
+				user.profile.save()
 			else:
-				Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
+				profile = Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
+				if form.cleaned_data.get('photo'):
+					profile.photo = form.cleaned_data.get('photo')
+					profile.save()
 
 			if form.cleaned_data.get('reset_password'):
 				raw_password = form.cleaned_data.get('raw_password')
@@ -707,7 +712,7 @@ def edit_user(request, pk):
 			return HttpResponseRedirect(reverse('users'))
 	else:
 		form = UserForm(instance=user)
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Update User %s' % user.username})
+	return TemplateResponse(request, 'crud/user_form.html', {'form':form, 'heading':'Update User %s' % user.username})
 
 
 @user_passes_test(admin_check)

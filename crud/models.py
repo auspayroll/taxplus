@@ -345,4 +345,5 @@ class Profile(models.Model):
 	user = models.OneToOneField(User, related_name='profile')
 	registration_no = models.CharField(max_length=40)
 	phone = models.CharField(max_length=40)
+	photo = models.ImageField(upload_to='users', null=True)
 

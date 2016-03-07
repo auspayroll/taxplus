@@ -515,6 +515,7 @@ class UserForm(forms.ModelForm):
 	registration_no = forms.CharField(max_length=40, required=False)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
 	reset_password = forms.BooleanField(required=False)
+	photo = forms.FileField(required=False)
 
 	def clean(self, *args, **kwargs):
 		cd = self.cleaned_data
@@ -534,6 +535,7 @@ class NewUserForm(forms.ModelForm):
 	registration_no = forms.CharField(max_length=40, required=False)
 	is_active = forms.BooleanField(initial=True)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
+	photo = forms.FileField(required=False)
 
 	def clean(self, *args, **kwargs):
 		self.cleaned_data['password'] = User.objects.make_random_password()
