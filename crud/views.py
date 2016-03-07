@@ -751,6 +751,25 @@ def district_roster(request, pk, blocks=0):
 		'district':district, 'next_block':next_block, 'last_block':last_block, 'heading':'%s district roster' % district})
 
 
+@user_passes_test(admin_check)
+def general_roster(request, blocks=0):
+	try:
+		blocks = int(blocks)
+	except:
+		raise Http404
+	block_length = 14 # days
+	#end_of_month = monthrange(date.today().year, date.today().month)[1]
+	start_date = date.today() + timedelta(days=blocks*block_length)
+	next_block = blocks + 1
+	last_block = blocks - 1
+	dates = [start_date + timedelta(days=i) for i in range(14)]
+	collectionz = [ c for c in Collection.objects.filter(date_from__lte=dates[-1], date_to__gte=dates[0])]
+	date_dict = collections.OrderedDict()
+	for d in dates:
+		date_dict[d] = [ c for c in collectionz if c.date_to == d ]
+	return TemplateResponse(request, 'crud/general_roster.html', {'dates':date_dict,
+		 'next_block':next_block, 'last_block':last_block, 'heading':'General Roster'})
+
 
 @user_passes_test(admin_check)
 def district_update(request, pk):

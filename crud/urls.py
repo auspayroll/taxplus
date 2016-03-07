@@ -68,6 +68,9 @@ urlpatterns = patterns('',
 	url(r'^district/(?P<pk>\d+)/roster/(?P<blocks>-?\d+)/$',district_roster, name='district_roster_block'),
 	url(r'^district/(?P<pk>\d+)/roster/$',district_roster, name='district_roster'),
 
+	url(r'^roster/(?P<blocks>-?\d+)/$',general_roster, name='general_roster_block'),
+	url(r'^roster/$',general_roster, name='general_roster'),
+
 	url(r'^sector/(?P<pk>\d+)/$',sector, name='sector'),
 	url(r'^cell/(?P<pk>\d+)/$',cell, name='cell'),
 	url(r'^village/(?P<pk>\d+)/$',village, name='village'),
