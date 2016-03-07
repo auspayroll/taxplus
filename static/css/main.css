@@ -8,11 +8,11 @@
 	div#template_wrapper{
 		-webkit-border-radius: 5px;
 		-moz-border-radius: 5px;
-		border-radius: 5px; 
-		margin-top:20px; 
-		border: 1px solid #cccccc; 
-		background:#f2f2f2; 
-		margin:20px 10px 10px 10px; 
+		border-radius: 5px;
+		margin-top:20px;
+		border: 1px solid #cccccc;
+		background:#f2f2f2;
+		margin:20px 10px 10px 10px;
 		box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);
 		-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);
 		-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.1);
@@ -119,11 +119,11 @@
 	div#template_wrapper{
 		-webkit-border-radius: 0px;
 		-moz-border-radius: 0px;
-		border-radius: 0px; 
-		margin-top:0px; 
-		border: 0px solid #cccccc; 
-		background:white; 
-		margin:0px; 
+		border-radius: 0px;
+		margin-top:0px;
+		border: 0px solid #cccccc;
+		background:white;
+		margin:0px;
 		box-shadow: 1px 2px 3px rgba(0,0,0, 0.0);
 		-webkit-box-shadow: 1px 2px 3px rgba(0,0,0, 0.0);
 		-moz-box-shadow: 1px 2px 3px rgba(0,0,0, 0.0);
@@ -146,11 +146,11 @@
 	}
 	#switcher {
 		display: none;
-		position: fixed; 
-		right:0; top:160px; 
-		width: 120px; 
-		height: auto; 
-		z-index: 9999; 
+		position: fixed;
+		right:0; top:160px;
+		width: 120px;
+		height: auto;
+		z-index: 9999;
 		padding:5px;
 		padding-left: 10px;
 		border: 2px solid #c4c4c4;
@@ -252,7 +252,7 @@
 	a,.btn {outline: none !important;}
 
 
-/* Typography 
+/* Typography
 -------------------------------------------------- */
 
 li {margin-bottom:7px;}
@@ -266,12 +266,12 @@ a:hover {
 }
 
 body {
-	font-family: 'Droid Sans', 
-	Helvetica, Arial, sans-serif; 
-	color:#353535; 
+	font-family: 'Droid Sans',
+	Helvetica, Arial, sans-serif;
+	color:#353535;
 	font-size: 13px;
 	-webkit-font-smoothing: antialiased; /* Fix for webkit rendering */
-	-webkit-text-size-adjust: 100%; 
+	-webkit-text-size-adjust: 100%;
 	font-size-adjust: 100%;
 	font-weight: 400;
 	/*-webkit-text-stroke: 100%;*/
@@ -322,14 +322,14 @@ h6 {font-size: 11px;color: #999999;text-transform: uppercase;}
 /*Change here if you want to use other fonts*/
 #top-nav a, h1,h2,h3,h4,h5,h6 {font-family: 'Open Sans', sans-serif;}
 body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
- 
+
 /* Boostrap override (make it pretty :)
 ================================================== */
 
 /*Page header*/
 .page-header {
-	padding-bottom: 0; 
-	margin-top:9px; 
+	padding-bottom: 0;
+	margin-top:9px;
 	border-color: #c4c4c4;
 	-moz-box-shadow:0 1px 0px rgba(255, 255, 255, 1);
 	-webkit-box-shadow: 0 1px 0px rgba(255, 255, 255, 1);
@@ -339,7 +339,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 /*Tables*/
 .table {position: relative;}
 .table td { border-top: 1px solid #c4c4c4;}
-.table thead th, .table tbody td {text-align: center;}
+.table thead th, .table tbody td {text-align: left;}
 .table thead th:first-child, .table tbody td:first-child  {text-align: left;}
 
 .table tr {
@@ -467,7 +467,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	margin-left: 0px;
 }
 .controls label.checkbox {margin-left:-18px;}
-	
+
 .form-actions {
 	border-bottom: 1px solid #E5E5E5;
 	-moz-box-shadow:0 1px 0px rgba(229, 229, 229, 0.1);
@@ -481,7 +481,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 .badge {padding-top: 2px; padding-bottom: 2px;}
 
 .tab-content {
-	background-color: #fff; 
+	background-color: #fff;
 	padding:15px;
 	border-left:1px solid #c4c4c4;
 	border-bottom:1px solid #c4c4c4;
@@ -494,7 +494,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	-webkit-border-bottom-right-radius: 2px;
 }
 .nav-tabs {
-	margin-bottom: 0; 
+	margin-bottom: 0;
 	border-color: #c4c4c4;
 	background: #fff;
 	border-top:1px solid #c4c4c4;
@@ -531,18 +531,18 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	border-top: 1px solid transparent;
 }
 .nav-tabs > li > a {
-	margin-left:-1px; 
-	margin-right: -1px; 
+	margin-left:-1px;
+	margin-right: -1px;
 	border-right: 1px solid #c4c4c4;
 	border-left: 1px solid transparent;
-	border-radius: 0; 
-	-moz-border-radius:0; 
+	border-radius: 0;
+	-moz-border-radius:0;
 	-webkit-border-radius:0;
 }
-.nav-tabs > li > a:hover { 
+.nav-tabs > li > a:hover {
 	border-color: transparent #c4c4c4 transparent #c4c4c4;
-	border-radius: 0; 
-	-moz-border-radius:0; 
+	border-radius: 0;
+	-moz-border-radius:0;
 	-webkit-border-radius:0;
 }
 
@@ -582,7 +582,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	-webkit-border-radius: 0 0 2px 2px;
 	-moz-border-radius: 0 0 2px 2px;
 	border-radius: 0 0 2px 2px;
-	
+
 }
 .tabs-below > .nav-tabs > li  {margin-bottom:-1px;}
 .tabs-below > .nav-tabs > li > a:hover { border-color: #c4c4c4 #c4c4c4 #c4c4c4 #c4c4c4;}
@@ -629,8 +629,8 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 }
 .tabs-left > .nav-tabs > li.active:first-child a {border-top: 1px solid transparent;}
 
-.tabs-right > .nav-tabs { 
-	margin-left: -1px; 
+.tabs-right > .nav-tabs {
+	margin-left: -1px;
 	border-left: 1px solid #c4c4c4;
 	-webkit-border-radius: 0 2px 2px 0;
 	-moz-border-radius: 0 2px 2px 0;
@@ -707,7 +707,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 
 /*Accordion style*/
 .accordion .accordion-group {
-	margin-bottom: 0px;	
+	margin-bottom: 0px;
 	border: 1px solid #c4c4c4;
 	-webkit-border-radius: 0;
 	-moz-border-radius: 0;
@@ -763,7 +763,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 
 	.progress .bar {
 		z-index: 2;
-		height:13px; 
+		height:13px;
 		border: 1px solid #439db8;
 		box-shadow: 0 1px 0 #55cbee inset;
 		-moz-border-radius: 6px;
@@ -886,7 +886,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	}
 
 	.pagination li>span {
-		margin: 0px 8px 0 7px !important; 
+		margin: 0px 8px 0 7px !important;
 		padding:0 5px 0 5px !important;
 		float:left !important;
 		display: inline-block !important;
@@ -1046,7 +1046,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 		line-height: 45px;
 		color: #353535;
 	}
-	
+
 	.navbar .brand .slogan {font-size:14px; color: #6b6b6b;}
 	.navbar .nav {
 		margin: 15px 10px 5px 20px;
@@ -1235,9 +1235,9 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	.dropdown-menu .menu .notif li.view-all	{line-height: 28px; padding-top: 5px !important; padding-bottom: 5px !important;}
 	.dropdown-menu .menu ul li a .icon {margin-bottom: 0px;}
 	.dropdown-menu .icon.avatar {padding: 2px 1px 9px 2px;}
-	.dropdown-menu .name {float: left;width:168px;}	
+	.dropdown-menu .name {float: left;width:168px;}
 	.dropdown-menu .messages {min-width: 210px;}
-	.dropdown-menu .messages a {padding: 0;}	
+	.dropdown-menu .messages a {padding: 0;}
 	.dropdown-menu .messages .time {
 		font-size:8px; text-transform: uppercase;
 		float:right;
@@ -1248,7 +1248,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 		width:190px;
 		clear: both;
 		color:#6e6e6e;
-	}		
+	}
 	.dropdown-menu .view-all {width:100%; text-align:center; padding-bottom: 8px !important; padding-top: 8px !important;}
 	.dropdown-menu .header {font-size:13px;}
 
@@ -1283,7 +1283,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 
 /*Red style*/
 .notification {
-	padding:0px 7px 0px 7px; 
+	padding:0px 7px 0px 7px;
 	color:#fff;
 	background: #ed7a53;
 	border-radius:2px;
@@ -1579,7 +1579,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 	position: relative;
 }
 
-	.search { 
+	.search {
 		float: right;
 		position: relative;
 		padding-right:12px;
@@ -1784,8 +1784,8 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 		h4 .label {float: right; margin-right: 40px;}
 		h4 .badge {float: right; margin-right: 40px;}
 
-		.box .title span[class*=" icon-"], .box .title span[class*=" brocco-icon-"], .box .title span[class*=" cut-icon-"], 
-		.box .title span[class*=" entypo-icon-"], .box .title span[class*=" icomoon-icon-"], .box .title span[class*=" minia-icon-"], 
+		.box .title span[class*=" icon-"], .box .title span[class*=" brocco-icon-"], .box .title span[class*=" cut-icon-"],
+		.box .title span[class*=" entypo-icon-"], .box .title span[class*=" icomoon-icon-"], .box .title span[class*=" minia-icon-"],
 		.box .title span[class*=" iconic-icon-"], .box .title span[class*=" meteo-icon-"], .box .title span[class*=" silk-icon-"],
 		.box .title span[class*=" typ-icon-"], .box .title span[class*=" wpzoom-"], .box .title span[class*=" eco-"]
 		{
@@ -1852,7 +1852,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 			background: url(/static/images/icons/plus.png) no-repeat center 3px #f3f3f3;
 			display: block;
 		}
-	
+
 	.box .content.vertical-scroll {
 		width: 200px;
 	}
@@ -1869,7 +1869,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 		margin-left: -1px;
 		margin-right: -1px;
 	}
-	.box.boxMargin {margin-bottom: 27px;}	
+	.box.boxMargin {margin-bottom: 27px;}
 
 	.sortable-placeholder {border: 4px dashed #C4C4C4; margin-bottom: 25px;}
 
@@ -1978,7 +1978,7 @@ body, p {font-family: 'Droid Sans', Helvetica, Arial, sans-serif;}
 		}
 		.bigBtnIcon li a .icon { font-size: 26px; width: 100%; margin: 8px 0 12px 0; display: inline-block;}
 		.bigBtnIcon li a .txt {line-height: 12px; text-align: center; font-size: 12px;}
-		.bigBtnIcon li a .notification {padding: 0 6px 1px 6px; z-index: 999} 
+		.bigBtnIcon li a .notification {padding: 0 6px 1px 6px; z-index: 999}
 
 /*Circle stats*/
 .circle-stats {text-align: center; margin-top:-5px; position: relative;}
@@ -2073,9 +2073,9 @@ h4 .icon span:hover {color: #3F3F3F;}
 		.sparkStats li span:first-child {margin-right:15px;}
 	.sparkStats h4 {
 		position: relative;
-		border-bottom: 1px solid #c4c4c4; 
-		padding-bottom: 0px; 
-		margin-bottom: 10px; 
+		border-bottom: 1px solid #c4c4c4;
+		padding-bottom: 0px;
+		margin-bottom: 10px;
 		line-height: 37px;
 		-moz-box-shadow:0 1px 0px rgba(255, 255, 255, 1);
 		-webkit-box-shadow: 0 1px 0px rgba(255, 255, 255, 1);
@@ -2092,7 +2092,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 	text-align: center;
 }
 	.chartShortcuts li {
-		display: inline-block; 
+		display: inline-block;
 		margin: 0 5px 5px 0;
 		border: 1px solid #C4C4C4;
 		border-radius: 2px;
@@ -2110,7 +2110,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 	}
 	.chartShortcuts a:hover {
 		background-position: 85% center;
-		color:#444444; 
+		color:#444444;
 		-webkit-transition: background 0.3s ease;
 		-moz-transition: background 0.3s ease;
         -ms-transition: background 0.3s ease;
@@ -2123,9 +2123,9 @@ h4 .icon span:hover {color: #3F3F3F;}
 /*To Do List*/
 .todo {position: relative; margin-bottom: 27px;}
 .todo h4 {
-	border-bottom: 1px solid #c4c4c4; 
-	padding-bottom: 0px; 
-	margin-bottom: 10px; 
+	border-bottom: 1px solid #c4c4c4;
+	padding-bottom: 0px;
+	margin-bottom: 10px;
 	line-height: 37px;
 	-moz-box-shadow:0 1px 0px rgba(255, 255, 255, 1);
 	-webkit-box-shadow: 0 1px 0px rgba(255, 255, 255, 1);
@@ -2229,7 +2229,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 .searchField { max-width: 60%; margin: 0 5px 0 5px; float: left; background: url(/static/images/search.png) no-repeat 95% center; }
 .searchBox { margin: 10px 0 22px 0; position: relative; width: 100%; }
 .searchBox > span { float: left; display: block; margin-top: 8px; }
-.searchBox button { 
+.searchBox button {
 	padding-left: 7px;
 	padding-right: 7px;
 	padding-bottom: 10px;
@@ -2237,7 +2237,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 .count { margin-top: 10px; display: block; float: left; }
 #box1Clear span, #box2Clear span {
 	display: inline-block;
-	margin-right: 0;	
+	margin-right: 0;
 }
 .slider {margin-top:8px;}
 
@@ -2264,7 +2264,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 
 .galleryView>li .actionBtn {position: absolute; bottom:10px; width: 100%;}
 .galleryView>li .actionBtn a {
-	padding:3px; 
+	padding:3px;
 	background: #000;
 	-webkit-border-radius:2px;
 	-moz-border-radius:2px;
@@ -2291,9 +2291,9 @@ h4 .icon span:hover {color: #3F3F3F;}
 
 .recent-users {position: relative; list-style:none; padding-top: 15px; margin-left:0; padding-bottom: 0;}
 .recent-users li {border-bottom: 1px solid #c4c4c4; padding: 10px 0 15px 0; width: 100%;}
-.recent-users .avatar {	
-	margin-left:15px; 
-	width:40px; 
+.recent-users .avatar {
+	margin-left:15px;
+	width:40px;
 	height: 40px;
 	border:1px solid #e3e2e2;
 	-webkit-border-radius:2px;
@@ -2368,7 +2368,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 		width: 10px;
 		height: 17px;
 		background: url(/static/images/icons/arrow-right.png) no-repeat;
-	}		
+	}
 
 /*loader*/
 .loadstate, .loadstate body {overflow:hidden}
@@ -2458,7 +2458,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 		-ms-transition: background 0.5s ease-in-out;
 		-o-transition: background 0.5s ease-in-out;
 		transition: background 0.5s ease-in-out;
-	}	
+	}
 	.invoice .you {float: left; margin-bottom: 15px;}
 	.invoice .client {float: right;}
 	.invoice .payment {float: left;}
@@ -2476,7 +2476,7 @@ h4 .icon span:hover {color: #3F3F3F;}
 	.invoice-footer p {margin-left: 20px; margin-top: 10px;}
 
 form .image {
-	padding: 5px; 
+	padding: 5px;
 	border: 1px solid #c4c4c4;
 	border-radius: 2px;
 	-webkit-border-radius: 2px;
@@ -2551,7 +2551,7 @@ form input.valid {border: 1px solid #9FC569 !important;}
 }
 .email-header {margin-bottom: 20px;}
 .email-header .btn-group > .dropdown-toggle, .email-header .btn-group .check {
-	padding: 2px 10px; 
+	padding: 2px 10px;
 	font-size: 12px;
 	-moz-border-radius: 2px 2px 2px 2px !important;
 	-webkit-border-radius: 2px 2px 2px 2px !important;

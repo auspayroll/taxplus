@@ -5,7 +5,7 @@
 	<h1>{{ village }} village</h1>
 
 	<div>
-		<a href="{% url 'add_village_utility' village.pk %}">Add a new Account in {{village}} village</a> | <a href="{% url 'village' village.pk %}">Village Accounts</a> | <a href="{% url 'village_update' village.pk %}">Update Village</a>
+		<a href="{% url 'add_village_utility' village.pk %}">Add a new Account in {{village}} village</a> | <a href="{% url 'village' village.pk %}">Village Accounts</a> | <a href="{% url 'village_rates' village.pk %}">Rates</a> | <a href="{% url 'village_update' village.pk %}">Update Village</a>
 	</div>
 
 	<div class="help">
@@ -22,7 +22,7 @@
 			or you can go directly to add a collection by clicking on the 'new collection' link for that account.
 		</div>
 		<p/>
-		<table border="1">
+		<table class="table">
 			<tr><th>Account Name</th><th>Location</th><th>Period</th>
 			{% for account in accounts %}
 				<tr>
@@ -47,7 +47,7 @@
 			What is a payment? A payment is made on a fee created in
 			advance. It will have an outstanding amount, and a due date. The fee outstanding amount is then reduced by the payment amount.
 		</div>
-		<table border="1">
+		<table class="table">
 			<tr><th>Amount</th>
 				<th>Fee Type</th>
 				<th>No. Collections</th>

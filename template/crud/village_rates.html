@@ -1,0 +1,11 @@
+{% extends "crud/village.html" %}
+
+{% block frame %}
+	<h3>Rates</h3>
+	<table border="1" class="table">
+		<tr><th>id</th><th>Category</th><th>Rate</th><th>Effective From</th>
+		{% for r in rates %}
+			<tr><td>{{ r.pk }}</td><td>{{ r.category }}</td><td>{{ r.amount }}</td><td>{{ r.date_from }}</td><td><a href="">Edit</a></td></tr>
+		{% endfor %}
+	</table>
+{% endblock %}

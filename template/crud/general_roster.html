@@ -24,12 +24,14 @@
 	{% for d, collections in dates.items %}
 	<div style="margin-bottom:20px; margin-top:15px">
 		{% now "Y-m-d" as todays_date %}
+		<div style="background-color:#cccccc; padding:5px;">
 		{% if todays_date == d|date:"Y-m-d" %}
 			<h2>Roster for Today, {{ d|date:'l - M d, Y' }} </h2>
 		{% else %}
 			<h3>{{ d|date:'l - M d, Y' }}</h3>
 		{% endif %}
-		<table border="1" width="70%">
+		</div>
+		<table class="table" border="1">
 			<tr>
 				<th>id</th>
 				<th>District</th>

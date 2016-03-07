@@ -1,0 +1,24 @@
+@media screen,print
+{
+html {height: 100%;}
+body {
+	background: #fff;
+	-webkit-font-smoothing: antialiased;
+	overflow-x:	hidden;
+	background: url(../images/patterns/5.png) repeat;
+	height: 100%;
+}
+
+.sidenav {width: 100%; margin-left:0;}
+
+.navbar-inverse {
+    background-color: #E7E5F5;
+    border-color: 0
+    padding: 5px;
+}
+
+.logo{
+	padding:5px 0;
+}
+
+}

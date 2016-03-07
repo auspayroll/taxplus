@@ -832,3 +832,23 @@ def village_update(request, pk):
 		form = VillageForm(instance=village)
 		return render(request, 'crud/village_update.html', {'form':form, 'village':village})
 
+
+@user_passes_test(admin_check)
+def village_rates(request, pk):
+	village = get_object_or_404(Village, pk=pk)
+	rates = village.rate_set.all().order_by('-date_from')
+	return render(request, 'crud/village_rates.html', {'village':village, 'rates':rates})
+
+@user_passes_test(admin_check)
+def village_rate_update(request, pk):
+	village = get_object_or_404(Village, pk=pk)
+	if request.method == 'POST':
+		form = VillageForm(request.POST, instance=village)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'Village has been updated')
+			return HttpResponseRedirect(reverse('village', args=[village.pk]))
+	else:
+		form = VillageForm(instance=village)
+		return render(request, 'crud/village_update.html', {'form':form, 'village':village})
+
