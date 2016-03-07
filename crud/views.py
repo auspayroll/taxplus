@@ -69,7 +69,7 @@ def login(request):
 
 @user_passes_test(admin_check)
 def index(request):
-	return districts(request)
+	return general_roster(request)
 
 
 @user_passes_test(admin_check)

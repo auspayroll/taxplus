@@ -2,7 +2,7 @@ from django.conf.urls import patterns, include, url
 from .views import *
 
 urlpatterns = patterns('',
-	url(r'^$',districts, name='index'),
+	url(r'^$',general_roster, name='index'),
 	url(r'^select_fees/$',select_fees, name='select_fees'),
 	url(r'^new_citizen_account/$',new_citizen_account, name='new_citizen_account'),
 	url(r'^new_business_account/$',new_business_account, name='new_business_account'),
