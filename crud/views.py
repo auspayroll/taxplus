@@ -34,8 +34,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 
 
 def admin_check(user):
-    return (user.groups.filter(name__in=['staff', 'Staff']) or user.is_staff or user.is_superuser)
-
+    return (user.groups.filter(name__in=['staff', 'Staff']) or user.is_superuser)
 
 
 def logout(request):
