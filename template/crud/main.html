@@ -54,10 +54,14 @@
         <!--[if lt IE 8]>
             <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         <![endif]-->
-        <div class="logo">
-          <img src="{% static 'img/pm_logo.png' %}" width="320" />
-        </div>
-    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+
+
+    <nav class="navbar" role="navigation">
+      <div class="logo">
+        <img src="{% static 'img/pm_logo.png' %}" width="320" />
+      </div>
+
+
       <div class="container">
          <!--<a href="{% url 'new_citizen_account' %}">New Citizen Account</a>|
          <a href="{% url 'new_business_account' %}">New Business Account</a>|-->
@@ -66,12 +70,11 @@
          <a href="{% url 'users' %}">Users</a>&nbsp;
           <br/><a href="{% url 'recent_accounts' %}">Recent Accounts</a>&nbsp;|
           <a href="{% url 'recent_collections' %}">Recent Collections</a>&nbsp;|
-          <!--<a href="{% url 'recent_locations' %}">Recent Locations</a>&nbsp;| -->
 
          <a href="/admin/logout/">Logout</a>
       </div>
-    </nav>
 
+    </nav>
 
     <div class="container">
 
@@ -85,10 +88,10 @@
       <hr/>
 
       <div>
-      {% block main %}
+        {% block main %}
 
 
-      {% endblock %}
+        {% endblock %}
       </div>
 
       <hr>

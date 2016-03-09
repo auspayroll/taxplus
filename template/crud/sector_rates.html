@@ -1,15 +1,19 @@
-{% extends "crud/village.html" %}
+{% extends "crud/sector.html" %}
 
 {% block frame %}
 	<h3>Rates</h3>
-	<table border="1" class="table table-hover">
-		<tr><th>id</th><th>Category</th>
+	<table border="1" class="table table-hover table-striped">
+		<tr>
+			<th>id</th>
+			<th>Village</th>
+			<th>Category</th>
 			<th>Sub Category</th>
 			<th>Rate</th>
 			<th>Effective From</th>
 		</tr>
 		{% for r in rates %}
 			<tr><td>{{ r.pk }}</td>
+				<td>{{ r.village }}</td>
 				<td>{{ r.category }}</td>
 				<td>{{ r.sub_category }}</td>
 				<td>{{ r.amount }}</td>

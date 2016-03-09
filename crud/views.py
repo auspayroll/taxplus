@@ -4,7 +4,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, AddUtilityRegionForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
-	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm
+	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile
 from datetime import date, timedelta
@@ -26,7 +26,7 @@ from django.shortcuts import HttpResponseRedirect, render_to_response, get_objec
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response
 from random import randint
-from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property
+from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property, Rate
 import csv
 import json
 import collections
@@ -834,21 +834,30 @@ def village_update(request, pk):
 
 
 @user_passes_test(admin_check)
+def sector_rates(request, pk):
+	sector = get_object_or_404(Sector, pk=pk)
+	rates = Rate.objects.filter(Q(sector=sector) | Q(village__cell__sector=sector)).order_by('category', '-date_from')
+	return render(request, 'crud/sector_rates.html', {'sector':sector, 'rates':rates})
+
+
+@user_passes_test(admin_check)
 def village_rates(request, pk):
 	village = get_object_or_404(Village, pk=pk)
 	rates = village.rate_set.all().order_by('-date_from')
 	return render(request, 'crud/village_rates.html', {'village':village, 'rates':rates})
 
 @user_passes_test(admin_check)
-def village_rate_update(request, pk):
-	village = get_object_or_404(Village, pk=pk)
+def rate_update(request, pk):
+	rate = get_object_or_404(Rate, pk=pk)
 	if request.method == 'POST':
-		form = VillageForm(request.POST, instance=village)
+		form = RateForm(request.POST, instance=rate)
 		if form.is_valid():
 			form.save()
-			messages.success(request,'Village has been updated')
-			return HttpResponseRedirect(reverse('village', args=[village.pk]))
+			messages.success(request,'Rate has been updated')
+			next = request.POST.get('next')
+			if next:
+				return HttpResponseRedirect(next)
 	else:
-		form = VillageForm(instance=village)
-		return render(request, 'crud/village_update.html', {'form':form, 'village':village})
+		form = RateForm(instance=rate, initial={'next':request.GET.get('next')})
+		return render(request, 'crud/rate_update.html', {'form':form, 'rate':rate})
 

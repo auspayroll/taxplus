@@ -4,7 +4,7 @@
 	<div><a href="{% url 'district' sector.district.pk %}">{{ sector.district }} district</a></div>
 	<h1>{{ sector }} sector</h1>
 
-	<div><a href="{% url 'sector' sector.pk %}">Cells</a> | <a href="{% url 'sector_update' sector.pk %}">Update Sector</a></div>
+	<div><a href="{% url 'sector' sector.pk %}">Cells</a> | <a href="{% url 'sector_rates' sector.pk %}">Rates</a>| <a href="{% url 'sector_update' sector.pk %}">Update Sector</a></div>
 	<p/>
 	{% block frame %}
 	{% if cells %}

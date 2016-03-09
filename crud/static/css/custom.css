@@ -11,7 +11,7 @@ body {
 
 .sidenav {width: 100%; margin-left:0;}
 
-.navbar-inverse {
+.navbar {
     background-color: #E7E5F5;
     border-color: 0
     padding: 5px;
@@ -19,6 +19,15 @@ body {
 
 .logo{
 	padding:5px 0;
+}
+
+.messages{
+	background: #88cc88;
+	padding:5px;
+	border-radius: 3px;
+	padding-left:15px;
+	list-style-type: none;
+	font-weight:bold;
 }
 
 }

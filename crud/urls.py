@@ -80,7 +80,10 @@ urlpatterns = patterns('',
 	url(r'^cell/(?P<pk>\d+)/update/$',cell_update, name='cell_update'),
 	url(r'^village/(?P<pk>\d+)/update/$',village_update, name='village_update'),
 
+	url(r'^rate/(?P<pk>\d+)/update/$',rate_update, name='rate_update'),
+
 	url(r'^village/(?P<pk>\d+)/rates/$',village_rates, name='village_rates'),
+	url(r'^sector/(?P<pk>\d+)/rates/$',sector_rates, name='sector_rates'),
 
 
 	url(r'^utility/(?P<pk>\d+)/update/$',update_utility, name='update_utility'),

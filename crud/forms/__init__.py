@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village
+from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village, Rate
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
  Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit
 from django.contrib.gis.geos import Point
@@ -638,6 +638,14 @@ class VillageForm(forms.ModelForm):
 		super(VillageForm,self).__init__(*args, **kwargs)
 		sector = self.instance.cell.sector
 		self.fields['cell'].queryset = Cell.objects.filter(sector=sector)
+
+
+class RateForm(forms.ModelForm):
+	class Meta:
+		model = Rate
+		fields = ('amount',)
+
+	next = forms.CharField(required=False, widget=forms.HiddenInput())
 
 
 

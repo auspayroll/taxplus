@@ -1,0 +1,25 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<div>
+		<div>
+	<fieldset>
+	    <legend>Update Rate</legend>
+	    {% if rate.sector %}<div><label>Sector:</label> {{ rate.sector }} </div>{% endif %}
+	    {% if rate.cell %}<div><label>Cell:</label> {{ rate.cell}} </div>{% endif %}
+	    {% if rate.village %}<div><label>Village:</label> {{ rate.village}} </div>{% endif %}
+	    {% if rate.category %}<div><label>Category:</label> {{ rate.category}} </div>{% endif %}
+	    {% if rate.sub_category %}<div><label>Sub Category:</label> {{ rate.sub_category}}</div>{% endif %}
+	    <div><label>Effective from:</label> {{ rate.date_from}} </div>
+  </fieldset>
+		</div>
+	<form method="post">
+	<table>
+	{{ form }}
+		{% csrf_token %}
+	</table>
+	<p>
+	<button>Update</button>
+	<p/>
+	</div>
+{% endblock %}
