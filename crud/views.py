@@ -52,7 +52,7 @@ def login(request):
 			if user is not None:
 				if user.is_active:
 					auth_login(request, user)
-					if user.groups.filter(name='Staff') or user.is_staff or user.is_superuser:
+					if user.groups.filter(name='Staff') or user.is_superuser:
 						return HttpResponseRedirect(reverse('index'))
 					elif user.groups.filter(name='Collector').exists():
 						return HttpResponseRedirect(reverse('collector_index'))
