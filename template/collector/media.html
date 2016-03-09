@@ -1,0 +1,29 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+<h2>Account Media</h2>
+<a href="{% url 'new_media' account.pk %}">New Media</a>
+<form method="post">
+<table border="1">
+<tr>
+	<th>Date</th>
+	<th>Title</th>
+	<th>Related Record</th>
+	<th>Size</th>
+	<th>Staff</th>
+	<th>Type</th>
+</tr>
+{% for m in media %}
+	<tr>
+		<td><a href="">{{ m.created_on }}</a></td>
+		<td>{{ m.title }}</td>
+		<td>{{ m.record }}</td>
+		<td>{{ m.item.size }}</td>
+		<td>{{ m.user }}</td>
+		<td>{{ m.extension }}</td>
+		<td><a href="{{ m.item.url }}" target="_BLANK">Download</a></td>
+	</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

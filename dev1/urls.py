@@ -84,6 +84,8 @@ urlpatterns = patterns('',
 	url(r'^admin/', include('admin.urls')),
 	url(r'^$','crud.views.login', name='login'),
 	url(r'^crud/', include('crud.urls')),
+	url(r'^collector/', include('collector.urls')),
+
 )
 
 urlpatterns += patterns('',

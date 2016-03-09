@@ -1,0 +1,19 @@
+{% extends "crud/main.html" %}
+{% load static from staticfiles %}
+{% block main %}
+<script>
+	var sector_posted = {{ request.POST.sector|default:form.initial.sector|default:'0' }};
+	var cell_posted = {{ request.POST.cell|default:form.initial.cell|default:'0' }};
+	var village_posted = {{ request.POST.village|default:form.initial.village|default:'0' }};
+</script>
+<script src="{% static 'js/load_region_data.js' %}"></script>
+<h1>{{heading}}</h1>
+
+<form method="post">
+<table>
+{{ form }}
+{% csrf_token %}
+</table>
+<input type="submit" value="Submit">
+</form>
+{% endblock %}

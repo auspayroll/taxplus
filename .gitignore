@@ -11,3 +11,4 @@ invoices/*
 *.gzip
 *.gz
 *.xls
+static/*

@@ -1,0 +1,103 @@
+<!doctype html>
+{% load staticfiles %}
+
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang=""> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8" lang=""> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9" lang=""> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang=""> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}">
+        <style>
+            body {
+                padding-bottom: 20px;
+            }
+        </style>
+        <!--<link rel="stylesheet" href="{% static "css/bootstrap-theme.min.css" %}">-->
+        <link rel="stylesheet" href="{% static "css/main.css" %}">
+
+        <script src="{% static "js/vendor/modernizr-2.8.3-respond-1.4.2.min.js" %}"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="{% static 'js/vendor/jquery-1.11.2.js' %}"><\/script>')</script>
+        <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/multidatepicker.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/prettify.js' %}"></script>
+        <script type="text/javascript" src="{% static 'js/vendor/lang-css.js' %}"></script>
+
+
+        <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/mdp.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/pepper-ginder-custom.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/prettify.css' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/custom.css' %}">
+        <script>
+        <!--
+           $(document).ready(function(){
+              $('button').click(function(){
+                $(this).html('submitting');
+                $(this).attr('disabled',true);
+                $(this).parents('form:first').submit();
+                return false;
+
+              })
+           });
+           -->
+        </script>
+    </head>
+    <body>
+        <!--[if lt IE 8]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+
+    <nav class="navbar" role="navigation">
+      <div class="logo">
+        <img src="{% static 'img/pm_logo.png' %}" width="320" />
+      </div>
+
+
+      <div class="container">
+       <!--<a href="{% url 'new_citizen_account' %}">New Citizen Account</a>|
+       <a href="{% url 'new_business_account' %}">New Business Account</a>|-->
+        <a href="{% url 'collector_roster' %}">Your Roster</a>&nbsp;|
+        <a href="{% url 'collector_recent_collections' %}">Recent Collections</a>&nbsp;|
+       <a href="/admin/logout/">Logout</a>
+      </div>
+
+    </nav>
+
+    <div class="container">
+
+      {% if messages %}
+      <ul class="messages">
+          {% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+          {% endfor %}
+      </ul>
+      {% endif %}
+      <hr/>
+
+      <div>
+        {% block main %}
+
+
+        {% endblock %}
+      </div>
+
+      <hr>
+
+      <footer>
+        <p>&copy; Taxplus</p>
+      </footer>
+    </div> <!-- /container -->
+
+        <script src="{% static 'js/vendor/bootstrap.min.js' %}"></script>
+
+    </body>
+</html>

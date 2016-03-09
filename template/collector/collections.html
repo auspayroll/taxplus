@@ -1,0 +1,41 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h2>Fee Collections</h2>
+	<h3>Total No. Collections: , Total Amount:</h3>
+	<div>Search for receipt no: <button>Search</button> Allocate selected collections to <button>Allocate</button></div>
+	<p/>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th><input type="checkbox" name="select_all"></th>
+		<th>id</th>
+		<th>Date</th>
+		<th>Fee Type</th>
+		<th>Location/Site</th>
+		<th>No. collections</th>
+		<th>Receipt no.s</th>
+		<th>Amount</th>
+		<th>Collector</th>
+		<th>Bank receipt</th>
+
+	</tr>
+	{% for c in collections %}
+	<tr>
+		<td><input type="checkbox" name="collection_{{ c.pk }}"></td>
+		<td>{{c.pk}}</td>
+		<td>{{ c.date_to }}</td>
+		<td>{{ c.fee_type }}</td>
+		<td>{{ c.utility|default:'-' }}</td>
+		<td>{{ c.no_collections|default:'-' }}</td>
+		<td>{{ c.receipt_no|default:'-' }}</td>
+		<td>{{ c.amount }}</td>
+		<td>{{ c.collector|default:'-' }}</td>
+		<td>{{ c.deposit.bank_receipt_no }}</td>
+		<td><a href="{% url 'edit_collection' c.id %}">Edit</a></td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+

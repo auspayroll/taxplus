@@ -1,0 +1,37 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+
+<h1>Account No. {{ account.pk }} - {{ account.name }}</h1>
+<h3 style="float:right; margin-right:20px">{{ account.start_date }} - {{ account.end_date|default:'Active' }}</h3>
+
+<div>
+
+<h3>{% autoescape off %}{{ account.utility_list|safe }}{% endautoescape %}</h3>
+
+</div>
+<div>
+
+
+<a href="{% url 'new_fee_collection' account.pk %}">New Collection</a> |
+<a href="{% url 'fee_collections' account.pk %}">Collections</a> |
+<a href="{% url 'account_fees' account.pk %}">Fees</a> |
+<a href="{% url 'account_payments' account.pk %}">Payments</a> |
+<a href="{% url 'account_media' account.pk %}">Media</a> |
+<a href="{% url 'account_holders' account.pk %}">Account Holders</a> |
+<a href="{% url 'account_notes' account.pk %}">Account Notes</a> |
+<a href="{% url 'account_contacts' account.pk %}">Contacts</a> |
+<a href="{% url 'add_account_dates' account.pk %}">Add operating dates</a>
+
+<!--<a href="{% url 'account_payments' account.pk %}">Running Balance</a>-->
+</div>
+
+<div>
+{% block body %}
+
+
+{% endblock %}
+</div>
+
+{% endblock %}
+

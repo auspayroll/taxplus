@@ -1,0 +1,23 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<div>&nbsp;<a href="{% url 'district' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} district</a> &#8594 <a href="{% url 'sector' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} sector</a> &#8594 <a href="{% url 'cell' village.cell.sector.district.pk %}">{{ village.cell.sector.district }} cell</a></div>
+	<h1>{{ village }} village</h1>
+	<div style="overflow:auto;">
+	</div>
+
+	<a href="{% url 'village' village.pk %}">Village Accounts</a>
+	<hr/>
+
+	<div>
+		<form method="post">
+			<table>
+			{{ form.as_table }}
+		</table>
+			<button>Add</button>
+			{% csrf_token %}
+		</form>
+
+	</div>
+
+{% endblock %}

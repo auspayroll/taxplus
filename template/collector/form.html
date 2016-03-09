@@ -1,0 +1,36 @@
+{% extends "crud/account.html" %}
+{% load staticfiles %}
+{% block body %}
+<style>
+.f{
+	float:left;
+	margin-right:20px;
+	margin-bottom:10px;
+	padding:20px;
+	border-radius:6px;
+	border:1pt solid #cccccc;
+}
+</style>
+<h1>{{heading}}</h1>
+<form method="post" enctype="multipart/form-data">
+<div style="overflow:hidden; margin-top:20px;">
+	<div class="f">
+
+		<table>
+		{{ form }}
+		{% csrf_token %}
+		</table>
+	</div>
+	{% if form2 %}
+		<div class="f">
+			<h3>{{ heading2 }}</h3>
+			<table>
+			{{ form2 }}
+			</table>
+		</div>
+	{% endif %}
+
+</div>
+<input type="submit" value="Submit">
+	</form>
+{% endblock %}

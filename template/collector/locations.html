@@ -1,0 +1,36 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h1>Locations</h1>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>Id</th>
+		<th>Name</th>
+		<th>Identifier</th>
+		<th>Type</th>
+		<th>UPI</th>
+		<th>GPS</th>
+		<th>District</th>
+		<th>Sector</th>
+		<th>Cell</th>
+		<th>Village</th>
+	</tr>
+	{% for l in locations %}
+	<tr>
+		<td>{{ l.pk }}</td>
+		<td><a href="{% url 'edit_location' l.pk %}">{{ l }}</a></td>
+
+		<td>{{ l.identifier|default:'-' }}</td>
+		<td>{{ l.utility_type }}</td>
+		<td>{{ l.upi|default:'-' }}</td>
+		<td>{% if l.location %}{{ l.location.coords }}{% else %}-{% endif %}</td>
+		<td>{{ l.district|default:'-' }}</td>
+		<td>{{ l.sector|default:'-' }}</td>
+		<td>{{ l.cell|default:'-' }}</td>
+		<td>{{ l.village|default:'-' }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}

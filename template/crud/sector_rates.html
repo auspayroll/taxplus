@@ -13,7 +13,7 @@
 		</tr>
 		{% for r in rates %}
 			<tr><td>{{ r.pk }}</td>
-				<td>{{ r.village }}</td>
+				<td>{% if r.village %}<a href="{% url 'village' r.village.pk %}">{{ r.village }}</a>{% endif %}</td>
 				<td>{{ r.category }}</td>
 				<td>{{ r.sub_category }}</td>
 				<td>{{ r.amount }}</td>

@@ -1,0 +1,18 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>{{ group }} EPAYS</h1>
+<form method="post">
+<table border="1">
+<tr><th>EPAY</th>
+	<th>Collector</th><th>Collection date</th><th>Collection coords</th></tr>
+{% for e in epays %}
+<tr><td>{{ e }}</td>
+	<td><a href="{% url 'collector' e.collector.pk %}">{{ e.collector }}</a></td>
+	<td>{{ e.used_on }}</td>
+	<td>{{ e.collection_point }}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+{% endblock %}

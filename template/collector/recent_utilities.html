@@ -1,0 +1,35 @@
+{% extends "crud/main.html" %}
+{% load static from staticfiles %}
+{% block main %}
+<script>
+	var sector_posted = {{ request.POST.sector|default:'0' }};
+	var cell_posted = {{ request.POST.cell|default:6|default:'0' }};
+	var village_posted = {{ request.POST.village|default:9|default:'0' }};
+</script>
+<script src="{% static 'js/load_region_data.js' %}"></script>
+<h1>{{heading|default:'Recent Market Sites'}}</h1>
+<div>
+<p/>
+<table border="1">
+<tr><th></th>
+	<th>Type</th>
+	<th>District</th>
+	<th>Sector</th>
+	<th>Cell</th>
+	<th>Village</th>
+	<th>UPI</th>
+	<th>Lat/Lon</th></tr>
+{% for u in utilities %}
+	<tr><td><a href="{% url 'update_utility' u.pk %}">{{ u }}</a></td>
+	<td>{{ u.utility_type }}</td>
+	<td>{{ u.district|default:'-' }}</td>
+	<td>{{ u.sector|default:'-' }}</td>
+	<td>{{ u.cell|default:'-' }}</td>
+	<td>{{ u.village|default:'-' }}</td>
+	<td>{{ u.upi|default:'-' }}</td>
+	<td>{{ u.location.coords }}</td></tr>
+{% endfor %}
+</table>
+</div>
+
+{% endblock %}

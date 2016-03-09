@@ -1,0 +1,31 @@
+{% extends "crud/main.html" %}
+{% load static from staticfiles %}
+{% block main %}
+<script>
+	var sector_posted = {{ request.POST.sector|default:'0' }};
+	var cell_posted = {{ request.POST.cell|default:6|default:'0' }};
+	var village_posted = {{ request.POST.village|default:9|default:'0' }};
+</script>
+<script src="{% static 'js/load_region_data.js' %}"></script>
+
+
+{% if current_accounts %}
+	<h2>Select from available {{ form.cleaned_data.utility_type }} sites in {{ form.cleaned_data.village }} village, <br/>or create a new location below</h1>
+	<table border="1">
+	<tr><th>Account Name</th><th>Location</th><th>Date Started</th></tr>
+	{% for a in current_accounts %}
+		<tr><td>{{ a }}</td><td>{{ a.utilities.all|join:', ' }}</td><td>{{ a.start_date }}</td><td><a href="{% url 'account' a.pk %}">Use this Account</a></td></tr>
+	{% endfor %}
+	</table>
+{% endif %}
+<p/>
+<hr/>
+<h3>{{heading}}</h3>
+<form method="post" action="{% url 'new_location_post' %}">
+<table>
+	{{ form }}
+{% csrf_token %}
+</table>
+<input type="submit" value="Submit">
+</form>
+{% endblock %}

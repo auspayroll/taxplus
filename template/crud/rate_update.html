@@ -5,9 +5,9 @@
 		<div>
 	<fieldset>
 	    <legend>Update Rate</legend>
-	    {% if rate.sector %}<div><label>Sector:</label> {{ rate.sector }} </div>{% endif %}
-	    {% if rate.cell %}<div><label>Cell:</label> {{ rate.cell}} </div>{% endif %}
-	    {% if rate.village %}<div><label>Village:</label> {{ rate.village}} </div>{% endif %}
+	    {% if rate.sector %}<div><label>Sector:</label> <a href="{% url 'sector' rate.sector %}">{{ rate.sector }}</a></div>{% endif %}
+	    {% if rate.cell %}<div><label>Cell:</label><a href="{% url 'cell' rate.cell.pk %}">{{ rate.cell}}</a></div>{% endif %}
+	    {% if rate.village %}<div><label>Village:</label> <a href="{% url 'village' rate.village.pk %}">{{ rate.village}}</a></div>{% endif %}
 	    {% if rate.category %}<div><label>Category:</label> {{ rate.category}} </div>{% endif %}
 	    {% if rate.sub_category %}<div><label>Sub Category:</label> {{ rate.sub_category}}</div>{% endif %}
 	    <div><label>Effective from:</label> {{ rate.date_from}} </div>

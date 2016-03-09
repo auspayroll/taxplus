@@ -1,0 +1,12 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>Generate EPAYS</h1>
+<form method="post">
+<table>
+{{ epayform }}
+</table>
+{% csrf_token %}
+<input type="submit" value="Create EPAYS">
+</form>
+{% endblock %}

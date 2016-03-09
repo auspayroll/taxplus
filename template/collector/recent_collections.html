@@ -1,0 +1,25 @@
+{% extends "collector/main.html" %}
+
+{% block main %}
+	<h2>Recent Collections</h2>
+	<table class="table">
+	<tr>
+		<th></th>
+		<th>Amount</th>
+		<th>Fee Type</th>
+		<th>No. collections</th>
+		<th>Location</th>
+	</tr>
+	{% for c in recent_collections %}
+	<tr>
+		<td><a href="{% url 'collector_edit_collection' c.id %}">Edit</a></td>
+		<td>{{ c.amount }}</td>
+		<td>{{ c.fee_type|capfirst }}</td>
+		<td>{{ c.no_collections|default:'-' }}</td>
+		<td>{{ c.utility }}</a></td>
+
+	</tr>
+	{% endfor %}
+	</table>
+{% endblock %}
+

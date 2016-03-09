@@ -1,0 +1,14 @@
+{% extends "crud/main.html" %}
+{% load staticfiles %}
+{% block main %}
+	<h2 style="display:inline">Rwandan Districts</h2>
+	<div>To add Utility/Site, select down to Village Level. You can then add a Utility such as Tower, Quarry, or a Market Site to that Village.
+	You will also be able to see what Site and Utility accounts exist for that Village. You will then be able to add fee collections on those accounts.</div>
+	<hr/>
+	<div style="overflow:auto;">
+	{% for d in districts %}
+		<div style="float:left; width:100px;"><h4><a href="{% url 'district' d.pk %}">{{ d }}</a></h4></div>
+	{% endfor %}
+	</div>
+
+{% endblock %}

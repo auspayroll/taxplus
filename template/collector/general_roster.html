@@ -1,0 +1,66 @@
+{% extends "collector/main.html" %}
+
+{% block main %}
+	<h2>Roster for {{ request.user.get_full_name }}</h2>
+	<style>
+	.missing {
+		background-color:red;
+		padding:2px;
+		color:white;
+		font-weight:bold
+	}
+
+	.ok {
+		background-color:green;
+		color:white;
+		font-weight:bold
+	}
+	</style>
+	<div>
+		<a href="{% url 'collector_roster_block' last_block %}">Last 2 weeks</a> |
+		<a href="{% url 'collector_roster' %}">Today</a> |
+		<a href="{% url 'collector_roster_block' next_block %}">Next 2 weeks</a>
+	</div>
+	{% for d, collections in dates.items %}
+	<div style="margin-bottom:20px; margin-top:15px">
+		{% now "Y-m-d" as todays_date %}
+		<div style="background-color:#cccccc; padding:5px;">
+		{% if todays_date == d|date:"Y-m-d" %}
+			<h2>Roster for Today, {{ d|date:'l - M d, Y' }} </h2>
+		{% else %}
+			<h3>{{ d|date:'l - M d, Y' }}</h3>
+		{% endif %}
+		</div>
+		<table class="table table-hover" border="1">
+			<tr>
+				<th></th>
+				<th>Location</th>
+				<th>Fee</th>
+				<th>No. collections</th>
+				<th>Amount</th>
+				<th>Bank Recept.</th>
+			</tr>
+			{% for c in collections %}
+				<tr>
+					<td><a href="{% url 'collector_edit_collection' c.pk %}?next={{ request.path }}">Edit</a></td>
+					<td width="15%">{{ c.utility|default:'-' }}</td>
+					<td width="15%">{{ c.fee_type }}</td>
+					<td>{{ c.no_collections }}</td>
+					<td>{{ c.amount }}</td>
+					<td width="15%" {% if c.deposit %}class="ok"{% endif %}>{{ c.deposit.bank_receipt_no|default:'-' }}</td>
+
+				</tr>
+			{% empty %}
+				<tr>
+					<td colspan="7">
+						You have no collections scheduled for this day
+					</td>
+
+				</tr>
+			{% endfor %}
+		</table>
+	</div>
+	{% endfor %}
+
+{% endblock %}
+

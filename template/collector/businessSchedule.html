@@ -1,0 +1,39 @@
+{% extends "collect/main.html" %}
+
+{% block main %}
+<h1>Business Schedule</h1>
+
+<form method="post">
+	{{ form }} <input type="submit" name="Submit">
+	{% csrf_token %}
+
+<div>
+{% if count %}Businesses: {{ count}}{% endif %}
+</div>
+
+{% if b %}
+	<table border="1">
+	<tr>
+		<th>Name</th>
+		<th>Phone1</th>
+		<th>Phone2</th>
+		<th>Address</th>
+		<th>Cell</th>
+		<th>Village</th>
+		<th>Category</th>
+	</tr>
+	{% for bus in b %}
+	<tr>
+		<td>{{ bus.name }}</td>
+		<td>{{ bus.phone1 }}</td>
+		<td>{{ bus.phone2 }}</td>
+		<td>{{ bus.address }}</td>
+		<td>{{ bus.cell }}</td>
+		<td>{{ bus.village }}</td>
+		<td>{{ bus.cleaning_category }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+{% endif %}
+</form>
+{% endblock %}

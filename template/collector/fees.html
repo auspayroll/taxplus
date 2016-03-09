@@ -1,0 +1,34 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h2>Account Fees / Taxes</h2>
+	<a href="{% url 'new_account_fee' account.pk %}">New Fee</a>
+	<form method="post">
+	<table border="1">
+	<tr>
+		<th>id</th>
+		<th>Period</th>
+		<th>Fee</th>
+		<th>rate</th>
+		<th>qty</th>
+		<th>total</th>
+		<th>Total Due (inc. interest)</th>
+		<th>Due date</th>
+
+	</tr>
+	{% for f in fees %}
+	<tr>
+		<td>{{f.pk}}</td>
+		<td>{{ f.from_date }} - {{ f.to_date|default:'active' }}</td>
+		<td>{{ f.fee_type }}</td>
+		<td>{{ r.rate|default:'-' }}</td>
+		<td>{{ f.quantity|default:'-' }}</td>
+		<td>{{ f.amount }}</td>
+		<td>{{ f.total_due }}</td>
+		<td>{{ f.due_date|default:'-' }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	</form>
+{% endblock %}
+
