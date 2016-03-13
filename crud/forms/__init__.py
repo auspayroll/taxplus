@@ -517,6 +517,16 @@ class UserForm(forms.ModelForm):
 	reset_password = forms.BooleanField(required=False)
 	photo = forms.FileField(required=False)
 
+	def __init__(self, *args, **kwargs):
+		user  = kwargs.get('instance')
+		if user and hasattr(user,'profile'):
+			profile = user.profile
+			kwargs.setdefault('initial', {})
+			kwargs['initial'].update(dict([(i.name, getattr(profile,i.name)) for i in profile._meta.fields]))
+			return super(UserForm, self).__init__(*args, **kwargs)
+		else:
+			return super(UserForm, self).__init__(*args, **kwargs)
+
 	def clean(self, *args, **kwargs):
 		cd = self.cleaned_data
 		if cd.get('reset_password'):
