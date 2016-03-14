@@ -341,9 +341,14 @@ class AccountNote(models.Model):
 	created_on = models.DateField(auto_now_add=True)
 
 
+def user_photo_path(instance, filename):
+	_, extension = os.path.splitext(filename)
+	return "users/user_%s%s" % (instance.user.username.replace('.','_'), extension)
+
+
 class Profile(models.Model):
 	user = models.OneToOneField(User, related_name='profile')
 	registration_no = models.CharField(max_length=40)
 	phone = models.CharField(max_length=40)
-	photo = models.ImageField(upload_to='users', null=True)
+	photo = models.ImageField(upload_to=user_photo_path, null=True)
 
