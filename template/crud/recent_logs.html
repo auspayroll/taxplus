@@ -1,0 +1,29 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+	<h2>Recent Logs</h2>
+	<table class="table">
+	<tr>
+		<th>id</th>
+		<th>Date</th>
+		<th>Account</th>
+		<th>Changes</th>
+		<th>Request/IP</th>
+		<th>User</th>
+
+	</tr>
+	{% for c in logs %}
+	<tr>
+		<td>{{c.pk}}</td>
+		<td>{{ c.created|date:'M d, Y' }}</td>
+		<td>{% if c.account %}<a href="{% url 'account' c.account.pk %}">{{ c.account }}</a>{% else %}-{% endif %}</td>
+		<td><div>{{ c.instance }}</div>
+			<div>{{ c.changes_as_html|safe }}</div></td>
+		<td><div>{% if c.request_path %}<a href="{{ c.request_path }}">{{ c.request_path }}</a>{% else %}{% endif %}</div><div>IP: {{ c.request_ip|default:'-' }}</div></td>
+		<td>{% if c.user %}<a href="{% url 'edit_user' c.user.pk %}">{{ c.user }}</a>{% else %}-{% endif %}</td>
+
+	</tr>
+	{% endfor %}
+	</table>
+{% endblock %}
+

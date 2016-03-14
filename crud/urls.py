@@ -88,6 +88,10 @@ urlpatterns = patterns('',
 
 	url(r'^utility/(?P<pk>\d+)/update/$',update_utility, name='update_utility'),
 
+	url(r'^recent_logs/$',recent_logs, name='recent_logs'),
+	url(r'^account/(?P<pk>\d+)/logs/$',account_logs, name='account_logs'),
+	url(r'^user/(?P<pk>\d+)/logs/$',user_logs, name='user_logs'),
+
 
 
 

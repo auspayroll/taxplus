@@ -32,6 +32,9 @@
 </style>
 <h1>{{heading}}</h1>
 <h2>{{ instance }}</h2>
+<div>
+<a href="{% url 'user_logs' user.pk %}">Logs</a>
+</div>
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">

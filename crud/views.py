@@ -6,7 +6,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm
 from crud.models import Account, Contact, AccountPayment, Media,\
-	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -31,6 +31,9 @@ import csv
 import json
 import collections
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from PIL import Image
+import PIL
+import os
 
 
 def admin_check(user):
@@ -637,11 +640,8 @@ def add_account_dates(request, pk):
 			dates = form.cleaned_data.get('dates')
 			cycle = form.cleaned_data.get('cycle')
 			for d in dates:
-				if cycle == -1: #every day
-					collection = Collection.objects.create(account=account, date_from=d, date_to=d,
+				collection = Collection.objects.create(account=account, date_from=d, date_to=d,
 						collector=collector, user=request.user, no_collections=0, fee_type=fee_type, utility=utility)
-				else: # everyweek
-					pass
 
 			messages.success(request, '%d new collections created' % len(dates))
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
@@ -692,14 +692,17 @@ def edit_user(request, pk):
 			if hasattr(user,'profile'):
 				user.profile.registration_no = form.cleaned_data.get('registration_no')
 				user.profile.phone = form.cleaned_data.get('phone')
-				if form.cleaned_data.get('photo'):
-					user.profile.photo = form.cleaned_data.get('photo')
 				user.profile.save()
+				profile = user.profile
 			else:
 				profile = Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
-				if form.cleaned_data.get('photo'):
-					profile.photo = form.cleaned_data.get('photo')
-					profile.save()
+
+			if form.cleaned_data.get('photo'):
+				profile.photo = form.cleaned_data.get('photo')
+				profile.save()
+				#im=Image.open(profile.photo.path)
+				#im.thumbnail([320,320], Image.ANTIALIAS)
+				#im.save(profile.photo.path, quality=100)
 
 			if form.cleaned_data.get('reset_password'):
 				raw_password = form.cleaned_data.get('raw_password')
@@ -860,3 +863,19 @@ def rate_update(request, pk):
 		form = RateForm(instance=rate, initial={'next':request.GET.get('next')})
 		return render(request, 'crud/rate_update.html', {'form':form, 'rate':rate})
 
+@user_passes_test(admin_check)
+def recent_logs(request):
+	recent_logs = Log.objects.all().order_by('-id')[:100]
+	return TemplateResponse(request, 'crud/recent_logs.html', {'logs':recent_logs })
+
+@user_passes_test(admin_check)
+def account_logs(request, pk):
+	account = get_object_or_404(Account,pk=pk)
+	logs = Log.objects.filter(account=account).order_by('-id')
+	return TemplateResponse(request, 'crud/account_logs.html', {'account':account,  'logs':logs })
+
+@user_passes_test(admin_check)
+def user_logs(request, pk):
+	user = get_object_or_404(User,pk=pk)
+	logs = Log.objects.filter(user=user).order_by('-id')
+	return TemplateResponse(request, 'crud/user_logs.html', {'user':user,  'logs':logs })

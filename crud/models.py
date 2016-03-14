@@ -1,21 +1,22 @@
 from __future__ import unicode_literals
+from datetime import date
 from django.contrib.auth.models import User
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.db import models
+from django.db.models import Sum
+from django.db.models.signals import pre_save, post_save
+from django.dispatch import receiver
 from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoice, District, Sector, Cell, Village
 import copy
 import os
 import re
-from django.core.exceptions import ValidationError
-from datetime import date
-from django.core.urlresolvers import reverse
-from django.db.models import Sum
-from django.db.models.signals import pre_save, post_save
-from django.dispatch import receiver
+import json
 
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
@@ -136,7 +137,7 @@ class Account(models.Model):
 		return self.principle_due + self.interest_due + self.penalty_due
 
 	def __unicode__(self):
-		return self.name
+		return self.name or ''
 
 
 	def utility_list(self):
@@ -351,4 +352,31 @@ class Profile(models.Model):
 	registration_no = models.CharField(max_length=40)
 	phone = models.CharField(max_length=40)
 	photo = models.ImageField(upload_to=user_photo_path, null=True)
+
+
+class Log(models.Model):
+	account = models.ForeignKey(Account, null=True)
+	instance_type = models.ForeignKey(ContentType,null=True)
+	instance_id = models.PositiveIntegerField(null=True)
+	instance = GenericForeignKey('instance_type', 'instance_id')
+	user = models.ForeignKey(User, null=True)
+	created = models.DateTimeField(null=True, auto_now_add=True)
+	changes = models.TextField(null=True)
+	request_path = models.TextField(null=True)
+	request_ip = models.CharField(max_length=40, null=True)
+
+	@property
+	def changes_as_html(self):
+		if self.changes:
+			try:
+				change_dict = json.loads(self.changes)
+			except:
+				return self.changes
+			else:
+				html = ''
+				for k,v in change_dict.items():
+					html += '<div><strong>%s</strong>: %s &#8594; %s</div>' % (k, v[0], v[1])
+				return html
+		return '-'
+
 
