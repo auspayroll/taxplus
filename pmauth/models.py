@@ -1,12 +1,10 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from admin.ListCompare import ListCompare
 from datetime import datetime
 from django.contrib.auth.models import User
 from dev1 import variables
 from property.models import Province, District, Sector, Council
-from admin.Common import Common
 from dev1 import ThreadLocal
 from common.validator import *
 from common.util import *

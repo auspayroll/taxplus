@@ -474,7 +474,6 @@ class AddAccountDates(forms.Form):
 	date_from = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text="inclusive")
 	date_to = forms.DateField(widget=html5_widgets.DateInput, initial=date.today(), help_text='inclusive')
 	days = forms.TypedMultipleChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Monday'),('2','Tuesday'),('3','Wednesday'),('4','Thursday'),('5','Friday'),('6','Saturday'), ('0','Sunday'),], widget=forms.CheckboxSelectMultiple)
-	cycle = forms.TypedChoiceField(coerce=int, choices=[('-1','Every day'), ('1','Everyweek'),])
 	dates = forms.CharField(widget=forms.HiddenInput())
 	collector = forms.ModelChoiceField( help_text='allocated collector can be assigned later', required=False, queryset=User.objects.filter(is_active=True, groups__name='Collector'))
 	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))

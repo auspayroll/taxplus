@@ -6,7 +6,6 @@ from dev1 import variables
 from common.models import Status
 from property.functions import getNextPlotId
 from dev1 import ThreadLocal
-from admin.Common import Common
 from django.conf import settings
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone

@@ -1,8 +1,6 @@
 from django.db import models, connection, transaction
 from datetime import datetime
 from django.utils import timezone
-from admin.ListCompare import ListCompare
-from admin.Common import Common
 import ast
 from property.models import Property
 from asset.models import Business, SubBusiness

@@ -2,7 +2,6 @@ import json
 from property.models import *
 from asset.models import Ownership
 from django.db.models.query import QuerySet
-from admin.Common import Common
 import calendar
 from log.models import *
 import datetime
@@ -12,19 +11,19 @@ from django.http import HttpResponse
 from django.db.models import Q,Sum
 
 
-class PropertyMapper:	
-		  
+class PropertyMapper:
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get all properties
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getAllProperties():
 		return Property.objects.all()
 
-	
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Property by Property ID
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getPropertyById(id):
 		property = Property.objects.filter(id = id)
@@ -33,10 +32,10 @@ class PropertyMapper:
 		else:
 			return property[0]
 
-	
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get property by plot ID
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getPropertyByPlotId(plot_id):
 		property = Property.objects.filter(plot_id = plot_id)
@@ -44,12 +43,12 @@ class PropertyMapper:
 			return None
 		else:
 			return property[0]
-	
-	
+
+
 
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get UPI by plot id
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getUPIByPropertyId(property_id):
 		property = PropertyMapper.getPropertyById(property_id)
@@ -60,10 +59,10 @@ class PropertyMapper:
 		cell_code = property.cell.code
 		return cell_code[1:2] + "/" + cell_code[2:4] + "/" + cell_code[4:6] + "/" + cell_code[6:8] + "/" + str(property.parcel_id)
 
-	
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get property by UPI
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getPropertyByUPI(upi):
 		#info = Common.getInfoFromUPI(upi)
@@ -72,11 +71,11 @@ class PropertyMapper:
 			return None
 		else:
 			return property[0]
-	
-	
+
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get property by conditions
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getPropertiesByConditions(conditions):
 		properties = None
@@ -115,7 +114,7 @@ class PropertyMapper:
 					kwargs['owners__i_status'] = 'active'
 				elif value == "without":
 					kwargs['owners__isnull'] = True
-					
+
 		properties = Property.objects.filter(**kwargs).distinct().order_by('sector__name', 'cell__code', 'parcel_id')
 		print properties.query
 		print '======='
@@ -133,13 +132,13 @@ class PropertyMapper:
 
 
 		return properties
-	
+
 
 
 
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get property by conditions to get properties with contact
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getNumOfPropertiesWithContact(conditions):
 		properties = None
@@ -187,10 +186,10 @@ class PropertyMapper:
 
 		return result
 
-	
+
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get log activities in the past 12 month
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getLogActivities(conditions = None):
 		print conditions
@@ -214,7 +213,7 @@ class PropertyMapper:
 		if conditions.has_key('cell'):
 			cell = conditions['cell']
 		year = int(conditions['calendar_year'])
-		
+
 		for count in range(1,13):
 			month_range = Common.get_month_time_range(year, count)
 			labels.append(month_range[0].strftime('%B'))
@@ -227,9 +226,9 @@ class PropertyMapper:
 				logs = logs.filter(Q(property__sector = sector)|Q(business__sector = sector)|Q(subbusiness__sector=sector))
 			if cell:
 				logs = logs.filter(Q(property__cell = cell)|Q(business__cell = cell)|Q(subbusiness__cell=cell))
-			
+
 			values.append(logs.count())
-		
+
 		result['labels'] = labels
 		result['values'] = values
 		return result
@@ -237,7 +236,7 @@ class PropertyMapper:
 	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	Get Geographic data of property or peroperties.
 	1) The returned data is of Json format
-	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""	
+	"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 	@staticmethod
 	def getPropertyGeoData(properties):
 		data = {}
@@ -247,12 +246,12 @@ class PropertyMapper:
 		elif type(properties) == QuerySet:
 			for property in properties:
 				properties_new.append(property)
-		else: 
+		else:
 			properties_new.append(properties)
-				
+
 		properties = []
-	
-		# return json  
+
+		# return json
 		for property in properties_new:
 			points_json = []
 			property_json = {}
@@ -288,6 +287,6 @@ class PropertyMapper:
 			else:
 				property_json['village']=""
 			property_json['sector']=property.sector.name
-			properties.append(property_json)			
+			properties.append(property_json)
 		data['properties'] = properties
 		return simplejson.dumps(data)

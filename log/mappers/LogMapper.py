@@ -1,7 +1,6 @@
 from django.forms import model_to_dict
 from datetime import datetime
 from django.utils import timezone
-from admin.Common import Common
 import ast, pytz
 from property.mappers.PropertyMapper import PropertyMapper
 from log.models import Log
