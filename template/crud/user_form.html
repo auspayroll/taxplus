@@ -41,7 +41,7 @@
 		</table>
 		<p/>
 		{% if form.instance.profile.photo %}
-			<img style="width:90%" src="{% static form.instance.profile.photo.url %}">
+			<img style="max-width:90%" src="{% static form.instance.profile.photo.url %}">
 		{% endif %}
 	</div>
 
