@@ -15,7 +15,7 @@
 	{% for c in logs %}
 	<tr>
 		<td>{{c.pk}}</td>
-		<td>{{ c.created|date:'M d, Y' }}</td>
+		<td>{{ c.created }}</td>
 		<td>{% if c.account %}<a href="{% url 'account' c.account.pk %}">{{ c.account }}</a>{% else %}-{% endif %}</td>
 		<td><div>{{ c.instance }}</div>
 			<div>{{ c.changes_as_html|safe }}</div></td>
