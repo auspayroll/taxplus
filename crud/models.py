@@ -65,7 +65,7 @@ class Utility(models.Model):
 		unique_together = ('identifier', 'upi')
 
 	def __unicode__(self):
-		s = "%s:%s" % (self.utility_type.name.capitalize(), self.identifier or self.pk)
+		s = "<Location: %s:%s>" % (self.utility_type.name.capitalize(), self.identifier or self.pk)
 		if self.upi:
 			s = "%s %s" % (s, self.upi)
 
@@ -288,7 +288,7 @@ class Collection(models.Model):
 		return super(Collection, self).save(*args, **kwargs)
 
 	def __unicode__(self):
-		s =  " %s collection on %s" % (self.fee_type, self.date_to)
+		s =  "<Collection:%s on %s>" % (self.fee_type, self.date_to)
 		if self.utility:
 			s = "%s for %s" % (s, self.utility)
 		return s
@@ -352,6 +352,9 @@ class Profile(models.Model):
 	registration_no = models.CharField(max_length=40)
 	phone = models.CharField(max_length=40)
 	photo = models.ImageField(upload_to=user_photo_path, null=True)
+
+	def __unicode__(self):
+		return '<Profile: %s>' % self.user.__unicode__()
 
 
 class Log(models.Model):
