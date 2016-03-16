@@ -8,6 +8,7 @@ from django.contrib import admin
 
 urlpatterns = patterns('',
 	url(r'^$','crud.views.login', name='login'),
+	url(r'^logout/$','crud.views.logout', name='logout'),
 	url(r'^collector/', include('collector.urls')),
 	url(r'^staff/', include('crud.urls')),
 
