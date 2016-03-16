@@ -7,7 +7,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import admin
 
 urlpatterns = patterns('',
-	url(r'^admin/', admin.site.urls),
 	url(r'^$','crud.views.login', name='login'),
 	url(r'^collector/', include('collector.urls')),
 	url(r'^staff/', include('crud.urls')),
