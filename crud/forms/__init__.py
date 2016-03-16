@@ -542,7 +542,7 @@ class NewUserForm(forms.ModelForm):
 	email = forms.EmailField(max_length=30, required=False)
 	phone = forms.CharField(max_length=40, required=False)
 	registration_no = forms.CharField(max_length=40, required=False)
-	is_active = forms.BooleanField(initial=True)
+	is_active = forms.BooleanField(initial=True, required=False)
 	groups = forms.ModelMultipleChoiceField(queryset=Group.objects.all(), widget=forms.CheckboxSelectMultiple)
 	photo = forms.FileField(required=False)
 
