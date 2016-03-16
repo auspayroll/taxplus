@@ -40,6 +40,9 @@ class LogMiddleware(object):
         if hasattr(instance, 'pk') and instance.pk is not None:
             ct = ContentType.objects.get_for_model(instance)
             if ct.app_label == 'crud' or isinstance(instance, User):
+                #last logins are set by the system so user will be empty, set it here
+                if isinstance(instance, User) and not user:
+                    user = instance
                 db_object = instance.__class__.objects.get(pk=instance.pk)
                 fields = set([f.name for f in instance._meta.fields]).union(set([f.name for f in db_object._meta.fields]))
                 fields = list(fields)
