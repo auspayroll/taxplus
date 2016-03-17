@@ -34,6 +34,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from PIL import Image
 import PIL
 import os
+from django.db import IntegrityError
 
 
 def admin_check(user):
@@ -688,30 +689,34 @@ def edit_user(request, pk):
 	if request.method == 'POST':
 		form = UserForm(request.POST, request.FILES, instance=user)
 		if form.is_valid():
-			user = form.save()
-			if hasattr(user,'profile'):
-				user.profile.registration_no = form.cleaned_data.get('registration_no')
-				user.profile.phone = form.cleaned_data.get('phone')
-				user.profile.save()
-				profile = user.profile
+			try:
+				user = form.save()
+			except IntegrityError:
+				messages.error(request, 'Username %s already exists' % form.cleaned_data.get('username'))
 			else:
-				profile = Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
+				if hasattr(user,'profile'):
+					user.profile.registration_no = form.cleaned_data.get('registration_no')
+					user.profile.phone = form.cleaned_data.get('phone')
+					user.profile.save()
+					profile = user.profile
+				else:
+					profile = Profile.objects.create(user=user, registration_no = form.cleaned_data.get('registration_no'), phone=form.cleaned_data.get('phone'))
 
-			if form.cleaned_data.get('photo'):
-				profile.photo = form.cleaned_data.get('photo')
-				profile.save()
-				#im=Image.open(profile.photo.path)
-				#im.thumbnail([320,320], Image.ANTIALIAS)
-				#im.save(profile.photo.path, quality=100)
+				if form.cleaned_data.get('photo'):
+					profile.photo = form.cleaned_data.get('photo')
+					profile.save()
+					#im=Image.open(profile.photo.path)
+					#im.thumbnail([320,320], Image.ANTIALIAS)
+					#im.save(profile.photo.path, quality=100)
 
-			if form.cleaned_data.get('reset_password'):
-				raw_password = form.cleaned_data.get('raw_password')
-				user.set_password(raw_password)
-				user.save()
-				messages.success(request, 'User password reset to %s . Please record this in a safe place.' % raw_password)
+				if form.cleaned_data.get('reset_password'):
+					raw_password = form.cleaned_data.get('raw_password')
+					user.set_password(raw_password)
+					user.save()
+					messages.success(request, 'User password reset to %s . Please record this in a safe place.' % raw_password)
 
-			messages.success(request, 'User updated')
-			return HttpResponseRedirect(reverse('users'))
+				messages.success(request, 'User updated')
+				return HttpResponseRedirect(reverse('users'))
 	else:
 		form = UserForm(instance=user)
 	return TemplateResponse(request, 'crud/user_form.html', {'form':form, 'heading':'Update User %s' % user.username})

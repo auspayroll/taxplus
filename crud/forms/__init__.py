@@ -551,10 +551,17 @@ class NewUserForm(forms.ModelForm):
 		email = self.cleaned_data.get('email')
 		first_name = self.cleaned_data.get('first_name')
 		last_name = self.cleaned_data.get('last_name')
-		if email and User.objects.filter(email=email).count() ==0:
+		if email and User.objects.filter(username=email).count() ==0:
 			self.cleaned_data['username'] = email
 		elif first_name and last_name:
-			self.cleaned_data['username'] = (first_name[0] + last_name)[:30]
+			self.cleaned_data['username'] = ((first_name[0] + last_name)[:30]).lower()
+			if User.objects.filter(username__exact=self.cleaned_data['username']).count() > 0:
+				#username made from first and lastnames already exists, try regisration no.
+				registration_no = self.cleaned_data.get('registration_no')
+				if not registration_no:
+					raise forms.ValidationError("Username %s already exists, so a registration number is required" % self.cleaned_data.get('username'))
+				else:
+					self.cleaned_data['username'] = registration_no
 
 		return self.cleaned_data
 
