@@ -12,7 +12,7 @@ from django.db import models
 from django.db.models import Sum
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
-from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoice, District, Sector, Cell, Village
+from taxplus.models import Boundary, Media, Citizen, Fee, District, CategoryChoice, District, Sector, Cell, Village, Property
 import copy
 import os
 import re
@@ -89,19 +89,6 @@ class LandPlot(models.Model):
 	boundary = models.ForeignKey(Boundary, null=True)
 
 
-class BankDeposit(models.Model):
-	bank = models.CharField(max_length=30)
-	branch = models.CharField(max_length=30, null=True, blank=True)
-	amount = models.PositiveIntegerField(default=0)
-	bank_receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
-	depositor_name = models.CharField(max_length=50, null=True, blank=True)
-	user = models.ForeignKey(User, null=True)
-	date_banked = models.DateField()
-	created = models.DateTimeField(auto_now_add=True, null=True)
-	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
-
-
-
 class Account(models.Model):
 	name = models.CharField(max_length=90, null=True)
 	start_date = models.DateField(null=True)
@@ -137,7 +124,7 @@ class Account(models.Model):
 		return self.principle_due + self.interest_due + self.penalty_due
 
 	def __unicode__(self):
-		return self.name or ''
+		return self.name or self.account_no or self.pk
 
 
 	def utility_list(self):
@@ -170,6 +157,21 @@ class AccountHolder(models.Model):
 	holder = GenericForeignKey('holder_type', 'holder_id')
 
 
+class BankDeposit(models.Model):
+	bank = models.CharField(max_length=30)
+	branch = models.CharField(max_length=30, null=True, blank=True)
+	amount = models.PositiveIntegerField(default=0)
+	bank_receipt_no = models.CharField(max_length=30, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
+	depositor_name = models.CharField(max_length=50, null=True, blank=True)
+	user = models.ForeignKey(User, null=True)
+	date_banked = models.DateField()
+	created = models.DateTimeField(auto_now_add=True, null=True)
+	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
+	account = models.ForeignKey(Account, null=True)
+	sector_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
+	note = models.TextField(null=True, blank=True)
+
+
 class Contact(models.Model):
 	account = models.ForeignKey(Account, null=True)
 	first_name = models.CharField(max_length = 100, help_text="Contact name.", null=True, blank=True)
@@ -193,7 +195,7 @@ class AccountFee(models.Model):
 	principle_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	rate = models.DecimalField(max_digits=14, decimal_places=4, null=True) # manual entry only
 	quantity = models.DecimalField(max_digits=18, decimal_places=4, null=True) # or no. collections taken, manual entry only
-	user = models.ForeignKey(User)
+	user = models.ForeignKey(User, null=True)
 	interest_total = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	interest_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	penalty_total = models.DecimalField(max_digits=16, decimal_places=2,default=0)
@@ -205,6 +207,7 @@ class AccountFee(models.Model):
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
 	is_paid = models.BooleanField(default=False)
 	utility = models.ForeignKey(Utility, null=True, blank=False)
+	prop = models.ForeignKey(Property, null=True, blank=False)
 
 	@property
 	def principle_due(self):
