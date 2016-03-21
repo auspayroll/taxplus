@@ -332,7 +332,7 @@ def new_payment(request, pk):
 @user_passes_test(admin_check)
 def account_media(request,pk):
 	account = get_object_or_404(Account, pk=pk)
-	media = Media.objects.filter(account=account).order_by('-pk')
+	media = [media for media in Media.objects.filter(account=account).order_by('-pk') if os.path.isfile(media.item.path)]
 	return TemplateResponse(request, 'crud/media.html', {'account':account, 'media':media})
 
 
