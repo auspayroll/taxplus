@@ -106,6 +106,7 @@ class Account(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
+	prop_title_id = models.PositiveIntegerField(null=True)
 
 	@property
 	def principle_due(self):
@@ -124,7 +125,7 @@ class Account(models.Model):
 		return self.principle_due + self.interest_due + self.penalty_due
 
 	def __unicode__(self):
-		return self.name or self.account_no or self.pk
+		return self.name or self.account_no or "%s" % self.pk
 
 
 	def utility_list(self):
@@ -167,7 +168,7 @@ class BankDeposit(models.Model):
 	date_banked = models.DateField()
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
-	account = models.ForeignKey(Account, null=True)
+	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.TextField(null=True, blank=True)
 
@@ -317,6 +318,7 @@ class AccountPayment(models.Model):
 
 class Media(models.Model):
 	account = models.ForeignKey(Account, null=True)
+	prop = models.ForeignKey(Property, null=True, related_name="property_media")
 	created_on = models.DateField(auto_now_add=True)
 	title = models.TextField(max_length=30, null=True, blank=True)
 	size = models.PositiveIntegerField(null=True, blank=True)
@@ -326,6 +328,7 @@ class Media(models.Model):
 	record_type = models.ForeignKey(ContentType,null=True)
 	record_id = models.PositiveIntegerField(null=True)
 	record = GenericForeignKey('record_type', 'record_id')
+	old_media_id = models.PositiveIntegerField(null=True)
 
 	@property
 	def extension(self):
