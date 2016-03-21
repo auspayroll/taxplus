@@ -9,16 +9,24 @@
 	<th>id</th>
 	<th>Date</th>
 	<th>Amount</th>
-	<th>Receipt no.s</th>
+	<th>Bank Receipt</th>
+	<th>RRA Receipt</th>
+	<th>Depositor</th>
+	<th>Bank</th>
+	<th>Branch</th>
 	<th>Staff</th>
 	<th>created</th>
 </tr>
 {% for p in payments %}
 	<tr>
 		<td>{{ p.pk }}</td>
-		<td>{{ p.payment_date }}</td>
+		<td>{{ p.date_banked }}</td>
 		<td>{{ p.amount }}</td>
-		<td>{{ p.receipt_no }}</td>
+		<td>{{ p.bank_receipt_no }}</td>
+		<td>{{ p.rra_receipt }}</td>
+		<td>{{ p.depositor_name }}</td>
+		<td>{{ p.bank }}</td>
+		<td>{{ p.branch }}</td>
 		<td>{{ p.user}}</td>
 		<td>{{ p.created}}</td>
 	</tr>
