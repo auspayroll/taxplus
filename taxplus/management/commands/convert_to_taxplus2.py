@@ -33,9 +33,15 @@ class Command(BaseCommand):
 			for m in medias:
 				title = m.title or m.description
 				try:
-					user = User.objects.get(Q(username=m.user.username) | Q(username=m.user.email) | Q(email=m.user.email))
+					user = User.objects.get(username=m.user.username)
 				except User.DoesNotExist:
-					user = None
+					try:
+						user = User.objects.get(username=m.user.email)
+					except User.DoesNotExist:
+						try:
+							user = User.objects.get(email=m.user.email)
+						except User.DoesNotExist:
+							user = None
 
 				nm = Media.objects.create(created_on=m.date_created, item=m.path, title=title, prop=pt.prop, user=user, old_media_id=m.pk)
 				nm.payfee_id = m.payfee_id
