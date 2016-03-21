@@ -171,6 +171,7 @@ class BankDeposit(models.Model):
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.TextField(null=True, blank=True)
+	old_receipt_id = models.PositiveIntegerField(null=True)
 
 
 class Contact(models.Model):

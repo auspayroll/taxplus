@@ -5,6 +5,21 @@ from django.db.models import Q, Sum
 from django.contrib.auth.models import User
 
 
+def get_user(pm_user):
+	if not pm_user:
+		return None
+	try:
+		user = User.objects.get(username=pm_user.username)
+	except User.DoesNotExist:
+		try:
+			user = User.objects.get(username=pm_user.email)
+		except User.DoesNotExist:
+			try:
+				user = User.objects.get(email=pm_user.email)
+			except User.DoesNotExist:
+				user = None
+	return user
+
 
 class Command(BaseCommand):
 	#fixed_asset/rental_income/trading_license/cleaning_fee/market_fee/land_lease_fee
@@ -14,6 +29,7 @@ class Command(BaseCommand):
 	This will be the entity responsible for fee payment
 
 	"""
+
 
 	def handle(self, *args, **options):
 		log = open('convert2taxplus.log', 'w')
@@ -32,22 +48,13 @@ class Command(BaseCommand):
 			new_media  = []
 			for m in medias:
 				title = m.title or m.description
-				try:
-					user = User.objects.get(username=m.user.username)
-				except User.DoesNotExist:
-					try:
-						user = User.objects.get(username=m.user.email)
-					except User.DoesNotExist:
-						try:
-							user = User.objects.get(email=m.user.email)
-						except User.DoesNotExist:
-							user = None
-
+				user = get_user(m.user)
 				nm = Media.objects.create(created_on=m.date_created, item=m.path, title=title, prop=pt.prop, user=user, old_media_id=m.pk)
 				nm.payfee_id = m.payfee_id
 				nm.fee_id = m.fee_id
 				nm.receipt_id = m.receipt_id
 				new_media.append(nm)
+			receipts = []
 
 
 			for o in pt.prop_title_ownerships.all():
@@ -68,9 +75,12 @@ class Command(BaseCommand):
 				payfees = PayFee.objects.filter(fee__prop_title=pt, fee__category__code='land_lease')
 				for payfee in payfees:
 					r = payfee.receipt
-					deposit = BankDeposit.objects.create(account=account, bank_receipt_no=r.bank_receipt, bank=r.bank,
-						date_banked=r.paid_date, depositor_name=r.payer_name, amount=r.amount,
-						note=r.note, created=r.date_time, sector_receipt=r.sector_receipt)
+					if r.pk not in receipts:
+						receipts.append(r.pk)
+						user = get_user(r.user)
+						deposit = BankDeposit.objects.create(account=account, bank_receipt_no=r.bank_receipt, bank=r.bank,
+							date_banked=r.paid_date, depositor_name=r.payer_name, amount=r.amount,
+							note=r.note, created=r.date_time, sector_receipt=r.sector_receipt, old_receipt_id=r.pk, user=user)
 					for nm in new_media:
 						if payfee.pk == nm.payfee_id or payfee.fee_id == nm.fee_id or nm.receipt_id  == r.pk:
 							nm.account = account
@@ -81,18 +91,21 @@ class Command(BaseCommand):
 					log.write("Deposit %s created, amount %s, receipt: %s, " % (deposit.pk, deposit.amount, deposit.sector_receipt))
 
 				#payments without property title
-				pay_fees = PayFee.objects.filter(fee__category__code='land_lease', fee__prop_title__isnull=True, fee__prop=pt.prop)
+				payfees = PayFee.objects.filter(fee__category__code='land_lease', fee__prop_title__isnull=True, fee__prop=pt.prop)
 				for payfee in payfees:
 					r = payfee.receipt
-					deposit = BankDeposit(account=account, bank_receipt_no=r.bank_receipt, bank=r.bank,
-						date_banked=r.paid_date, depositor_name=r.payer_name, amount=r.amount,
-						note=r.note, created=r.date_time, sector_receipt=r.sector_receipt)
+					if r.pk not in receipts:
+						receipts.append(r.pk)
+						user = get_user(r.user)
+						deposit = BankDeposit(account=account, bank_receipt_no=r.bank_receipt, bank=r.bank,
+							date_banked=r.paid_date, depositor_name=r.payer_name, amount=r.amount,
+							note=r.note, created=r.date_time, sector_receipt=r.sector_receipt, old_receipt_id=r.pk, user=user)
 
 					if r.paid_date < account.start_date or (account.end_date and r.paid_date > account.end_date):
 						found_accounts = PropertyTitle.objects.filter(date_from__lte=r.paid_date, prop=pt.prop).filter(Q(date_to__isnull=True) | Q(date_to__gte=r.paid_date)).exclude(pk=pt.pk).order_by('-date_from')
-						if not found_accounts:
-							deposit.save()
-					else:
+						if found_accounts:
+							continue
+
 						deposit.save()
 						for nm in new_media:
 							if payfee.pk == nm.payfee_id or payfee.fee_id == nm.fee_id or nm.receipt_id  == r.pk:
