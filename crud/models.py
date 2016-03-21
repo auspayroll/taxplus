@@ -320,7 +320,7 @@ class Media(models.Model):
 	account = models.ForeignKey(Account, null=True)
 	prop = models.ForeignKey(Property, null=True, related_name="property_media")
 	created_on = models.DateField(auto_now_add=True)
-	title = models.TextField(max_length=30, null=True, blank=True)
+	title = models.TextField(null=True, blank=True)
 	size = models.PositiveIntegerField(null=True, blank=True)
 	user = models.ForeignKey(User, null=True, blank=True)
 	file_type = models.TextField(max_length=4, null=True, blank=True)
