@@ -306,7 +306,7 @@ def new_contact(request, pk):
 @user_passes_test(admin_check)
 def account_payments(request,pk):
 	account = get_object_or_404(Account, pk=pk)
-	payments = AccountPayment.objects.filter(account=account).order_by('-pk')
+	payments = BankDeposit.objects.filter(account=account).order_by('-pk')
 
 	return TemplateResponse(request, 'crud/payments.html', {'account':account, 'payments':payments})
 
