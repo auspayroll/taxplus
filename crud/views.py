@@ -6,7 +6,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm
 from crud.models import Account, Contact, AccountPayment, Media,\
-	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
