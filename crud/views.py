@@ -4,7 +4,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
-	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm
+	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm, AccountForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit
 from datetime import date, timedelta
@@ -867,3 +867,20 @@ def user_logs(request, pk):
 	user = get_object_or_404(User,pk=pk)
 	logs = Log.objects.filter(user=user).order_by('-id')
 	return TemplateResponse(request, 'crud/user_logs.html', {'user':user,  'logs':logs })
+
+@user_passes_test(admin_check)
+def edit_account(request, pk):
+	account = get_object_or_404(Account, pk=pk)
+	if request.method == 'POST':
+		form = AccountForm(request.POST, instance=account)
+		if form.is_valid():
+			form.save()
+			messages.success(request,'Account has been updated')
+			next = request.POST.get('next')
+			if next:
+				return HttpResponseRedirect(next)
+			else:
+				return HttpResponseRedirect(reverse('account', args=[account.pk]))
+	else:
+		form = AccountForm(instance=account, initial={'next':request.GET.get('next')})
+		return render(request, 'crud/form.html', {'form':form, 'account':account})

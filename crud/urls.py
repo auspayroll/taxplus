@@ -43,6 +43,7 @@ urlpatterns = patterns('',
 	#fees
 	url(r'^new_account_fee/(?P<pk>\d+)/$',new_account_fee, name='new_account_fee'),
 	url(r'^account/(?P<pk>\d+)/fees/$',account_fees, name='account_fees'),
+	url(r'^account/(?P<pk>\d+)/edit/$',edit_account, name='edit_account'),
 
 	url(r'^village/(?P<pk>\d+)/utility/new/$',add_village_utility, name='add_village_utility'),
 

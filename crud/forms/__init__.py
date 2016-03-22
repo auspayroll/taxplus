@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village, Rate
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
- Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit
+ Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit, Account
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
 from django.contrib.auth.models import User, Group
@@ -228,6 +228,14 @@ class NewFeeForm(forms.Form):
 	auto = forms.BooleanField(label="Auto-calculate fee" , help_text="Uncheck to specify amount", required=False)
 	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
 
+
+class AccountForm(forms.ModelForm):
+	class Meta:
+		model = Account
+		fields = ('name', 'start_date')
+
+	start_date = forms.DateField(widget=html5_widgets.DateInput,)
+	end_date = forms.DateField(widget=html5_widgets.DateInput, required=False )
 
 class AccountNoteForm(forms.ModelForm):
 	class Meta:
