@@ -107,6 +107,8 @@ class Account(models.Model):
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
 	prop_title_id = models.PositiveIntegerField(null=True)
+	created = models.DateTimeField(null=True, auto_now_add=True)
+	modified = models.DateTimeField(null=True, auto_now=True)
 
 	@property
 	def principle_due(self):

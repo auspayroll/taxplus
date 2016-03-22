@@ -2,7 +2,7 @@ from django.db.models import signals
 from django.utils.functional import curry
 import json
 from django.contrib.contenttypes.models import ContentType
-from .models import Log
+from .models import Log, Account
 from django.contrib.auth.models import User
 
 def get_client_ip(request):
@@ -68,6 +68,8 @@ class LogMiddleware(object):
             account = None
             if hasattr(instance, 'account'):
                 account = instance.account
+            elif isinstance(instance, Account):
+                account = instance
             ct = ContentType.objects.get_for_model(instance)
             if ct.app_label == 'crud' or isinstance(instance, User):
                 changes = dict([(f.name,(None, str(getattr(instance, f.name)))) \
