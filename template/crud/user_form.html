@@ -12,10 +12,12 @@
 }
 </style>
 <h1>{{heading}}</h1>
-<h2>{{ instance }}</h2>
-<div>
-<a href="{% url 'user_logs' form.instance.pk %}">Logs</a>
-</div>
+
+{% if form.instance %}
+	<div>
+	<a href="{% url 'user_logs' form.instance.pk %}">Logs</a>
+	</div>
+{% endif %}
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">
