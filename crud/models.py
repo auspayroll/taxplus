@@ -65,17 +65,17 @@ class Utility(models.Model):
 		unique_together = ('identifier', 'upi')
 
 	def __unicode__(self):
-		s = "<Location: %s:%s>" % (self.utility_type.name.capitalize(), self.identifier or self.pk)
-		if self.upi:
-			s = "%s %s" % (s, self.upi)
-
+		s = "%s %s, %s" % (self.utility_type.name.capitalize(), self.identifier or self.pk, self.village or self.cell or self.sector or self.district)
 		if self.village:
-			s = "%s, %s village" % (s, self.village)
-
+			s += ' village'
+		elif self.cell:
+			s += ' cell'
 		elif self.sector:
-			s = "%s, %s sector" % (s, self.sector)
-
+			s+= ' sector'
+		elif self.district:
+			s+= ' district'
 		return s
+
 
 
 
@@ -136,17 +136,7 @@ class Account(models.Model):
 		"""
 		utilities  = []
 		for u in self.utilities.all():
-			s = ''
-			if u.village:
-				s += ' <a href="'+ reverse('village', args=[u.village.pk]) +'">%s village</a> ' % u.village
-			elif u.cell:
-				s += ' <a href="'+ reverse('cell', args=[u.cell.pk]) +'">%s cell</a> ' % u.cell
-			elif u.sector:
-				s += ' <a href="'+ reverse('sector', args=[u.sector.pk]) +'">%s sector</a> ' % u.sector
-			elif u.district:
-				s += ' <a href="'+ reverse('district', args=[u.district.pk]) +'">%s sector</a> ' % u.district
-
-			s += '| <a href="' + reverse('edit_location', args=[u.pk]) +'">%s</a> ' % u.__unicode__()
+			s = '<a href="' + reverse('edit_location', args=[u.pk]) +'">%s</a> ' % u.__unicode__()
 			utilities.append(s)
 
 		return '<BR/>'.join(utilities)
