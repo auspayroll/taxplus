@@ -2,7 +2,7 @@ from collect.forms import EpayForm, CollectionGroupForm, RegistrationForm, Colle
 from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPaymentForm, \
 	AccountUtilityForm, ContactForm, PaymentForm, form_for_model, \
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
-	NewLocationForm, LocationForm, AddUtilityRegionForm, \
+	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm
 from crud.models import Account, Contact, AccountPayment, Media,\
@@ -267,12 +267,11 @@ def new_location_post(request):
 	if request.method == 'POST':
 		form = LocationForm(request.POST)
 		if form.is_valid():
-			village = form.cleaned_data.get('village')
 			utility = form.save()
-			account = Account(name=utility, start_date=form.cleaned_data.get('start_date'))
+			account = Account(start_date=form.cleaned_data.get('start_date'), name=form.cleaned_data.get('name'))
 			account.save()
 			account.utilities.add(utility)
-			messages.success(request, 'New Location created')
+			messages.success(request, 'New Account created')
 			return HttpResponseRedirect(reverse('account', args=[account.pk]))
 	else:
 		return HttpResponseRedirect(reverse('new_location'))
@@ -524,24 +523,8 @@ def recent_collections(request):
 @user_passes_test(admin_check)
 def add_village_utility(request, pk):
 	village = get_object_or_404(Village, pk=pk)
-	if request.method == 'POST':
-		form= AddUtilityRegionForm(request.POST)
-		if form.is_valid():
-			utility = form.save() #custom form save method has commit= False
-			utility.village = village
-			utility.cell = village.cell
-			utility.sector = village.cell.sector
-			utility.district = village.cell.sector.district
-			utility.save()
-			account = Account(name=utility, start_date=form.cleaned_data.get('start_date'))
-			account.save()
-			account.utilities.add(utility)
-			messages.success(request, 'New utility added')
-			return HttpResponseRedirect(reverse('village',args=[village.pk]))
-	else:
-		form = AddUtilityRegionForm()
-
-	return TemplateResponse(request, 'crud/village_utility.html', {'village':village, 'form':form, })
+	form = NewLocationForm(initial={'village':village, 'cell':village.cell, 'sector':village.cell.sector, 'district':village.cell.sector.district})
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Add a new Account' })
 
 
 

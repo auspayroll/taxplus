@@ -1,25 +1,6 @@
 {% extends "crud/main.html" %}
 {% load static from staticfiles %}
 {% block main %}
-<script>
-	{# need statements here as will fail if pk on None sector, cell, village #}
-	{% if instance and instance.sector %}
-		var sector_posted = {{ request.POST.sector|default:instance.sector.pk|default:'0' }};
-	{% else %}
-		var sector_posted = {{ request.POST.sector|default:'0' }};
-	{% endif %}
-	{% if instance and instance.cell %}
-		var cell_posted = {{ request.POST.cell|default:instance.cell.pk|default:'0' }};
-	{% else %}
-		var cell_posted = {{ request.POST.cell|default:'0' }};
-	{% endif %}
-	{% if instance and instance.village %}
-		var village_posted = {{ request.POST.village|default:instance.village.pk|default:'0' }};
-	{% else %}
-		var village_posted = {{ request.POST.village|default:'0' }};
-	{% endif %}
-</script>
-<script src="{% static 'js/load_region_data.js' %}"></script>
 <style>
 .f{
 	float:left;

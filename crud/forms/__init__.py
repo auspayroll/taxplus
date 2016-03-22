@@ -14,6 +14,7 @@ from django.core.validators import RegexValidator
 import re
 from datetime import date
 from dateutil import parser
+import collections
 
 from django.core.exceptions import ValidationError
 
@@ -121,9 +122,9 @@ class AccountUtilityForm(forms.Form):
 
 class RegionForm(FormExtra):
 	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
-	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=False)
-	cell = forms.ModelChoiceField(queryset=Cell.objects.none(), required=False)
-	village = forms.ModelChoiceField(queryset=Village.objects.none(), required=False)
+	sector = forms.ModelChoiceField(queryset=Sector.objects.none(), required=True)
+	cell = forms.ModelChoiceField(queryset=Cell.objects.none(), required=True)
+	village = forms.ModelChoiceField(queryset=Village.objects.none(), required=True)
 
 	def clean(self, *args, **kwargs):
 		try:
@@ -191,40 +192,34 @@ class NewLocationForm(RegionForm):
 	def __init__(self, *args, **kwargs):
 		super(NewLocationForm, self).__init__(*args, **kwargs)
 		fields = self.fields
-		self.fields = OrderedDict({'utility_type': forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code__in=['property','district','sector','cell','village']), label='Location type')})
+		self.fields = OrderedDict({'utility_type': forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').\
+			exclude(code__in=['property','district','sector','cell','village']), label='Location type')})
 		self.fields.update(fields)
 
-class AddUtilityRegionForm(forms.ModelForm):
-	class Meta:
-		model = Utility
-		fields = ('utility_type', 'identifier', 'upi')
 
-	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type').exclude(code='property'), label='Location type')
-	identifier = forms.CharField(max_length=30, label="Unique Identifer", help_text="Market ID, Quarry ID etc.", required=False)
-	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
-	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
-	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
-
-
-	def save(self, *args, **kwargs):
-		utility = super(AddUtilityRegionForm, self).save(commit=False, *args, **kwargs)
-		lat = self.cleaned_data.get('lat')
-		lon = self.cleaned_data.get('lon')
-		if lat and lon:
-			utility.location = Point(lat, lon)
-		return utility
 
 class LocationForm(UtilityForm):
+	name = forms.CharField(max_length=90, label='Account Name')
 	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	utility_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='utility_type'), label='Location type')
+	identifier = forms.CharField(max_length=30, label="Location Identifer", help_text="Market ID, Quarry ID etc.", required=False)
+	lat = forms.FloatField(required=False, min_value=-90, max_value=90, label='Latitude')
+	lon = forms.FloatField(required=False, min_value=-180, max_value=180, label='Longitude')
+
 	def __init__(self, *args, **kwargs):
 		super(LocationForm, self).__init__(*args, **kwargs)
-		self.fields['utility_type'].widget = forms.HiddenInput()
+		fields = collections.OrderedDict()
+		fields['name'] = self.fields.pop('name')
+		fields['start_date'] = self.fields.pop('start_date')
+		fields.update(self.fields)
+		self.fields = fields
 		self.fields['district'].widget = forms.HiddenInput()
-		self.fields['identifier'].help_text = 'optional'
+		self.fields['utility_type'].widget = forms.HiddenInput()
+		self.fields['identifier'].help_text = 'eg. Market ID, or Tower ID (optional)'
 		self.fields['sector'].widget = forms.HiddenInput()
 		self.fields['cell'].widget = forms.HiddenInput()
 		self.fields['village'].widget = forms.HiddenInput()
-		self.fields['identifier'].label = "Unique Identifer"
+		self.fields['name'].help_text = "Eg Kicukiro Village Market"
 
 
 
