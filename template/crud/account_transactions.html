@@ -1,0 +1,32 @@
+{% extends "crud/account.html" %}
+
+{% block body %}
+	<h3>Transactions</h3>
+	<h3>Balance Owing: {{ account.balance }} &nbsp;Overdue: {{ account.overdue }}</h3>
+	<div>
+	Principle Due: <strong>{{ account.principle_due}}</strong>&nbsp; Penalty Due: <strong>{{ account.penalty_due }}</strong>&nbsp;
+	Interest Due: <strong>{{ account.interest_due }}</strong>&nbsp;as at {{ account.period_ending }}
+
+	</div>
+	<table class="table">
+	<tr>
+		<th>id</th>
+		<th>Date</th>
+		<th>Description</th>
+		<th>Due Date</th>
+		<th>Amount</th>
+		<th>Balance</th>
+	</tr>
+	{% for t in transactions %}
+	<tr>
+		<td>{{t.pk|slugify}}</td>
+		<td>{{t.trans_date}}</td>
+		<td>{{t.description|safe}}</td>
+		<td>{{ t.due_date }}</td>
+		<td>{{ t.amount }}</td>
+		<td>{{ t.balance }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+{% endblock %}
+

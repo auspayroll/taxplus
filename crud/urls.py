@@ -57,6 +57,7 @@ urlpatterns = patterns('',
 	url(r'^add_account_dates/(?P<pk>\d+)/$',add_account_dates, name='add_account_dates'),
 
 	url(r'^account/(?P<pk>\d+)/utility/add/$',add_account_utility, name='add_account_utility'),
+	url(r'^account/(?P<pk>\d+)/transactions/$',account_transactions, name='account_transactions'),
 
 	url(r'^districts/$',districts, name='districts'),
 

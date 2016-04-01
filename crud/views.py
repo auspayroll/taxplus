@@ -884,3 +884,10 @@ def edit_account(request, pk):
 	else:
 		form = AccountForm(instance=account, initial={'next':request.GET.get('next')})
 		return render(request, 'crud/form.html', {'form':form, 'account':account})
+
+
+@user_passes_test(admin_check)
+def account_transactions(request, pk):
+	account = get_object_or_404(Account,pk=pk)
+	transactions = account.transactions()
+	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions})
