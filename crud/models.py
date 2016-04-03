@@ -717,7 +717,7 @@ class Log(models.Model):
 
 class CurrentOutstanding(models.Model):
 	village = models.ForeignKey(Village)
-	fee_type = models.GenericForeignKey(CategoryChoice)
+	fee_type = models.ForeignKey(CategoryChoice)
 	balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	overdue = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
