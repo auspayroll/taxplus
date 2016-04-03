@@ -175,7 +175,7 @@ class Account(models.Model):
 			fee.amount = Decimal(0)
 			if fee.auto:
 				if fee.period == 1:
-					period_end = a.start_date - relativedelta(years=1)
+					period_end = self.start_date - relativedelta(years=1)
 				elif fee.period in (12,4,3):
 					period_end = self.start_date - relativedelta(months=1)
 				else:
