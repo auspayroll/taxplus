@@ -175,7 +175,7 @@ class Account(models.Model):
 			fee.amount = Decimal(0)
 			if fee.auto:
 				if fee.period == 1:
-					period_end = date(self.start_date.year-1, self.start_date.month, self.start_date.day)
+					period_end = a.start_date - relativedelta(years=1)
 				elif fee.period in (12,4,3):
 					period_end = self.start_date - relativedelta(months=1)
 				else:
@@ -713,5 +713,12 @@ class Log(models.Model):
 					html += '<div><strong>%s</strong>: %s &#8594; %s</div>' % (k, v[0], v[1])
 				return html
 		return '-'
+
+
+class CurrentOutstanding(models.Model):
+	village = models.ForeignKey(Village)
+	fee_type = models.GenericForeignKey(CategoryChoice)
+	balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+	overdue = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 
 
