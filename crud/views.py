@@ -510,7 +510,7 @@ def cell(request, pk):
 @user_passes_test(admin_check)
 def village(request, pk):
 	village = get_object_or_404(Village, pk=pk)
-	accounts = Account.objects.filter(utilities__village=village).order_by('-id')
+	accounts = Account.objects.filter(Q(utilities__village=village) | Q(account_fees__prop__village=village)).order_by('-id')
 	recent_collections = Collection.objects.filter(account__in=accounts).order_by('-id')[:100]
 	return TemplateResponse(request, 'crud/village.html', {'village':village, 'accounts':accounts, 'recent_collections':recent_collections })
 
