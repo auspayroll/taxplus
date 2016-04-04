@@ -159,10 +159,27 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def fee_transactions(self, update=False):
+	def fee_transactions(self, update=False, period_ending):
 		fee_list = []
 		fees = self.account_fees.all()
-		self.period_ending =  date.today()
+		if self.end_date and period_ending:
+			if period_ending < self.end_date:
+				self.period_ending = period_ending
+			else:
+				self.period_ending = self.end_date
+		elif self.end_date and not period_ending:
+			if self.end_date < date.today()
+				self.period_ending = self.end_date
+			else:
+				self.period_ending = date.today()
+
+		elif not self.end_date and period_ending:
+			self.period_ending = period_ending
+
+		elif not period_ending and not self.end_date:
+			self.period_ending = date.today()
+
+
 		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
 		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
 
@@ -207,8 +224,8 @@ class Account(models.Model):
 		return payments
 
 
-	def transactions(self, update=True):
-		fees, fee_records = self.fee_transactions()
+	def transactions(self, update=True, period_ending):
+		fees, fee_records = self.fee_transactions(period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
 		trans_list = sorted(self.payment_transactions() + fees, key=lambda x:x.trans_date)
 		penalty_list = []
