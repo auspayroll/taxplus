@@ -23,13 +23,14 @@
 		</div>
 		<p/>
 		<table class="table">
-			<tr><th>Account Name</th><th>Location</th><th>Period</th>
+			<tr><th>Account</th><th>Fees</th><th>Balance</th><th>Overdue</th><th>Period</th>
 			{% for account in accounts %}
 				<tr>
-					<td><a href="{% url 'account' account.pk %}">{{ account }}</a></td>
-					<td>{{ account.utilities.all|join:', ' }}</td>
+					<td><a href="{% url 'account' account.pk %}">{{ account.pk }} {{ account }}</a></td>
+					<td>{{ account.account_fees.all|join:'<br/>' }}</td>
+					<td>{{ account.balance|default:'-' }}</td>
+					<td>{{ account.overdue|default:'-' }}</td>
 					<td>{{ account.start_date }} - {{ account.end_date|default:'Active' }}</td>
-					<td><a href="{% url 'new_fee_collection' account.pk %}">Add Collection</a></td>
 				</tr>
 			{% empty %}
 				<tr><td colspan="5">There are no accounts in this region</td></tr>

@@ -227,76 +227,87 @@ class Account(models.Model):
 
 			if kitty > 0:
 				#first look for overdues and pay off principle first
-				overdue =  sorted([f for f in fees if  f.principle_due > 0 and f.due_date < t.trans_date], key=lambda f:f.due_date)
+				overdue =  sorted([f for f in fees if  f.principle_due > 0], key=lambda f:f.due_date)
 				# pay off principle
 				for o in overdue:
 					fee_record = fee_record_dict.get(o.pk)
-					if o.principle_due > 0 and kitty > 0:
+					principle_paid = 0
+					if kitty > 0:
 						if kitty >= o.principle_due:
-							o.principle_paid = o.principle_due
-							kitty -= o.principle_paid
+							principle_paid = o.principle_due
+							kitty -= principle_paid
 						else:
-							o.principle_paid = kitty
+							principle_paid = kitty
 							kitty = 0
-						if o.principle_paid:
-							fee_record.principle_paid += o.principle_paid
-							self.principle_paid += o.principle_paid
-							interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, payment_amount=o.principle_paid)
-							o.interest_total += interest_balance
-							o.penalty_total += penalty_balance
-							fee_record.interest_total += interest_balance
-							fee_record.penalty_total += penalty_balance
-							self.interest_total += interest_balance
-							self.penalty_total += penalty_balance
-							self.balance += interest_balance + penalty_balance	
+						if principle_paid:
+							o.principle_paid += principle_paid
+							fee_record.principle_paid += principle_paid
+							self.principle_paid += principle_paid
+							interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, payment_amount=principle_paid)
 							if interest_balance + penalty_balance > 0:
+								o.interest_total += interest_balance
+								o.penalty_total += penalty_balance
+								fee_record.interest_total += interest_balance
+								fee_record.penalty_total += penalty_balance
+								self.interest_total += interest_balance
+								self.penalty_total += penalty_balance
+								self.balance += interest_balance + penalty_balance	
+								# add to transaction balance for penalties
 								od_copy = copy.copy(o)
 								od_copy.description = "<span style=\"color:red\">Late charges on %s %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy.fee_type, od_copy.to_date, calc_string)
 								od_copy.trans_date = t.trans_date
 								od_copy.amount = interest_balance + penalty_balance
 								od_copy.balance = self.balance
 								penalty_list.append(od_copy)
-
-			#then pay off any other outstanding
-			outstanding = sorted(fees, key=lambda f:f.due_date)
-			for o in outstanding:
-				fee_record = fee_record_dict.get(o.pk)
-
-				# pay off principle
-				if o.principle_due > 0 and kitty > 0:
-					if kitty >= o.principle_due:
-						o.principle_paid = o.principle_due
-						kitty -= o.principle_paid
 					else:
-						o.principle_paid = kitty
-						kitty = 0
-					fee_record.principle_paid += o.principle_paid
-					self.principle_paid += o.principle_paid
+						break
 
-				# pay off interest
-				if o.interest_due >0 and kitty >0:
-					if kitty >= o.interest_due:
-						o.interest_paid = o.interest_due
-						kitty -= o.interest_paid
-					else:
-						o.interest_paid = kitty
-						kitty =0
-					fee_record.interest_paid += o.interest_paid
-					self.interest_paid += o.interest_paid
+		#then pay off any other outstanding
+		outstanding = sorted(fees, key=lambda f:f.due_date)
+		for o in outstanding:
+			principle_paid = 0
+			interest_paid = 0
+			penalty_paid = 0
+			fee_record = fee_record_dict.get(o.pk)
 
-				# pay off penalty
-				if o.penalty_due >0 and kitty >0:
-					if kitty >= o.penalty_due:
-						o.penalty_paid = o.penalty_due
-						kitty -= o.penalty_paid
-					else:
-						o.penalty_paid = kitty
-						kitty =0
-					fee_record.penalty_paid += o.penalty_paid
-					self.penalty_paid += o.penalty_paid
+			# pay off principle
+			if o.principle_due > 0 and kitty > 0:
+				if kitty >= o.principle_due:
+					principle_paid = o.principle_due
+					kitty -= principle_paid
+				else:
+					principle_paid = kitty
+					kitty = 0
+				o.principle_paid += principle_paid
+				fee_record.principle_paid += principle_paid
+				self.principle_paid += principle_paid
+
+			# pay off interest
+			if o.interest_due >0 and kitty >0:
+				if kitty >= o.interest_due:
+					interest_paid = o.interest_due
+					kitty -= interest_paid
+				else:
+					interest_paid = kitty
+					kitty =0
+				o.interest_paid += interest_paid
+				fee_record.interest_paid += interest_paid
+				self.interest_paid += interest_paid
+
+			# pay off penalty
+			if o.penalty_due >0 and kitty >0:
+				if kitty >= o.penalty_due:
+					penalty_paid = o.penalty_due
+					kitty -= penalty_paid
+				else:
+					o.penalty_paid = kitty
+					kitty =0
+				o.penalty_paid += penalty_paid
+				fee_record.penalty_paid += penalty_paid
+				self.penalty_paid += penalty_paid
 
 
-		overdue =  sorted([f for f in fees if f.total_due > 0 and f.due_date < self.period_ending], key=lambda x:x.due_date)
+		overdue =  sorted([f for f in fees if f.total_due > 0 and f.from_date <= self.period_ending], key=lambda x:x.due_date)
 		for od in overdue:
 			fee_record = fee_record_dict.get(od.pk)
 			interest_balance, penalty_balance, calc_string = od.calc_late_fee_balance(self.period_ending)
@@ -326,6 +337,37 @@ class Account(models.Model):
 		trans_list = sorted(trans_list + penalty_list, key=lambda x:x.trans_date)
 
 		return trans_list
+
+
+class Business(models.Model):
+	name = models.CharField(max_length=100,help_text='Business Name')
+	tin = models.CharField(max_length=50, help_text='TIN RRA',null=True,  blank = True)
+	date_started = models.DateField(blank = True, null=True, help_text='Date Business Started')
+	address = models.CharField(max_length = 255, null = True, blank = True, help_text="Contact address")
+	phone1 = models.CharField(max_length=50,help_text='')
+	phone2 = models.CharField(max_length=50, blank = True,help_text='')
+	email = models.CharField(max_length=50,help_text='', blank = True)
+	po_box = models.TextField(help_text='Business PO Box', blank = True)
+	vat_register = models.BooleanField(help_text="Whether business is VAT registered.")
+	business_type = models.CharField(max_length = 50, blank = True, null = True)
+	sector = models.ForeignKey(Sector, null=True, blank=True, related_name="biz_sectors")
+	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="", related_name="biz_cells")
+	village = models.ForeignKey(Village, null=True, blank=True, related_name="biz_villages")
+	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
+	closed_date = models.DateField(blank=True, null=True)
+	#business_category = models.ForeignKey(BusinessCategory, null=True, blank=True, db_column='business_subcategory_id')
+	#cleaning_category = models.ForeignKey(CleaningCategory, null=True, blank=True, db_column='business_category_id')
+	business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
+	business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+	location = gis_models.PointField(blank =True, null=True)
+	objects = gis_models.GeoManager()
+
+	class Meta:
+		db_table = 'asset_business'
+
+
+	def __unicode__(self):
+		return self.name
 
 
 
