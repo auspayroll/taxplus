@@ -593,7 +593,12 @@ class AccountFee(models.Model):
 
 
 	def __unicode__(self):
-		return "%s for period %s" % (self.fee_type, self.to_date)
+		if self.prop:
+			return "%s for UPI %s" % (self.fee_type, self.prop.upi)
+		elif self.utility:
+			return "%s for %s" % (self.fee_type, self.utility)
+		else:
+			return self.fee_type
 
 
 
