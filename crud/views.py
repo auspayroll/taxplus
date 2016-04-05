@@ -568,29 +568,8 @@ def edit_collection(request, pk):
 	collection = get_object_or_404(Collection, pk=pk)
 	if request.method == 'POST':
 		form= CollectionUpdateForm(request.POST, request.FILES, instance=collection, initial={'next':request.GET.get('next')})
-		if collection.deposit:
-			form2 = BankDepositForm(request.POST, instance=collection.deposit)
-		else:
-			form2 = BankDepositForm(request.POST)
-		if form.is_valid() and form2.is_valid():
+		if form.is_valid():
 			collection = form.save(commit=False)
-			if not collection.deposit and form2.not_empty: #create a new deposit
-				deposit =  form2.save(commit=False)
-				deposit.amount = collection.amount
-				deposit.user = request.user
-				deposit.save()
-				messages.success(request, 'New Bank deposit created')
-				collection.deposit = deposit
-
-			elif collection.deposit and form2.not_empty:
-				form2.save() # collection record and not empty, update as normal
-				messages.success(request, 'New Bank deposit updated')
-			elif collection.deposit and not form2.not_empty:
-				pass # there is deposit record but the form is empty, should be invalid
-			elif not collection.deposit and not form2.not_empty:
-				pass # no deposit record, form is empty, do nothing
-
-			collection.save()
 			uploaded_file = form.cleaned_data.get('file_upload')
 			if uploaded_file:
 				Media.objects.create(account=collection.account, user=request.user, item=uploaded_file, record=collection)
@@ -602,12 +581,8 @@ def edit_collection(request, pk):
 				return HttpResponseRedirect(reverse('fee_collections',args=[collection.account.pk]))
 	else:
 		form = CollectionUpdateForm(instance=collection, initial={'next':request.GET.get('next')})
-		if collection.deposit:
-			form2 = BankDepositForm(instance=collection.deposit)
-		else:
-			form2 = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'form2':form2, 'heading':'Edit Collection', 'heading2':'Banking Details' })
+	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Edit Collection', 'heading2':'Banking Details' })
 
 @user_passes_test(admin_check)
 def add_account_dates(request, pk):
