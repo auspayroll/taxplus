@@ -159,26 +159,17 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def fee_transactions(self, update=False, period_ending):
+	def fee_transactions(self, update=False, period_ending=None):
 		fee_list = []
 		fees = self.account_fees.all()
-		if self.end_date and period_ending:
-			if period_ending < self.end_date:
+
+
+		if period_ending:
+			if self.period_ending:
+				assert period_ending >= self.period_ending, 'period %s is less than %s' % (period_ending, self.period_ending)
 				self.period_ending = period_ending
-			else:
-				self.period_ending = self.end_date
-		elif self.end_date and not period_ending:
-			if self.end_date < date.today()
-				self.period_ending = self.end_date
-			else:
-				self.period_ending = date.today()
-
-		elif not self.end_date and period_ending:
-			self.period_ending = period_ending
-
-		elif not period_ending and not self.end_date:
+		else:
 			self.period_ending = date.today()
-
 
 		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
 		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
@@ -198,7 +189,7 @@ class Account(models.Model):
 				else:
 					period_end = self.start_date - timedelta(days=1)
 
-				while period_end <= self.period_ending:
+				while period_end <= (self.end_date or self.period_ending):
 					af = copy.copy(fee)
 					af.from_date, period_end = get_next_period(period_end, fee.period)
 					af.to_date = period_end
@@ -209,6 +200,9 @@ class Account(models.Model):
 					self.principle_total += Decimal(af.amount)
 					af.description = "%s %s<br/><span class=\"calc_string\">%s</font>" % (af.fee_type, af.from_date, calc_string)
 					fee_list.append(af)
+
+				#import pdb
+				#pdb.set_trace()
 
 		fee_list = sorted(fee_list, key=lambda x:x.trans_date)
 
@@ -224,7 +218,7 @@ class Account(models.Model):
 		return payments
 
 
-	def transactions(self, update=True, period_ending):
+	def transactions(self, update=True, period_ending=None):
 		fees, fee_records = self.fee_transactions(period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
 		trans_list = sorted(self.payment_transactions() + fees, key=lambda x:x.trans_date)
@@ -268,7 +262,7 @@ class Account(models.Model):
 								fee_record.penalty_total += penalty_balance
 								self.interest_total += interest_balance
 								self.penalty_total += penalty_balance
-								self.balance += interest_balance + penalty_balance	
+								self.balance += interest_balance + penalty_balance
 								# add to transaction balance for penalties
 								od_copy = copy.copy(o)
 								od_copy.description = "<span style=\"color:red\">Late charges on %s %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy.fee_type, od_copy.to_date, calc_string)
@@ -323,7 +317,6 @@ class Account(models.Model):
 				fee_record.penalty_paid += penalty_paid
 				self.penalty_paid += penalty_paid
 
-
 		overdue =  sorted([f for f in fees if f.total_due > 0 and f.from_date <= self.period_ending], key=lambda x:x.due_date)
 		for od in overdue:
 			fee_record = fee_record_dict.get(od.pk)
@@ -344,6 +337,7 @@ class Account(models.Model):
 		if update:
 			for fee_record in fee_records:
 				fee_record.save()
+
 			overdue_fees = [fee.principle_due for fee in fees if fee.principle_due > 0 and fee.due_date < self.period_ending]
 			if overdue_fees:
 				self.overdue = reduce(lambda x,y:x + y, overdue_fees)

@@ -232,7 +232,7 @@ class NewFeeForm(forms.Form):
 class AccountForm(forms.ModelForm):
 	class Meta:
 		model = Account
-		fields = ('name', 'start_date')
+		fields = ('name', 'start_date', 'end_date')
 
 	start_date = forms.DateField(widget=html5_widgets.DateInput,)
 	end_date = forms.DateField(widget=html5_widgets.DateInput, required=False )
