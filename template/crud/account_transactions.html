@@ -1,8 +1,9 @@
 {% extends "crud/account.html" %}
 
 {% block body %}
-	<h3>Transactions</h3>
+
 	<h3>Balance Owing: {{ account.balance }} &nbsp;Overdue: {{ account.overdue }}</h3>
+	<div><a href="{% url 'new_payment' account.pk %}">New Payment</a></div>
 	<div>
 	Principle Due: <strong>{{ account.principle_due}}</strong>&nbsp; Penalty Due: <strong>{{ account.penalty_due }}</strong>&nbsp;
 	Interest Due: <strong>{{ account.interest_due }}</strong>&nbsp;as at {{ account.period_ending }}

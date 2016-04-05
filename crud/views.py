@@ -313,19 +313,26 @@ def account_payments(request,pk):
 @user_passes_test(admin_check)
 def new_payment(request, pk):
 	account = get_object_or_404(Account, pk=pk)
+	collections = Collection.objects.filter(account=account, deposit__isnull=True)
 	if request.method == 'POST':
-		form= PaymentForm(request.POST)
+		collection_ids = request.POST.getlist('collection_id')
+		collection_instances = Collection.objects.filter(pk__in=collection_ids)
+		form= BankDepositForm(request.POST)
 		if form.is_valid():
 			payment = form.save(commit=False)
 			payment.account = account
 			payment.user = request.user
 			payment.save()
+			if collection_instances:
+				collection_instances.update(deposit=payment)
+				payment.amount = reduce(lambda x,y:x+y, [c.amount for c in collection_instances])
+				payment.save()
 			messages.success(request, 'New Payment created')
 			return HttpResponseRedirect(reverse('account_payments', args=[account.pk]))
 	else:
-		form = PaymentForm()
+		form = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Account Payment'})
+	return TemplateResponse(request, 'crud/new_payment.html', {'account':account, 'collections':collections, 'form':form, 'heading':'New Account Payment'})
 
 
 @user_passes_test(admin_check)
@@ -358,19 +365,11 @@ def new_fee_collection(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
 		form = CollectionForm(request.POST, request.FILES, account=account)
-		form2 = BankDepositForm(request.POST)
-		if form.is_valid() and form2.is_valid():
+		if form.is_valid():
 			payment = form.save(commit=False)
 			payment.account = account
 			payment.user = request.user
 			payment.collector = request.user
-			if form2.not_empty:
-				deposit =  form2.save(commit=False)
-				deposit.amount = payment.amount
-				deposit.user = request.user
-				deposit.save()
-				messages.success(request, 'New Bank deposit created')
-				payment.deposit = deposit
 			payment.save()
 			uploaded_file = form.cleaned_data.get('file_upload')
 			if uploaded_file:
@@ -379,9 +378,8 @@ def new_fee_collection(request, pk):
 			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
 	else:
 		form = CollectionForm(account=account)
-		form2 = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'form2':form2, 'heading':'New Collection', 'heading2':'Bank Details'})
+	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'New Collection', 'heading2':'Bank Details'})
 
 
 @user_passes_test(admin_check)

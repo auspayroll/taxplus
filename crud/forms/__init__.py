@@ -572,46 +572,14 @@ class NewUserForm(forms.ModelForm):
 class BankDepositForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ['bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked']
+		fields = ['amount', 'bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked', 'non_pm_payment']
 
 	date_banked = forms.DateField(widget=html5_widgets.DateInput)
-
-	def __init__(self, *args, **kwargs):
-		super(BankDepositForm, self).__init__(*args, **kwargs)
-		if not self.instance.pk:
-			for k, v in self.fields.items():
-				v.required = False
 
 	@property
 	def not_empty(self):
 		return True in [ bool(i) for i in self.cleaned_data.values()]
 
-	def clean(self, *args, **kwargs):
-		cd = super(BankDepositForm, self).clean(*args, **kwargs)
-		if not self.instance.pk:
-			not_empty = self.not_empty
-			errors = {}
-			if not_empty and not cd.get('bank'):
-				errors['bank'] = 'Bank Name is required'
-			if not_empty and not cd.get('bank_receipt_no'):
-				errors['bank_receipt_no'] = 'Bank Receipt is required'
-			if not_empty and not cd.get('date_banked'):
-				errors['date_banked'] = 'Date banked is required'
-			if errors:
-				raise forms.ValidationError(errors)
-
-		return cd
-
-	def save(self, *args, **kwargs):
-		bank_receipt_no = self.cleaned_data.get('bank_receipt_no')
-		if not self.instance.pk and bank_receipt_no:
-			try:
-				self.instance = BankDeposit.objects.get(bank_receipt_no__iexact=bank_receipt_no)
-			except BankDeposit.DoesNotExist:
-				pass
-
-		deposit = super(BankDepositForm, self).save(*args, **kwargs)
-		return deposit
 
 
 class NewAccountHolderForm(forms.Form):

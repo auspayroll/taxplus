@@ -198,7 +198,7 @@ class Account(models.Model):
 					af.amount, calc_string = af.calc_rate(af.to_date)
 					fee.amount += Decimal(af.amount)
 					self.principle_total += Decimal(af.amount)
-					af.description = "%s %s<br/><span class=\"calc_string\">%s</font>" % (af.fee_type, af.from_date, calc_string)
+					af.description = "%s<br/><span class=\"calc_string\">%s</font>" % (af, calc_string)
 					fee_list.append(af)
 
 				#import pdb
@@ -265,7 +265,7 @@ class Account(models.Model):
 								self.balance += interest_balance + penalty_balance
 								# add to transaction balance for penalties
 								od_copy = copy.copy(o)
-								od_copy.description = "<span style=\"color:red\">Late charges on %s %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy.fee_type, od_copy.to_date, calc_string)
+								od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
 								od_copy.trans_date = t.trans_date
 								od_copy.amount = interest_balance + penalty_balance
 								od_copy.balance = self.balance
@@ -328,7 +328,7 @@ class Account(models.Model):
 			self.balance += interest_balance + penalty_balance
 			if interest_balance + penalty_balance > 0:
 				od_copy = copy.copy(od)
-				od_copy.description = "<span style=\"color:red\">Late charges on %s %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy.fee_type, od_copy.to_date, calc_string)
+				od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
 				od_copy.trans_date = self.period_ending
 				od_copy.amount = interest_balance + penalty_balance
 				od_copy.balance = self.balance
@@ -393,7 +393,7 @@ class BankDeposit(models.Model):
 	bank = models.CharField(max_length=30)
 	branch = models.CharField(max_length=30, null=True, blank=True)
 	amount = models.PositiveIntegerField(default=0)
-	bank_receipt_no = models.CharField(max_length=50, null=True, help_text='bank deposit record amounts will be adjusted<br/> according to the receipt number entered. <br/>Make sure  the receipt number is correct. ')
+	bank_receipt_no = models.CharField(max_length=50, null=True, help_text='')
 	depositor_name = models.CharField(max_length=50, null=True, blank=True)
 	user = models.ForeignKey(User, null=True)
 	date_banked = models.DateField()
@@ -402,6 +402,8 @@ class BankDeposit(models.Model):
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.TextField(null=True, blank=True)
+	status = models.ForeignKey(CategoryChoice, null=True)
+	non_pm_payment = models.BooleanField(default=False)
 	old_receipt_id = models.PositiveIntegerField(null=True)
 
 
@@ -533,15 +535,17 @@ class AccountFee(models.Model):
 		rate, calc_string = get_rate(period_ending, self.fee_type, village=self.village)
 		total = Decimal(round(rate * quantity))
 		calc_string += " * size: %s" % (quantity)
-		if self.account.start_date > self.from_date or self.account.period_ending < self.to_date:
-			if self.account.start_date > self.from_date:
-				from_date = self.account.start_date
-			else:
-				from_date = self.from_date
-			if self.account.period_ending < self.to_date:
-				to_date = self.account.period_ending
-			else:
-				to_date = self.to_date
+		if self.account.start_date > self.from_date:
+			from_date = self.account.start_date
+		else:
+			from_date = self.from_date
+
+		if (self.account.end_date or self.account.period_ending) < self.to_date:
+			to_date = (self.account.end_date or self.account.period_ending)
+		else:
+			to_date = self.to_date
+
+		if to_date < self.to_date or from_date > self.from_date:
 			part_days = (to_date - from_date).days + 1
 			if part_days < 0:
 				part_days = 0
