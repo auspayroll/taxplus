@@ -109,6 +109,8 @@ class Account(models.Model):
 	start_date = models.DateField(null=True)
 	end_date = models.DateField(null=True)
 	comments = models.TextField(null=True)
+	phone = models.CharField(max_length=50, null=True)
+	email = models.EmailField(null=True)
 	principle_total = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	principle_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	interest_total = models.DecimalField(max_digits=16, decimal_places=2,default=0)
@@ -123,6 +125,7 @@ class Account(models.Model):
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
 	prop_title_id = models.PositiveIntegerField(null=True)
+	business_id = models.PositiveIntegerField(null=True)
 	created = models.DateTimeField(null=True, auto_now_add=True)
 	modified = models.DateTimeField(null=True, auto_now=True)
 	period_ending = models.DateField(null=True)
@@ -164,10 +167,11 @@ class Account(models.Model):
 		fees = self.account_fees.all()
 
 
-		if period_ending:
-			if self.period_ending:
+		if period_ending and self.period_ending:
 				assert period_ending >= self.period_ending, 'period %s is less than %s' % (period_ending, self.period_ending)
 				self.period_ending = period_ending
+		elif period_ending:
+			self.period_ending = period_ending
 		else:
 			self.period_ending = self.period_ending or date.today()
 
@@ -195,14 +199,11 @@ class Account(models.Model):
 					af.to_date = period_end
 					af.trans_date = af.from_date
 					af.due_date =  af.to_date + timedelta(days=(af.due_days or 5))
-					af.amount, calc_string = af.calc_rate(af.to_date)
+					af.amount, calc_string = af.calc_rate()
 					fee.amount += Decimal(af.amount)
 					self.principle_total += Decimal(af.amount)
 					af.description = "%s<br/><span class=\"calc_string\">%s</font>" % (af, calc_string)
 					fee_list.append(af)
-
-				#import pdb
-				#pdb.set_trace()
 
 		fee_list = sorted(fee_list, key=lambda x:x.trans_date)
 
@@ -377,6 +378,7 @@ class Business(models.Model):
 
 	class Meta:
 		db_table = 'asset_business'
+		managed = False
 
 
 	def __unicode__(self):
@@ -478,6 +480,7 @@ class AccountFee(models.Model):
 	period = models.PositiveSmallIntegerField(null=True, default=0,
 		choices=[(0,'Once only'), (12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
+	fee_subtype = models.ForeignKey(CategoryChoice, null=True, related_name='not_used')
 	is_paid = models.BooleanField(default=False)
 	utility = models.ForeignKey(Utility, null=True, blank=False)
 	prop = models.ForeignKey(Property, null=True, blank=False)
@@ -528,7 +531,7 @@ class AccountFee(models.Model):
 		else: return self
 
 
-	def calc_rate(self, period_ending):
+	def calc_rate(self):
 		quantity = Decimal(1)
 		if self.prop and not self.village:
 			self.village = self.prop.village
@@ -542,9 +545,6 @@ class AccountFee(models.Model):
 		elif self.quantity:
 			quantity = Decimal(str(self.quantity))
 
-		rate, calc_string = get_rate(period_ending, self.fee_type, village=self.village)
-		total = Decimal(round(rate * quantity))
-		calc_string += " * size: %s" % (quantity)
 		if self.account.start_date > self.from_date:
 			from_date = self.account.start_date
 		else:
@@ -554,6 +554,11 @@ class AccountFee(models.Model):
 			to_date = (self.account.end_date or self.account.period_ending)
 		else:
 			to_date = self.to_date
+
+
+		rate, calc_string = get_rate(self.from_date, category=self.fee_type, sub_category=self.fee_subtype, village=self.village)
+		total = Decimal(round(rate * quantity))
+		calc_string += " * size: %s" % (quantity)
 
 		if to_date < self.to_date or from_date > self.from_date:
 			part_days = (to_date - from_date).days + 1
@@ -618,15 +623,19 @@ class AccountFee(models.Model):
 
 
 	def __unicode__(self):
+		s = "%s" % self.fee_type
 		if self.prop:
-			return "%s %s for UPI %s" % (self.fee_type,self.from_date.year, self.prop.upi)
+			s+= "for UPI %s" % (self.fee_type, self.prop.upi)
 		elif self.utility:
-			return "%s for %s" % (self.fee_type,self.from_date.year, self.utility)
-		else:
-			return self.fee_type
+			s+=  "or %s" % (self.fee_type, self.utility)
 
+		if self.period == 52:
+			s += " %s" % self.from_date.format("%Y")
 
+		elif self.period == 12:
+			s+= " %s" % self.from_date.strftime("%b, %Y")
 
+		return s
 
 
 class MarketFee(AccountFee):
