@@ -572,9 +572,10 @@ class NewUserForm(forms.ModelForm):
 class BankDepositForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ['amount', 'bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked', 'non_pm_payment']
+		fields = ['amount', 'bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked', 'fee_date', 'non_pm_payment']
 
 	date_banked = forms.DateField(widget=html5_widgets.DateInput)
+	fee_date = forms.DateField(widget=html5_widgets.DateInput, required=False)
 
 	@property
 	def not_empty(self):

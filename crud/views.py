@@ -328,7 +328,7 @@ def new_payment(request, pk):
 				payment.amount = reduce(lambda x,y:x+y, [c.amount for c in collection_instances])
 				payment.save()
 			messages.success(request, 'New Payment created')
-			return HttpResponseRedirect(reverse('account_payments', args=[account.pk]))
+			return HttpResponseRedirect(reverse('account_transactions', args=[account.pk]))
 	else:
 		form = BankDepositForm()
 
@@ -375,7 +375,7 @@ def new_fee_collection(request, pk):
 			if uploaded_file:
 				Media.objects.create(account=account, user=request.user, item=uploaded_file, record=payment)
 			messages.success(request, 'New Collection created')
-			return HttpResponseRedirect(reverse('fee_collections', args=[account.pk]))
+			return HttpResponseRedirect(reverse('new_payment', args=[account.pk]))
 	else:
 		form = CollectionForm(account=account)
 
@@ -862,5 +862,5 @@ def edit_account(request, pk):
 @user_passes_test(admin_check)
 def account_transactions(request, pk):
 	account = get_object_or_404(Account,pk=pk)
-	transactions = account.transactions()
-	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions})
+	transactions, fees = account.transactions()
+	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions, 'fees':fees})

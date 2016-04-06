@@ -9,12 +9,13 @@
 	Interest Due: <strong>{{ account.interest_due }}</strong>&nbsp;as at {{ account.period_ending }}
 
 	</div>
+	<h4>Transactions</h4>
 	<table class="table">
 	<tr>
-		<th>id</th>
+		<th></th>
 		<th>Date</th>
-		<th>Description</th>
-		<th>Due Date</th>
+		<th>Fee</th>
+		<th>Due date</th>
 		<th>Amount</th>
 		<th>Balance</th>
 	</tr>
@@ -26,6 +27,36 @@
 		<td>{{ t.due_date }}</td>
 		<td>{{ t.amount }}</td>
 		<td>{{ t.balance }}</td>
+	</tr>
+	{% endfor %}
+	</table>
+	<h4>Fee Summary</h4>
+		<table class="table">
+	<tr>
+		<th>Fee</th>
+		<th>Principle</th>
+		<th>Principle Paid</th>
+		<th>Principle Due</th>
+		<th>Interest</th>
+		<th>Interest Paid</th>
+		<th>Interest Due</th>
+		<th>Penalty</th>
+		<th>Penalty Paid</th>
+		<th>Penalty Due</th>
+	</tr>
+	{% for f in fees %}
+	<tr>
+		<td>{{f }}</td>
+		<td>{{f.amount}}</td>
+		<td>{{f.principle_paid}}</td>
+		<td>{{ f.principle_due }}</td>
+		<td>{{f.interest_total}}</td>
+		<td>{{f.interest_paid}}</td>
+		<td>{{ f.interest_due }}</td>
+		<td>{{f.penalty_total}}</td>
+		<td>{{f.penalty_paid}}</td>
+		<td>{{ f.penalty_due }}</td>
+	</tr>
 	</tr>
 	{% endfor %}
 	</table>

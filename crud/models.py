@@ -169,7 +169,7 @@ class Account(models.Model):
 				assert period_ending >= self.period_ending, 'period %s is less than %s' % (period_ending, self.period_ending)
 				self.period_ending = period_ending
 		else:
-			self.period_ending = date.today()
+			self.period_ending = self.period_ending or date.today()
 
 		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
 		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
@@ -219,26 +219,28 @@ class Account(models.Model):
 
 
 	def transactions(self, update=True, period_ending=None):
-		fees, fee_records = self.fee_transactions(period_ending)
+		fees, fee_records = self.fee_transactions(update, period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
 		trans_list = sorted(self.payment_transactions() + fees, key=lambda x:x.trans_date)
-		penalty_list = []
+		return_list = []
 
 		self.balance = kitty = Decimal(0)
 		for t in trans_list:
 			if isinstance(t, AccountFee):
 				self.balance += t.amount
 				t.balance = self.balance
+				return_list.append(t)
 
 			elif isinstance(t, BankDeposit):
 				t.amount = abs(t.amount) * -1
 				kitty += abs(t.amount)
 				self.balance += t.amount
 				t.balance = self.balance
+				return_list.append(t)
 
 			if kitty > 0:
 				#first look for overdues and pay off principle first
-				overdue =  sorted([f for f in fees if  f.principle_due > 0], key=lambda f:f.due_date)
+				overdue =  sorted([f for f in fees if  f.principle_due > 0 and f.to_date >= (t.fee_date or self.start_date)], key=lambda f:f.due_date)
 				# pay off principle
 				for o in overdue:
 					fee_record = fee_record_dict.get(o.pk)
@@ -255,7 +257,7 @@ class Account(models.Model):
 							fee_record.principle_paid += principle_paid
 							self.principle_paid += principle_paid
 							interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, payment_amount=principle_paid)
-							if interest_balance + penalty_balance > 0:
+							if interest_balance + penalty_balance > 0 and t.trans_date < self.period_ending:
 								o.interest_total += interest_balance
 								o.penalty_total += penalty_balance
 								fee_record.interest_total += interest_balance
@@ -269,7 +271,7 @@ class Account(models.Model):
 								od_copy.trans_date = t.trans_date
 								od_copy.amount = interest_balance + penalty_balance
 								od_copy.balance = self.balance
-								penalty_list.append(od_copy)
+								return_list.append(od_copy)
 					else:
 						break
 
@@ -321,6 +323,8 @@ class Account(models.Model):
 		for od in overdue:
 			fee_record = fee_record_dict.get(od.pk)
 			interest_balance, penalty_balance, calc_string = od.calc_late_fee_balance(self.period_ending)
+			od.interest_total += interest_balance
+			od.penalty_total += penalty_balance
 			fee_record.interest_total += interest_balance
 			fee_record.penalty_total += penalty_balance
 			self.interest_total += interest_balance
@@ -332,7 +336,7 @@ class Account(models.Model):
 				od_copy.trans_date = self.period_ending
 				od_copy.amount = interest_balance + penalty_balance
 				od_copy.balance = self.balance
-				penalty_list.append(od_copy)
+				return_list.append(od_copy)
 
 		if update:
 			for fee_record in fee_records:
@@ -345,9 +349,7 @@ class Account(models.Model):
 				self.overdue = Decimal(0)
 			self.save() # save account
 
-		trans_list = sorted(trans_list + penalty_list, key=lambda x:x.trans_date)
-
-		return trans_list
+		return return_list, fees
 
 
 class Business(models.Model):
@@ -405,6 +407,14 @@ class BankDeposit(models.Model):
 	status = models.ForeignKey(CategoryChoice, null=True)
 	non_pm_payment = models.BooleanField(default=False)
 	old_receipt_id = models.PositiveIntegerField(null=True)
+	fee_date = models.DateField(null=True, blank=True)
+
+	def save(self, *args, **kwargs):
+		if self.account.period_ending and self.date_banked > self.account.period_ending or not self.account.period_ending:
+			self.account.transactions(update=True, period_ending=self.date_banked)
+		else:
+			self.account.transactions()
+		return super(BankDeposit, self).save(*args, **kwargs)
 
 
 class Contact(models.Model):
@@ -609,9 +619,9 @@ class AccountFee(models.Model):
 
 	def __unicode__(self):
 		if self.prop:
-			return "%s for UPI %s" % (self.fee_type, self.prop.upi)
+			return "%s %s for UPI %s" % (self.fee_type,self.from_date.year, self.prop.upi)
 		elif self.utility:
-			return "%s for %s" % (self.fee_type, self.utility)
+			return "%s for %s" % (self.fee_type,self.from_date.year, self.utility)
 		else:
 			return self.fee_type
 
