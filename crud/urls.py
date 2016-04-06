@@ -6,7 +6,7 @@ urlpatterns = patterns('',
 	url(r'^select_fees/$',select_fees, name='select_fees'),
 	url(r'^new_citizen_account/$',new_citizen_account, name='new_citizen_account'),
 	url(r'^new_business_account/$',new_business_account, name='new_business_account'),
-	url(r'^account/(?P<pk>\d+)/$',account, name='account'),
+	url(r'^account/(?P<pk>\d+)/$',account_transactions, name='account'),
 
 	url(r'^recent_accounts/$',recent_accounts, name='recent_accounts'),
 	url(r'^recent_collections/$',recent_collections, name='recent_collections'),

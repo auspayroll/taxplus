@@ -12,12 +12,12 @@
 </div>
 <div>
 
-<a href="{% url 'edit_account' account.pk %}">Edit Account</a> |
-<a href="{% url 'new_fee_collection' account.pk %}">New Collection</a> |
-<a href="{% url 'fee_collections' account.pk %}">Collections</a> |
-<a href="{% url 'account_fees' account.pk %}">Fees</a> |
 <a href="{% url 'account_transactions' account.pk %}">Transactions</a> |
 <a href="{% url 'account_payments' account.pk %}">Payments</a> |
+<a href="{% url 'account_fees' account.pk %}">Fees</a> |
+<a href="{% url 'fee_collections' account.pk %}">Collections</a> |
+<a href="{% url 'new_fee_collection' account.pk %}">New Collection</a> |
+<a href="{% url 'edit_account' account.pk %}">Edit Account</a> |
 <a href="{% url 'account_media' account.pk %}">Media</a> |
 <a href="{% url 'account_holders' account.pk %}">Account Holders</a> |
 <a href="{% url 'account_notes' account.pk %}">Account Notes</a> |

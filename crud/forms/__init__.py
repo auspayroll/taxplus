@@ -572,15 +572,19 @@ class NewUserForm(forms.ModelForm):
 class BankDepositForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ['amount', 'bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'date_banked', 'fee_date', 'non_pm_payment']
+		fields = ['amount', 'bank', 'branch', 'bank_receipt_no', 'rra_receipt', 'depositor_name', 'fee_date', 'date_banked', 'non_pm_payment']
 
 	date_banked = forms.DateField(widget=html5_widgets.DateInput)
 	fee_date = forms.DateField(widget=html5_widgets.DateInput, required=False)
 
-	@property
-	def not_empty(self):
-		return True in [ bool(i) for i in self.cleaned_data.values()]
-
+	def clean_date_banked(self):
+		date_banked = self.cleaned_data.get('date_banked')
+		fee_date = self.cleaned_data.get('fee_date')
+		if date_banked and date_banked > date.today():
+			self.add_error('date_banked',"Date banked cannot be later than today")
+		if date_banked and fee_date and date_banked < fee_date:
+			self.add_error('date_banked',"Date banked cannot be earlier than the fee date")
+		return date_banked
 
 
 class NewAccountHolderForm(forms.Form):

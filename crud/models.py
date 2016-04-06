@@ -189,7 +189,7 @@ class Account(models.Model):
 				else:
 					period_end = self.start_date - timedelta(days=1)
 
-				while period_end <= (self.end_date or self.period_ending):
+				while period_end <= (fee.to_date or self.end_date or self.period_ending):
 					af = copy.copy(fee)
 					af.from_date, period_end = get_next_period(period_end, fee.period)
 					af.to_date = period_end
@@ -221,7 +221,7 @@ class Account(models.Model):
 	def transactions(self, update=True, period_ending=None):
 		fees, fee_records = self.fee_transactions(update, period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
-		trans_list = sorted(self.payment_transactions() + fees, key=lambda x:x.trans_date)
+		trans_list = sorted(fees + self.payment_transactions(), key=lambda x:x.trans_date)
 		return_list = []
 
 		self.balance = kitty = Decimal(0)
