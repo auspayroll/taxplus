@@ -321,7 +321,7 @@ class Account(models.Model):
 					penalty_paid = f.penalty_due
 					kitty -= penalty_paid
 				else:
-					f.penalty_paid = kitty
+					penalty_paid = kitty
 					kitty =0
 				f.penalty_paid += penalty_paid
 				fee_record.penalty_paid += penalty_paid
