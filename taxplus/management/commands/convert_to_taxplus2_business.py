@@ -77,7 +77,7 @@ class Command(BaseCommand):
 					receipts.append(r.pk)
 					user = get_user(r.user)
 					deposit = BankDeposit.objects.create(account=account, bank_receipt_no=r.bank_receipt, bank=r.bank,
-						date_banked=r.paid_date, depositor_name=r.payer_name, amount=r.amount, status_id=r.status_id,
+						date_banked=r.paid_date, depositor_name=r.payer_name, amount=(r.amount or 0), status_id=r.status_id,
 						note=r.note, created=r.date_time, sector_receipt=r.sector_receipt, old_receipt_id=r.pk, user=user)
 					print 'deposit %s' % deposit.pk
 
