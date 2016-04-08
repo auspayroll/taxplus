@@ -22,6 +22,9 @@ import re
 from decimal import Decimal
 from django.db.models import Q
 
+from django.core.cache import cache
+
+
 def validate_upi(upi):
 	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
 		raise ValidationError('Invalid UPI Format')
@@ -164,7 +167,7 @@ class Account(models.Model):
 
 	def fee_transactions(self, update=False, period_ending=None):
 		fee_list = []
-		fees = self.account_fees.all()
+		fees = self.account_fees.select_related('fee_type', 'fee_subtype').all()
 
 
 		if period_ending and self.period_ending:
@@ -177,7 +180,6 @@ class Account(models.Model):
 
 		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
 		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
-
 		for fee in fees:
 			fee.interest_total = Decimal(0)
 			fee.interest_paid = Decimal(0)
@@ -192,6 +194,7 @@ class Account(models.Model):
 					period_end = self.start_date - relativedelta(months=1)
 				else:
 					period_end = self.start_date - timedelta(days=1)
+
 
 				while period_end <= (fee.to_date or self.end_date or self.period_ending):
 					af = copy.copy(fee)
@@ -219,14 +222,16 @@ class Account(models.Model):
 		return payments
 
 
+
 	def transactions(self, update=True, period_ending=None):
 		fees, fee_records = self.fee_transactions(update, period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
 		trans_list = sorted(fees + self.payment_transactions(), key=lambda x:x.trans_date)
-		return_list = []
 
-		self.balance = kitty = Decimal(0)
+		return_list = []
+		self.balance = left_over = 0
 		for t in trans_list:
+
 			if isinstance(t, AccountFee):
 				self.balance += t.amount
 				t.balance = self.balance
@@ -234,110 +239,94 @@ class Account(models.Model):
 
 			elif isinstance(t, BankDeposit):
 				t.amount = abs(t.amount) * -1
-				kitty += abs(t.amount)
+				kitty = abs(t.amount)
 				self.balance += t.amount
 				t.balance = self.balance
 				return_list.append(t)
 
-			if kitty > 0:
-				#first look for overdues and pay off principle first
-				overdue =  sorted([f for f in fees if  f.principle_due > 0 and f.to_date >= (t.fee_date or self.start_date)], key=lambda f:f.due_date)
-				# pay off principle
-				for o in overdue:
-					fee_record = fee_record_dict.get(o.pk)
-					principle_paid = 0
-					if kitty > 0:
-						if kitty >= o.principle_due:
-							principle_paid = o.principle_due
-							kitty -= principle_paid
-						else:
-							principle_paid = kitty
-							kitty = 0
-						if principle_paid:
+				if kitty > 0:
+					pay_range = sorted([f for f in fees if f.principle_due > 0 and f.to_date >= (t.fee_date or self.start_date) and f.from_date <= t.trans_date], key=lambda f:f.due_date)
+					previous_range = sorted([f for f in fees if f.principle_due > 0 and f.from_date <= t.trans_date if f.pk not in pay_range], key=lambda f:f.due_date)
+					to_pay = pay_range + previous_range
+					for o in to_pay:
+						fee_record = fee_record_dict.get(o.pk)
+
+						# pay off principle
+						if o.principle_due >  0 and kitty > 0:
+							if kitty >= o.principle_due:
+								principle_paid = o.principle_due
+								kitty -= principle_paid
+							else:
+								principle_paid = kitty
+								kitty = 0
+
 							o.principle_paid += principle_paid
 							fee_record.principle_paid += principle_paid
 							self.principle_paid += principle_paid
-							interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, payment_amount=principle_paid)
-							if interest_balance + penalty_balance > 0 and t.trans_date < self.period_ending:
-								o.interest_total += interest_balance
-								o.penalty_total += penalty_balance
-								fee_record.interest_total += interest_balance
-								fee_record.penalty_total += penalty_balance
-								self.interest_total += interest_balance
-								self.penalty_total += penalty_balance
-								self.balance += interest_balance + penalty_balance
-								# add to transaction balance for penalties
-								od_copy = copy.copy(o)
-								od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
-								od_copy.trans_date = t.trans_date
-								od_copy.amount = interest_balance + penalty_balance
-								od_copy.balance = self.balance
-								return_list.append(od_copy)
-					else:
-						break
 
-		#then pay off any other outstanding
-		outstanding = sorted(fees, key=lambda f:f.due_date)
-		for o in outstanding:
-			principle_paid = 0
-			interest_paid = 0
-			penalty_paid = 0
-			fee_record = fee_record_dict.get(o.pk)
+							if principle_paid and t.trans_date < self.period_ending:
+								interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, principle_paid)
+								if interest_balance + penalty_balance > 0:
+									fee_record.interest_total += interest_balance
+									fee_record.penalty_total += penalty_balance
+									self.interest_total += interest_balance
+									self.penalty_total += penalty_balance
+									self.balance += interest_balance + penalty_balance
+									if interest_balance + penalty_balance > 0:
+										od_copy = copy.copy(o)
+										od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
+										od_copy.trans_date = t.trans_date
+										od_copy.amount = interest_balance + penalty_balance
+										od_copy.balance = self.balance
+										return_list.append(od_copy)
+						else:
+							break
+					if kitty > 0:
+						left_over += kitty
 
-			# pay off principle
-			if o.principle_due > 0 and kitty > 0:
-				if kitty >= o.principle_due:
-					principle_paid = o.principle_due
-					kitty -= principle_paid
-				else:
-					principle_paid = kitty
-					kitty = 0
-				o.principle_paid += principle_paid
-				fee_record.principle_paid += principle_paid
-				self.principle_paid += principle_paid
-
-			# pay off interest
-			if o.interest_due >0 and kitty >0:
-				if kitty >= o.interest_due:
-					interest_paid = o.interest_due
-					kitty -= interest_paid
-				else:
-					interest_paid = kitty
-					kitty =0
-				o.interest_paid += interest_paid
-				fee_record.interest_paid += interest_paid
-				self.interest_paid += interest_paid
-
-			# pay off penalty
-			if o.penalty_due >0 and kitty >0:
-				if kitty >= o.penalty_due:
-					penalty_paid = o.penalty_due
-					kitty -= penalty_paid
-				else:
-					o.penalty_paid = kitty
-					kitty =0
-				o.penalty_paid += penalty_paid
-				fee_record.penalty_paid += penalty_paid
-				self.penalty_paid += penalty_paid
-
-		overdue =  sorted([f for f in fees if f.total_due > 0 and f.from_date <= self.period_ending], key=lambda x:x.due_date)
-		for od in overdue:
-			fee_record = fee_record_dict.get(od.pk)
-			interest_balance, penalty_balance, calc_string = od.calc_late_fee_balance(self.period_ending)
-			od.interest_total += interest_balance
-			od.penalty_total += penalty_balance
+		#then pay off any other outstanding for period ending
+		for f in [f for f in fees if f.total_due > 0]:
+			interest_balance, penalty_balance, calc_string = f.calc_late_fee_balance(self.period_ending)
+			fee_record = fee_record_dict.get(f.pk)
 			fee_record.interest_total += interest_balance
 			fee_record.penalty_total += penalty_balance
 			self.interest_total += interest_balance
 			self.penalty_total += penalty_balance
 			self.balance += interest_balance + penalty_balance
 			if interest_balance + penalty_balance > 0:
-				od_copy = copy.copy(od)
+				od_copy = copy.copy(f)
 				od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
 				od_copy.trans_date = self.period_ending
 				od_copy.amount = interest_balance + penalty_balance
 				od_copy.balance = self.balance
 				return_list.append(od_copy)
+
+			fee_record = fee_record_dict.get(f.pk)
+			kitty = left_over
+			# pay off interest
+			if f.interest_due >0 and kitty >0:
+				if kitty >= f.interest_due:
+					interest_paid = f.interest_due
+					kitty -= interest_paid
+				else:
+					interest_paid = kitty
+					kitty =0
+				f.interest_paid += interest_paid
+				fee_record.interest_paid += interest_paid
+				self.interest_paid += interest_paid
+
+			# pay off penalty
+			if f.penalty_due >0 and kitty >0:
+				if kitty >= f.penalty_due:
+					penalty_paid = f.penalty_due
+					kitty -= penalty_paid
+				else:
+					f.penalty_paid = kitty
+					kitty =0
+				f.penalty_paid += penalty_paid
+				fee_record.penalty_paid += penalty_paid
+				self.penalty_paid += penalty_paid
+
 
 		if update:
 			for fee_record in fee_records:
@@ -384,6 +373,14 @@ class Business(models.Model):
 	def __unicode__(self):
 		return self.name
 
+	@property
+	def phone(self):
+		return self.phone1 or self.phone2
+
+	@property
+	def identifier(self):
+		return self.tin
+
 
 
 class AccountHolder(models.Model):
@@ -411,13 +408,6 @@ class BankDeposit(models.Model):
 	old_receipt_id = models.PositiveIntegerField(null=True)
 	fee_date = models.DateField(null=True, blank=True)
 
-	def save(self, *args, **kwargs):
-		if self.account.period_ending and self.date_banked > self.account.period_ending or not self.account.period_ending:
-			self.account.transactions(update=True, period_ending=self.date_banked)
-		else:
-			self.account.transactions()
-		return super(BankDeposit, self).save(*args, **kwargs)
-
 
 class Contact(models.Model):
 	account = models.ForeignKey(Account, null=True)
@@ -432,26 +422,39 @@ class Contact(models.Model):
 
 
 def get_rate(period, category, sub_category=None, village=None, cell=None, sector=None):
-	rates = Rate.objects.filter(category=category, date_from__lte=period)
-	if sub_category:
-		rates = rates.filter(sub_category=sub_category)
+	#rates = cache.get('rate_pk')
+	#if not rates:
+	#	rates = [r for r in Rate.objects.select_related('village','cell','sector', 'category', 'sub_category').all()]
+	#	cache.set('rates', rates, 60)
+	#rates = [r for r in rates if r.category==category and r.sub_category==sub_category and r.date_from <= period]
+	rates = Rate.objects.all()
+	rates = rates.select_related('village','cell','sector', 'category', 'sub_category').filter(category=category, sub_category=sub_category, date_from__lte=period)
+
 	if village:
 		rates = rates.filter(Q(village=village)| Q(cell=village.cell)|Q(sector=village.cell.sector))
+		#rates = [r for r in rates if r.village==village or r.cell==village.cell or r.sector==village.cell.sector]
 	elif cell:
 		rates = rates.filter(village__isnull=True).filter(Q(cell=cell)| Q(sector=cell.sector))
+		#rates = [r for r in rates if not r.village or r.cell==cell or r.sector==cell.sector]
 	elif sector:
 		rates = rates.filter(village__isnull=True, cell__isnull=True, sector=sector)
+		#rates = [r for r in rates if not r.village and not r.cell and r.sector==sector]
 
-	rates = rates.order_by('-date_from', '-village', '-cell', '-sector')
+	#rates = rates.order_by('-date_from', '-village', '-cell', '-sector')
 	if rates:
 		rate = rates[0]
-		calc_string = "%s" % rate.amount
+		calc_string = ''
+		calc_string = "%s" % '{0:,}'.format(rate.amount)
 		if rate.village:
 			calc_string += " (%s village)" % rate.village
 		elif rate.cell:
 			calc_string += " (%s cell)" % rate.cell
 		elif rate.sector:
 			calc_string += " (%s sector)" % rate.sector
+
+
+		if sub_category:
+			calc_string += " %s" % sub_category
 
 		return rate.amount, calc_string
 	else:
@@ -488,6 +491,26 @@ class AccountFee(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
+
+	@property
+	def site(self):
+		site = self.utility or self.prop
+		if not site:
+			if sector:
+				site = ' sector %s' % self.sector
+			if cell:
+				site += ', %s cell' % self.cell
+			if village:
+				site += ', %s village' % self.village
+
+		return site
+
+	def adjust_balance(self, period_ending):
+		interest_total = self.interest_total
+		penalty_total = self.penalty_total
+		self.interest_total, self.penalty_balance, calc_string = f.calc_late_fee(period_ending)
+		self.interest_balance, self.penalty_balance = self.interest_total - interest_total, self.penalty_balance - penalty_total
+		return self.interest_balance, self.penalty_balance
 
 	def save(self, *args, **kwargs):
 		if not self.pk or not self.village:
@@ -531,8 +554,61 @@ class AccountFee(models.Model):
 		else: return self
 
 
+	def calc_land_lease(self, sub_category, village):
+		if not self.fee_subtype and self.prop:
+				self.fee_subtype = self.prop.land_zone
+				self.save()
+
+		rate, calc_string = get_rate(self.from_date, category=self.fee_type, sub_category=self.fee_subtype, village=self.village)
+		if not rate:
+			if self.fee_subtype.code == 'agricultural':
+				if self.quantity >= 20000:
+					rate = 0.4
+					calc_string += 'Agricultural > 2 hectares'
+			else:
+				if self.from_date >= date(1998,2,1) and self.to_date <= date(2001,12,31):
+
+					calc_string = 'pre 2001'
+					if self.fee_subtype == 'residential':
+						rate = 80
+						calc_string += ' Residential'
+
+					elif self.fee_subtype == 'commercial':
+						calc_string += ' Commerical'
+						rate = 100
+
+				elif self.from_date >= date(2002,1,1) and self.from_date <= date(2002,12,31):
+					calc_string = 'pre 2002, post 2001'
+					if self.fee_subtype == 'residential':
+						rate = 150
+						calc_string += ' Residential'
+
+					elif self.fee_subtype == 'commercial':
+						rate = 200
+						calc_string += ' Commercial'
+
+				elif self.from_date >= date(2003,1,1) and self.to_date <= date(2012,12,31): #2003 to 2012
+					calc_string = 'pre 2012, post 2002'
+					if self.fee_subtype.code == 'residential' and village:
+
+						calc_string += ' Residential'
+						if village.cell.sector.district.name.lower() == 'kicukiro' and village.cell.sector.name.lower() in ('gahanga', 'masaka'):
+							rate = 30
+						elif village.cell.sector.district.name.lower() == 'kicukiro' and village.cell.name.lower() in ('muyange') and \
+							village.cell.name.lower() in ('kamuna','mugeyo'):
+								rate = 70
+						else:
+							rate = 80
+
+					elif self.fee_subtype.code == 'commercial':
+						calc_string += ' Commercial'
+						rate = 150
+
+		return rate, calc_string
+
+
 	def calc_rate(self):
-		quantity = Decimal(1)
+		quantity = 1
 		if self.prop and not self.village:
 			self.village = self.prop.village
 			self.cell = self.prop.cell
@@ -556,9 +632,16 @@ class AccountFee(models.Model):
 			to_date = self.to_date
 
 
-		rate, calc_string = get_rate(self.from_date, category=self.fee_type, sub_category=self.fee_subtype, village=self.village)
+		if self.fee_type.code == 'land_lease':
+			rate, calc_string = self.calc_land_lease(sub_category=self.fee_subtype, village=self.village)
+		elif self.fee_type.code == 'cleaning':
+			rate, calc_string = get_rate(self.from_date, category=self.fee_type, sub_category=self.fee_subtype, village=None)
+		else:
+			rate, calc_string = get_rate(self.from_date, category=self.fee_type, sub_category=self.fee_subtype, village=self.village)
+
 		total = Decimal(round(rate * quantity))
-		calc_string += " * size: %s" % (quantity)
+		if quantity > 1:
+			calc_string += " * size: %s" % (quantity)
 
 		if to_date < self.to_date or from_date > self.from_date:
 			part_days = (to_date - from_date).days + 1
@@ -569,10 +652,9 @@ class AccountFee(models.Model):
 			total = Decimal(str(round(day_fraction * total)))
 			calc_string += "* %s (%s / %s days)" % (day_fraction, part_days, total_days)
 
-
 		return (total, calc_string)
 
-	def calc_late_fee_balance(self, pay_date=None, payment_amount=None):
+	def calc_late_fee_balance(self, pay_date, payment_amount=None):
 		"""
 		returns the balance of interest and penalty that needs to be paid for the period
 		and sets the penalty and interest totals
@@ -587,14 +669,14 @@ class AccountFee(models.Model):
 		if penalty_balance:
 			calc_string += " + %s" % penalty_calc_string
 
+		self.interest_total += interest
+		self.penalty_total += penalty_balance
 		return interest, penalty_balance, calc_string
 
 
-	def calc_late_fee(self, pay_date=None, payment_amount=None):
+	def calc_late_fee(self, pay_date, payment_amount=None):
 		interest =  0
 		penalty = 0
-		#import pdb
-		#pdb.set_trace()
 		interest_calc_string = penalty_calc_string = ''
 		principle_due = self.principle_due
 		if payment_amount:# calculate percentage only on part payment
@@ -617,23 +699,26 @@ class AccountFee(models.Model):
 				penalty = int(0.1 * float(self.amount))
 				if penalty > penalty_limit:
 					penalty = penalty_limit
+
 				penalty_calc_string = "penalty %s (0.1 * %s)" % ('{0:,}'.format(penalty), '{0:,}'.format(self.amount))
 
 		return Decimal(str(interest)), Decimal(str(penalty)), interest_calc_string, penalty_calc_string
 
+	def update_name(self):
+		self.name = "%s" % self.fee_type
+		if self.prop:
+			self.name += " for UPI %s" % (self.prop.upi)
+		elif self.utility:
+			self.name +=  " for %s" % (self.utility)
 
 	def __unicode__(self):
 		s = "%s" % self.fee_type
-		if self.prop:
-			s+= "for UPI %s" % (self.fee_type, self.prop.upi)
-		elif self.utility:
-			s+=  "or %s" % (self.fee_type, self.utility)
 
-		if self.period == 52:
-			s += " %s" % self.from_date.format("%Y")
+		if self.period == 1:
+			s += " %s" % self.from_date.strftime("%Y")
 
 		elif self.period == 12:
-			s+= " %s" % self.from_date.strftime("%b, %Y")
+			s += " %s" % self.from_date.strftime("%b, %Y")
 
 		return s
 

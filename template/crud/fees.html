@@ -9,21 +9,19 @@
 		<th>id</th>
 		<th>Period</th>
 		<th>Fee</th>
+		<th>Category</th>
 		<th>Utility/Site</th>
-		<th>Interest due /paid </th>
-		<th>Penalty due /paid </th>
-		<th>Principle due /paid</th>
-
+		<th>Qty/Size</th>
+		<th></th>
 	</tr>
 	{% for f in fees %}
 	<tr>
 		<td>{{f.pk|slugify}}</td>
 		<td>{{ f.from_date }} - {{ f.to_date|default:'active' }}</td>
 		<td>{{ f.fee_type }}</td>
+		<td>{{ f.fee_subtype|default:'-' }}</td>
 		<td>{{ f.prop|default:f.utility|default:'- ' }}</td>
-		<td>{{ f.interest_due }} / {{ f.interest_paid }}</td>
-		<td>{{ f.penalty_due }} / {{ f.penalty_paid }}</td>
-		<td>{{ f.principle_due }} / {{ f.principle_paid }}</td>
+		<td>{{ f.quantity|default:'-' }}</td>
 	</tr>
 	{% endfor %}
 	</table>

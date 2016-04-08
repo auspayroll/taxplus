@@ -7,12 +7,20 @@
 	<table class="table">
 	<tr>
 		<th>id</th>
-		<th></th>
+		<th>Type</th>
+		<th>Name</th>
+		<th>TIN/CID</th>
+		<th>Phone</th>
+		<th>Email</th>
 	</tr>
 	{% for h in holders %}
 	<tr>
-		<td>{{h.pk}}</td>
-		<td>{{h.holder}}
+		<td>{{h.pk|slugify}}/{{h.holder.pk|slugify}}</td>
+		<td>{{h.holder_type|capfirst }}
+		<td>{{h.holder}}</td>
+		<td>{{ h.holder.identifier }}</td>
+		<td>{{ h.holder.phone }}</td>
+		<td>{{ h.holder.email }}</td>
 	</tr>
 	{% endfor %}
 	</table>

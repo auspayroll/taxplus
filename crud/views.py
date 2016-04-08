@@ -37,6 +37,9 @@ import os
 from django.db import IntegrityError
 
 
+
+
+
 def admin_check(user):
     return (user.groups.filter(name__in=['staff', 'Staff']) or user.is_superuser)
 
@@ -327,6 +330,10 @@ def new_payment(request, pk):
 				collection_instances.update(deposit=payment)
 				payment.amount = reduce(lambda x,y:x+y, [c.amount for c in collection_instances])
 				payment.save()
+				if account.period_ending and payment.date_banked > account.period_ending or not account.period_ending:
+					account.transactions(update=True, period_ending=payment.date_banked)
+				else:
+					account.transactions(update=True)
 			messages.success(request, 'New Payment created')
 			return HttpResponseRedirect(reverse('account_transactions', args=[account.pk]))
 	else:

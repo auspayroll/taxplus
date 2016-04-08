@@ -351,6 +351,16 @@ class Citizen(LoggedModel):
 	def __unicode__(self):
 		return self.name
 
+
+	@property
+	def identifer(self):
+		return self.citizen_id
+
+
+	@property
+	def phone(self):
+		return self.phone_1 or self.phone_2
+
 	@property
 	def current_assets(self):
 		ownerships = Ownership.objects.filter(owner_citizen=self, date_ended__isnull=True)
