@@ -176,7 +176,7 @@ class Account(models.Model):
 		elif period_ending:
 			self.period_ending = period_ending
 		else:
-			self.period_ending = self.period_ending or date.today()
+			self.period_ending = date.today()
 
 		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
 		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
