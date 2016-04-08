@@ -563,7 +563,7 @@ class AccountFee(models.Model):
 		if not rate:
 			if self.fee_subtype.code == 'agricultural':
 				if self.quantity >= 20000:
-					rate = 0.4
+					rate = Decimal(str(0.4))
 					calc_string += 'Agricultural > 2 hectares'
 			else:
 				if self.from_date >= date(1998,2,1) and self.to_date <= date(2001,12,31):
