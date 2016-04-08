@@ -88,6 +88,6 @@ class Command(BaseCommand):
 						nm.save()
 						print '1111111. media pk %s saved' % nm.pk
 
-			account.transactions(update=True)
+			#account.transactions(update=True)
 
 
