@@ -132,7 +132,7 @@ class Account(models.Model):
 	created = models.DateTimeField(null=True, auto_now_add=True)
 	modified = models.DateTimeField(null=True, auto_now=True)
 	period_ending = models.DateField(null=True)
-	balance =  models.DecimalField(max_digits=16, decimal_places=2, null=True) # or no. collections taken, manual entry only
+	balance =  models.DecimalField(max_digits=16, decimal_places=2, default=0) # or no. collections taken, manual entry only
 
 	@property
 	def principle_due(self):
@@ -491,6 +491,8 @@ class AccountFee(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
+	balance = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	overdue = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 
 	@property
 	def site(self):
@@ -882,7 +884,9 @@ class Log(models.Model):
 
 
 class CurrentOutstanding(models.Model):
-	village = models.ForeignKey(Village)
+	sector = models.ForeignKey(Village, related_name="sector_outstanding", null=True)
+	cell = models.ForeignKey(Village, related_name="cell_outstanding", null=True)
+	village = models.ForeignKey(Village, related_name="village_outstanding", null=True)
 	fee_type = models.ForeignKey(CategoryChoice)
 	balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	overdue = models.DecimalField(max_digits=16, decimal_places=2, default=0)
