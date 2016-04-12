@@ -178,15 +178,12 @@ class Account(models.Model):
 		else:
 			self.period_ending = date.today()
 
-		self.principle_total = self.interest_total = self.penalty_total =  Decimal(0)
-		self.principle_paid = self.interest_paid = self.penalty_paid =  Decimal(0)
+		self.principle_total = self.interest_total = self.penalty_total =  0
+		self.principle_paid = self.interest_paid = self.penalty_paid =  0
 		for fee in fees:
-			fee.interest_total = Decimal(0)
-			fee.interest_paid = Decimal(0)
-			fee.penalty_total = Decimal(0)
-			fee.penalty_paid = Decimal(0)
-			fee.principle_paid = Decimal(0)
-			fee.amount = Decimal(0)
+			fee.interest_total = fee.interest_paid = fee.penalty_total = fee.penalty_paid = fee.principle_paid = fee.balance = fee.overdue =  0
+
+			fee.amount = 0
 			if fee.auto:
 				if fee.period == 1:
 					period_end = self.start_date - relativedelta(years=1)
@@ -260,6 +257,9 @@ class Account(models.Model):
 								principle_paid = kitty
 								kitty = 0
 
+							if o.principle_due > 0 and o.due_date < self.period_ending:
+								fee_record.overdue += o.principle_due
+
 							o.principle_paid += principle_paid
 							fee_record.principle_paid += principle_paid
 							self.principle_paid += principle_paid
@@ -271,12 +271,13 @@ class Account(models.Model):
 									fee_record.penalty_total += penalty_balance
 									self.interest_total += interest_balance
 									self.penalty_total += penalty_balance
-									self.balance += interest_balance + penalty_balance
+									fee_record.balance += (interest_balance + penalty_balance)
+									self.balance += (interest_balance + penalty_balance)
 									if interest_balance + penalty_balance > 0:
 										od_copy = copy.copy(o)
 										od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
 										od_copy.trans_date = t.trans_date
-										od_copy.amount = interest_balance + penalty_balance
+										od_copy.amount = (interest_balance + penalty_balance)
 										od_copy.balance = self.balance
 										return_list.append(od_copy)
 						else:
@@ -292,7 +293,8 @@ class Account(models.Model):
 			fee_record.penalty_total += penalty_balance
 			self.interest_total += interest_balance
 			self.penalty_total += penalty_balance
-			self.balance += interest_balance + penalty_balance
+			self.balance += (interest_balance + penalty_balance)
+			fee_record.balance += (interest_balance + penalty_balance)
 			if interest_balance + penalty_balance > 0:
 				od_copy = copy.copy(f)
 				od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
@@ -336,7 +338,7 @@ class Account(models.Model):
 			if overdue_fees:
 				self.overdue = reduce(lambda x,y:x + y, overdue_fees)
 			else:
-				self.overdue = Decimal(0)
+				self.overdue = 0
 			self.save() # save account
 
 		return return_list, fees
