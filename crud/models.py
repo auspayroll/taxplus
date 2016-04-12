@@ -214,7 +214,7 @@ class Account(models.Model):
 
 
 	def payment_transactions(self):
-		payments = [p for p in self.account_payments.all().order_by('date_banked')]
+		payments = [p for p in self.account_payments.filter(status__code='active').order_by('date_banked')]
 		for payment in payments:
 			payment.trans_date = payment.date_banked
 			payment.description = "<span style=\"color:green\">Payment %s %s</span>" % ((payment.bank_receipt_no or payment.sector_receipt or payment.rra_receipt), payment.note)
