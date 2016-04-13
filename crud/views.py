@@ -899,8 +899,8 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		af = af.filter(sector=sector)
 		filename += "%s sector " % sector
 
-	elif int(sector_pk):
-		district = get_object_or_404(District, pk=sector_pk)
+	elif int(district_pk):
+		district = get_object_or_404(District, pk=district_pk)
 		af = af.filter(sector__district=district)
 		filename += "%s district " % district
 
