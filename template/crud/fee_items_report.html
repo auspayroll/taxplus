@@ -1,0 +1,30 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+
+
+	<table class="table">
+	<tr>
+		<th>Account Number</th>
+		<th>Account Name</th>
+		<th>Phone</th>
+		<th>Email</th>
+		<th>Fee</th>
+		<th>Balance</th>
+		<th>Overdue</th>
+	</tr>
+	{% for af in account_fees %}
+	<tr>
+		<td><a href="{% url 'account' af.account.pk %}">{{ af.account.pk|slugify }}</a></td>
+		<td>{{af.account.name}}</td>
+		<td>{{af.account.phone|default:'-'}}</td>
+		<td>{{af.account.email|default:'-'}}</td>
+		<td>{{af.fee_type}}</td>
+		<td>{{af.balance}}</td>
+		<td>{{af.overdue}}</td>
+	</tr>
+	{% endfor %}
+	</table>
+
+{% endblock %}
+

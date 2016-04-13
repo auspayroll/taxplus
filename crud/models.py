@@ -886,11 +886,23 @@ class Log(models.Model):
 
 
 class CurrentOutstanding(models.Model):
-	sector = models.ForeignKey(Village, related_name="sector_outstanding", null=True)
-	cell = models.ForeignKey(Village, related_name="cell_outstanding", null=True)
+	district = models.ForeignKey(District, related_name="district_outstanding", null=True)
+	sector = models.ForeignKey(Sector, related_name="sector_outstanding", null=True)
+	cell = models.ForeignKey(Cell, related_name="cell_outstanding", null=True)
 	village = models.ForeignKey(Village, related_name="village_outstanding", null=True)
 	fee_type = models.ForeignKey(CategoryChoice)
 	balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	overdue = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+	@property
+	def name(self):
+		if self.village:
+			return "%s village" % self.village
+		elif self.cell:
+			return "%s cell" % self.cell
+		elif self.sector:
+			return "%s sector" % self.sector
+		elif self.district:
+			return "%s district" % self.district
 
 

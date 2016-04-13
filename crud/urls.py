@@ -95,6 +95,12 @@ urlpatterns = patterns('',
 	url(r'^user/(?P<pk>\d+)/logs/$',user_logs, name='user_logs'),
 
 
+	url(r'^report/region/$',region_report, name='region_report'),
+
+	url(r'^report/district/(?P<district_pk>\d+)/sector/(?P<sector_pk>\d+)/cell/(?P<cell_pk>\d+)/village/(?P<village_pk>\d+)/fee_type/(?P<fee_type_pk>\d+)/$',fee_items_report, name='fee_items_report'),
+	url(r'^report/district/(?P<district_pk>\d+)/sector/(?P<sector_pk>\d+)/cell/(?P<cell_pk>\d+)/village/(?P<village_pk>\d+)/fee_type/(?P<fee_type_pk>\d+)/web/$',fee_items_report, {'web':True}, name='fee_items_report_web'),
+
+
 
 
 )

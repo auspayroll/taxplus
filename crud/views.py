@@ -4,9 +4,10 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	MediaForm, NewFeeCollectionForm, AccountNoteForm, CollectionForm, RegionForm, \
 	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
-	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm, CellForm, VillageForm, RateForm, AccountForm
+	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm,\
+	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm
 from crud.models import Account, Contact, AccountPayment, Media,\
-	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit, CurrentOutstanding
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -24,7 +25,7 @@ from django.forms.models import modelformset_factory
 from django.http import HttpResponse, Http404
 from django.shortcuts import HttpResponseRedirect, render_to_response, get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
-from djqscsv import render_to_csv_response
+from djqscsv import render_to_csv_response, generate_filename
 from random import randint
 from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property, Rate
 import csv
@@ -871,3 +872,95 @@ def account_transactions(request, pk):
 	account = get_object_or_404(Account,pk=pk)
 	transactions, fees = account.transactions()
 	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions, 'fees':fees})
+
+
+@user_passes_test(admin_check)
+def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, village_pk=None, fee_type_pk=None, web=False):
+	filename = ''
+	af = AccountFee.objects.select_related('account', 'fee_type')
+
+	if int(fee_type_pk):
+		fee_type = get_object_or_404(CategoryChoice, id=fee_type_pk)
+		af = af.filter(fee_type=fee_type)
+		filename += "%s " % fee_type.name
+
+	if int(village_pk):
+		village = get_object_or_404(Village, pk=village_pk)
+		af = af.filter(village=village)
+		filename += "%s village " % village
+
+	elif int(cell_pk):
+		cell = get_object_or_404(Cell, pk=cell_pk)
+		af = af.filter(cell=cell)
+		filename += "%s cell " % cell
+
+	elif int(sector_pk):
+		sector = get_object_or_404(Sector, pk=sector_pk)
+		af = af.filter(sector=sector)
+		filename += "%s sector " % sector
+
+	elif int(sector_pk):
+		district = get_object_or_404(District, pk=sector_pk)
+		af = af.filter(sector__district=district)
+		filename += "%s district " % district
+
+	if filename:
+		filename += '.csv'
+	else:
+		filename = generate_filename(af, append_datestamp=True)
+
+	if web:
+		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af.order_by('-balance')})
+	else:
+		af = af.values('id', 'account__name', 'account__phone', 'account__email', 'fee_type__name', 'balance', 'overdue' )
+		return render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
+
+
+
+
+@user_passes_test(admin_check)
+def region_report(request):
+	region = []
+	sub_regions = []
+	regions = []
+	if request.method == 'POST':
+		form = RegionReportForm(request.POST)
+		if form.is_valid():
+			village = form.cleaned_data.get('village')
+			cell = form.cleaned_data.get('cell')
+			sector = form.cleaned_data.get('sector')
+			district = form.cleaned_data.get('district')
+			fee_type = form.cleaned_data.get('fee_type')
+			if fee_type:
+				region = CurrentOutstanding.objects.filter(fee_type=fee_type)
+				sub_regions = CurrentOutstanding.objects.filter(fee_type=fee_type)
+			else:
+				region = CurrentOutstanding.objects.all()
+				sub_regions = CurrentOutstanding.objects.all()
+
+			if village:
+				region = region.filter(village=village)
+				sub_regions = []
+
+			elif cell:
+				region = region.filter(cell=cell)
+				sub_regions = sub_regions.filter(village__cell=cell)
+
+			elif sector:
+				region = region.filter(sector=sector)
+				sub_regions = sub_regions.filter(cell__sector=sector)
+
+			elif district:
+				region = region.filter(district=district)
+				sub_regions = sub_regions.filter(sector__district=district)
+			else:
+				region = region.filter(district__isnull=False)
+				sub_regions = []
+
+			regions = [r for r in region] + [r for r in sub_regions]
+
+	else:
+		form = RegionReportForm()
+
+	return TemplateResponse(request, 'crud/region_report.html', {'form':form, 'regions':regions,})
+
