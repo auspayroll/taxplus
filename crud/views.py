@@ -912,7 +912,7 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 	if web:
 		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af.order_by('-balance')})
 	else:
-		af = af.values('id', 'account__name', 'account__phone', 'account__email', 'fee_type__name', 'balance', 'overdue' )
+		af = af.values('id', 'account__name', 'account__phone', 'account__tin', 'account__citizen_id', 'upi', 'account__email', 'fee_type__name', 'balance', 'overdue' )
 		return render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
 
 

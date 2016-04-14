@@ -7,6 +7,9 @@
 	<tr>
 		<th>Account Number</th>
 		<th>Account Name</th>
+		<th>CID</th>
+		<th>TIN</th>
+		<th>UPI</th>
 		<th>Phone</th>
 		<th>Email</th>
 		<th>Fee</th>
@@ -17,6 +20,9 @@
 	<tr>
 		<td><a href="{% url 'account' af.account.pk %}">{{ af.account.pk|slugify }}</a></td>
 		<td>{{af.account.name}}</td>
+		<td>{{af.account.citizen_id|default:'-'|slugify}}</td>
+		<td>{{af.account.tin|default:'-'|slugify}}</td>
+		<td>{{af.upi|default:'-'}}</td>
 		<td>{{af.account.phone|default:'-'}}</td>
 		<td>{{af.account.email|default:'-'}}</td>
 		<td>{{af.fee_type}}</td>

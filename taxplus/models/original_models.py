@@ -353,7 +353,7 @@ class Citizen(LoggedModel):
 
 
 	@property
-	def identifer(self):
+	def identifier(self):
 		return self.citizen_id
 
 
@@ -444,6 +444,15 @@ class Business(LoggedModel):
 				yield ownership.owner_busines
 			elif owernship.owner_citizen:
 				yield ownership.owner_citizen
+
+
+	@property
+	def identifier(self):
+		return self.citizen_id
+
+	@property
+	def phone(self):
+		return self.phone1 or self.phone2
 
 	def merge(self, businesses):
 		for fee in Fee.objects.filter(business__in=businesses, fee_payments__isnull=False).distinct():

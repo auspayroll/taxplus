@@ -62,13 +62,14 @@
 
 
 <table class="table">
-	<tr><th>Region</th><th>Fee</th>
+	<tr><th>Region</th><th>Fee</th><th># Accounts</th>
 		<th>Outstanding</th><th>Overdue</th><th>Fees</th></tr>
 
 
 {% for sub_region in regions %}
 	<tr><td>{{ sub_region.name }}</td>
 		<td>{{ sub_region.fee_type }}</td>
+		<td>{{ sub_region.accounts }}</td>
 		<td>{{ sub_region.balance }}</td>
 		<td>{{ sub_region.overdue }}</td>
 		{% if sub_region.village %}

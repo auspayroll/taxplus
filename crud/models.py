@@ -133,6 +133,8 @@ class Account(models.Model):
 	modified = models.DateTimeField(null=True, auto_now=True)
 	period_ending = models.DateField(null=True)
 	balance =  models.DecimalField(max_digits=16, decimal_places=2, default=0) # or no. collections taken, manual entry only
+	tin = models.BigIntegerField(null=True)
+	citizen_id = models.BigIntegerField(null=True)
 
 	@property
 	def principle_due(self):
@@ -153,6 +155,35 @@ class Account(models.Model):
 	def __unicode__(self):
 		return self.name or self.account_no or "%s" % self.pk
 
+	def update_contact_details(self):
+		def convert_to_int(values):
+			for val in values:
+				try:
+					r = int(val.replace('-','').replace('/','').replace('\\',''))
+					if r > 9223372036854775807:
+						continue
+					else:
+						return r
+				except:
+					pass
+
+			return None
+		current_emails = [h.holder.email for h in self.holders.all()]
+		current_phones = [h.holder.phone for h in self.holders.all()]
+		citizen_ids = [h.holder.citizen_id for h in self.holders.all() if hasattr(h.holder, 'citizen_id')]
+		tins = [h.holder.tin for h in self.holders.all() if hasattr(h.holder, 'tin')]
+
+		if citizen_ids and (not self.citizen_id or self.citizen_id not in citizen_ids):
+			self.citizen_id = convert_to_int(citizen_ids)
+
+		if tins and (not self.tin or self.tin not in tins):
+			self.tin = convert_to_int(tins)
+
+		if current_emails and (not self.email or self.email not in current_emails):
+			self.email = current_emails[0]
+
+		if current_phones and (not self.phone or self.phone not in current_phones):
+			self.phone = current_phones[0]
 
 	def utility_list(self):
 		"""
@@ -490,11 +521,15 @@ class AccountFee(models.Model):
 	utility = models.ForeignKey(Utility, null=True, blank=False)
 	prop = models.ForeignKey(Property, null=True, blank=False)
 	due_days = models.PositiveSmallIntegerField(default=0, null=True)
+	district = models.ForeignKey(District, null=True, blank=True)
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
 	balance = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	ytd_balance = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	overdue = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	parcel_id = models.IntegerField(null=True)
+	upi = models.CharField(null=True, max_length=30, validators=[validate_upi],help_text="eg. 1/03/10/01/655", verbose_name="UPI", blank=True)
 
 	@property
 	def site(self):
@@ -890,6 +925,7 @@ class CurrentOutstanding(models.Model):
 	sector = models.ForeignKey(Sector, related_name="sector_outstanding", null=True)
 	cell = models.ForeignKey(Cell, related_name="cell_outstanding", null=True)
 	village = models.ForeignKey(Village, related_name="village_outstanding", null=True)
+	accounts = models.IntegerField(default=0,null=True)
 	fee_type = models.ForeignKey(CategoryChoice)
 	balance = models.DecimalField(max_digits=16, decimal_places=2, default=0)
 	overdue = models.DecimalField(max_digits=16, decimal_places=2, default=0)
