@@ -274,7 +274,7 @@ class Account(models.Model):
 
 				if kitty > 0:
 					pay_range = sorted([f for f in fees if f.principle_due > 0 and f.to_date >= (t.fee_date or self.start_date) and f.from_date <= t.trans_date], key=lambda f:f.due_date)
-					previous_range = sorted([f for f in fees if f.principle_due > 0 and f.from_date <= t.trans_date if f.pk not in pay_range], key=lambda f:f.due_date)
+					previous_range = sorted([f for f in fees if f.principle_due > 0 if f.pk not in pay_range], key=lambda f:f.due_date)
 					to_pay = pay_range + previous_range
 					for o in to_pay:
 						fee_record = fee_record_dict.get(o.pk)
