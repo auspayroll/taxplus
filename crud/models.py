@@ -257,7 +257,7 @@ class Account(models.Model):
 		trans_list = sorted(fees + self.payment_transactions(), key=lambda x:x.trans_date)
 
 		return_list = []
-		self.balance = left_over = 0
+		self.balance = kitty = 0
 		for t in trans_list:
 
 			if isinstance(t, AccountFee):
@@ -267,7 +267,7 @@ class Account(models.Model):
 
 			elif isinstance(t, BankDeposit):
 				t.amount = abs(t.amount) * -1
-				kitty = abs(t.amount)
+				kitty += abs(t.amount)
 				self.balance += t.amount
 				t.balance = self.balance
 				return_list.append(t)
@@ -313,8 +313,6 @@ class Account(models.Model):
 										return_list.append(od_copy)
 						else:
 							break
-					if kitty > 0:
-						left_over += kitty
 
 		#then pay off any other outstanding for period ending
 		for f in [f for f in fees if f.total_due > 0]:
@@ -335,7 +333,6 @@ class Account(models.Model):
 				return_list.append(od_copy)
 
 			fee_record = fee_record_dict.get(f.pk)
-			kitty = left_over
 			# pay off interest
 			if f.interest_due >0 and kitty >0:
 				if kitty >= f.interest_due:
