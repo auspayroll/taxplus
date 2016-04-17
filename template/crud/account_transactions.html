@@ -15,7 +15,7 @@
 		<th>Balance</th>
 	</tr>
 	{% for t in transactions %}
-	<tr>
+	<tr {% if account.closed_off and t.trans_date <= account.closed_off %}style="background:#cccccc"{% endif %}>
 		<td>{{t.pk|slugify}}</td>
 		<td>{{t.trans_date}}</td>
 		<td>{{t.description|safe}}</td>
@@ -44,7 +44,7 @@
 		<th>Penalty Due</th>
 	</tr>
 	{% for f in fees %}
-	<tr>
+	<tr {% if f.closed %}style="background:#cccccc"{% endif %}>
 		<td>{{f }}</td>
 		<td>{{f.amount}}</td>
 		<td>{{f.principle_paid}}</td>

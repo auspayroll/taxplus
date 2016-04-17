@@ -20,7 +20,7 @@ import json
 import os
 import re
 from decimal import Decimal
-from django.db.models import Q
+from django.db.models import Q, F
 
 from django.core.cache import cache
 
@@ -135,6 +135,8 @@ class Account(models.Model):
 	balance =  models.DecimalField(max_digits=16, decimal_places=2, default=0) # or no. collections taken, manual entry only
 	tin = models.BigIntegerField(null=True)
 	citizen_id = models.BigIntegerField(null=True)
+	bf = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	closed_off = models.DateField(null=True)
 
 	@property
 	def principle_due(self):
@@ -196,132 +198,249 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def fee_transactions(self, update=False, period_ending=None):
-		fee_list = []
-		fees = self.account_fees.select_related('fee_type', 'fee_subtype').all()
-
-
-		if period_ending and self.period_ending:
-				assert period_ending >= self.period_ending, 'period %s is less than %s' % (period_ending, self.period_ending)
-				self.period_ending = period_ending
-		elif period_ending:
-			self.period_ending = period_ending
+	def close_off_transactions(self, period_ending):
+		self.closed_off = period_ending
+		self.save()
+		self.transactions(update=True, period_ending=period_ending) # calculate final late fees etc. 
+		if self.balance < 0:
+			self.bf = -1 * self.balance
 		else:
-			self.period_ending = date.today()
+			self.bf = 0
+		fees = self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True)
+
+		for fee in [f for f in fees if f.auto]:
+			from_date = period_ending + timedelta(days=1)
+			AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type, 
+				from_date=from_date,
+				defaults=dict(to_date=None, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
+					due_date=(fee.due_date or (from_date + timedelta(days=fee.due_days)) + timedelta(years=1)), 
+					due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
+				district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility, 
+				period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
+			)
+
+		fees.update(closed=period_ending, to_date=period_ending)
+		self.closed_off = period_ending
+		self.account_payments.filter(date_banked__lte=period_ending, closed__isnull=True).update(closed=period_ending)
+		self.save(update_fields=['bf','closed_off'])
+		self.transactions(update=True)
+
+
+
+	def fee_transactions(self, period_ending=None):
+		fee_list = []
+		fees = self.account_fees.select_related('fee_type', 'fee_subtype').filter(status__code='active', from_date__lte=period_ending).order_by('from_date')
 
 		self.principle_total = self.interest_total = self.penalty_total =  0
 		self.principle_paid = self.interest_paid = self.penalty_paid =  0
 		for fee in fees:
-			fee.interest_total = fee.interest_paid = fee.penalty_total = fee.penalty_paid = fee.principle_paid = fee.balance = fee.overdue =  0
+			fee.interest_total = fee.interest_paid = fee.penalty_total = 0
+			fee.penalty_paid = fee.principle_paid = fee.balance = fee.overdue =  0
 
 			fee.amount = 0
-			if fee.auto:
-				if fee.period == 1:
-					period_end = self.start_date - relativedelta(years=1)
-				elif fee.period in (12,4,3):
-					period_end = self.start_date - relativedelta(months=1)
-				else:
-					period_end = self.start_date - timedelta(days=1)
+			if fee.period == 1:
+				period_end = fee.from_date - relativedelta(years=1)
+			elif fee.period in (12,4,3):
+				period_end = fee.from_date - relativedelta(months=1)
+			else:
+				period_end = fee.from_date - timedelta(days=1)
 
+			while period_end < (fee.to_date or self.end_date or period_ending):
+				af = copy.copy(fee)
+				af.from_date, period_end = get_next_period(period_end, fee.period)
+				af.to_date = period_end
+				af.trans_date = af.from_date
+				af.due_date =  af.to_date + timedelta(days=(af.due_days or 5))
+				af.amount, calc_string = af.calc_rate()
+				fee.amount += Decimal(af.amount)
+				af.description = "%s<br/><span class=\"calc_string\">%s</font>" % (af, calc_string)
+				fee_list.append(af)
 
-				while period_end <= (fee.to_date or self.end_date or self.period_ending):
-					af = copy.copy(fee)
-					af.from_date, period_end = get_next_period(period_end, fee.period)
-					af.to_date = period_end
-					af.trans_date = af.from_date
-					af.due_date =  af.to_date + timedelta(days=(af.due_days or 5))
-					af.amount, calc_string = af.calc_rate()
-					fee.amount += Decimal(af.amount)
-					self.principle_total += Decimal(af.amount)
-					af.description = "%s<br/><span class=\"calc_string\">%s</font>" % (af, calc_string)
-					fee_list.append(af)
 
 		fee_list = sorted(fee_list, key=lambda x:x.trans_date)
 
 		return fee_list, fees
 
 
-	def payment_transactions(self):
-		payments = [p for p in self.account_payments.filter(status__code='active').order_by('date_banked')]
+	def payment_transactions(self, period_ending):
+		payments = [p for p in self.account_payments.filter(status__code='active', fee_date__lte=period_ending)]
+
 		for payment in payments:
-			payment.trans_date = payment.date_banked
-			payment.description = "<span style=\"color:green\">Payment %s %s</span>" % ((payment.bank_receipt_no or payment.sector_receipt or payment.rra_receipt), payment.note)
+			payment.trans_date = payment.fee_date
+			payment.description = "<span style=\"color:green\">Payment %s %s</span>" % ((payment.bank_receipt_no or payment.sector_receipt or payment.rra_receipt), payment.note or '')
 
 		return payments
 
 
+	def current_transactions(self):
+		return_list = []
+		self.balance = -1 * self.bf
+		class BroughtForward(object):
+			pass
+		bf = BroughtForward()
+		if self.bf and self.closed_off:
+			bf.trans_date = self.closed_off + timedelta(days=1)
+			bf.amount = bf.balance = self.balance
+			bf.description = "Balance Brought Forward"
+			bf.closed = False
+			return_list.append(bf)
 
-	def transactions(self, update=True, period_ending=None):
-		fees, fee_records = self.fee_transactions(update, period_ending)
+		transactions, fees = self.transactions()
+		active_transactions = [t for t in transactions if not t.closed]
+		active_fees = [f for f in fees if not f.closed]
+		return_list += active_transactions
+		return return_list, active_fees
+
+
+	def transactions(self, update=False, period_ending=None): #all transactions
+		if period_ending and self.period_ending:
+				#assert period_ending >= self.period_ending, 'period %s is less than %s' % (period_ending, self.period_ending)
+				self.period_ending = period_ending
+		elif period_ending:
+			self.period_ending = period_ending
+		else:
+			self.period_ending = date.today()
+		fees, fee_records = self.fee_transactions(self.period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
-		trans_list = sorted(fees + self.payment_transactions(), key=lambda x:x.trans_date)
+		trans_list = sorted(fees + self.payment_transactions(self.period_ending), key=lambda x:x.trans_date)
 
 		return_list = []
 		self.balance = kitty = 0
+		close_off_next_iter = False
 		for t in trans_list:
+			if close_off_next_iter and self.closed_off and t.trans_date > self.closed_off:
+				close_off_next_iter = False
+				class ClosedOff(object):
+					pass
+				co = ClosedOff()
+				co.trans_date = self.closed_off
+				co.description = 'Balance Closed Off'
+				co.closed = self.closed_off
+				co.amount = -1 * self.balance
+				return_list.append(co)
+				co.balance = 0
+				#add carried forward
+				if self.balance < 0:
+					class BroughtForward(object):
+						pass
+					cf = BroughtForward()
+					cf.trans_date = self.closed_off + timedelta(days=1)
+					cf.description = 'Balance Brought Forward'
+					cf.balance = cf.amount = self.balance
+					return_list.append(cf)
+				else:
+					self.balance = 0
 
 			if isinstance(t, AccountFee):
 				self.balance += t.amount
 				t.balance = self.balance
 				return_list.append(t)
+				#add closed off
+				if t.to_date == self.closed_off:
+					close_off_next_iter = True
 
 			elif isinstance(t, BankDeposit):
 				t.amount = abs(t.amount) * -1
-				kitty += abs(t.amount)
+				deposit_amount = abs(t.amount)
 				self.balance += t.amount
 				t.balance = self.balance
 				return_list.append(t)
+				if deposit_amount > 0:
+						#import pdb
+						#pdb.set_trace()
+						to_pay = sorted([f for f in fees if f.principle_due > 0 and f.from_date <= t.fee_date and t.closed == f.closed], key=lambda f:f.due_date)
 
-				if kitty > 0:
-					pay_range = sorted([f for f in fees if f.principle_due > 0 and f.to_date >= (t.fee_date or self.start_date) and f.from_date <= t.trans_date], key=lambda f:f.due_date)
-					previous_range = sorted([f for f in fees if f.principle_due > 0 if f.pk not in pay_range], key=lambda f:f.due_date)
-					to_pay = pay_range + previous_range
-					for o in to_pay:
-						fee_record = fee_record_dict.get(o.pk)
+						for o in to_pay:
+							fee_record = fee_record_dict.get(o.pk)
 
-						# pay off principle
-						if o.principle_due >  0 and kitty > 0:
-							if kitty >= o.principle_due:
-								principle_paid = o.principle_due
-								kitty -= principle_paid
-							else:
-								principle_paid = kitty
-								kitty = 0
+							# pay off principle
+							if o.principle_due >  0 and deposit_amount > 0:
+								if deposit_amount >= o.principle_due:
+									principle_paid = o.principle_due
+									deposit_amount -= principle_paid
+								else:
+									principle_paid = deposit_amount
+									deposit_amount = 0
 
-							if o.principle_due > 0 and o.due_date < self.period_ending:
-								fee_record.overdue += o.principle_due
+								kitty += deposit_amount
 
-							o.principle_paid += principle_paid
-							fee_record.principle_paid += principle_paid
-							self.principle_paid += principle_paid
+								if o.principle_due > 0 and o.due_date < self.period_ending:
+									fee_record.overdue += o.principle_due
 
-							if principle_paid and t.trans_date < self.period_ending:
-								interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, principle_paid)
-								if interest_balance + penalty_balance > 0:
-									fee_record.interest_total += interest_balance
-									fee_record.penalty_total += penalty_balance
-									self.interest_total += interest_balance
-									self.penalty_total += penalty_balance
-									fee_record.balance += (interest_balance + penalty_balance)
-									self.balance += (interest_balance + penalty_balance)
+								o.principle_paid += principle_paid
+								fee_record.principle_paid += principle_paid
+								#self.principle_paid += principle_paid
+
+								if principle_paid and t.trans_date < self.period_ending:
+									interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, principle_paid)
 									if interest_balance + penalty_balance > 0:
-										od_copy = copy.copy(o)
-										od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
-										od_copy.trans_date = t.trans_date
-										od_copy.amount = (interest_balance + penalty_balance)
-										od_copy.balance = self.balance
-										return_list.append(od_copy)
+										fee_record.interest_total += interest_balance
+										fee_record.penalty_total += penalty_balance
+										#self.interest_total += interest_balance
+										#self.penalty_total += penalty_balance
+										fee_record.balance += (interest_balance + penalty_balance)
+										self.balance += (interest_balance + penalty_balance)
+										if interest_balance + penalty_balance > 0:
+											od_copy = copy.copy(o)
+											od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
+											od_copy.trans_date = t.trans_date
+											od_copy.amount = (interest_balance + penalty_balance)
+											od_copy.balance = self.balance
+											return_list.append(od_copy)
+							else:
+								break
+
+
+			if kitty > 0:
+				to_pay = sorted([f for f in fees if f.principle_due > 0 and f.from_date <= t.trans_date], key=lambda f:f.due_date)
+
+				for o in to_pay:
+					fee_record = fee_record_dict.get(o.pk)
+
+					# pay off principle
+					if o.principle_due >  0 and kitty > 0:
+						if kitty >= o.principle_due:
+							principle_paid = o.principle_due
+							kitty -= principle_paid
 						else:
-							break
+							principle_paid = kitty
+							kitty = 0
+
+						if o.principle_due > 0 and o.due_date < self.period_ending:
+							fee_record.overdue += o.principle_due
+
+						o.principle_paid += principle_paid
+						fee_record.principle_paid += principle_paid
+						#self.principle_paid += principle_paid
+
+						if principle_paid and t.trans_date < self.period_ending:
+							interest_balance, penalty_balance, calc_string = o.calc_late_fee_balance(t.trans_date, principle_paid)
+							if interest_balance + penalty_balance > 0:
+								fee_record.interest_total += interest_balance
+								fee_record.penalty_total += penalty_balance
+								#self.interest_total += interest_balance
+								#self.penalty_total += penalty_balance
+								#fee_record.balance += (interest_balance + penalty_balance)
+								self.balance += (interest_balance + penalty_balance)
+								if interest_balance + penalty_balance > 0:
+									od_copy = copy.copy(o)
+									od_copy.description = "<span style=\"color:red\">Late charges on %s<br/><span class=\"calc_string\">%s</span></span>" % (od_copy, calc_string)
+									od_copy.trans_date = t.trans_date
+									od_copy.amount = (interest_balance + penalty_balance)
+									od_copy.balance = self.balance
+									return_list.append(od_copy)
+					else:
+						break
+
 
 		#then pay off any other outstanding for period ending
-		for f in [f for f in fees if f.total_due > 0]:
+		for f in [f for f in fees if f.total_due > 0 and (not f.closed or f.closed == self.period_ending)]:
 			interest_balance, penalty_balance, calc_string = f.calc_late_fee_balance(self.period_ending)
 			fee_record = fee_record_dict.get(f.pk)
 			fee_record.interest_total += interest_balance
 			fee_record.penalty_total += penalty_balance
-			self.interest_total += interest_balance
-			self.penalty_total += penalty_balance
+			#self.interest_total += interest_balance
+			#self.penalty_total += penalty_balance
 			self.balance += (interest_balance + penalty_balance)
 			fee_record.balance += (interest_balance + penalty_balance)
 			if interest_balance + penalty_balance > 0:
@@ -343,7 +462,7 @@ class Account(models.Model):
 					kitty =0
 				f.interest_paid += interest_paid
 				fee_record.interest_paid += interest_paid
-				self.interest_paid += interest_paid
+				#self.interest_paid += interest_paid
 
 			# pay off penalty
 			if f.penalty_due >0 and kitty >0:
@@ -355,18 +474,25 @@ class Account(models.Model):
 					kitty =0
 				f.penalty_paid += penalty_paid
 				fee_record.penalty_paid += penalty_paid
-				self.penalty_paid += penalty_paid
+				#self.penalty_paid += penalty_paid
 
+		self.overdue = 0
+		for fee_record in fee_records:
+			if not fee_record.closed:
+				self.interest_paid += fee_record.interest_paid
+				self.interest_total += fee_record.interest_total
+				self.penalty_paid += fee_record.penalty_paid
+				self.penalty_total += fee_record.penalty_total
+				self.principle_paid += fee_record.principle_paid
+				self.principle_total += fee_record.amount
+			fee_record.balance = fee_record.interest_due + fee_record.penalty_due + fee_record.principle_due
+			if not fee_record.closed and fee_record.principle_due and fee_record.due_date < self.period_ending:
+				self.overdue += fee_record.principle_due
 
-		if update:
-			for fee_record in fee_records:
+			if update:
 				fee_record.save()
 
-			overdue_fees = [fee.principle_due for fee in fees if fee.principle_due > 0 and fee.due_date < self.period_ending]
-			if overdue_fees:
-				self.overdue = reduce(lambda x,y:x + y, overdue_fees)
-			else:
-				self.overdue = 0
+		if update:
 			self.save() # save account
 
 		return return_list, fees
@@ -433,10 +559,11 @@ class BankDeposit(models.Model):
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=50, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.TextField(null=True, blank=True)
-	status = models.ForeignKey(CategoryChoice, null=True)
+	status = models.ForeignKey(CategoryChoice, default=1)
 	non_pm_payment = models.BooleanField(default=False)
 	old_receipt_id = models.PositiveIntegerField(null=True)
 	fee_date = models.DateField(null=True, blank=True)
+	closed = models.DateField(default=False)
 
 
 class Contact(models.Model):
@@ -488,7 +615,7 @@ def get_rate(period, category, sub_category=None, village=None, cell=None, secto
 
 		return rate.amount, calc_string
 	else:
-		return Decimal(0), 'No Rate Found'
+		return 0, 'No Rate Found'
 
 
 class AccountFee(models.Model):
@@ -499,7 +626,7 @@ class AccountFee(models.Model):
 	account = models.ForeignKey(Account, related_name='account_fees')
 	from_date = models.DateField(null=True)
 	to_date = models.DateField(null=True)
-	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0) #must be static
+	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0) #total principle amount
 	principle_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	rate = models.DecimalField(max_digits=14, decimal_places=4, null=True) # manual entry only
 	quantity = models.DecimalField(max_digits=18, decimal_places=4, null=True) # or no. collections taken, manual entry only
@@ -527,6 +654,10 @@ class AccountFee(models.Model):
 	overdue = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	parcel_id = models.IntegerField(null=True)
 	upi = models.CharField(null=True, max_length=30, validators=[validate_upi],help_text="eg. 1/03/10/01/655", verbose_name="UPI", blank=True)
+	#bf = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	#cf = models.DecimalField(max_digits=16, decimal_places=2,default=0)
+	status = models.ForeignKey(CategoryChoice, default=1, related_name='account_fee__status')
+	closed = models.DateField(default=False)
 
 	@property
 	def site(self):
