@@ -204,18 +204,19 @@ class Account(models.Model):
 			self.bf = -1 * self.balance
 		else:
 			self.bf = 0
-		fees = self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True)
+		fees = self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending))
 
-		for fee in [f for f in fees if f.auto]:
-			from_date = period_ending + timedelta(days=1)
-			AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
-				from_date=from_date,
-				defaults=dict(to_date=None, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
-					due_date=(fee.due_date or (from_date + timedelta(days=fee.due_days)) + relativedelta(year=1)),
-					due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
-				district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
-				period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
-			)
+		if not self.end_date:
+			for fee in [f for f in fees if f.auto]:
+				from_date = period_ending + timedelta(days=1)
+				AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
+					from_date=from_date,
+					defaults=dict(to_date=None, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
+						due_date=(fee.due_date or (from_date + timedelta(days=fee.due_days)) + relativedelta(year=1)),
+						due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
+					district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
+					period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
+				)
 
 		fees.update(closed=period_ending, to_date=period_ending)
 		self.closed_off = period_ending
