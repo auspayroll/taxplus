@@ -868,17 +868,16 @@ def edit_account(request, pk):
 
 
 @user_passes_test(admin_check)
-def account_all_transactions(request, pk):
+def account_archive_transactions(request, pk):
 	account = get_object_or_404(Account,pk=pk)
-	transactions, fees = account.transactions()
+	transactions, fees = account.transactions(update=False)
 	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions, 'fees':fees})
-
 
 
 @user_passes_test(admin_check)
 def account_transactions(request, pk):
 	account = get_object_or_404(Account,pk=pk)
-	transactions, fees = account.transactions(update=True)
+	transactions, fees = account.current_transactions()
 	return TemplateResponse(request, 'crud/account_transactions.html', {'account':account, 'transactions':transactions, 'fees':fees})
 
 

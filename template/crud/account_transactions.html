@@ -2,8 +2,9 @@
 
 {% block body %}
 
-	<h3>Balance Owing: {{ account.balance }} &nbsp;Overdue: {{ account.overdue }}</h3>
-	<div><a href="{% url 'new_payment' account.pk %}">New Payment</a></div>
+	<h3 style="display:inline;">Balance Owing: {{ account.balance }} &nbsp;Overdue: {{ account.overdue }}</h3>
+	as at {{ account.period_ending }}
+	<div><a href="{% url 'new_payment' account.pk %}">New Payment</a> | <a href="{% url 'account_archive_transactions' account.pk %}">Archived</a></div>
 	<h4>Transactions</h4>
 	<table class="table">
 	<tr>
@@ -13,6 +14,7 @@
 		<th>Due date</th>
 		<th>Amount</th>
 		<th>Balance</th>
+		<th>Outstanding</th>
 	</tr>
 	{% for t in transactions %}
 	<tr {% if account.closed_off and t.trans_date <= account.closed_off %}style="background:#cccccc"{% endif %}>
@@ -21,6 +23,7 @@
 		<td>{{t.description|safe}}</td>
 		<td>{{ t.due_date }}</td>
 		<td>{{ t.amount }}</td>
+		<td>{{ t.kitty }}</td>
 		<td>{{ t.balance }}</td>
 	</tr>
 	{% endfor %}
