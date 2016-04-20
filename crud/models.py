@@ -209,24 +209,23 @@ class Account(models.Model):
 					fee.save()
 
 		elif fees:
-			if not self.end_date:
-				for fee in fees:
-					from_date = period_ending + timedelta(days=1)
-					AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
-						from_date=from_date,
-						defaults=dict(to_date=fee.to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
-							due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
-						district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
-						period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
-					)
-					fee.to_date = period_ending
-					if write_off:
-						fee.closed = period_ending
-					fee.save()
+			for fee in fees:
+				from_date = period_ending + timedelta(days=1)
+				AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
+					from_date=from_date,
+					defaults=dict(to_date=fee.to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
+						due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
+					district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
+					period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
+				)
+				fee.to_date = period_ending
+				if write_off:
+					fee.closed = period_ending
+				fee.save()
 
-			if write_off:
-				self.closed_off = period_ending
-				self.save(update_fields=['closed_off'])
+		if write_off:
+			self.closed_off = period_ending
+			self.save(update_fields=['closed_off'])
 
 		if write_off and fees:
 			self.account_payments.filter(date_banked__lte=period_ending, closed__isnull=True).update(closed=period_ending)
