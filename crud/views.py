@@ -924,7 +924,7 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		filename = generate_filename(af, append_datestamp=True)
 
 	if web:
-		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af.order_by('-balance')})
+		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af})
 	else:
 		buff = StringIO()
 		af = af.values('id', 'account__name', 'account__phone', 'account__tin', 'account__citizen_id', 'upi', 'account__email', 'fee_type__name', 'balance', 'overdue' )
