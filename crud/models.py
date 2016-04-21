@@ -607,6 +607,10 @@ class Account(models.Model):
 				f.penalty_paid += penalty_paid
 				fee_record.penalty_paid += penalty_paid
 
+			#calc overdue
+			if f.principle_due > 0 and f.due_date < self.period_ending:
+							fee_record.overdue += f.principle_due
+
 		for fee_record in [f for f in fee_records if not f.closed]:
 			self.interest_paid += fee_record.interest_paid
 			self.interest_total += fee_record.interest_total
