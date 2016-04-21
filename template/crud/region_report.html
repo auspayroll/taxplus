@@ -73,18 +73,18 @@
 		<td>{{ sub_region.balance }}</td>
 		<td>{{ sub_region.overdue }}</td>
 		{% if sub_region.village %}
-			<td><a href="{% url 'fee_items_report' 0 0 0 sub_region.village.pk sub_region.fee_type.pk %}">CSV</a> | <a href="{% url 'fee_items_report_web' 0 0 0 sub_region.village.pk sub_region.fee_type.pk %}">Web</a></td>
+			<td><a href="{% url 'fee_items_report' 0 0 0 sub_region.village.pk sub_region.fee_type.pk %}">CSV</a></td>
 		{% else %}
 			{% if sub_region.cell %}
-				<td><a href="{% url 'fee_items_report' 0 0 sub_region.cell.pk 0 sub_region.fee_type.pk %}">CSV</a> | <a href="{% url 'fee_items_report_web' 0 0 sub_region.cell.pk 0 sub_region.fee_type.pk %}">Web</a></td>
+				<td><a href="{% url 'fee_items_report' 0 0 sub_region.cell.pk 0 sub_region.fee_type.pk %}">CSV</a></td>
 			{% else %}
 				{% if sub_region.sector %}
-					<td><a href="{% url 'fee_items_report' 0 sub_region.sector.pk 0 0 sub_region.fee_type.pk %}">CSV</a> | <a href="{% url 'fee_items_report_web' 0 sub_region.sector.pk 0 0 sub_region.fee_type.pk %}">Web</a></td>
+					<td><a href="{% url 'fee_items_report' 0 sub_region.sector.pk 0 0 sub_region.fee_type.pk %}">CSV</a></td>
 				{% else %}
 					{% if sub_region.district %}
-						<td><a href="{% url 'fee_items_report' sub_region.district.pk 0 0 0 sub_region.fee_type.pk %}">CSV</a> | <a href="{% url 'fee_items_report_web' sub_region.district.pk 0 0 0 sub_region.fee_type.pk %}">Web</a></td>
+						<td><a href="{% url 'fee_items_report' sub_region.district.pk 0 0 0 sub_region.fee_type.pk %}">CSV</a></td>
 					{% else %}
-						<td><a href="{% url 'fee_items_report' 0 0 0 0 sub_region.fee_type.pk %}">CSV</a> | <a href="{% url 'fee_items_report_web' 0 0 0 0 sub_region.fee_type.pk %}">Web</a></td>
+						<td><a href="{% url 'fee_items_report' 0 0 0 0 sub_region.fee_type.pk %}">CSV</a></td>
 					{% endif %}
 				{% endif %}
 			{% endif %}
