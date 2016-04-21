@@ -916,6 +916,8 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		filename += "%s district " % district
 
 	af = af.order_by('-balance')
+	if web:
+		af = af[:101]
 	if filename:
 		filename += '.csv'
 	else:
