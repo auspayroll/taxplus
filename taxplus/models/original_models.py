@@ -388,6 +388,7 @@ class Business(LoggedModel):
 	vat_register = models.BooleanField(help_text="Whether business is VAT registered.")
 	area_type = models.CharField(max_length = 50, blank = True, null = True)
 	business_type = models.CharField(max_length = 50, blank = True, null = True)
+	district = models.ForeignKey(District, null=True, blank=True)
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="")
 	village = models.ForeignKey(Village, null=True, blank=True)

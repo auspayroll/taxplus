@@ -643,8 +643,9 @@ class Business(models.Model):
 	phone2 = models.CharField(max_length=50, blank = True,help_text='')
 	email = models.CharField(max_length=50,help_text='', blank = True)
 	po_box = models.TextField(help_text='Business PO Box', blank = True)
-	vat_register = models.BooleanField(help_text="Whether business is VAT registered.")
+	vat_register = models.BooleanField(help_text="Whether business is VAT registered.", default=False)
 	business_type = models.CharField(max_length = 50, blank = True, null = True)
+	district = models.ForeignKey(District, null=True, blank=True, related_name='biz_districts')
 	sector = models.ForeignKey(Sector, null=True, blank=True, related_name="biz_sectors")
 	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="", related_name="biz_cells")
 	village = models.ForeignKey(Village, null=True, blank=True, related_name="biz_villages")
@@ -700,6 +701,7 @@ class BankDeposit(models.Model):
 	old_receipt_id = models.PositiveIntegerField(null=True)
 	fee_date = models.DateField(null=True, blank=True)
 	closed = models.DateField(null=True)
+	created = models.DateTimeField(auto_now_add=True, null=True)
 
 
 class Contact(models.Model):
@@ -794,6 +796,7 @@ class AccountFee(models.Model):
 	#cf = models.DecimalField(max_digits=16, decimal_places=2,default=0)
 	status = models.ForeignKey(CategoryChoice, default=1, related_name='account_fee__status')
 	closed = models.DateField(null=True)
+	created = models.DateTimeField(auto_now_add=True, null=True)
 
 	@property
 	def site(self):
