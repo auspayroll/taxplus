@@ -933,7 +933,7 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		#render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
 		response = HttpResponse(content_type='application/zip')
 		response['Content-Disposition'] = 'attachment; filename=%s.zip' % filename
-		zf = zipfile.ZipFile(response, mode='w')
+		zf = zipfile.ZipFile(response, mode='w', compression=zipfile.ZIP_DEFLATED)
 		zf.writestr(filename, buff.read())
 
 		return response
