@@ -36,6 +36,9 @@ from PIL import Image
 import PIL
 import os
 from django.db import IntegrityError
+import zipfile
+import djqscsv
+from StringIO import StringIO
 
 
 
@@ -574,6 +577,7 @@ def sector_collection(request, pk):
 @user_passes_test(admin_check)
 def edit_collection(request, pk):
 	collection = get_object_or_404(Collection, pk=pk)
+	account = collection.account
 	if request.method == 'POST':
 		form= CollectionUpdateForm(request.POST, request.FILES, instance=collection, initial={'next':request.GET.get('next')})
 		if form.is_valid():
@@ -590,7 +594,7 @@ def edit_collection(request, pk):
 	else:
 		form = CollectionUpdateForm(instance=collection, initial={'next':request.GET.get('next')})
 
-	return TemplateResponse(request, 'crud/base_form.html', {'form':form, 'heading':'Edit Collection', 'heading2':'Banking Details' })
+	return TemplateResponse(request, 'crud/form.html', {'account':account, 'form':form, 'heading':'Edit Collection', 'heading2':'Banking Details' })
 
 @user_passes_test(admin_check)
 def add_account_dates(request, pk):
@@ -911,6 +915,7 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		af = af.filter(sector__district=district)
 		filename += "%s district " % district
 
+	af = af.order_by('-balance')
 	if filename:
 		filename += '.csv'
 	else:
@@ -919,8 +924,17 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 	if web:
 		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af.order_by('-balance')})
 	else:
+		buff = StringIO()
 		af = af.values('id', 'account__name', 'account__phone', 'account__tin', 'account__citizen_id', 'upi', 'account__email', 'fee_type__name', 'balance', 'overdue' )
-		return render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
+		djqscsv.write_csv(af, buff, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
+		buff.seek(0)
+		#render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
+		response = HttpResponse(content_type='application/zip')
+		response['Content-Disposition'] = 'attachment; filename=%s.zip' % filename
+		zf = zipfile.ZipFile(response, mode='w')
+		zf.writestr(filename, buff.read())
+
+		return response
 
 
 
