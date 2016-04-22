@@ -159,33 +159,21 @@ class Account(models.Model):
 		return self.name or self.account_no or "%s" % self.pk
 
 	def update_contact_details(self):
-		def convert_to_int(values):
-			for val in values:
-				try:
-					r = int(val.replace('-','').replace('/','').replace('\\',''))
-					if r > 9223372036854775807:
-						continue
-					else:
-						return r
-				except:
-					pass
-
-			return None
 		current_emails = [h.holder.email for h in self.holders.all()]
 		current_phones = [h.holder.phone for h in self.holders.all()]
 		citizen_ids = [h.holder.citizen_id for h in self.holders.all() if hasattr(h.holder, 'citizen_id')]
 		tins = [h.holder.tin for h in self.holders.all() if hasattr(h.holder, 'tin')]
 
-		if citizen_ids and (not self.citizen_id or self.citizen_id not in citizen_ids):
-			self.citizen_id = convert_to_int(citizen_ids)
+		if citizen_ids:
+			self.citizen_id = citizen_ids[0]
 
-		if tins and (not self.tin or self.tin not in tins):
-			self.tin = convert_to_int(tins)
+		if tins:
+			self.tin = tins[0]
 
-		if current_emails and (not self.email or self.email not in current_emails):
+		if current_emails:
 			self.email = current_emails[0]
 
-		if current_phones and (not self.phone or self.phone not in current_phones):
+		if current_phones:
 			self.phone = current_phones[0]
 
 	def utility_list(self):
