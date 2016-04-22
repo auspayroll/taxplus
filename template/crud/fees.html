@@ -12,7 +12,10 @@
 		<th>Category</th>
 		<th>Utility/Site</th>
 		<th>Qty/Size</th>
-		<th></th>
+		<th>Balance</th>
+		<th>Overdue</th>
+		<th>Closed off</th>
+
 	</tr>
 	{% for f in fees %}
 	<tr>
@@ -22,6 +25,9 @@
 		<td>{{ f.fee_subtype|default:'-' }}</td>
 		<td>{{ f.prop|default:f.utility|default:'- ' }}</td>
 		<td>{{ f.quantity|default:'-' }}</td>
+		<td>{{ f.balance }}</td>
+		<td>{{ f.overdue }}</td>
+		<td>{{ f.closed|default:'-' }}</td>
 	</tr>
 	{% endfor %}
 	</table>
