@@ -62,6 +62,9 @@ def login(request):
 			if user is not None:
 				if user.is_active:
 					auth_login(request, user)
+					next = request.GET.get('next')
+					if next:
+						return HttpResponseRedirect(next)
 					if user.groups.filter(name='Staff') or user.is_superuser:
 						return HttpResponseRedirect(reverse('index'))
 					elif user.groups.filter(name='Collector').exists():
