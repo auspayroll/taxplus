@@ -46,6 +46,8 @@ class Command(BaseCommand):
 			account_start_dates = {}
 			cleaning_rate_cat = Category.objects.get(code='cleaning_rate')
 			cleaning_cat = CategoryChoice.objects.get(code='cleaning', category__code='fee_type')
+			active = CategoryChoice.objects.get(code='active', category__code='status')
+			inactive = CategoryChoice.objects.get(code='inactive', category__code='status')
 			for line in UnicodeDictReader(file):
 				year, month, day = (line['PAYMENT_DATE'].split()[0]).split('-')
 				payment_date = date(int(year), int(month), int(day))
@@ -71,8 +73,6 @@ class Command(BaseCommand):
 				if account.start_date > from_date:
 					account.start_date = from_date
 
-				account.closed_off = last_closed_off
-				account.save()
 				rates = Rate.objects.filter(category=cleaning_cat, amount=int(line['TAX'])).order_by('id')
 				if not rates:
 					fee_subtype = CategoryChoice.objects.create(category=cleaning_rate_cat, code=line['TAX_PAYER_NAME'])
@@ -87,10 +87,16 @@ class Command(BaseCommand):
 					to_date = date(from_date.year, 12, 31)
 					closed = last_closed_off
 
-				af, created = AccountFee.objects.update_or_create(account=account, fee_type__code='cleaning', from_date=from_date, fee_subtype=fee_subtype, defaults=dict(due_days=5, district=district, to_date=to_date, closed=closed, auto=True, period=12, fee_type=cleaning_cat))
+				if not closed:
+					af, created = AccountFee.objects.update_or_create(account=account, fee_type__code='cleaning', from_date=from_date, fee_subtype=fee_subtype, defaults=dict(due_days=5, district=district, to_date=to_date, closed=closed, auto=True, period=12, fee_type=cleaning_cat))
+					status = active
+				else:
+					account.closed_off = last_closed_off
+					account.save()
+					status = inactive
 
 				deposit, created = BankDeposit.objects.update_or_create(account=account, bank_receipt_no=line['BANK_REF_NO'], note="imported Doc Id: %s" % line['DOC_ID'],
-					defaults=dict(fee_date=payment_date, amount=line['TOTAL'], bank=line['BANK_NAME'], date_banked=payment_date, closed=closed ))
+					defaults=dict(fee_date=payment_date, amount=line['TOTAL'], bank=line['BANK_NAME'], date_banked=payment_date, closed=closed, status=status ))
 
 				account.transactions(update=True)
 			file.close()

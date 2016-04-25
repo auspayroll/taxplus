@@ -16,6 +16,8 @@
 	<th>Branch</th>
 	<th>Staff</th>
 	<th>created</th>
+	<th>status</th>
+	<th>note</th>
 </tr>
 {% for p in payments %}
 	<tr>
@@ -23,12 +25,14 @@
 		<td>{{ p.date_banked }}</td>
 		<td>{{ p.amount }}</td>
 		<td>{{ p.bank_receipt_no }}</td>
-		<td>{{ p.rra_receipt }}</td>
-		<td>{{ p.depositor_name }}</td>
-		<td>{{ p.bank }}</td>
-		<td>{{ p.branch }}</td>
-		<td>{{ p.user}}</td>
+		<td>{{ p.rra_receipt|default:'-' }}</td>
+		<td>{{ p.depositor_name|default:'-' }}</td>
+		<td>{{ p.bank|default:'-' }}</td>
+		<td>{{ p.branch|default:'-' }}</td>
+		<td>{{ p.user|default:'-'}}</td>
 		<td>{{ p.created}}</td>
+		<td>{{ p.status}}</td>
+		<td>{{ p.note|default:'-'}}</td>
 	</tr>
 {% endfor %}
 </table>
