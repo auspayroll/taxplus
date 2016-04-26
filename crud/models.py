@@ -108,7 +108,7 @@ class LandPlot(models.Model):
 
 
 class Account(models.Model):
-	name = models.CharField(max_length=90, null=True)
+	name = models.CharField(max_length=150, null=True)
 	start_date = models.DateField(null=True)
 	end_date = models.DateField(null=True)
 	comments = models.TextField(null=True)
@@ -442,7 +442,7 @@ class Account(models.Model):
 				allocated_fees = [f for f in fees if f.from_date in t.allocated_dates and f.from_date <= t.trans_date]
 				to_pay = allocated_fees + [f for f in fees if f.from_date <= t.trans_date and t.closed == f.closed]
 				total_penalties_sum = 0
-				
+
 				for o in to_pay:
 					principle_paid = 0
 					if o.principle_due >  0 and deposit_amount > 0:
@@ -602,7 +602,7 @@ class BankDeposit(models.Model):
 	branch = models.CharField(max_length=30, null=True, blank=True)
 	amount = models.PositiveIntegerField(default=0)
 	bank_receipt_no = models.CharField(max_length=50, null=True, help_text='')
-	depositor_name = models.CharField(max_length=100, null=True, blank=True)
+	depositor_name = models.CharField(max_length=150, null=True, blank=True)
 	user = models.ForeignKey(User, null=True)
 	date_banked = models.DateField()
 	created = models.DateTimeField(auto_now_add=True, null=True)
@@ -627,7 +627,7 @@ class BankDeposit(models.Model):
 			year = match.group()
 		else:
 			year = self.date_banked.year
-	
+
 		if months:
 			dates = []
 			return_dates = []
