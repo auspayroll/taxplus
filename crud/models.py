@@ -96,6 +96,47 @@ class Utility(models.Model):
 
 
 
+class Business(models.Model):
+	name = models.CharField(max_length=100,help_text='Business Name')
+	tin = models.CharField(max_length=50, help_text='TIN RRA',null=True,  blank = True)
+	date_started = models.DateField(blank = True, null=True, help_text='Date Business Started')
+	address = models.CharField(max_length = 255, null = True, blank = True, help_text="Contact address")
+	phone1 = models.CharField(max_length=50,help_text='')
+	phone2 = models.CharField(max_length=50, blank = True,help_text='')
+	email = models.CharField(max_length=50,help_text='', blank = True)
+	po_box = models.TextField(help_text='Business PO Box', blank = True)
+	vat_register = models.BooleanField(help_text="Whether business is VAT registered.", default=False)
+	business_type = models.CharField(max_length = 50, blank = True, null = True)
+	district = models.ForeignKey(District, null=True, blank=True, related_name='biz_districts')
+	sector = models.ForeignKey(Sector, null=True, blank=True, related_name="biz_sectors")
+	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="", related_name="biz_cells")
+	village = models.ForeignKey(Village, null=True, blank=True, related_name="biz_villages")
+	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
+	closed_date = models.DateField(blank=True, null=True)
+	#business_category = models.ForeignKey(BusinessCategory, null=True, blank=True, db_column='business_subcategory_id')
+	#cleaning_category = models.ForeignKey(CleaningCategory, null=True, blank=True, db_column='business_category_id')
+	business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
+	business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
+	location = gis_models.PointField(blank =True, null=True)
+	objects = gis_models.GeoManager()
+
+	class Meta:
+		db_table = 'asset_business'
+		managed = False
+
+
+	def __unicode__(self):
+		return self.name
+
+	@property
+	def phone(self):
+		return self.phone1 or self.phone2
+
+	@property
+	def identifier(self):
+		return self.tin
+
+
 
 
 class LandPlot(models.Model):
@@ -128,7 +169,7 @@ class Account(models.Model):
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
 	prop_title_id = models.PositiveIntegerField(null=True)
-	business_id = models.PositiveIntegerField(null=True)
+	business = models.ForeignKey(Business, null=True)
 	created = models.DateTimeField(null=True, auto_now_add=True)
 	modified = models.DateTimeField(null=True, auto_now=True)
 	period_ending = models.DateField(null=True)
@@ -546,47 +587,6 @@ class Account(models.Model):
 			self.save() # save account
 
 		return return_list, fees
-
-
-class Business(models.Model):
-	name = models.CharField(max_length=100,help_text='Business Name')
-	tin = models.CharField(max_length=50, help_text='TIN RRA',null=True,  blank = True)
-	date_started = models.DateField(blank = True, null=True, help_text='Date Business Started')
-	address = models.CharField(max_length = 255, null = True, blank = True, help_text="Contact address")
-	phone1 = models.CharField(max_length=50,help_text='')
-	phone2 = models.CharField(max_length=50, blank = True,help_text='')
-	email = models.CharField(max_length=50,help_text='', blank = True)
-	po_box = models.TextField(help_text='Business PO Box', blank = True)
-	vat_register = models.BooleanField(help_text="Whether business is VAT registered.", default=False)
-	business_type = models.CharField(max_length = 50, blank = True, null = True)
-	district = models.ForeignKey(District, null=True, blank=True, related_name='biz_districts')
-	sector = models.ForeignKey(Sector, null=True, blank=True, related_name="biz_sectors")
-	cell = models.ForeignKey(Cell, null=True, blank=True,help_text="", related_name="biz_cells")
-	village = models.ForeignKey(Village, null=True, blank=True, related_name="biz_villages")
-	date_created = models.DateTimeField(help_text='Date this record is saved',auto_now_add=True)
-	closed_date = models.DateField(blank=True, null=True)
-	#business_category = models.ForeignKey(BusinessCategory, null=True, blank=True, db_column='business_subcategory_id')
-	#cleaning_category = models.ForeignKey(CleaningCategory, null=True, blank=True, db_column='business_category_id')
-	business_category_id = models.IntegerField(null=True) #models.ForeignKey(BusinessCategory, null=True, blank=True)
-	business_subcategory_id = models.IntegerField(null=True) #models.ForeignKey(BusinessSubCategory, null=True, blank=True)
-	location = gis_models.PointField(blank =True, null=True)
-	objects = gis_models.GeoManager()
-
-	class Meta:
-		db_table = 'asset_business'
-		managed = False
-
-
-	def __unicode__(self):
-		return self.name
-
-	@property
-	def phone(self):
-		return self.phone1 or self.phone2
-
-	@property
-	def identifier(self):
-		return self.tin
 
 
 
