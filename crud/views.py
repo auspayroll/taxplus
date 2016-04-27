@@ -891,7 +891,7 @@ def account_transactions(request, pk):
 @user_passes_test(admin_check)
 def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, village_pk=None, fee_type_pk=None, web=False):
 	filename = ''
-	af = AccountFee.objects.select_related('account', 'fee_type')
+	af = AccountFee.objects.filter(balance__gt=0).select_related('account', 'fee_type')
 
 	if int(fee_type_pk):
 		fee_type = get_object_or_404(CategoryChoice, id=fee_type_pk)
