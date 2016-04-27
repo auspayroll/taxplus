@@ -21,7 +21,7 @@ from django.core.exceptions import ValidationError
 
 valid_tin = RegexValidator(regex='1\d{8}', message='Invalid TIN')
 valid_phone = RegexValidator(regex='07\d{8}', message='Invalid Phone')
-valid_phone_search = RegexValidator(regex='\d{8}', message='Invalid Phone')
+valid_number_search = RegexValidator(regex='\d{4}', message='Invalid number, specify atleast 4 numbers')
 valid_citizen_id = RegexValidator(regex='\d{16}', message='Invalid Citizen ID')
 
 fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month'),(4,'Auto generate fees every quarter'),
@@ -659,12 +659,9 @@ class SearchForm(forms.Form):
 			for k, v in cleaned_data.items():
 				cleaned_data[k] = v.replace(' ', '')
 		search_for = cleaned_data.get('search_for')
-		if category == 'TIN':
-			valid_tin(search_for)
-		elif category == 'citizen_id':
-			valid_citizen_id(search_for)
-		elif category == 'phone':
-			valid_phone_search(search_for)
+		if category in ('TIN', 'citizen_id', 'phone'):
+			valid_number_search(search_for)
+
 
 
 
