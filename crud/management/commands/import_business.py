@@ -44,10 +44,24 @@ class Command(BaseCommand):
 				district = District.objects.get(name__iexact=line['District'])
 				accounts = Account.objects.filter(tin=line['TIN']).order_by('-id')
 				match = re.search(r'7\d{8}', line['Phone'])
+
 				if match:
 					phone = '0' + match.group()
 				else:
 					phone = None
+
+				businesses = Business.objects.filter(tin=line['TIN']).order_by('-id')
+				if businesses:
+					business = businesses[0]
+					if phone:
+						if business.phone1 and not business.phone2 and phone != business.phone1:
+							business.phone2 = business.phone1
+						business.phone1 = phone
+						business.save()
+				else:
+					business = Business.objects.create(tin=line['TIN'], date_started=date.today(), name=line['Name'], district=district, phone1=phone)
+
+
 				if accounts:
 					account = accounts[0]
 					if phone:
@@ -55,16 +69,10 @@ class Command(BaseCommand):
 						account.save()
 						business = account.business
 						if not business:
-							business = Business.objects.filter(tin=line['TIN'])[0]
 							account.business = business
 							account.save()
 							AccountHolder.objects.create(account=account, holder=business)
-						if business.phone1 and not business.phone2 and phone != business.phone1:
-							business.phone2 = business.phone1
-						business.phone1 = phone
-						business.save()
 				else:
-					business = Business.objects.create(tin=line['TIN'], date_started=date.today(), name=line['Name'], district=district, phone1=phone)
 					account = Account.objects.create(start_date=date.today(), name=line['Name'], tin=line['TIN'], phone=phone, business=business)
 					AccountHolder.objects.create(account=account, holder=business)
 
