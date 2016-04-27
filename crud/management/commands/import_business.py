@@ -67,8 +67,8 @@ class Command(BaseCommand):
 					if phone:
 						account.phone = phone
 						account.save()
-						business = account.business
-						if not business:
+
+						if not account.business:
 							account.business = business
 							account.save()
 							AccountHolder.objects.create(account=account, holder=business)
