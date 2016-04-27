@@ -66,11 +66,12 @@ class Command(BaseCommand):
 					account = accounts[0]
 					if phone:
 						account.phone = phone
+						account.business = business
 						account.save()
-
-						if not account.business:
-							account.business = business
-							account.save()
+						holders = [h for h in AccountHolder.objects.filter(account=account, holder_id=business.pk)]
+						if len(holders) > 1:
+							holders[1].delete()
+						elif not holders:
 							AccountHolder.objects.create(account=account, holder=business)
 				else:
 					account = Account.objects.create(start_date=date.today(), name=line['Name'], tin=line['TIN'], phone=phone, business=business)
