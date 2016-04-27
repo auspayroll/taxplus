@@ -1108,7 +1108,7 @@ class Profile(models.Model):
 	photo = models.ImageField(upload_to=user_photo_path, null=True)
 
 	def __unicode__(self):
-		return '<Profile: %s>' % self.user.__unicode__()
+		return self.user.__unicode__()
 
 
 class Log(models.Model):

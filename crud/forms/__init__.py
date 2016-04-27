@@ -12,12 +12,17 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.core.validators import RegexValidator
 import re
+from django.forms.widgets import RadioSelect, CheckboxSelectMultiple, Textarea
 from datetime import date
 from dateutil import parser
 import collections
 
 from django.core.exceptions import ValidationError
 
+valid_tin = RegexValidator(regex='1\d{8}', message='Invalid TIN')
+valid_phone = RegexValidator(regex='07\d{8}', message='Invalid Phone')
+valid_phone_search = RegexValidator(regex='\d{8}', message='Invalid Phone')
+valid_citizen_id = RegexValidator(regex='\d{16}', message='Invalid Citizen ID')
 
 fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month'),(4,'Auto generate fees every quarter'),
 (52,'Auto generate fees every week'),(1,'Auto generate fees every year')]
@@ -641,6 +646,26 @@ class RateForm(forms.ModelForm):
 		fields = ('amount',)
 
 	next = forms.CharField(required=False, widget=forms.HiddenInput())
+
+
+class SearchForm(forms.Form):
+	search_for = forms.CharField(min_length=3)
+	category = forms.ChoiceField(choices=[('Account Name','Account Name'), ('TIN','TIN'), ('citizen_id','Citizen Id'), ('phone','Phone Number')])
+
+	def clean(self, *args, **kwargs):
+		cleaned_data = super(SearchForm, self).clean()
+		category = cleaned_data.get('category')
+		if category in('phone','citizen_id','TIN'):
+			for k, v in cleaned_data.items():
+				cleaned_data[k] = v.replace(' ', '')
+		search_for = cleaned_data.get('search_for')
+		if category == 'TIN':
+			valid_tin(search_for)
+		elif category == 'citizen_id':
+			valid_citizen_id(search_for)
+		elif category == 'phone':
+			valid_phone_search(search_for)
+
 
 
 

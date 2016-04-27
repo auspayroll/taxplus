@@ -5,7 +5,7 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm,\
-	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm
+	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm, SearchForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit, CurrentOutstanding
 from datetime import date, timedelta
@@ -989,4 +989,32 @@ def region_report(request):
 		form = RegionReportForm()
 
 	return TemplateResponse(request, 'crud/region_report.html', {'form':form, 'regions':regions,})
+
+
+@user_passes_test(admin_check)
+def search(request):
+	r = []
+	results = []
+	if request.method == 'POST':
+		form = SearchForm(request.POST)
+		if form.is_valid():
+			category = form.cleaned_data.get('category')
+			search_for = form.cleaned_data.get('search_for')
+			if category == 'TIN':
+				r = r + [a for a in Account.objects.filter(tin__icontains=search_for)]
+			elif category == 'phone':
+				r = r + [a for a in Account.objects.filter(phone__icontains=search_for)]
+				r = r + [a for a in Profile.objects.filter(phone__icontains=search_for)]
+			elif category == 'Account Name':
+				r = r + [a for a in Account.objects.filter(name__icontains=search_for)]
+			elif category == 'citizen_id':
+				r = r + [a for a in Account.objects.filter(citizen_id__icontains=search_for)]
+
+	else:
+		form = SearchForm(initial={'category':'Account Name'})
+
+	for m in r:
+		results.append([ContentType.objects.get_for_model(m), m])
+
+	return render(request, 'crud/search_form.html', {'form':form, 'results':results})
 

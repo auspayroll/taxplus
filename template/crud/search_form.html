@@ -1,0 +1,52 @@
+{% extends "crud/main.html" %}
+{% load staticfiles %}
+{% block main %}
+<style>
+.f{
+	float:left;
+	margin-right:20px;
+	margin-bottom:10px;
+	padding:20px;
+	border-radius:6px;
+	border:1pt solid #cccccc;
+}
+</style>
+<h1>{{heading}}</h1>
+<form method="post" enctype="multipart/form-data">
+<div style="overflow:hidden; margin-top:20px;">
+	<div class="f">
+
+		<table>
+		{{ form }}
+		{% csrf_token %}
+		</table>
+	</div>
+	{% if form2 %}
+		<div class="f">
+			<h3>{{ heading2 }}</h3>
+			<table>
+			{{ form2 }}
+			</table>
+		</div>
+	{% endif %}
+
+</div>
+<p/>
+<input type="submit" value="Search">
+	</form>
+	{% if not results %}
+	<p>No results found</p>
+	{% endif %}
+	<table class="table">
+		{% for r in results %}
+		<tr><td><a href="
+		{% if r.0.name == 'account' %}
+			{% url 'account' r.1.pk %}
+		{% endif %}
+		{% if r.0.name == 'profile' %}
+			{% url 'edit_user' r.1.user.pk %}
+		{% endif %}
+		">{{ r.1 }}</a> ({{ r.0|capfirst }})</td></tr>
+		{% endfor %}
+	</table>
+{% endblock %}
