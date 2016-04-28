@@ -229,16 +229,15 @@ class Account(models.Model):
 		return '<BR/>'.join(utilities)
 
 	def close_off_period(self, period_ending, write_off=False):
-		fees = [f for f in self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending)).order_by('-to_date')]
+		#fees = [f for f in self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending)).order_by('-to_date')]
+		fees = self.account_fees.all()
 
-		if not self.no_payments and fees and write_off:
-			for fee in fees: #simply move the record to the next period if no payments and write off
-				if fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
+		for fee in fees:
+			if not self.no_payments and write_off and fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
 					fee.from_date = period_ending + timedelta(days=1)
 					fee.save()
 
-		elif fees:
-			for fee in fees:
+			elif fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
 				from_date = period_ending + timedelta(days=1)
 				AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
 					from_date=from_date,
@@ -250,6 +249,10 @@ class Account(models.Model):
 				fee.to_date = period_ending
 				if write_off:
 					fee.closed = period_ending
+				fee.save()
+
+			elif fee.to_date and fee.to_date < period_ending and write_off:
+				fee.closed = period_ending
 				fee.save()
 
 		if write_off:
@@ -341,18 +344,31 @@ class Account(models.Model):
 			self.period_ending = date.today()
 		fees, fee_records = self.fee_transactions(self.period_ending)
 		fee_record_dict = dict([(f.pk, f) for f in fee_records])
-		trans_list = sorted(fees + self.payment_transactions(self.period_ending), key=lambda x:x.trans_date)
+		class AccountTrans(object):
+			pass
+		account_opened = AccountTrans()
+		account_opened.trans_date = self.start_date
+		account_opened.description = 'Account opened'
+		account_opened.amount = 0
+		account_opened.closed = None
+
+		account_transactions = [account_opened]
+		if self.end_date:
+			account_closed = AccountTrans()
+			account_closed.description = 'Account closed'
+			account_closed.trans_date = self.end_date
+			account_closed.amount = 0
+			account_closed.closed = None
+			account_transactions.append(account_closed)
+
+		trans_list = sorted(fees + self.payment_transactions(self.period_ending) + account_transactions, key=lambda x:x.trans_date)
 
 		#pay off allocated payments
-
 		return_list = []
 		self.balance = kitty = 0
 		close_off_next_iter = False
 		for t in trans_list:
-			#if t.trans_date == date(2016,1,1):
-			#	import pdb
-			#	pdb.set_trace()
-			if close_off_next_iter and t.trans_date > close_off_next_iter:
+			if close_off_next_iter and t.trans_date >= close_off_next_iter and not t.closed or (t.closed > close_off_next_iter):
 				#charge closed off late fees
 				overdue_closed_fees = [f for f in fees if f.closed == close_off_next_iter and f.principle_due > 0 and f.due_date <= close_off_next_iter]
 				close_off_next_iter = False
@@ -427,10 +443,12 @@ class Account(models.Model):
 				else:
 					self.balance = 0
 
+			if isinstance(t, AccountTrans):
+				t.balance = self.balance
+				t.kitty = kitty
+				return_list.append(t)
+
 			if isinstance(t, AccountFee):
-				#if t.trans_date == date(2016,2,1):
-				#	import pdb
-				#	pdb.set_trace()
 				self.balance += t.amount
 				#add closed off
 				if t.closed:
