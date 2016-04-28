@@ -891,7 +891,10 @@ def account_transactions(request, pk):
 @user_passes_test(admin_check)
 def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, village_pk=None, fee_type_pk=None, web=False):
 	filename = ''
-	af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True).select_related('account', 'fee_type')
+	#af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True).select_related('account', 'fee_type')
+	af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True, account_id=82254).\
+		values('account_id', 'account__name', 'account__citizen_id', 'account__tin','upi', 'account__phone','account__email', 'fee_type__name').\
+		annotate(balance=Sum('balance'), overdue=Sum('overdue')).order_by('-balance')
 
 	if int(fee_type_pk):
 		fee_type = get_object_or_404(CategoryChoice, id=fee_type_pk)
@@ -930,8 +933,8 @@ def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, v
 		return TemplateResponse(request, 'crud/fee_items_report.html', {'account_fees':af})
 	else:
 		buff = StringIO()
-		af = af.values('id', 'account__name', 'account__phone', 'account__tin', 'account__citizen_id', 'upi', 'account__email', 'fee_type__name', 'balance', 'overdue' )
-		djqscsv.write_csv(af, buff, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
+		af = af.values('account_id', 'account__name', 'account__phone', 'account__tin', 'account__citizen_id', 'upi', 'account__email', 'fee_type__name', 'balance', 'overdue' )
+		djqscsv.write_csv(af, buff, field_header_map={'account_id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
 		buff.seek(0)
 		#render_to_csv_response(af, filename=filename, field_header_map={'id': 'Account Number', 'account__name':'Account Name', 'account__phone':'Account Phone', 'account__email':'Account Email', 'fee_type__name':'Fee Type'})
 		response = HttpResponse(content_type='application/zip')

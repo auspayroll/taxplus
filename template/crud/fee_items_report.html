@@ -19,14 +19,14 @@
 	</tr>
 	{% for af in account_fees %}
 	<tr>
-		<td><a href="{% url 'account' af.account.pk %}">{{ af.account.pk|slugify }}</a></td>
-		<td>{{af.account.name}}</td>
-		<td>{{af.account.citizen_id|default:'-'|slugify}}</td>
-		<td>{{af.account.tin|default:'-'|slugify}}</td>
+		<td><a href="{% url 'account' af.account_id %}">{{ af.account_id|slugify }}</a></td>
+		<td>{{af.account__name}}</td>
+		<td>{{af.account__citizen_id|default:'-'|slugify}}</td>
+		<td>{{af.account__tin|default:'-'|slugify}}</td>
 		<td>{{af.upi|default:'-'}}</td>
-		<td>{{af.account.phone|default:'-'}}</td>
-		<td>{{af.account.email|default:'-'}}</td>
-		<td>{{af.fee_type}}</td>
+		<td>{{af.account__phone|default:'-'}}</td>
+		<td>{{af.account__email|default:'-'}}</td>
+		<td>{{af.fee_type__name}}</td>
 		<td>{{af.balance}}</td>
 		<td>{{af.overdue}}</td>
 	</tr>
