@@ -366,7 +366,7 @@ class Account(models.Model):
 		#pay off allocated payments
 		return_list = []
 		self.balance = kitty = 0
-		close_off_next_iter = False
+		close_off_next_iter = None
 		for t in trans_list:
 			if close_off_next_iter and t.trans_date >= close_off_next_iter and not t.closed or (t.closed > close_off_next_iter):
 				#charge closed off late fees
