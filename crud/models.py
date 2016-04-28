@@ -237,8 +237,9 @@ class Account(models.Model):
 		fees = self.account_fees.all()
 		if not self.end_date:
 			for fee in fees: #move  fee to the next period if no payments and account not closed
-				if not self.no_payments and close_off and fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
+				if not self.no_payments and close_off and fee.from_date <= period_ending:
 						fee.from_date = period_ending + timedelta(days=1)
+						fee.closed = None
 						fee.save()
 
 				elif fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
