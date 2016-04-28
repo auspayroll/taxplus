@@ -352,7 +352,7 @@ class Account(models.Model):
 		account_opened.amount = 0
 		account_opened.closed = None
 
-		account_transactions = [account_opened]
+		account_transactions = []
 		if self.end_date:
 			account_closed = AccountTrans()
 			account_closed.description = 'Account closed'
@@ -361,7 +361,7 @@ class Account(models.Model):
 			account_closed.closed = None
 			account_transactions.append(account_closed)
 
-		trans_list = sorted(fees + self.payment_transactions(self.period_ending) + account_transactions, key=lambda x:x.trans_date)
+		trans_list = sorted([account_opened] + fees + self.payment_transactions(self.period_ending) + account_transactions, key=lambda x:x.trans_date)
 
 		#pay off allocated payments
 		return_list = []
