@@ -371,7 +371,7 @@ class Account(models.Model):
 			if close_off_next_iter and t.trans_date >= close_off_next_iter and not t.closed or (t.closed > close_off_next_iter):
 				#charge closed off late fees
 				overdue_closed_fees = [f for f in fees if f.closed == close_off_next_iter and f.principle_due > 0 and f.due_date <= close_off_next_iter]
-				close_off_next_iter = False
+				close_off_next_iter = None
 				total_closed_penalties = 0
 				for f in overdue_closed_fees:
 					interest_balance, penalty_balance, calc_string = f.calc_late_fee_balance(self.closed_off)
