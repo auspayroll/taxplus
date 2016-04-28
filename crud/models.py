@@ -253,7 +253,7 @@ class Account(models.Model):
 					fee.closed = period_ending
 				fee.save()
 
-			elif fee.to_date and fee.to_date < period_ending and write_off:
+			elif fee.to_date and fee.to_date <= period_ending and write_off:
 				fee.closed = period_ending
 				fee.save()
 
