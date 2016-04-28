@@ -238,20 +238,10 @@ class Account(models.Model):
 		if not self.end_date:
 			for fee in fees: #move  fee to the next period if no payments and account not closed
 				if not self.no_payments and close_off and fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
-					fee.from_date = period_ending + timedelta(days=1)
-					fee.save()
+						fee.from_date = period_ending + timedelta(days=1)
+						fee.save()
 
-			elif fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
-				from_date = period_ending + timedelta(days=1)
-				AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
-					from_date=from_date,
-					defaults=dict(to_date=fee.to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
-						due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
-					district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
-					period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
-				)
-				fee.to_date = period_ending
-				fee.save()
+
 
 		if close_off:
 			self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).update(closed=period_ending, to_date=period_ending)
@@ -733,7 +723,7 @@ class AccountFee(models.Model):
 	selected in fee register
 	"""
 	account = models.ForeignKey(Account, related_name='account_fees')
-	from_date = models.DateField(null=True)
+	from_date = models.DateField()
 	to_date = models.DateField(null=True)
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0) #total principle amount
 	principle_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
