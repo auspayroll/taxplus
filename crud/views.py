@@ -892,7 +892,7 @@ def account_transactions(request, pk):
 def fee_items_report(request, district_pk=None, sector_pk=None,  cell_pk=None, village_pk=None, fee_type_pk=None, web=False):
 	filename = ''
 	#af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True).select_related('account', 'fee_type')
-	af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True, account_id=82254).\
+	af = AccountFee.objects.filter(balance__gt=0, closed__isnull=True).\
 		values('account_id', 'account__name', 'account__citizen_id', 'account__tin','upi', 'account__phone','account__email', 'fee_type__name').\
 		annotate(balance=Sum('balance'), overdue=Sum('overdue')).order_by('-balance')
 
