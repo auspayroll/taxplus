@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
 	# @transaction.commit_on_success
 	def handle(self, *args, **options):
-		accounts = Account.objects.filter(end_date__isnull=False, end_date__lt=F('period_ending'))
+		accounts = Account.objects.filter(end_date__isnull=False, closed_off__isnull=True)
 		for account in accounts:
 			print account.pk
 			fees = account.account_fees.all()
