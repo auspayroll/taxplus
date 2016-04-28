@@ -228,14 +228,16 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def close_off_period(self, period_ending=None, write_off=False):
+	def roll_over_period(self, period_ending=None, close_off=False):
 		if self.end_date:
 			period_ending = self.end_date
+		else:
+			assert period_ending, 'Must specify period ending'
 		#fees = [f for f in self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending)).order_by('-to_date')]
 		fees = self.account_fees.all()
-
-		for fee in fees:
-			if not self.no_payments and write_off and fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
+		if not self.end_date:
+			for fee in fees: #move  fee to the next period if no payments and account not closed
+				if not self.no_payments and close_off and fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
 					fee.from_date = period_ending + timedelta(days=1)
 					fee.save()
 
@@ -249,19 +251,18 @@ class Account(models.Model):
 					period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
 				)
 				fee.to_date = period_ending
-				if write_off:
-					fee.closed = period_ending
 				fee.save()
 
-			elif fee.to_date and fee.to_date <= period_ending and write_off:
-				fee.closed = period_ending
-				fee.save()
+		if close_off:
+			self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).update(closed=period_ending, to_date=period_ending)
+		else:
+			self.account_fees.filter(from_date__lte=period_ending).update(to_date=period_ending)
 
-		if write_off:
+		if close_off:
 			self.closed_off = period_ending
 			self.save(update_fields=['closed_off'])
 
-		if write_off and fees:
+		if close_off and fees:
 			self.account_payments.filter(trans_date__lte=period_ending, closed__isnull=True).update(closed=period_ending)
 
 
