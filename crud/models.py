@@ -241,7 +241,17 @@ class Account(models.Model):
 						fee.from_date = period_ending + timedelta(days=1)
 						fee.save()
 
-
+				elif fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
+					from_date = period_ending + timedelta(days=1)
+					AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
+						from_date=from_date,
+						defaults=dict(to_date=fee.to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
+							due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
+						district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
+						period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
+					)
+					fee.to_date = period_ending
+					fee.save()
 
 		if close_off:
 			self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).update(closed=period_ending, to_date=period_ending)
