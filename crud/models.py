@@ -228,7 +228,9 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def close_off_period(self, period_ending, write_off=False):
+	def close_off_period(self, period_ending=None, write_off=False):
+		if self.end_date:
+			period_ending = self.end_date
 		#fees = [f for f in self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending)).order_by('-to_date')]
 		fees = self.account_fees.all()
 
