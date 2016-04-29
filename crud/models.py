@@ -243,11 +243,13 @@ class Account(models.Model):
 				fee.save()
 				continue
 
-
+			self.closed_off = None
+			self.period_ending = period_ending
 			if fee.fee_type.code == 'cleaning':
-				close_off = date(2015,12,31)
+				self.closed_off = close_off = date(2015,12,31)
 			elif fee.fee_type.code == 'land_lease':
-				close_off = date(2014,12,31)
+				self.closed_off = close_off = date(2014,12,31)
+
 
 			if close_off and fee.from_date < close_off and not fee.closed:
 				fee.closed=close_off
@@ -289,6 +291,8 @@ class Account(models.Model):
 
 		if self.no_payments > 0:
 			self.account_payments.filter(trans_date__lte=period_ending, closed__isnull=True).update(closed=period_ending)
+
+		self.save(update_fields=['period_ending', 'closed_off'])
 
 
 
