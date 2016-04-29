@@ -1012,6 +1012,8 @@ def search(request):
 				r = r + [a for a in Account.objects.filter(name__icontains=search_for)]
 			elif category == 'citizen_id':
 				r = r + [a for a in Account.objects.filter(citizen_id__icontains=search_for)]
+			elif category == 'account_id':
+				r = r + [a for a in Account.objects.filter(pk=search_for)]
 
 	else:
 		form = SearchForm(initial={'category':'Account Name'})

@@ -650,16 +650,16 @@ class RateForm(forms.ModelForm):
 
 class SearchForm(forms.Form):
 	search_for = forms.CharField(min_length=3)
-	category = forms.ChoiceField(choices=[('Account Name','Account Name'), ('TIN','TIN'), ('citizen_id','Citizen Id'), ('phone','Phone Number')])
+	category = forms.ChoiceField(choices=[('Account Name','Account Name'), ('account_id','Account Number/Id'), ('TIN','TIN'), ('citizen_id','Citizen Id'), ('phone','Phone Number')])
 
 	def clean(self, *args, **kwargs):
 		cleaned_data = super(SearchForm, self).clean()
 		category = cleaned_data.get('category')
-		if category in('phone','citizen_id','TIN'):
+		if category in('phone','citizen_id','TIN', 'account_id'):
 			for k, v in cleaned_data.items():
 				cleaned_data[k] = v.replace(' ', '')
 		search_for = cleaned_data.get('search_for')
-		if category in ('TIN', 'citizen_id', 'phone'):
+		if category in ('TIN', 'citizen_id', 'phone', 'account_id'):
 			valid_number_search(search_for)
 
 
