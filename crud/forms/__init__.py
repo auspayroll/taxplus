@@ -657,7 +657,7 @@ class SearchForm(forms.Form):
 		category = cleaned_data.get('category')
 		if category in('phone','citizen_id','TIN', 'account_id'):
 			for k, v in cleaned_data.items():
-				cleaned_data[k] = v.replace(' ', '')
+				cleaned_data[k] = v.replace(' ', '').replace(',','')
 		search_for = cleaned_data.get('search_for')
 		if category in ('TIN', 'citizen_id', 'phone', 'account_id'):
 			valid_number_search(search_for)

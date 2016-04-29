@@ -1013,7 +1013,12 @@ def search(request):
 			elif category == 'citizen_id':
 				r = r + [a for a in Account.objects.filter(citizen_id__icontains=search_for)]
 			elif category == 'account_id':
-				r = r + [a for a in Account.objects.filter(pk=search_for)]
+				try:
+					account  = Account.objects.get(pk=search_for)
+				except Account.DoesNotExist:
+					r = []
+				else:
+					return HttpResponseRedirect(reverse('account', args=[account.pk]))
 
 	else:
 		form = SearchForm(initial={'category':'Account Name'})
