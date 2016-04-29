@@ -15,6 +15,7 @@
 		<th>Balance</th>
 		<th>Overdue</th>
 		<th>Closed off</th>
+		<th>Status</th>
 
 	</tr>
 	{% for f in fees %}
@@ -28,6 +29,7 @@
 		<td>{{ f.balance }}</td>
 		<td>{{ f.overdue }}</td>
 		<td>{{ f.closed|default:'-' }}</td>
+		<td>{{ f.status|default:'-' }}</td>
 	</tr>
 	{% endfor %}
 	</table>

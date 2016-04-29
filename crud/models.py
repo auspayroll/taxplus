@@ -228,42 +228,66 @@ class Account(models.Model):
 
 		return '<BR/>'.join(utilities)
 
-	def roll_over_period(self, period_ending=None, close_off=False):
+
+
+	def close_period(self):
 		if self.end_date:
 			period_ending = self.end_date
 		else:
-			assert period_ending, 'Must specify period ending'
-		#fees = [f for f in self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).filter(Q(to_date__isnull=True) | Q(to_date__gte=period_ending)).order_by('-to_date')]
-		fees = self.account_fees.all()
-		if not self.end_date:
-			for fee in fees: #move  fee to the next period if no payments and account not closed
-				if not self.no_payments and close_off and fee.from_date <= period_ending:
-						fee.from_date = period_ending + timedelta(days=1)
-						fee.closed = None
-						fee.save()
+			period_ending = date(2016,12,31)
+		active = CategoryChoice.objects.get(category__code='status', code='active')
+		fees = self.account_fees.filter(status__code='active')
+		for fee in fees:
+			if fee.from_date > period_ending:
+				fee.status = CategoryChoice.objects.get(category__code='status', code='inactive')
+				fee.save()
+				continue
 
-				elif fee.from_date < period_ending and (not fee.to_date or fee.to_date > period_ending):
-					from_date = period_ending + timedelta(days=1)
-					AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
-						from_date=from_date,
-						defaults=dict(to_date=fee.to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
-							due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
-						district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
-						period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop)
-					)
-					fee.to_date = period_ending
-					fee.save()
 
-		if close_off:
-			self.account_fees.filter(from_date__lte=period_ending, closed__isnull=True).update(closed=period_ending, to_date=period_ending)
-		else:
-			self.account_fees.filter(from_date__lte=period_ending).update(to_date=period_ending)
+			if fee.fee_type.code == 'cleaning':
+				close_off = date(2015,12,31)
+			elif fee.fee_type.code == 'land_lease':
+				close_off = date(2014,12,31)
 
-		if close_off:
-			self.closed_off = period_ending
-			self.save(update_fields=['closed_off'])
+			if close_off and fee.from_date < close_off and not fee.closed:
+				fee.closed=close_off
 
-		if close_off and fees:
+			if fee.auto and not self.end_date and not self.no_payments and close_off and fee.from_date <= close_off and (not fee.to_date or fee.to_date >= close_off):
+				fee.from_date = close_off + timedelta(days=1)
+				fee.closed = None
+
+			if close_off and fee.from_date < close_off and (not fee.to_date or fee.to_date > close_off):
+				fee.to_date = close_off
+
+			else:
+				fee.to_date = date(fee.from_date.year,12,31)
+
+			if fee.to_date > period_ending:
+				fee.to_date = period_ending
+
+			fee.save(update_fields=['closed','to_date', 'from_date'])
+			fee.from_date = fee.to_date + timedelta(days=1)
+
+			if fee.auto and not self.end_date:
+				while fee.from_date <= period_ending:
+					fee.to_date = date(fee.from_date.year,12,31)
+					if fee.to_date > period_ending:
+						fee.to_date = period_ending
+					if fee.to_date > close_off:
+						if fee.to_date == period_ending:
+							to_date = None
+						else:
+							to_date = fee.to_date
+						AccountFee.objects.update_or_create(account=self, fee_type=fee.fee_type,
+							from_date=fee.from_date,
+							defaults=dict(to_date=to_date, amount=fee.amount,rate=fee.rate,quantity=fee.quantity,user=fee.user,
+								due_days=fee.due_days, fee_subtype=fee.fee_subtype, auto=True,
+							district=fee.district, sector=fee.sector, cell=fee.cell, village=fee.village, utility=fee.utility,
+							period=fee.period, parcel_id=fee.parcel_id, upi=fee.upi, prop=fee.prop, status=active)
+						)
+					fee.from_date = fee.to_date + relativedelta(days=1)
+
+		if self.no_payments > 0:
 			self.account_payments.filter(trans_date__lte=period_ending, closed__isnull=True).update(closed=period_ending)
 
 
