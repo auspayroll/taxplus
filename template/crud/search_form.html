@@ -15,20 +15,12 @@
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">
-
 		<table>
 		{{ form }}
 		{% csrf_token %}
 		</table>
 	</div>
-	{% if form2 %}
-		<div class="f">
-			<h3>{{ heading2 }}</h3>
-			<table>
-			{{ form2 }}
-			</table>
-		</div>
-	{% endif %}
+
 
 </div>
 <p/>
@@ -38,6 +30,9 @@
 	<p>No results found</p>
 	{% endif %}
 	<table class="table">
+		<tr><th></th><th>Record Type</th><th></th><th>Phone</th>
+			<th>TIN</th><th>CID</th>
+		</tr>
 		{% for r in results %}
 		<tr><td><a href="
 		{% if r.0.name == 'account' %}
@@ -46,7 +41,29 @@
 		{% if r.0.name == 'profile' %}
 			{% url 'edit_user' r.1.user.pk %}
 		{% endif %}
-		">{{ r.1 }}</a> ({{ r.0|capfirst }})</td></tr>
+		">{{ r.1 }}</a></td>
+
+	<td>{{ r.0|capfirst }}</td>
+
+	<td>
+		{% if r.0.name == 'account' %}
+			<a href="{% url 'make_payment' r.1.pk %}" class="btn btn-success">Make Payment</a>
+		{% endif %}
+	</td>
+
+	<td>
+		{{ r.1.phone|default:'-' }}
+	</td>
+
+	<td>
+		{{ r.1.tin|default:'-'|slugify }}
+	</td>
+
+	<td>
+		{{ r.1.citizen_id|default:'-'|slugify }}
+	</td>
+
+	</tr>
 		{% endfor %}
 	</table>
 {% endblock %}

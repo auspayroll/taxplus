@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village, Rate
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
- Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit, Account, CurrentOutstanding
+ Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit, Account, CurrentOutstanding, ReceiptBook
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
 from django.contrib.auth.models import User, Group
@@ -663,8 +663,49 @@ class SearchForm(forms.Form):
 			valid_number_search(search_for)
 
 
+class MakePaymentForm(forms.ModelForm):
+	class Meta:
+		model = BankDeposit
+		fields = ('amount', 'fee_type', 'note', 'receipt_book', 'rra_receipt', 'bank_receipt_no', 'bank', 'branch', 'depositor_name', 'date_banked', 'non_pm_payment')
+
+	def clean(self, *args, **kwargs):
+		cd= super(MakePaymentForm, self).clean(*args, **kwargs)
+		receipt_book = cd.get('receipt_book')
+		receipt_no = cd.get('rra_receipt')
+		if receipt_book and receipt_no:
+			receipt_nos = receipt_no.split(',')
+			for r in receipt_nos:
+				rsplit = r.split('-')
+				if len(rsplit) == 1:
+					try:
+						min_r = int(rsplit[0])
+					except:
+						raise forms.ValidationError("Invalid receipt number %s" % rsplit[0])
+					else:
+						if min_r < receipt_book.start_seq or min_r > receipt_book.end_seq:
+							raise forms.ValidationError("Receipt %s out of range %s - %s" % (rsplit[0], receipt_book.start_seq, receipt_book.end_seq))
+
+				elif len(rsplit) == 2:
+					try:
+						min_r = int(rsplit[0])
+						max_r = int(rsplit[1])
+					except ValueError:
+						raise forms.ValidationError("Invalid receipt range %s - %s" % (min_r, max_r))
+					else:
+						if min_r < receipt_book.start_seq or max_r > receipt_book.end_seq:
+							raise forms.ValidationError("Invalid receipt range %s - %s" % (min_r, max_r))
+
+				else:
+					raise forms.ValidationError("Invalid receipt range %s - %s" % (min_r, max_r))
+
+		return cd
 
 
+
+class ReceiptBookForm(forms.ModelForm):
+	class Meta:
+		model = ReceiptBook
+		fields = ('code', 'district', 'sector', 'start_seq', 'end_seq')
 
 
 

@@ -102,6 +102,13 @@ urlpatterns = patterns('',
 	url(r'^report/district/(?P<district_pk>\d+)/sector/(?P<sector_pk>\d+)/cell/(?P<cell_pk>\d+)/village/(?P<village_pk>\d+)/fee_type/(?P<fee_type_pk>\d+)/web/$',fee_items_report, {'web':True}, name='fee_items_report_web'),
 
 	url(r'^search/$',search, name='search'),
+	url(r'^make_payment/(?P<pk>\d+)/$',make_payment, name='make_payment'),
+
+	url(r'^receipt-books/$', receipt_books, name='receipt_books'),
+	url(r'^receipt-book-add/$',receipt_book_add, name='receipt_book_add'),
+	url(r'^receipt-book-update/(?P<pk>\d+)/$',receipt_book_update, name='receipt_book_update'),
+
+	url(r'^receipt_payments/(?P<pk>\d+)/$',receipt_payments, name='receipt_payments'),
 
 
 

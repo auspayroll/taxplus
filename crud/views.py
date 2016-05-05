@@ -5,9 +5,10 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm,\
-	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm, SearchForm
+	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm, SearchForm, MakePaymentForm, ReceiptBookForm
 from crud.models import Account, Contact, AccountPayment, Media,\
-	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile, Log, BankDeposit, CurrentOutstanding
+	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile,\
+	  Log, BankDeposit, CurrentOutstanding, ReceiptBook
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -1027,4 +1028,64 @@ def search(request):
 		results.append([ContentType.objects.get_for_model(m), m])
 
 	return render(request, 'crud/search_form.html', {'form':form, 'results':results})
+
+
+@user_passes_test(admin_check)
+def make_payment(request, pk):
+	account = get_object_or_404(Account,pk=pk)
+	searchform = SearchForm()
+	if request.method == 'POST':
+		form = MakePaymentForm(request.POST)
+		if form.is_valid():
+			bank_deposit = form.save(commit=False)
+			bank_deposit.account = account
+			bank_deposit.user = request.user
+			bank_deposit.save()
+			return HttpResponseRedirect(reverse('make_payment', args=[pk]))
+
+	else:
+		form = MakePaymentForm()
+
+	return render(request, 'crud/make_payment.html', {'form':form, 'searchform':searchform, 'account':account })
+
+
+@user_passes_test(admin_check)
+def receipt_book_add(request):
+	if request.method == 'POST':
+		form = ReceiptBookForm(request.POST)
+		if form.is_valid():
+			form.save()
+			return HttpResponseRedirect(reverse('receipt_books'))
+	else:
+		form = ReceiptBookForm()
+
+	return render(request, 'crud/base_form.html', {'form':form,})
+
+
+@user_passes_test(admin_check)
+def receipt_book_update(request, pk):
+	receipt_book = get_object_or_404(ReceiptBook,pk=pk)
+	if request.method == 'POST':
+		form = ReceiptBookForm(request.POST, instance=receipt_book)
+		if form.is_valid():
+			form.save()
+			return HttpResponseRedirect(reverse('receipt_books'))
+	else:
+		form = ReceiptBookForm(instance=receipt_book)
+
+	return render(request, 'crud/base_form.html', {'form':form})
+
+
+@user_passes_test(admin_check)
+def receipt_books(request):
+	receipt_books = ReceiptBook.objects.all().order_by('id')
+	return render(request, 'crud/receipt_books.html', {'receipt_books':receipt_books })
+
+
+@user_passes_test(admin_check)
+def receipt_payments(request,pk):
+	receipt_book = get_object_or_404(ReceiptBook, pk=pk)
+	payments = BankDeposit.objects.filter(receipt_book=receipt_book, status__code='active').order_by('-pk')
+	return TemplateResponse(request, 'crud/receipt_payments.html', {'receipt_book':receipt_book, 'payments':payments})
+
 

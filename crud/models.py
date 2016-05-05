@@ -647,25 +647,61 @@ class AccountHolder(models.Model):
 	holder = GenericForeignKey('holder_type', 'holder_id')
 
 
+class ReceiptBook(models.Model):
+	code = models.CharField(max_length=40)
+	district = models.ForeignKey(District, null=True)
+	sector = models.ForeignKey(Sector, null=True, blank=True)
+	start_seq = models.PositiveIntegerField(default=0, verbose_name="Start receipt number", help_text="must be a number")
+	end_seq = models.PositiveIntegerField(default=0, verbose_name="Last receipt number", help_text="must be a number")
+	user = models.ForeignKey(User, null=True, blank=True)
+	created = models.DateTimeField(null=True, auto_now_add=True)
+	total = models.DecimalField(max_digits=16, decimal_places=2, default=0)
+
+	def __unicode__(self):
+		return "%s (%s - %s)" % (self.code, self.start_seq, self.end_seq)
+
+
+	@property
+	def unused(self):
+		receipts = BankDeposit.objects.filter(receipt_book=self).values('rra_receipt', flat=True)
+		uu = [u for u in self.unused_receipts(self.start_seq, self.end_seq, receipts)]
+		return uu, len(uu)
+
+	def unused_receipts(self, min_seq, max_seq, used=[]):
+		if not used:
+			yield [min_seq, max_seq]
+			return
+		else:
+			if type(used) == list:
+				pass
+			elif used[0] > min_seq:
+				yield [min_seq, used[0] - 1]
+		self.unused_receipts(used[0]+1, max_seq, used[1:])
+
+
+
+
 class BankDeposit(models.Model):
-	bank = models.CharField(max_length=30)
+	bank = models.CharField(max_length=30, null=True, blank=True)
 	branch = models.CharField(max_length=30, null=True, blank=True)
 	amount = models.PositiveIntegerField(default=0)
-	bank_receipt_no = models.CharField(max_length=50, null=True, help_text='')
+	bank_receipt_no = models.CharField(max_length=50, null=True, blank=True, help_text='')
 	depositor_name = models.CharField(max_length=150, null=True, blank=True)
 	user = models.ForeignKey(User, null=True)
-	date_banked = models.DateField()
+	date_banked = models.DateField(null=True, blank=True)
 	created = models.DateTimeField(auto_now_add=True, null=True)
-	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt')
+	receipt_book = models.ForeignKey(ReceiptBook, null=True, blank=True)
+	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='Receipt number')
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=50, null=True, blank=True, verbose_name='RRA Receipt')
-	note = models.TextField(null=True, blank=True)
+	note = models.CharField(max_length=100, null=True, blank=True, verbose_name='fee period', help_text='eg. 2016 or Jul 2016')
 	status = models.ForeignKey(CategoryChoice, default=1)
 	non_pm_payment = models.BooleanField(default=False)
 	old_receipt_id = models.PositiveIntegerField(null=True)
 	closed = models.DateField(null=True)
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	trans_date = models.DateField(null=True)
+	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'}, related_name='bank_deposit__fee_type')
 
 	@property
 	def allocated_dates(self):
@@ -699,9 +735,21 @@ class BankDeposit(models.Model):
 		if self.allocated_dates and self.allocated_dates[0] > self.date_banked: #payment in advance
 			self.trans_date = self.allocated_dates[0]
 
+		if not self.trans_date:
+			self.trans_date = date.today()
+
+
 		if self.account.closed_off and self.trans_date <= self.account.closed_off:
 			self.closed = self.account.closed_off
+
+
 		return super(BankDeposit, self).save(*args, **kwargs)
+
+@receiver(post_save, sender=BankDeposit)
+def update_payment_receipt(sender, instance, *args, **kwargs):
+   	if instance.receipt_book:
+		instance.receipt_book.total = BankDeposit.objects.filter(receipt_book=instance.receipt_book, status__code='active').aggregate(total=Sum('amount'))['total'] or 0
+		instance.receipt_book.save(update_fields=['total'])
 
 
 class Contact(models.Model):
@@ -762,7 +810,7 @@ class AccountFee(models.Model):
 	selected in fee register
 	"""
 	account = models.ForeignKey(Account, related_name='account_fees')
-	from_date = models.DateField()
+	from_date = models.DateField(null=True)
 	to_date = models.DateField(null=True)
 	amount = models.DecimalField(max_digits=16, decimal_places=2, default=0) #total principle amount
 	principle_paid = models.DecimalField(max_digits=16, decimal_places=2,default=0)
@@ -1207,5 +1255,7 @@ class CurrentOutstanding(models.Model):
 			return "%s sector" % self.sector
 		elif self.district:
 			return "%s district" % self.district
+
+
 
 

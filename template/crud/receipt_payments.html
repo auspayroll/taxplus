@@ -1,37 +1,39 @@
-{% extends "crud/account.html" %}
+{% extends "crud/main.html" %}
 
-{% block body %}
-<h2>Account Payments</h2>
-<a href="{% url 'new_payment' account.pk %}">New Payment</a>
+{% block main %}
+<h2>Receipt Book {{ receipt_book }}</h2>
+<div>Total: {{ receipt_book.total }}</div>
 <form method="post">
 <table class="table">
 <tr>
 	<th>id</th>
-	<th>Date</th>
+	<th>Fee Type</th>
+	<th>Account #</th>
 	<th>Amount</th>
-	<th>Bank Receipt</th>
-	<th>RRA Receipt</th>
+	<th>Receipt #</th>
+	<th>Bank Receipt #</th>
 	<th>Depositor</th>
 	<th>Bank</th>
 	<th>Branch</th>
+	<th>Date Banked</th>
 	<th>Staff</th>
 	<th>created</th>
-	<th>status</th>
 	<th>note</th>
 </tr>
 {% for p in payments %}
 	<tr>
-		<td>{{ p.pk }}</td>
-		<td>{{ p.trans_date }}</td>
+		<td>{{ p.pk|slugify }}</td>
+		<td>{{ p.fee_type }}</td>
+		<td><a href="{% url 'account' p.account.pk %}">{{ p.account.pk|slugify }}</a></td>
 		<td>{{ p.amount }}</td>
-		<td>{{ p.bank_receipt_no }}</td>
 		<td>{{ p.rra_receipt|default:'-' }}</td>
+		<td>{{ p.bank_receipt_no|default:'-' }}</td>
 		<td>{{ p.depositor_name|default:'-' }}</td>
 		<td>{{ p.bank|default:'-' }}</td>
 		<td>{{ p.branch|default:'-' }}</td>
+		<td>{{ p.date_banked|default:'-' }}</td>
 		<td>{{ p.user|default:'-'}}</td>
 		<td>{{ p.created}}</td>
-		<td>{{ p.status}}</td>
 		<td>{{ p.note|default:'-'}}</td>
 	</tr>
 {% endfor %}

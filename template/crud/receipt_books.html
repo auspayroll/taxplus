@@ -1,0 +1,33 @@
+{% extends "crud/main.html" %}
+
+{% block main %}
+<h1>Receipt Books</h1>
+<div><a href="{% url 'receipt_book_add' %}">Add Receipt Book</a></div>
+<table class="table">
+<tr>
+	<th></th>
+	<th>Code</th>
+	<th>Receipt Range</th>
+	<th>District</th>
+	<th>Sector</th>
+	<th>Assigned To</th>
+	<th>created</th>
+	<th></th>
+	<th>Total</th>
+
+</tr>
+{% for b in receipt_books %}
+	<tr>
+		<td>{{ b.pk }}</td>
+		<td><a href="{% url 'receipt_book_update' b.id %}">{{ b.code }}</a></td>
+		<td>{{ b.start_seq }} - {{ b.end_seq }}</td>
+		<td>{{ b.district|default:'-' }}</td>
+		<td>{{ b.sector|default:'-' }}</td>
+		<td>{{ b.user|default:'-' }}</td>
+		<td>{{ b.created }}</td>
+		<td><a href="{% url 'receipt_payments' b.pk %}">View Payments</a></td>
+		<td>{{ b.total }}</td>
+	</tr>
+{% endfor %}
+</table>
+{% endblock %}

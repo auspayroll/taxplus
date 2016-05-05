@@ -1,0 +1,41 @@
+{% extends "crud/main.html" %}
+{% load staticfiles %}
+{% block main %}
+<style>
+.f{
+	float:left;
+	margin-right:20px;
+	margin-bottom:10px;
+	padding:20px;
+	border-radius:6px;
+	border:1pt solid #cccccc;
+}
+</style>
+<form method="post" enctype="multipart/form-data" action="{% url 'search' %}">
+<div style="overflow:hidden; margin-top:20px;">
+	<div class="f">
+		<table>
+		{{ searchform }}
+		{% csrf_token %}
+		</table>
+		<input type="submit" value="Search">
+	</div>
+
+</form>
+</div>
+<h1>Payment for <a href="{% url 'account' account.pk %}">{{ account }}</a></h1>
+<p/>
+
+<p/>
+
+<div style="width:50%;">
+<form method="post" enctype="multipart/form-data">
+	<table class="table" width="50%">
+		{{ form }}
+		{% csrf_token %}
+	</table>
+	<input type="submit" value="Add Payment">
+</form>
+</div>
+
+{% endblock %}
