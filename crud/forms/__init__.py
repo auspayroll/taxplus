@@ -738,7 +738,7 @@ class NewAccountForm(RegionForm):
 	def clean(self, *args, **kwargs):
 		cd = super(NewAccountForm, self).clean(*args, **kwargs)
 		if not cd.get('tin') and not cd.get('citizen_id') and not cd.get('phone') \
-		  and not cd.get('district') and not cd.get('sector') and not cd.get('cell') and not cd.get('parcel_id'):
+		  and not (cd.get('cell') and cd.get('parcel_id')):
 			raise forms.ValidationError("You must enter either phone, citizen id, TIN, or cell + parcel id")
 
 		if cd.get('citizen_id'):
