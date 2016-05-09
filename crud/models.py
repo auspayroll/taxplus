@@ -25,8 +25,9 @@ from django.db.models import Q, F
 from django.core.cache import cache
 
 
+
 def validate_upi(upi):
-	if not re.match(r'(0?\d+/){4}0?\d*$',upi):
+	if not re.match(r'(0?\d+/){4}0?\d+$',upi):
 		raise ValidationError('Invalid UPI Format')
 	province, district, sector, cell, parcel = upi.split('/')
 	cell_code = "%02d" % int(province) + "%02d" % int(district) + "%02d" % int(sector) + "%02d" % int(cell)
@@ -36,6 +37,28 @@ def validate_upi(upi):
 		raise ValidationError('Cell code %s not found' % cell_code)
 
 	return upi
+
+
+def split_upi(upi):
+	"""
+	returns Cell and parcel id from upi
+	"""
+	validate_upi(upi)
+	upi_parts =  upi.split('/')
+	i = 0
+	for upi_part in upi_parts:
+		if len(upi_part) ==1 and upi_part[0] != '0':
+			upi_parts[i] = '0' + upi_part
+		i += 1
+
+	cell_code = ''.join(upi_parts[:-1])
+	try:
+		cell = Cell.objects.get(code=cell_code)
+	except Cell.DoesNotExist:
+		return None
+	else:
+		return cell, int(upi_parts[-1])
+
 
 def get_fee_objects():
 	return [ct.model_class() for ct in ContentType.objects.all() if ct.model_class() and issubclass(ct.model_class(),AccountFee)]
@@ -168,6 +191,7 @@ class Account(models.Model):
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	cell = models.ForeignKey(Cell, null=True, blank=True)
 	village = models.ForeignKey(Village, null=True, blank=True)
+	parcel_id = models.PositiveIntegerField(null=True, blank=True)
 	prop_title_id = models.PositiveIntegerField(null=True)
 	business = models.ForeignKey(Business, null=True)
 	created = models.DateTimeField(null=True, auto_now_add=True)
@@ -662,21 +686,28 @@ class ReceiptBook(models.Model):
 
 
 	@property
-	def unused(self):
-		receipts = BankDeposit.objects.filter(receipt_book=self).values('rra_receipt', flat=True)
-		uu = [u for u in self.unused_receipts(self.start_seq, self.end_seq, receipts)]
-		return uu, len(uu)
+	def used_receipts(self):
+		receipts = set(BankDeposit.objects.filter(receipt_book=self).values_list('rra_receipt', flat=True))
+		for r in receipts:
+			try:
+				yield int(r)
+			except:
+				try:
+					yield map(lambda x:int(x), r.split('-'))
+				except:
+					pass
 
-	def unused_receipts(self, min_seq, max_seq, used=[]):
-		if not used:
-			yield [min_seq, max_seq]
-			return
-		else:
-			if type(used) == list:
-				pass
-			elif used[0] > min_seq:
-				yield [min_seq, used[0] - 1]
-		self.unused_receipts(used[0]+1, max_seq, used[1:])
+	@property
+	def unused(self):
+		r = set(range(self.start_seq, self.end_seq+1))
+		for used in self.used_receipts:
+			if type(used) is list:
+				r = r.difference(set(used))
+			else:
+				r.discard(used)
+
+		return list(r)
+
 
 
 
@@ -688,7 +719,7 @@ class BankDeposit(models.Model):
 	bank_receipt_no = models.CharField(max_length=50, null=True, blank=True, help_text='')
 	depositor_name = models.CharField(max_length=150, null=True, blank=True)
 	user = models.ForeignKey(User, null=True)
-	date_banked = models.DateField(null=True, blank=True)
+	date_banked = models.DateField(null=True, blank=True, verbose_name="Payment Date")
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	receipt_book = models.ForeignKey(ReceiptBook, null=True, blank=True)
 	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='Receipt number')
@@ -985,7 +1016,9 @@ class AccountFee(models.Model):
 		else:
 			to_date = self.to_date
 
-
+		if self.rate:
+			rate = self.rate
+			calc_string = 'specified rate'
 		if self.fee_type.code == 'land_lease':
 			rate, calc_string = self.calc_land_lease(sub_category=self.fee_subtype, village=self.village)
 		elif self.fee_type.code == 'cleaning':

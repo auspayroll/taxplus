@@ -11,32 +11,18 @@
 	border:1pt solid #cccccc;
 }
 </style>
-<h1>{{heading}}</h1>
+<h1>New Payment</h1>
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">
-
-		<table>
+		<table class="table">
 		{{ form }}
 		{% csrf_token %}
 		</table>
 	</div>
 
 </div>
-{% if collections.count > 0 %}
-	<h4>Select collections for this payment (optional)</h4>
-	<table class="table">
-		<tr><td>&nbsp;</td><th>Amount</th><th>Date</th><th>Location</th><th>Type</th></tr>
-		{% for c in collections %}
-			<tr><td><input type="checkbox" name="collection_id" value="{{c.pk}}"></td>
-				<td>{{ c.amount }}</td>
-				<td>{{ c.created }}</td>
-				<td>{{ c.utility }}</td>
-				<td>{{ c.fee_type }}</td>
-			</tr>
-		{% endfor %}
-	</table>
-{% endif %}
+
 </table>
 <input type="submit" value="Submit">
 	</form>

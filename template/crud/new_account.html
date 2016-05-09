@@ -1,13 +1,103 @@
 {% extends "crud/main.html" %}
-
+{% load static from staticfiles %}
 {% block main %}
-<h1>New Account</h1>
-<form method="post">
-<table>
-	{{ form.errors }}
-{{ form }}
-{% csrf_token %}
-</table>
-<input type="submit" value="Register">
+<script>
+
+{% if request.POST %}
+	var sector_posted = {{ request.POST.sector|slugify|default:'0' }};
+	var cell_posted = {{ request.POST.cell|slugify|default:'0' }};
+	var village_posted = {{ request.POST.village|slugify|default:'0' }};
+{% else %}
+	{% if form.instance and form.instance.sector %}
+		var sector_posted = {{ form.instance.sector.pk|slugify|default:'0' }};
+		var cell_posted = {{ form.instance.cell.pk|slugify|default:'0' }};
+		var village_posted = {{ form.instance.village.pk|slugify|default:'0' }};
+	{% else %}
+		{% if form and form.initial.sector %}
+			var sector_posted = {{ form.initial.sector.pk|slugify|default:'0' }};
+			var cell_posted = {{ form.initial.cell.pk|slugify|default:'0' }};
+			var village_posted = {{ form.initial.village.pk|slugify|default:'0' }};
+		{% else %}
+			var sector_posted = 0;
+			var cell_posted = 0;
+			var village_posted = 0;
+		{% endif %}
+	{% endif %}
+{% endif %}
+
+</script>
+<script src="{% static 'js/load_region_data.js' %}"></script>
+<style>
+
+.f{
+	float:left;
+	margin-right:5px;
+	padding:5px;
+	border-radius:6px;
+	border:1pt solid #cccccc;
+	margin-bottom:10px;
+	vertical-align: top;
+}
+
+.panel{
+	display:table-cell;
+	overflow:hidden;
+	margin-top:20px;
+	vertical-align:top;
+}
+
+</style>
+<h1>{{heading}}</h1>
+<h2>{{ form.instance }}</h2>
+<form method="post" enctype="multipart/form-data">
+<div class="panel">
+	<div class="f">
+		<table class="table">
+			<td colspan="2">To create a new account you must enter
+				<ul>
+				<li>Account Name
+				<li>Start Date
+				<li>District
+				<li>Sector
+				<li>Phone <b>OR</b> Citizen Id <b>OR</b>
+					TIN <b>OR</b> Cell + Parcel Id
+				</ul>
+			</td>
+		{{ form }}
+		{% csrf_token %}
+		</table>
+		<input type="submit" name="create" value="Create Account" class="btn btn-default">
+	</div>
+</div>
+
+<div class="panel">
+	{% if matches %}
+	<div class="f">
+		<h3>Did you mean any of these accounts?</h2>
+		<table class="table">
+			<tr><th>Account Number</th>
+				<th>Account Name</th>
+				<th>Phone</th>
+				<th>Citizen Id</th>
+				<th>TIN</th>
+				<th>Sector</th>
+				<th>Village</th>
+			</tr>
+		{% for m in matches %}
+		<tr><td><a href="{% url 'account' m.pk %}">{{ m.pk|slugify }}</a></td>
+				<td>{{ m.name }}</td>
+				<td>{{ m.phone|default:'-' }}</td>
+				<td>{{ m.citizen_id|default:'-'|slugify }}</td>
+				<td>{{ m.tin|default:'-'|slugify }}</td>
+				<td>{{ m.sector|default:'-' }}</td>
+				<td>{{ m.village|default:'-' }}</td>
+		</tr>
+		{% endfor %}
+		</table>
+		<input type="submit" name="confirm" value="None of these, I still want to create a new account" class="btn btn-default">
+	</div>
+	{% endif %}
+</div>
+
 </form>
 {% endblock %}

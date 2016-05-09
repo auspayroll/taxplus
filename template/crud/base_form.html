@@ -42,7 +42,7 @@
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">
-		<table>
+		<table class="table">
 		{{ form }}
 		{% csrf_token %}
 		</table>
@@ -51,7 +51,7 @@
 	{% if form2 %}
 	<div class="f">
 		<h3>{{ heading2 }}</h2>
-		<table>
+		<table class="table">
 		{{ form2 }}
 		</table>
 	</div>

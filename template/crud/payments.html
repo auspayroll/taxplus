@@ -2,7 +2,8 @@
 
 {% block body %}
 <h2>Account Payments</h2>
-<a href="{% url 'new_payment' account.pk %}">New Payment</a>
+<a href="{% url 'new_payment' account.pk %}"class="btn btn-success">New Payment</a>
+<p/>
 <form method="post">
 <table class="table">
 <tr>

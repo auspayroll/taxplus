@@ -39,4 +39,9 @@
 {% endfor %}
 </table>
 </form>
+<div>
+<h3>Unused Receipts</h3>
+{{ receipt_book.unused|join:', '}}
+
+</div>
 {% endblock %}

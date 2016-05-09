@@ -5,10 +5,10 @@ from crud.forms import CitizenForm, BusinessForm, UtilityForm, FeeForm, NewPayme
 	NewLocationForm, LocationForm, \
 	RegionalCollectionForm, AddAccountDates, UserForm, NewUserForm, CollectionUpdateForm,\
 	BankDepositForm, LoginForm, NewAccountHolderForm, DistrictForm, SectorForm,\
-	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm, SearchForm, MakePaymentForm, ReceiptBookForm
+	CellForm, VillageForm, RateForm, AccountForm, RegionReportForm, SearchForm, MakePaymentForm, ReceiptBookForm, NewAccountForm
 from crud.models import Account, Contact, AccountPayment, Media,\
 	 AccountHolder, AccountFee, AccountNote, Utility, Collection, Profile,\
-	  Log, BankDeposit, CurrentOutstanding, ReceiptBook
+	  Log, BankDeposit, CurrentOutstanding, ReceiptBook, Business, split_upi
 from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from django.contrib import messages
@@ -28,7 +28,7 @@ from django.shortcuts import HttpResponseRedirect, render_to_response, get_objec
 from django.template.response import TemplateResponse
 from djqscsv import render_to_csv_response, generate_filename
 from random import randint
-from taxplus.models import District, Sector, Cell, Village, Business, Citizen, Category, CategoryChoice, Property, Rate
+from taxplus.models import District, Sector, Cell, Village, Citizen, Category, CategoryChoice, Property, Rate
 import csv
 import json
 import collections
@@ -321,6 +321,32 @@ def account_payments(request,pk):
 	return TemplateResponse(request, 'crud/payments.html', {'account':account, 'payments':payments})
 
 
+
+@user_passes_test(admin_check)
+def new_payment(request, pk):
+	account = get_object_or_404(Account,pk=pk)
+	searchform = SearchForm()
+	if request.method == 'POST':
+		form = MakePaymentForm(request.POST)
+		if form.is_valid():
+			fee_type = form.cleaned_data.get('fee_type')
+			current_fees = AccountFee.objects.filter(fee_type=fee_type, account=account, closed__isnull=True)
+			if not current_fees:
+				messages.warning(request, "Warning: There is no active %s for this account" % fee_type)
+			bank_deposit = form.save(commit=False)
+			bank_deposit.account = account
+			bank_deposit.user = request.user
+			bank_deposit.save()
+			messages.success(request, "Payment created successfully")
+			return HttpResponseRedirect(reverse('account_payments', args=[pk]))
+
+	else:
+		form = MakePaymentForm()
+
+	return TemplateResponse(request, 'crud/new_payment.html', {'account':account, 'form':form})
+
+
+"""
 @user_passes_test(admin_check)
 def new_payment(request, pk):
 	account = get_object_or_404(Account, pk=pk)
@@ -347,7 +373,8 @@ def new_payment(request, pk):
 	else:
 		form = BankDepositForm()
 
-	return TemplateResponse(request, 'crud/new_payment.html', {'account':account, 'collections':collections, 'form':form, 'heading':'New Account Payment'})
+	return TemplateResponse(request, 'crud/new_payment.html', {'account':account, 'form':form, 'heading':'New Account Payment'})
+"""
 
 
 @user_passes_test(admin_check)
@@ -1013,6 +1040,12 @@ def search(request):
 				r = r + [a for a in Account.objects.filter(name__icontains=search_for)]
 			elif category == 'citizen_id':
 				r = r + [a for a in Account.objects.filter(citizen_id__icontains=search_for)]
+			elif category == 'upi':
+				cell, parcel_id = split_upi(search_for)
+				accounts = Account.objects.filter(account_fees__cell=cell, account_fees__parcel_id=parcel_id).distinct()
+				prop = Property.objects.filter(cell=cell, parcel_id=parcel_id)
+				r = r + [a for a in accounts]
+				r = r + [a for a in prop]
 			elif category == 'account_id':
 				try:
 					account  = Account.objects.get(pk=search_for)
@@ -1037,10 +1070,15 @@ def make_payment(request, pk):
 	if request.method == 'POST':
 		form = MakePaymentForm(request.POST)
 		if form.is_valid():
+			fee_type = form.cleaned_data.get('fee_type')
+			current_fees = AccountFee.objects.filter(fee_type=fee_type, account=account, closed__isnull=True)
+			if not current_fees:
+				messages.warning(request, "Warning: There is no active %s for this account" % fee_type)
 			bank_deposit = form.save(commit=False)
 			bank_deposit.account = account
 			bank_deposit.user = request.user
 			bank_deposit.save()
+			messages.success(request, "Payment created successfully")
 			return HttpResponseRedirect(reverse('make_payment', args=[pk]))
 
 	else:
@@ -1088,4 +1126,98 @@ def receipt_payments(request,pk):
 	payments = BankDeposit.objects.filter(receipt_book=receipt_book, status__code='active').order_by('-pk')
 	return TemplateResponse(request, 'crud/receipt_payments.html', {'receipt_book':receipt_book, 'payments':payments})
 
+
+@user_passes_test(admin_check)
+def new_account(request):
+	matches = []
+	if request.method == 'POST':
+		form = NewAccountForm(request.POST)
+		if form.is_valid():
+			cd = form.cleaned_data
+			tin = cd.get('tin')
+			citizen_id = cd.get('citizen_id')
+			phone = cd.get('phone')
+			name = cd.get('name')
+			district = cd.get('district')
+			sector = cd.get('sector')
+			cell = cd.get('cell')
+			village = cd.get('village')
+			parcel_id = cd.get('parcel_id')
+			if not request.POST.get('confirm'):
+				filt = Q(name__icontains=name)
+				words = name.split(' ')
+				if len(words) > 1:
+					for w in words:
+						if len(w) < 4: #eliminate common words/articles
+							continue
+						filt |= Q(name__icontains=w)
+
+				if tin:
+					filt |= Q(tin=tin)
+				if citizen_id:
+					filt |= Q(citizen_id=citizen_id)
+				if phone:
+					filt |= Q(phone=phone)
+				if cell and parcel_id:
+					filt |= Q(account_fees__cell=cell, account_fees__parcel_id=parcel_id)
+				matches = Account.objects.filter(filt).distinct()[:70]
+
+				if not matches:
+					if village:
+						matches = Account.objects.filter(Q(village=village) | Q(account_fees__village=village)).distinct()[:50]
+					elif cell:
+						matches = Account.objects.filter(Q(cell=cell) | Q(account_fees__cell=cell)).distinct()[:30]
+					elif sector:
+						matches = Account.objects.filter(Q(sector=sector) | Q(account_fees=sector)).distinct()[:30]
+
+
+			if not matches or request.POST.get('confirm'): #create the account
+				account = Account.objects.create(name=name, start_date=cd.get('start_date'), parcel_id=cd.get('parcel_id'), village=village, cell=cell, sector=sector, district=district,
+					phone=phone, citizen_id=citizen_id, tin=tin, period_ending=date.today())
+				messages.success(request, "New Account %s created" % account.pk)
+				if tin: #create / link business
+					businesses = Business.objects.filter(tin=tin)
+					if not businesses:
+						Business.objects.create(name=name, tin=tin, phone1=phone, date_started=cd.get('start_date'), village=village, cell=cell,
+							district=district, sector=sector)
+					else:
+						business = businesses[0]
+						business.phone1 = phone or business.phone1
+						business.district = district or business.district
+						business.sector = sector or business.sector
+						business.cell = cell or business.cell
+						business.village = village or business.village
+						business.save()
+					AccountHolder.objects.create(account=account, holder=business)
+				if citizen_id: # create / link citizen
+					citizens = Citizen.objects.filter(citizen_id=citizen_id)
+					if not citizens:
+						citizen = Citizen.objects.create(first_name=cd.get('citizen_first_name'), last_name=cd.get('citizen_last_name'), date_of_birth=cd.get('citizen_dob'), citizen_id=citizen_id)
+					else:
+						citizen = citizens[0]
+						citizen.phone_1 = phone or citizen.phone_1
+						citizen.date_of_birth = cd.get('dob') or citizen.date_of_birth
+						citizen.first_name = cd.get('citizen_first_name') or citizen.first_name
+						citizen.last_name = cd.get('ctizen_last_name') or citizen.last_name
+						citizen.save()
+					AccountHolder.objects.create(account=account, holder=citizen)
+
+				fee_type = cd.get('fee_type')
+				if fee_type: #create fee
+					if fee_type == 'cleaning':
+						period = 12
+					else:
+						period = 1
+					from_date = date(date.today().year, 1,1 )
+					to_date = date(date.today().year, 12, 31)
+					AccountFee.objects.create(account=account, from_date=from_date, to_date=to_date, fee_type=cd.get('fee_type'), parcel_id=cd.get('parcel_id'), district=district,\
+						sector=sector, cell=cell, village=village, period=period, fee_subtype=cd.get('fee_subtype'))
+
+					account.transactions(update=True)
+
+				return HttpResponseRedirect(reverse('account', args=[account.pk]))
+	else:
+		form = NewAccountForm()
+
+	return render(request, 'crud/new_account.html', {'form':form, 'matches':matches})
 

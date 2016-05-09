@@ -36,6 +36,9 @@ urlpatterns = patterns('',
 	url(r'^location/new/post/$',new_location_post, name='new_location_post'),
 	url(r'^locations/recent/$',recent_locations, name='recent_locations'),
 
+
+	url(r'^account/new/$',new_account, name='new_account'),
+
 	#utilities
 	url(r'^utilities/$',utilities, name='utilities'),
 	url(r'^utilities/(?P<utility_type>\w+)/$',utilities, name='utilities_type'),

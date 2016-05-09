@@ -4,8 +4,9 @@
 
 	<h3 style="display:inline;">Balance Owing: {{ account.balance }} &nbsp;Overdue: {{ account.overdue }}</h3>
 	as at {{ account.period_ending }}
-	<div><a href="{% url 'new_payment' account.pk %}">New Payment</a> | <a href="{% url 'account_archive_transactions' account.pk %}">Archived</a></div>
-	<h4>Transactions</h4>
+	<div><a href="{% url 'new_payment' account.pk %}" class="btn btn-success">New Payment</a> | <a href="{% url 'account_archive_transactions' account.pk %}">Archived</a></div>
+	<p/>
+	<h3>Transactions</h3>
 	<table class="table">
 	<tr>
 		<th></th>

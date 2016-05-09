@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from taxplus.models import Business, Citizen, District, Sector, Property, CategoryChoice, Cell, District, Village, Rate
 from crud.models import AccountPayment, CleaningFee, TowerFee, QuarryFee,\
- Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit, Account, CurrentOutstanding, ReceiptBook
+ Contact, AccountPayment, Media, AccountFee, Utility, AccountNote, Collection, BankDeposit, Account, CurrentOutstanding, ReceiptBook, validate_upi
 from django.contrib.gis.geos import Point
 from collections import OrderedDict
 from django.contrib.auth.models import User, Group
@@ -650,23 +650,30 @@ class RateForm(forms.ModelForm):
 
 class SearchForm(forms.Form):
 	search_for = forms.CharField(min_length=3)
-	category = forms.ChoiceField(choices=[('Account Name','Account Name'), ('account_id','Account Number/Id'), ('TIN','TIN'), ('citizen_id','Citizen Id'), ('phone','Phone Number')])
+	category = forms.ChoiceField(choices=[('Account Name','Account Name'), ('account_id','Account Number/Id'), ('TIN','TIN'), ('citizen_id','Citizen Id'), ('phone','Phone Number'), ('upi','UPI')])
 
 	def clean(self, *args, **kwargs):
 		cleaned_data = super(SearchForm, self).clean()
 		category = cleaned_data.get('category')
-		if category in('phone','citizen_id','TIN', 'account_id'):
-			for k, v in cleaned_data.items():
-				cleaned_data[k] = v.replace(' ', '').replace(',','')
-		search_for = cleaned_data.get('search_for')
-		if category in ('TIN', 'citizen_id', 'phone', 'account_id'):
-			valid_number_search(search_for)
+		if category in ('TIN', 'citizen_id', 'phone', 'account_id') and cleaned_data.get('search_for'):
+			cleaned_data['search_for'] = cleaned_data['search_for'].replace(' ', '').replace(',','')
+			valid_number_search(cleaned_data['search_for'])
+		elif category == 'upi' and cleaned_data.get('search_for'):
+			validate_upi(cleaned_data.get('search_for'))
+
+		return cleaned_data
 
 
 class MakePaymentForm(forms.ModelForm):
 	class Meta:
 		model = BankDeposit
-		fields = ('amount', 'fee_type', 'note', 'receipt_book', 'rra_receipt', 'bank_receipt_no', 'bank', 'branch', 'depositor_name', 'date_banked', 'non_pm_payment')
+		fields = ('amount', 'fee_type', 'date_banked', 'note', 'receipt_book', 'rra_receipt', 'bank_receipt_no', 'bank', 'branch', 'depositor_name', 'non_pm_payment')
+
+	date_banked = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+
+	def __init__(self, *args, **kwargs):
+		super(MakePaymentForm, self).__init__(*args, **kwargs)
+		self.fields['date_banked'].label = "Payment Date"
 
 	def clean(self, *args, **kwargs):
 		cd= super(MakePaymentForm, self).clean(*args, **kwargs)
@@ -708,7 +715,38 @@ class ReceiptBookForm(forms.ModelForm):
 		fields = ('code', 'district', 'sector', 'start_seq', 'end_seq')
 
 
+class NewAccountForm(RegionForm):
+	name = forms.CharField(max_length=90, label='Account Name')
+	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
+	parcel_id = forms.IntegerField(required=False)
+	tin = forms.IntegerField(validators=[valid_tin], required=False, label='TIN')
+	citizen_first_name = forms.CharField(required=False)
+	citizen_last_name = forms.CharField(required=False)
+	citizen_id = forms.IntegerField(validators=[valid_citizen_id], required=False, help_text="16 digits", label="Citizen ID")
+	citizen_dob = forms.DateField(widget=html5_widgets.DateInput, required=False)
+	phone = forms.CharField(max_length=40, validators=[valid_phone], required=False, help_text="07+8 digits, eg. 0789891223")
+	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'), required=False)
+	fee_subtype = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code__in=['land_use', 'cleaning_rate']), required=False)
 
+	def __init__(self, *args, **kwargs):
+		super(NewAccountForm, self).__init__(*args, **kwargs)
+		self.fields['district'].required = True
+		self.fields['sector'].required = True
+		self.order_fields(['name', 'start_date', 'district', 'sector', 'cell', 'village', 'parcel_id', 'tin',
+			'citizen_first_name','citizen_last_name', 'citizen_id', 'citizen_dob', 'phone', 'fee_type', 'fee_subtype'])
 
+	def clean(self, *args, **kwargs):
+		cd = super(NewAccountForm, self).clean(*args, **kwargs)
+		if not cd.get('tin') and not cd.get('citizen_id') and not cd.get('phone') \
+		  and not cd.get('district') and not cd.get('sector') and not cd.get('cell') and not cd.get('parcel_id'):
+			raise forms.ValidationError("You must enter either phone, citizen id, TIN, or cell + parcel id")
+
+		if cd.get('citizen_id'):
+		 if not cd.get('citizen_first_name'):
+		 	self.add_error('citizen_first_name', 'first name required if citizen id')
+		 if not cd.get('citizen_last_name'):
+		 	self.add_error('citizen_last_name', 'last name required if citizen id')
+
+		return cd
 
 
