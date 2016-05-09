@@ -723,7 +723,7 @@ class BankDeposit(models.Model):
 	date_banked = models.DateField(null=True, blank=True, verbose_name="Payment Date")
 	created = models.DateTimeField(auto_now_add=True, null=True)
 	receipt_book = models.ForeignKey(ReceiptBook, null=True, blank=True, verbose_name='RRA Receipt Book')
-	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt number')
+	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt number', help_text="multiple receipts eg: 4567, 4568 or range: 4567 - 4568 or both: 4567-4568,4569 ")
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=50, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.CharField(max_length=100, null=True, blank=True, verbose_name='fee period', help_text='eg. 2016 or Jul 2016')
