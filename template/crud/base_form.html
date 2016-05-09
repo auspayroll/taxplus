@@ -38,7 +38,7 @@
 }
 </style>
 <h1>{{heading}}</h1>
-<h2>{{ form.instance }}</h2>
+{% if form.instance.pk %}<h2>{{ form.instance}}</h2>{% endif %}
 <form method="post" enctype="multipart/form-data">
 <div style="overflow:hidden; margin-top:20px;">
 	<div class="f">
@@ -57,6 +57,6 @@
 	</div>
 	{% endif %}
 </div>
-<button id="test">Submit</button>
+<button id="test" class="btn btn-default">Submit</button>
 </form>
 {% endblock %}

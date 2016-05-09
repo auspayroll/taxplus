@@ -714,6 +714,14 @@ class ReceiptBookForm(forms.ModelForm):
 		model = ReceiptBook
 		fields = ('code', 'district', 'sector', 'start_seq', 'end_seq')
 
+	def clean(self, *args, **kwargs):
+		cd = self.cleaned_data
+		start = cd.get('start_seq', 0)
+		end = cd.get('end_seq', 0)
+		if start > end:
+			raise forms.ValidationError("Start Receipt must be less than end receipt")
+
+
 
 class NewAccountForm(RegionForm):
 	name = forms.CharField(max_length=90, label='Account Name')
@@ -737,6 +745,10 @@ class NewAccountForm(RegionForm):
 
 	def clean(self, *args, **kwargs):
 		cd = super(NewAccountForm, self).clean(*args, **kwargs)
+		fee_type = cd.get('fee_type')
+		if 'land_lease' in fee_type.code and not cd.get('parcel_id') and not cd.get('cell'):
+			raise forms.ValidationError("You must enter a parcel/plot ID and Cell when adding Land Lease Fee")
+
 		if not cd.get('tin') and not cd.get('citizen_id') and not cd.get('phone') \
 		  and not (cd.get('cell') and cd.get('parcel_id')):
 			raise forms.ValidationError("You must enter either phone, citizen id, TIN, or cell + parcel id")

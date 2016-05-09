@@ -1097,7 +1097,7 @@ def receipt_book_add(request):
 	else:
 		form = ReceiptBookForm()
 
-	return render(request, 'crud/base_form.html', {'form':form,})
+	return render(request, 'crud/base_form.html', {'form':form, 'heading':'New Receipt Book'})
 
 
 @user_passes_test(admin_check)

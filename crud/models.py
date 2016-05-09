@@ -672,7 +672,7 @@ class AccountHolder(models.Model):
 
 
 class ReceiptBook(models.Model):
-	code = models.CharField(max_length=40)
+	code = models.CharField(max_length=40, verbose_name='Receipt Book code/identifer')
 	district = models.ForeignKey(District, null=True)
 	sector = models.ForeignKey(Sector, null=True, blank=True)
 	start_seq = models.PositiveIntegerField(default=0, verbose_name="Start receipt number", help_text="must be a number")
@@ -687,22 +687,23 @@ class ReceiptBook(models.Model):
 
 	@property
 	def used_receipts(self):
-		receipts = set(BankDeposit.objects.filter(receipt_book=self).values_list('rra_receipt', flat=True))
-		for r in receipts:
-			try:
-				yield int(r)
-			except:
+		receipts = BankDeposit.objects.filter(receipt_book=self).values_list('rra_receipt', flat=True)
+		for receipt in receipts:
+			for r in receipt.split(','):
 				try:
-					yield map(lambda x:int(x), r.split('-'))
+					yield int(r)
 				except:
-					pass
+					try:
+						yield map(lambda x:int(x), r.split('-'))
+					except:
+						pass
 
 	@property
 	def unused(self):
 		r = set(range(self.start_seq, self.end_seq+1))
 		for used in self.used_receipts:
 			if type(used) is list:
-				r = r.difference(set(used))
+				r = r.difference(set(range(used[0], used[-1]+1)))
 			else:
 				r.discard(used)
 
@@ -721,8 +722,8 @@ class BankDeposit(models.Model):
 	user = models.ForeignKey(User, null=True)
 	date_banked = models.DateField(null=True, blank=True, verbose_name="Payment Date")
 	created = models.DateTimeField(auto_now_add=True, null=True)
-	receipt_book = models.ForeignKey(ReceiptBook, null=True, blank=True)
-	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='Receipt number')
+	receipt_book = models.ForeignKey(ReceiptBook, null=True, blank=True, verbose_name='RRA Receipt Book')
+	rra_receipt = models.CharField(max_length=40, null=True, blank=True, verbose_name='RRA Receipt number')
 	account = models.ForeignKey(Account, null=True, related_name='account_payments')
 	sector_receipt = models.CharField(max_length=50, null=True, blank=True, verbose_name='RRA Receipt')
 	note = models.CharField(max_length=100, null=True, blank=True, verbose_name='fee period', help_text='eg. 2016 or Jul 2016')
