@@ -1,7 +1,7 @@
 {% extends "crud/main.html" %}
 
 {% block main %}
-	<h2>General Roster</h2>
+	<h2>District Rosters</h2>
 	<style>
 	.missing {
 		background-color:red;
@@ -16,54 +16,11 @@
 		font-weight:bold
 	}
 	</style>
-	<div>
-		<a href="{% url 'general_roster_block' last_block %}">Last 2 weeks</a> |
-		<a href="{% url 'general_roster' %}">Today</a> |
-		<a href="{% url 'general_roster_block' next_block %}">Next 2 weeks</a>
-	</div>
-	{% for d, collections in dates.items %}
-	<div style="margin-bottom:20px; margin-top:15px">
-		{% now "Y-m-d" as todays_date %}
-		<div style="background-color:#cccccc; padding:5px;">
-		{% if todays_date == d|date:"Y-m-d" %}
-			<h2>Roster for Today, {{ d|date:'l - M d, Y' }} </h2>
-		{% else %}
-			<h3>{{ d|date:'l - M d, Y' }}</h3>
-		{% endif %}
-		</div>
-		<table class="table table-hover" border="1">
-			<tr>
-				<th>id</th>
-				<th>District</th>
-				<th>Location</th>
-				<th>Fee</th>
-				<th>No. collections</th>
-				<th>Amount</th>
-				<th>Bank Recept.</th>
-				<th>Collector</th>
-			{% for c in collections %}
-				<tr>
-					<td>{{ c.pk }}</td>
-					<td>{% if c.utility and c.utility.district %}<a href="{% url 'district' c.utility.district.pk %}">{{ c.utility.district }}</a>{% else %}-{% endif %}</td>
-					<td width="15%">{{ c.utility|default:'-' }}</td>
-					<td width="15%">{{ c.fee_type }}</td>
-					<td>{{ c.no_collections }}</td>
-					<td>{{ c.amount }}</td>
-					<td width="15%" {% if c.deposit %}class="ok"{% endif %}>{{ c.deposit.bank_receipt_no|default:'-' }}</td>
-					<td width="15%" {% if not c.collector %}class="missing"{% endif %}>{% if c.collector %}<a href="{% url 'edit_user' c.collector.pk %}">{{ c.collector.get_full_name }}</a>{% else %}No collector assigned{% endif %}{% if c.collector.profile.phone %} <nobr>Ph: {{ c.collector.profile.phone }}</nobr>{% endif %}</td>
-					<td><a href="{% url 'edit_collection' c.pk %}?next={{ request.path }}">Edit</a></td>
-				</tr>
-			{% empty %}
-				<tr>
-					<td colspan="7">
-						There are no collections scheduled for this day
-					</td>
 
-				</tr>
-			{% endfor %}
-		</table>
-	</div>
-	{% endfor %}
+		<div  style="width:406px; overflow:hidden;">
+		{% for d in districts %}
+			<div style="float:left; width:200px; height:20px;"><a href="{% url 'district_roster' d.pk %}">{{ d.name }} roster</a></div>
+		{% endfor %}
+		</div>
 
 {% endblock %}
-
