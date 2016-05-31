@@ -2,28 +2,69 @@
 
 {% block main %}
 	<h2>Recent Logs</h2>
-	<table class="table">
+	<table class="table" id="logTable">
+	<thead>
 	<tr>
 		<th>id</th>
 		<th>Date</th>
-		<th>Account</th>
-		<th>Changes</th>
-		<th>Request/IP</th>
+		<th>Time</th>
 		<th>User</th>
+		<th>Account</th>
+		<th>Record</th>
+		<th>Request/IP</th>
+		<th style="display:hidden;">Changes</th>
 
 	</tr>
-	{% for c in logs %}
-	<tr>
-		<td>{{c.pk}}</td>
-		<td>{{ c.created }}</td>
-		<td>{% if c.account %}<a href="{% url 'account' c.account.pk %}">{{ c.account }}</a>{% else %}-{% endif %}</td>
-		<td><div>{{ c.instance }}</div>
-			<div>{{ c.changes_as_html|safe }}</div></td>
-		<td><div>{% if c.request_path %}<a href="{{ c.request_path }}">{{ c.request_path }}</a>{% else %}{% endif %}</div><div>IP: {{ c.request_ip|default:'-' }}</div></td>
-		<td>{% if c.user %}<a href="{% url 'edit_user' c.user.pk %}">{{ c.user }}</a>{% else %}-{% endif %}</td>
+	<thead>
 
-	</tr>
-	{% endfor %}
+	<tbody>
+	</tbody>
+
 	</table>
+
+	<script>
+	oTable = $('#logTable').DataTable( {
+	serverSide: true,
+	deferRender: true,
+	searching: false,
+	//searchDelay: 1000,
+    ajax: {
+        url: "{% url 'log_json' %}",
+        dataSrc: 'data',
+
+    },
+    columns: [
+    	{ data: 'id' },
+        { data: 'created' },
+        { data: 'time' },
+        { data: 'user' },
+        { data: 'account' },
+        { data: 'instance' },
+        { data: 'request_ip' },
+        { data: 'changes' }
+    ],
+
+	} );
+
+
+	/*
+	$(document).ready(function() {
+	    oTable.$('td').click(function(){
+	    	$(this).siblings('#changes').fadeIn();
+	    	return false;
+
+	    });
+	});
+*/
+
+	$(document).ready(function() {
+	    //var table = $('#example').DataTable();
+	    $('#logTable tbody').on('click', 'td a.show_changes', function () {
+	    	$(this).siblings('.changes').toggle(400);
+	    	return false;
+	    } );
+	} );
+
+	</script>
 {% endblock %}
 

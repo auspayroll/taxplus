@@ -66,6 +66,12 @@ urlpatterns = patterns('',
 	url(r'^districts/$',districts, name='districts'),
 
 	url(r'^users/$',users, name='users'),
+	url(r'^users/json/$',user_list_json, name='user_list_json'),
+
+	url(r'^user/(?P<pk>\d+)/logs/json/$',log_list_json, name='user_log_json'),
+
+	url(r'^logs/json/$', log_list_json, name='log_json'),
+
 	url(r'^user/register/$',register_user, name='register_user'),
 	url(r'^user/(?P<pk>\d+)/$',edit_user, name='edit_user'),
 

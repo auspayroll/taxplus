@@ -40,6 +40,8 @@ from django.db import IntegrityError
 import zipfile
 import djqscsv
 from StringIO import StringIO
+import json
+from django.core import serializers
 
 
 
@@ -655,6 +657,78 @@ def add_account_dates(request, pk):
 def users(request):
 	users = User.objects.all().order_by('-is_active', 'first_name', '-id')
 	return TemplateResponse(request, 'crud/users.html', {'users':users})
+
+
+
+def user_list_json(request, pk=None):
+    pay_load = {}
+    users = User.objects.all()
+    start = int(request.GET.get("start", 0))
+    length = int(request.GET.get("length", 25))
+
+    totalUsers = users.count()
+    search = request.GET.get('search[value]')
+    if search:
+        users = users.filter(Q(username__icontains=search) | Q(email__icontains=search))
+        pay_load['recordsTotal'] = pay_load['recordsFiltered'] = users.count()
+    else:
+        pay_load['recordsTotal'] = pay_load['recordsFiltered'] = totalUsers
+
+
+    pay_load["draw"] = request.GET.get('draw')
+    pay_load["data"] = [dict(i) for i in users.values('id', 'username', 'first_name', 'last_name')[start:(start+length)]]
+    for user in pay_load['data']:
+    	user['edit_link'] = "<a href=\"%s\">Edit</a>" % reverse('edit_user', args = (user['id'],))
+    pay_load = json.dumps(pay_load)
+    return HttpResponse(pay_load, content_type="application/json")
+
+
+def log_list_json(request, pk=None):
+    pay_load = {}
+    logs = Log.objects.all()
+    if pk:
+        user = get_object_or_404(User, pk=pk)
+        logs = logs.filter(user=user)
+
+    start = int(request.GET.get("start", 0))
+    length = int(request.GET.get("length", 25))
+
+    totalLogs = logs.count()
+    search = request.GET.get('search[value]')
+    if search:
+        logs = logs.filter(Q(username__icontains=search) | Q(email__icontains=search))
+        pay_load['recordsTotal'] = pay_load['recordsFiltered'] = users.count()
+    else:
+        pay_load['recordsTotal'] = pay_load['recordsFiltered'] = totalLogs
+
+    logs = logs.order_by('-id')
+
+    pay_load["draw"] = request.GET.get('draw')
+    pay_load["data"] = []
+    for log in logs[start:(start+length)]:
+    	data = {}
+    	data["id"] = log.pk
+    	data["user"] = '<a href="%s">%s</a>' % (reverse('edit_user',args=[log.user.pk,]),log.user.username)
+    	data['time'] = log.created.strftime('%I:%M %p')
+    	data['created'] = log.created.strftime('%d-%m-%Y')
+    	data['request_ip'] = log.request_ip or '-'
+    	if log.account:
+    		data['account'] = '<a href="%s">%s : %s</a>' % (reverse('account',args=[log.account.pk]), log.account.pk, log.account.name )
+    	else:
+    		data['account'] = '-'
+    	if log.instance:
+    		data['instance'] = "%s : %s " % (ContentType.objects.get_for_model(log.instance), log.instance)
+    	else:
+    		data['instance'] = ''
+    	changes_as_html = log.changes_as_html
+    	if 'Logged in' in changes_as_html:
+    		data['changes'] = changes_as_html
+    	else:
+    		data['changes'] = "<a href=\"\"  class=\"show_changes btn btn-default\">View</a> <div style=\"display:none;\" class=\"changes\">"+changes_as_html+"</div>"
+    	pay_load["data"].append(data)
+
+    pay_load = json.dumps(pay_load)
+    return HttpResponse(pay_load, content_type="application/json")
 
 
 @user_passes_test(admin_check)

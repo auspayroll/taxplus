@@ -1263,6 +1263,8 @@ class Log(models.Model):
 				return self.changes
 			else:
 				html = ''
+				if 'last_login' in change_dict:
+					return 'Logged in %s' % change_dict['last_login'][1]
 				for k,v in change_dict.items():
 					html += '<div><strong>%s</strong>: %s &#8594; %s</div>' % (k, v[0], v[1])
 				return html

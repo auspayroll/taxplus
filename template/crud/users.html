@@ -3,27 +3,43 @@
 {% block main %}
 	<h1>Users</h1>
 	<form method="post">
-	<table  class="table">
+	<table  class="table" id="usersTable">
+	<thead>
 	<tr>
-		<th>Id</th>
-		<th>Full Name</th>
+		<th>id</th>
 		<th>Username</th>
-		<th>Email</th>
-		<th>Groups</th>
-		<th>Is Active</th>
-		<th>Last Login</th>
+		<th>First name</th>
+		<th>Last name</th>
+		<th></th>
+
 	</tr>
-	{% for u in users %}
-	<tr>
-		<td>{{ u.pk }}</td>
-		<td>{{ u.get_full_name }}</td>
-		<td><a href="{% url 'edit_user' u.pk %}">{{ u.username }}</a></td>
-		<td>{{ u.email }}</td>
-		<td>{{ u.groups.all|join:', ' }}</td>
-		<td>{{ u.is_active|yesno }}</td>
-		<td>{{ u.last_login|default:'-' }}</td>
-	</tr>
-	{% endfor %}
+	</thead>
+	<tbody>
+
+	<tbody>
 	</table>
 	</form>
+	<script>
+	$('#usersTable').DataTable( {
+	serverSide: true,
+	deferRender: true,
+	//searchDelay: 1000,
+    ajax: {
+        url: "{% url 'user_list_json' %}",
+        dataSrc: 'data',
+
+    },
+    columns: [
+    	{ data: 'id' },
+        { data: 'username' },
+        { data: 'first_name' },
+        { data: 'last_name' },
+        { data: 'edit_link' }
+    ]
+
+	} );
+
+	</script>
+
+
 {% endblock %}
