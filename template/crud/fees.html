@@ -9,6 +9,7 @@
 		<th>id</th>
 		<th>Period</th>
 		<th>Fee</th>
+		<th>Cycle</th>
 		<th>Category</th>
 		<th>Utility/Site</th>
 		<th>Qty/Size</th>
@@ -23,6 +24,7 @@
 		<td>{{f.pk|slugify}}</td>
 		<td>{{ f.from_date }} - {{ f.to_date|default:'active' }}</td>
 		<td>{{ f.fee_type }}</td>
+		<td>{{ f.period }}</td>
 		<td>{{ f.fee_subtype|default:'-' }}</td>
 		<td>{{ f.prop|default:f.utility|default:'- ' }}</td>
 		<td>{{ f.quantity|default:'-' }}</td>

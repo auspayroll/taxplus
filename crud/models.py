@@ -14,7 +14,7 @@ from django.db.models import Sum
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from taxplus.models import Boundary, Media, Citizen, Fee, District,\
- CategoryChoice, District, Sector, Cell, Village, Property, Rate
+ Category, CategoryChoice, District, Sector, Cell, Village, Property, Rate
 import copy
 import json
 import os
@@ -205,6 +205,10 @@ class Account(models.Model):
 	no_payments = models.IntegerField(default=0)
 
 	@property
+	def balance(self):
+		return self.principle_due + self.interest_due + self.penalty_due
+
+	@property
 	def principle_due(self):
 		return self.principle_total - self.principle_paid
 
@@ -331,6 +335,14 @@ class Account(models.Model):
 			fee.interest_total = fee.interest_paid = fee.penalty_total = 0
 			fee.penalty_paid = fee.principle_paid = fee.balance = fee.overdue =  0
 
+			if not fee.period:
+				af = copy.copy(fee)
+				af.to_date = fee.from_date
+				af.trans_date = af.from_date
+				af.due_date =  af.to_date + timedelta(days=(af.due_days or 0))
+				fee_list.append(af)
+				continue
+
 			fee.amount = 0
 			if fee.period == 1:
 				period_end = fee.from_date - relativedelta(years=1)
@@ -341,10 +353,12 @@ class Account(models.Model):
 
 			while period_end < (fee.to_date or self.end_date or period_ending):
 				af = copy.copy(fee)
+				#import pdb
+				#pdb.set_trace()
 				af.from_date, period_end = get_next_period(period_end, fee.period)
 				af.to_date = period_end
 				af.trans_date = af.from_date
-				af.due_date =  af.to_date + timedelta(days=(af.due_days or 5))
+				af.due_date =  af.to_date + timedelta(days=(af.due_days or 0))
 				af.amount, calc_string = af.calc_rate()
 				fee.amount += Decimal(af.amount)
 				af.description = "%s<br/><span class=\"calc_string\">%s</font>" % (af, calc_string)
@@ -858,7 +872,7 @@ class AccountFee(models.Model):
 	period = models.PositiveSmallIntegerField(null=True, default=0,
 		choices=[(0,'Once only'), (12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
-	fee_subtype = models.ForeignKey(CategoryChoice, null=True, related_name='not_used')
+	fee_subtype = models.ForeignKey(CategoryChoice, null=True, related_name='not_used', limit_choices_to={'category__code':'fee_type'})
 	is_paid = models.BooleanField(default=False)
 	utility = models.ForeignKey(Utility, null=True, blank=False)
 	prop = models.ForeignKey(Property, null=True, blank=False)

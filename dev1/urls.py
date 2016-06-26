@@ -10,12 +10,18 @@ from rest_framework import routers
 
 
 router = routers.DefaultRouter()
-router.register('accounts', AccountApi)
+router.register('account', AccountApi)
 router.register('property', PropertyApi)
-router.register('districts', DistrictApi)
-router.register('sectors', SectorApi)
-router.register('cells', CellApi)
-router.register('villages', VillageApi)
+router.register('district', DistrictApi)
+router.register('sector', SectorApi)
+router.register('cell', CellApi)
+router.register('village', VillageApi)
+router.register('business', BusinessApi)
+router.register('citizen', CitizenApi)
+router.register('category', CategoryApi)
+router.register('categorychoice', CategoryChoiceApi)
+router.register('rate', RateApi)
+router.register('fee', AccountFeeApi)
 
 urlpatterns = patterns('',
 	url(r'^$','crud.views.login', name='login'),

@@ -1,4 +1,5 @@
-from crud.models import Property, Account, District, Sector, Cell, Village
+from crud.models import Property, Account, District, Sector, Cell, \
+  Village, Business, Citizen, Category, CategoryChoice, Rate, AccountFee
 from crud.serializers import *
 from django.http import Http404
 from rest_framework.views import APIView
@@ -22,6 +23,35 @@ class PropertyListx(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AccountFeeApi(viewsets.ModelViewSet):
+    queryset = AccountFee.objects.all()
+    serializer_class = AccountFeeSerializer
+
+
+class RateApi(viewsets.ModelViewSet):
+    queryset = Rate.objects.all()
+    serializer_class = RateSerializer
+
+class CategoryApi(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+
+class CategoryChoiceApi(viewsets.ModelViewSet):
+    queryset = CategoryChoice.objects.all()
+    serializer_class = CategoryChoiceSerializer
+
+
+class CitizenApi(viewsets.ModelViewSet):
+    queryset = Citizen.objects.all()
+    serializer_class = CitizenSerializer
+
+
+class BusinessApi(viewsets.ModelViewSet):
+    queryset = Business.objects.all()
+    serializer_class = BusinessSerializer
 
 
 class PropertyApi(viewsets.ModelViewSet):

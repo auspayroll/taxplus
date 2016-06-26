@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from crud.models import Property, Account, District, Sector, Cell, Village
+from crud.models import Property, Account, District, Sector, Cell, Village, \
+	Business, Citizen, Category, CategoryChoice, Rate, AccountFee
 
 
 class TestSerializer(serializers.Serializer):
@@ -37,6 +38,63 @@ class PropertySerializer(serializers.ModelSerializer):
 		model = Property
 		fields = ('id', 'upi')
 """
+
+
+class AccountFeeSerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = AccountFee
+		fields = ('account', 'fee_type', 'fee_subtype', 'from_date', 'auto', 'amount', 
+			'due_days', 'period', 'sector', 'cell', 'village')
+
+	account = serializers.PrimaryKeyRelatedField(label='Account Number', queryset=Account.objects.all(), style={'base_template': 'input.html'})
+	fee_type = serializers.PrimaryKeyRelatedField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))
+	fee_subtype = serializers.PrimaryKeyRelatedField(label='Category', queryset=CategoryChoice.objects.filter(category__code__in=['land_use', 'cleaning_rate']))
+	sector = serializers.PrimaryKeyRelatedField(required=False, label='Sector Id', queryset=Sector.objects.all(), style={'base_template': 'input.html'})
+	cell = serializers.PrimaryKeyRelatedField(required=False, label='Cell Id', queryset=Cell.objects.all(), style={'base_template': 'input.html'})
+	village = serializers.PrimaryKeyRelatedField(required=False, label='Village Id', queryset=Village.objects.all(), style={'base_template': 'input.html'})
+
+class RateSerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = Rate
+		fields = ('category', 'sub_category', 'amount', 'date_from', 
+			'date_to', 'village', 'village_id', 'sub_category_name',
+			'category_name',
+			'cell', 'sector')
+
+	category = serializers.PrimaryKeyRelatedField(queryset=CategoryChoice.objects.filter(category__code='fee_type'))
+	sub_category = serializers.PrimaryKeyRelatedField( queryset=CategoryChoice.objects.filter(category__code__in=['land_use', 'cleaning_rate']))
+	category_name = serializers.ReadOnlyField(source='category.name')
+	sub_category_name = serializers.ReadOnlyField(source='sub_category.name')
+	village = serializers.ReadOnlyField(source='village.name')
+	village_id = serializers.ReadOnlyField(source='village.id')
+	cell = serializers.ReadOnlyField(source='cell.name')
+	sector = serializers.ReadOnlyField(source='sector.name')
+
+class CategorySerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = Category
+		fields = ('code', 'name')
+
+class CategoryChoiceSerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = CategoryChoice
+		fields = ('code', 'name', 'category')
+
+
+class CitizenSerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = Citizen
+		fields = ('id', 'citizen_id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 
+			'phone_1', 'phone_2', 'email', 'address', 'gender', 'created', 'photo')
+
+
+
+class BusinessSerializer(serializers.ModelSerializer):
+	class Meta:
+		model  = Business
+		fields = ('id', 'name', 'tin', 'date_started', 'address', 'phone1', 
+			'phone2', 'email', 'vat_register', )
+
 
 class DistrictSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
@@ -108,6 +166,14 @@ class PropertySerializer(serializers.HyperlinkedModelSerializer):
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = Account
-		fields = ('id', 'name', 'start_date', 'district', 'sector', 'cell', 'village')
+		fields = ('id', 'name', 'start_date', 'tin', 'citizen_id', 'phone', 'email', 
+			'principle_total', 'principle_paid', 'interest_total', 'interest_paid',
+			'penalty_total', 'penalty_paid', 'overdue', 'balance')
+
+		read_only_fields = ('principle_total', 'principle_paid', 'interest_total', 'interest_paid',
+			'penalty_total', 'penalty_paid', 'overdue', 'balance')
+
+
+
 
 

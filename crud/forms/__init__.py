@@ -308,12 +308,12 @@ class MediaForm(forms.ModelForm):
 class FeeForm(forms.ModelForm):
 	class Meta:
 		model = AccountFee
-		fields = ['fee_type',  'period', 'from_date', 'auto', 'amount', 'due_date']
+		fields = ['fee_type',  'fee_subtype', 'period', 'from_date', 'auto', 'amount', 'due_days', 'district', 'sector', 'cell', 'village', 'parcel_id']
 
 	auto = forms.BooleanField(label="Auto-calculate fee" , help_text="Uncheck to specify amount", required=False)
-	from_date = forms.DateField(widget=html5_widgets.DateInput, label="Start fee on")
-	due_date = forms.DateField(widget=html5_widgets.DateInput)
-	amount = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2)
+	from_date = forms.DateField(widget=html5_widgets.DateInput, label="Start fee on", initial=date.today())
+	#due_date = forms.DateField(widget=html5_widgets.DateInput)
+	amount = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2, initial=0)
 
 
 class UtilityFeeForm(FeeForm):

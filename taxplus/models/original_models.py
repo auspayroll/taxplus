@@ -1501,8 +1501,8 @@ class DebtorsReportLine(models.Model):
 	total = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
 class Rate(models.Model):
-	category = models.ForeignKey(CategoryChoice, related_name='rate_category')
-	sub_category = models.ForeignKey(CategoryChoice, related_name='rate_subcategory')
+	category = models.ForeignKey(CategoryChoice, related_name='rate_category', limit_choices_to={'id':22})
+	sub_category = models.ForeignKey(CategoryChoice, related_name='rate_subcategory', limit_choices_to={'category__code':'fee_subtype'})
 	amount = models.DecimalField(decimal_places=2, max_digits=8)
 	date_from = models.DateField()
 	date_to = models.DateField(null=True)

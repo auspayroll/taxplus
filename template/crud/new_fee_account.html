@@ -1,11 +1,36 @@
 {% extends "crud/account.html" %}
-
+{% load static from staticfiles %}
 {% block body %}
+<script>
 
+{% if request.POST %}
+	var sector_posted = {{ request.POST.sector|slugify|default:'0' }};
+	var cell_posted = {{ request.POST.cell|slugify|default:'0' }};
+	var village_posted = {{ request.POST.village|slugify|default:'0' }};
+{% else %}
+	{% if form.instance and form.instance.sector %}
+		var sector_posted = {{ form.instance.sector.pk|slugify|default:'0' }};
+		var cell_posted = {{ form.instance.cell.pk|slugify|default:'0' }};
+		var village_posted = {{ form.instance.village.pk|slugify|default:'0' }};
+	{% else %}
+		{% if form and form.initial.sector %}
+			var sector_posted = {{ form.initial.sector.pk|slugify|default:'0' }};
+			var cell_posted = {{ form.initial.cell.pk|slugify|default:'0' }};
+			var village_posted = {{ form.initial.village.pk|slugify|default:'0' }};
+		{% else %}
+			var sector_posted = 0;
+			var cell_posted = 0;
+			var village_posted = 0;
+		{% endif %}
+	{% endif %}
+{% endif %}
+
+</script>
+<script src="{% static 'js/load_region_data.js' %}"></script>
 <div>
 <h2>New Fee</h2>
 <form method="post">
-	<table>
+<table class="table">
 	{{form}}
 </table>
 <button>Add New Fee</button></select>
