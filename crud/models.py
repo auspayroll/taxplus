@@ -205,7 +205,7 @@ class Account(models.Model):
 	no_payments = models.IntegerField(default=0)
 
 	@property
-	def balance(self):
+	def outstanding(self):
 		return self.principle_due + self.interest_due + self.penalty_due
 
 	@property

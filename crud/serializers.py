@@ -43,7 +43,7 @@ class PropertySerializer(serializers.ModelSerializer):
 class AccountFeeSerializer(serializers.ModelSerializer):
 	class Meta:
 		model  = AccountFee
-		fields = ('account', 'fee_type', 'fee_subtype', 'from_date', 'auto', 'amount', 
+		fields = ('account', 'fee_type', 'fee_subtype', 'from_date', 'auto', 'amount',
 			'due_days', 'period', 'sector', 'cell', 'village')
 
 	account = serializers.PrimaryKeyRelatedField(label='Account Number', queryset=Account.objects.all(), style={'base_template': 'input.html'})
@@ -56,7 +56,7 @@ class AccountFeeSerializer(serializers.ModelSerializer):
 class RateSerializer(serializers.ModelSerializer):
 	class Meta:
 		model  = Rate
-		fields = ('category', 'sub_category', 'amount', 'date_from', 
+		fields = ('category', 'sub_category', 'amount', 'date_from',
 			'date_to', 'village', 'village_id', 'sub_category_name',
 			'category_name',
 			'cell', 'sector')
@@ -84,7 +84,7 @@ class CategoryChoiceSerializer(serializers.ModelSerializer):
 class CitizenSerializer(serializers.ModelSerializer):
 	class Meta:
 		model  = Citizen
-		fields = ('id', 'citizen_id', 'first_name', 'middle_name', 'last_name', 'date_of_birth', 
+		fields = ('id', 'citizen_id', 'first_name', 'middle_name', 'last_name', 'date_of_birth',
 			'phone_1', 'phone_2', 'email', 'address', 'gender', 'created', 'photo')
 
 
@@ -92,7 +92,7 @@ class CitizenSerializer(serializers.ModelSerializer):
 class BusinessSerializer(serializers.ModelSerializer):
 	class Meta:
 		model  = Business
-		fields = ('id', 'name', 'tin', 'date_started', 'address', 'phone1', 
+		fields = ('id', 'name', 'tin', 'date_started', 'address', 'phone1',
 			'phone2', 'email', 'vat_register', )
 
 
@@ -166,12 +166,12 @@ class PropertySerializer(serializers.HyperlinkedModelSerializer):
 class AccountSerializer(serializers.HyperlinkedModelSerializer):
 	class Meta:
 		model = Account
-		fields = ('id', 'name', 'start_date', 'tin', 'citizen_id', 'phone', 'email', 
+		fields = ('id', 'name', 'start_date', 'tin', 'citizen_id', 'phone', 'email',
 			'principle_total', 'principle_paid', 'interest_total', 'interest_paid',
-			'penalty_total', 'penalty_paid', 'overdue', 'balance')
+			'penalty_total', 'penalty_paid', 'overdue', 'outstanding')
 
 		read_only_fields = ('principle_total', 'principle_paid', 'interest_total', 'interest_paid',
-			'penalty_total', 'penalty_paid', 'overdue', 'balance')
+			'penalty_total', 'penalty_paid', 'overdue', 'outstanding')
 
 
 
