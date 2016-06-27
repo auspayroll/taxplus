@@ -1238,7 +1238,7 @@ def new_account(request):
 				if tin: #create / link business
 					businesses = Business.objects.filter(tin=tin)
 					if not businesses:
-						Business.objects.create(name=name, tin=tin, phone1=phone, date_started=cd.get('start_date'), village=village, cell=cell,
+						business=Business.objects.create(name=name, tin=tin, phone1=phone, date_started=cd.get('start_date'), village=village, cell=cell,
 							district=district, sector=sector)
 					else:
 						business = businesses[0]

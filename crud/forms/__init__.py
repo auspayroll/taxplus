@@ -727,27 +727,22 @@ class NewAccountForm(RegionForm):
 	name = forms.CharField(max_length=90, label='Account Name')
 	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	parcel_id = forms.IntegerField(required=False)
-	tin = forms.IntegerField(validators=[valid_tin], required=False, label='TIN')
+	tin = forms.CharField(validators=[valid_tin], required=False, label='TIN')
 	citizen_first_name = forms.CharField(required=False)
 	citizen_last_name = forms.CharField(required=False)
 	citizen_id = forms.IntegerField(validators=[valid_citizen_id], required=False, help_text="16 digits", label="Citizen ID")
 	citizen_dob = forms.DateField(widget=html5_widgets.DateInput, required=False)
 	phone = forms.CharField(max_length=40, validators=[valid_phone], required=False, help_text="07+8 digits, eg. 0789891223")
-	fee_type = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code='fee_type'), required=False)
-	fee_subtype = forms.ModelChoiceField(queryset=CategoryChoice.objects.filter(category__code__in=['land_use', 'cleaning_rate']), required=False)
 
 	def __init__(self, *args, **kwargs):
 		super(NewAccountForm, self).__init__(*args, **kwargs)
 		self.fields['district'].required = True
 		self.fields['sector'].required = True
 		self.order_fields(['name', 'start_date', 'district', 'sector', 'cell', 'village', 'parcel_id', 'tin',
-			'citizen_first_name','citizen_last_name', 'citizen_id', 'citizen_dob', 'phone', 'fee_type', 'fee_subtype'])
+			'citizen_first_name','citizen_last_name', 'citizen_id', 'citizen_dob', 'phone'])
 
 	def clean(self, *args, **kwargs):
 		cd = super(NewAccountForm, self).clean(*args, **kwargs)
-		fee_type = cd.get('fee_type')
-		if 'land_lease' in fee_type.code and not cd.get('parcel_id') and not cd.get('cell'):
-			raise forms.ValidationError("You must enter a parcel/plot ID and Cell when adding Land Lease Fee")
 
 		if not cd.get('tin') and not cd.get('citizen_id') and not cd.get('phone') \
 		  and not (cd.get('cell') and cd.get('parcel_id')):
