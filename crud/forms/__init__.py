@@ -19,10 +19,24 @@ import collections
 
 from django.core.exceptions import ValidationError
 
-valid_tin = RegexValidator(regex='1\d{8}', message='Invalid TIN')
+#valid_tin = RegexValidator(regex='1\d{8}', message='Invalid TIN')
 valid_phone = RegexValidator(regex='07\d{8}', message='Invalid Phone')
 valid_number_search = RegexValidator(regex='\d{4}', message='Invalid number, specify atleast 4 numbers')
-valid_citizen_id = RegexValidator(regex='\d{16}', message='Invalid Citizen ID')
+#valid_citizen_id = RegexValidator(regex='\d{16}', message='Invalid Citizen ID')
+
+def valid_tin(value):
+    if not re.match(r'1\d{8}',str(value)):
+        raise ValidationError(
+            'invalid TIN',
+            params={'value': value},
+        )
+
+def valid_citizen_id(value):
+    if not re.match(r'\d{16}',str(value)):
+        raise ValidationError(
+            'invalid Citizen ID',
+            params={'value': value},
+        )
 
 fee_auto_choices = [(0,'Add as one-off fee'),(12,'Auto generate fees every month'),(4,'Auto generate fees every quarter'),
 (52,'Auto generate fees every week'),(1,'Auto generate fees every year')]
@@ -727,7 +741,7 @@ class NewAccountForm(RegionForm):
 	name = forms.CharField(max_length=90, label='Account Name')
 	start_date = forms.DateField(widget=html5_widgets.DateInput, initial=date.today())
 	parcel_id = forms.IntegerField(required=False)
-	tin = forms.CharField(validators=[valid_tin], required=False, label='TIN')
+	tin = forms.IntegerField(validators=[valid_tin], required=False, label='TIN')
 	citizen_first_name = forms.CharField(required=False)
 	citizen_last_name = forms.CharField(required=False)
 	citizen_id = forms.IntegerField(validators=[valid_citizen_id], required=False, help_text="16 digits", label="Citizen ID")
