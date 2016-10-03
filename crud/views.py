@@ -169,7 +169,7 @@ def account(request, pk):
 def new_account_fee(request, pk):
 	account = get_object_or_404(Account, pk=pk)
 	if request.method == 'POST':
-		form= FeeForm(request.POST)
+		form= FeeForm(request.POST, account=account)
 		if form.is_valid():
 			account_fee = form.save(commit=False)
 			account_fee.account = account
@@ -178,7 +178,7 @@ def new_account_fee(request, pk):
 			messages.success(request, 'New Fee Created')
 			return HttpResponseRedirect(reverse('account_fees', args=[pk]))
 	else:
-		form = FeeForm()
+		form = FeeForm(account=account)
 
 	return TemplateResponse(request, 'crud/new_fee_account.html', {'account':account, 'form':form})
 
@@ -957,9 +957,9 @@ def edit_account(request, pk):
 				return HttpResponseRedirect(next)
 			else:
 				return HttpResponseRedirect(reverse('account', args=[account.pk]))
-	else:
-		form = AccountForm(instance=account, initial={'next':request.GET.get('next')})
-		return render(request, 'crud/form.html', {'form':form, 'account':account})
+
+	form = AccountForm(instance=account, initial={'next':request.GET.get('next')})
+	return render(request, 'crud/form.html', {'form':form, 'account':account})
 
 
 @user_passes_test(admin_check)

@@ -11,6 +11,7 @@ from datetime import date
 
 categories = (
 	('status', 'status'),
+	('cycle', 'cycle'),
 	('market_status', 'market type'),
 	('property_type', 'property type'),
 	('occupancy_status', 'occupancy status'),
@@ -27,6 +28,8 @@ categories = (
 category_choices = {
 
 	'status':(('active', 'active'), ('inactive','inactive'), ('pending','pending')),
+
+	'cycle':((0,'One off'), (12, 'Monthly'), (1,'Yearly'), (26, 'Fortnightly'), (52,'Weekly')),
 
 	'fee_type':(('land_lease', 'Land Lease Fee'),('cleaning', 'Cleaning Fee'), ('quarry', 'Quarry Fee'), ('cemetery', 'Cemetery Fee'),
 		('market', 'Market Fee'), ('tower', 'Tower Fee'), ('marriage','Marriage Licence'), ('sign', 'Billboard & Sign')),

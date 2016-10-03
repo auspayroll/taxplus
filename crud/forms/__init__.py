@@ -251,13 +251,18 @@ class NewFeeForm(forms.Form):
 	district = forms.ModelChoiceField(queryset=District.objects.all().order_by('name'))
 
 
-class AccountForm(forms.ModelForm):
+class AccountForm(forms.ModelForm, RegionForm):
 	class Meta:
 		model = Account
-		fields = ('name', 'start_date', 'end_date')
+		fields = ('name', 'start_date', 'end_date', 'district', 'sector', 'cell', 'village', 'parcel_id')
 
 	start_date = forms.DateField(widget=html5_widgets.DateInput,)
 	end_date = forms.DateField(widget=html5_widgets.DateInput, required=False )
+
+	def clean(self, *args, **kwargs):
+		RegionForm.clean(self, *args, **kwargs)
+		return super(AccountForm, self).clean(*args, **kwargs)
+
 
 class AccountNoteForm(forms.ModelForm):
 	class Meta:
@@ -319,7 +324,7 @@ class MediaForm(forms.ModelForm):
 
 
 
-class FeeForm(forms.ModelForm):
+class FeeForm(forms.ModelForm, RegionForm):
 	class Meta:
 		model = AccountFee
 		fields = ['fee_type',  'fee_subtype', 'period', 'from_date', 'auto', 'amount', 'due_days', 'district', 'sector', 'cell', 'village', 'parcel_id']
@@ -329,6 +334,16 @@ class FeeForm(forms.ModelForm):
 	#due_date = forms.DateField(widget=html5_widgets.DateInput)
 	amount = forms.DecimalField(label='Fee Amount', min_value=0, decimal_places=2, initial=0)
 
+	def clean(self, *args, **kwargs):
+		RegionForm.clean(self, *args, **kwargs)
+		return super(FeeForm, self).clean(*args, **kwargs)
+
+	def __init__(self, *args, **kwargs):
+		account = kwargs.pop('account')
+		super(FeeForm, self).__init__(*args, **kwargs)
+		self.initial = {'district':account.district, 'sector':account.sector, 'cell':account.cell,
+		'village':account.village, 'parcel_id':account.parcel_id}
+		self.fields['fee_subtype'].queryset = CategoryChoice.objects.filter(category__code__in=['land_use', 'cleaning_rate'])
 
 class UtilityFeeForm(FeeForm):
 	identifier = forms.CharField(max_length=30, label="Unique Identifier")

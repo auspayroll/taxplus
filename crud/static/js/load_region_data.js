@@ -1,116 +1,133 @@
 
-
  $(document).ready(function(){
-	if(localStorage.getItem("sectors")) {
-	    data = JSON.parse(localStorage.getItem("sectors"));
-	} else {
-	    $.ajax({
-				type:"get",
-				url: "/static/sectors.json",
-				success:function(sectors)
-				{
-					localStorage.setItem("sectors", JSON.stringify(sectors));
-				},
-				error: function(request)
-				{
-					console.log('failed to load sectors')
-				}
-			});
-	}
+ 	var district_val;
+ 	var sector_val = sector_posted;
+ 	var cell_val = cell_posted;
 
-	if(localStorage.getItem("cells")) {
-	    data = JSON.parse(localStorage.getItem("cells"));
-	} else {
-	    $.ajax({
-				type:"get",
-				url: "/static/cells.json",
-				success:function(cells)
-				{
-					localStorage.setItem("cells", JSON.stringify(cells));
-				},
-				error: function(request)
-				{
-					console.log('failed to load cells')
-				}
-			});
-	}
 
-	if(localStorage.getItem("villages")) {
-	    data = JSON.parse(localStorage.getItem("villages"));
-	} else {
-	    $.ajax({
-				type:"get",
-				url: "/static/villages.json",
-				success:function(villages)
-				{
-					localStorage.setItem("villages", JSON.stringify(villages));
-				},
-				error: function(request)
-				{
-					console.log('failed to load villages')
-				}
-			});
-	}
+
+
+	$("#id_fee_type").change(function(){
+		var fee_type = $("#id_fee_type").val();
+		$("#id_fee_subtype").children("option[value!='']").remove();
+
+		if(fee_type !== ''){
+		    $.ajax({
+					type:"get",
+					url: "/api/subcategory/"+fee_type+"/",
+					success:function(choices)
+					{
+						for(var i=0; i< choices.length; i++){
+							$("#id_fee_subtype").append('<option value="'+ choices[i].id +'">'+ choices[i].name +'</option>');
+
+						}
+					},
+					error: function(request)
+					{
+						console.log('failed to load fee sub type choices');
+					}
+				});
+		}
+
+	});
+
+
 
 	$("#id_district").change(function(){
-		var district_val = $("#id_district").val();
-		var sector_val = $("#id_sector").val();
+		district_val = $("#id_district").val();
 		$("#id_sector").children("option[value!='']").remove();
 		if(district_val !== ''){
-			var sectors = JSON.parse(localStorage.getItem('sectors'));
-			for(var i=0; i< sectors.length; i++){
-				if(Number(district_val) === sectors[i]['district_id']){
-					if (sector_posted === sectors[i].id){
-						$("#id_sector").append('<option value="'+ sectors[i].id +'" selected>'+ sectors[i].name +'</option>');
+		    $.ajax({
+					type:"get",
+					url: "/api/sectors/"+district_val+'/',
+					success:function(sectors)
+					{
+						for(var i=0; i< sectors.length; i++){
+								if (sector_posted === sectors[i].id){
+									$("#id_sector").append('<option value="'+ sectors[i].id +'" selected>'+ sectors[i].name +'</option>');
+									$("#id_sector").val(sector_posted);
+								}
+								else{
+									$("#id_sector").append('<option value="'+ sectors[i].id +'">'+ sectors[i].name +'</option>');
+								}
+						}
+						$("#id_sector").change();
+					},
+					error: function(request)
+					{
+						console.log('failed to load sectors');
 					}
-					else{
-						$("#id_sector").append('<option value="'+ sectors[i].id +'">'+ sectors[i].name +'</option>');
-					}
-				}
-			}
-			//$("#search_table #id_pay_village").trigger("chosen:updated");
+				});
 		}
-		$("#id_sector").change();
-	}).trigger('change');
+		else{
+			$("#id_sector").change();
+		}
+
+	});
 
 
 	$("#id_sector").change(function(){
-		var sector_val = $("#id_sector").val();
 		$("#id_cell").children("option[value!='']").remove();
+		sector_val = $("#id_sector").val();
 		if(sector_val !== ''){
-			var cells = JSON.parse(localStorage.getItem('cells'));
-			for(var i=0; i< cells.length; i++){
-				if(Number(sector_val) === cells[i]['sector_id']){
-					if (cell_posted === cells[i].id){
-						$("#id_cell").append('<option value="'+ cells[i].id +'" selected>'+ cells[i].name +'</option>');
+		    $.ajax({
+					type:"get",
+					url: "/api/cells/"+sector_val+'/',
+					success:function(cells)
+					{
+						for(var i=0; i< cells.length; i++){
+								if (cell_val === cells[i].id){
+									$("#id_cell").append('<option value="'+ cells[i].id +'" selected>'+ cells[i].name +'</option>');
+									$("#id_cell").val(cell_val);
+
+								}
+								else{
+									$("#id_cell").append('<option value="'+ cells[i].id +'">'+ cells[i].name +'</option>');
+								}
+						}
+						$("#id_cell").change();
+					},
+					error: function(request)
+					{
+						console.log('failed to load cells')
 					}
-					else{
-						$("#id_cell").append('<option value="'+ cells[i].id +'">'+ cells[i].name +'</option>');
-					}
-				}
-			}
+				});
 		}
-		$("#id_cell").change();
-	}).trigger('change');
+		else{
+			$("#id_cell").change();
+		}
+	});
 
 
 	$("#id_cell").change(function(){
-		var cell_val = $("#id_cell").val();
 		$("#id_village").children("option[value!='']").remove();
+		cell_val = $(this).val();
 		if(cell_val !== ''){
-			var villages = JSON.parse(localStorage.getItem('villages'));
-			for(var i=0; i< villages.length; i++){
-				if(Number(cell_val) === villages[i]['cell_id']){
-					if (village_posted === villages[i].id){
-						$("#id_village").append('<option value="'+ villages[i].id +'" selected>'+ villages[i].name +'</option>');
+		    $.ajax({
+					type:"get",
+					url: "/api/villages/"+cell_val+'/',
+					success:function(villages)
+					{
+						for(var i=0; i< villages.length; i++){
+								if (village_posted === villages[i].id){
+									$("#id_village").append('<option value="'+ villages[i].id +'" selected>'+ villages[i].name +'</option>');
+									$("id_village").val(village_posted);
+								}
+								else{
+									$("#id_village").append('<option value="'+ villages[i].id +'">'+ villages[i].name +'</option>');
+								}
+						}
+					},
+					error: function(request)
+					{
+						console.log('failed to load cells')
 					}
-					else{
-						$("#id_village").append('<option value="'+ villages[i].id +'">'+ villages[i].name +'</option>');
-					}
-				}
-			}
+				});
 		}
-	}).trigger('change');
+
+	});
+
+	$("#id_district").trigger('change');
 
 
 });

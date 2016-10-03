@@ -872,7 +872,7 @@ class AccountFee(models.Model):
 	period = models.PositiveSmallIntegerField(null=True, default=0,
 		choices=[(0,'Once only'), (12,'Monthly'),(1,'Annually'),(4,'Quarterly'),(52,'Weekly')]) # auto gen only
 	fee_type = models.ForeignKey(CategoryChoice, null=True, limit_choices_to={'category__code':'fee_type'})
-	fee_subtype = models.ForeignKey(CategoryChoice, null=True, related_name='not_used', limit_choices_to={'category__code':'fee_type'})
+	fee_subtype = models.ForeignKey(CategoryChoice, null=True, related_name='not_used')
 	is_paid = models.BooleanField(default=False)
 	utility = models.ForeignKey(Utility, null=True, blank=False)
 	prop = models.ForeignKey(Property, null=True, blank=False)
