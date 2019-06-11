@@ -1,2 +1,2 @@
 # propertymode-taxplus
-Python / Django
+Taxation system - Python / Django
